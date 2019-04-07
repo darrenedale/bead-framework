@@ -62,4 +62,11 @@ interface Validatable {
 	 * @return DataValidationReport A report on the validity of the object.
 	 */
 	public function validate(): DataValidationReport;
+
+	/**
+	 * Determine whether an object is valid or not.
+	 *
+	 * @return bool `true` if the object is valid, `false` if not.
+	 */
+	public function isValid(): bool;
 }
