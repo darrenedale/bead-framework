@@ -22,6 +22,8 @@
 
 namespace Equit\Html;
 
+use Equit\AppLog;
+
 /**
  * A static label element to include in a page.
  *
@@ -122,7 +124,7 @@ class Label extends PageElement {
 			return true;
 		}
 
-		\Equit\AppLog::error("invalid label content type $type", __FILE__, __LINE__, __FUNCTION__);
+		AppLog::error("invalid label content type $type", __FILE__, __LINE__, __FUNCTION__);
 		return false;
 	}
 
