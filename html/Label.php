@@ -22,14 +22,6 @@
 
 namespace Equit\Html;
 
-use Equit\Html\Tooltip;
-use Equit\Html\PageElement;
-
-require_once("classes/equit/AppLog.php");
-require_once("classes/equit/html/Page.php");
-require_once("classes/equit/html/PageElement.php");
-require_once("classes/equit/html/Tooltip.php");
-
 /**
  * A static label element to include in a page.
  *
