@@ -20,8 +20,6 @@ namespace Equit;
 
 use StdClass;
 
-require_once("classes/equit/AppLog.php");
-
 /**
  * A sequential reader of tagged text format files.
  *

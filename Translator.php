@@ -22,8 +22,6 @@
 
 namespace Equit;
 
-require_once("classes/equit/AppLog.php");
-
 /**
  * Class to handle translation of UI strings into alternate languages.
  *

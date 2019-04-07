@@ -20,8 +20,6 @@
 
 namespace Equit;
 
-require_once("classes/equit/AppLog.php");
-
 /**
  * A class encapsulating a header for an email message.
  *

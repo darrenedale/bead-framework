@@ -20,9 +20,6 @@
 
 namespace Equit;
 
-require_once('classes/equit/AppLog.php');
-require_once('classes/equit/Application.php');
-
 require_once("includes/string.php");
 
 /**
