@@ -31,10 +31,6 @@ require_once("includes/string.php");
 
 use Equit\Application;
 use Equit\AppLog;
-use Equit\DataController;
-use Equit\Html\Division;
-use Equit\Html\PageElement;
-use Equit\Translator;
 use StdClass;
 
 /**
@@ -322,24 +318,24 @@ class Page {
 	/**
 	 * Add an element to the navbar page section.
 	 *
-	 * @param $element PageElement The element to add to the navbar section.
-	 *
 	 * The element is appended to the existing content in the navbar section. If you need to insert
 	 * elements elsewhere (which is not recommended), you should call menuBar() and manipulate the
 	 * PageSection directly. It is recommended that you add only simple content such as hyperlinks
 	 * to the navbar. Content that takes up too much space will quickly make the navbar unwieldy for
 	 * the end user.
 	 *
+	 * @param $element PageElement The element to add to the navbar section.
+	 *
 	 * @return bool _true_ if the element was added, _false_ otherwise.
 	 */
-	public function addNavbarElement($element) {
+	public function addNavbarElement(PageElement $element): bool {
 		return $this->addSectionElement("navbar", $element);
 	}
 
 	/**
 	 * Add the URL for a stylesheet to the page.
 	 *
-	 * @param $url `string` The URL for the stylesheet.
+	 * @param $url string The URL for the stylesheet.
 	 * @param $mimetype string _optional_ The MIME type of the content.
 	 *
 	 * If the MIME type parameter is not specified, the default MIME type of text/css will be used.
@@ -351,7 +347,7 @@ class Page {
 	 *
 	 * @return bool _true_ if the stylesheet URL was added to the page, _false_ otherwise.
 	 */
-	public function addStylesheetUrl($url, $mimetype = "text/css") {
+	public function addStylesheetUrl(string $url, string $mimetype = "text/css") {
 		if(!is_string($url)) {
 			AppLog::error("invalid stylesheet URL", __FILE__, __LINE__, __FUNCTION__);
 			return false;
@@ -487,84 +483,28 @@ class Page {
 	/**
 	 * Provides the core `<head>` content for the page template.
 	 *
-	 * This base implementation provides content specified in the `page.head.content` setting. You
-	 * can alter this behaviour by reimplementing this method your subclasses.
+	 * This base implementation provides no content. You can alter this behaviour by reimplementing this method your
+	 * subclasses.
 	 *
-	 * The html() method adds user-supplied scripts and stylesheets to this content. The content
-	 * provided by this method **must not** include the `<head>` or `</head>` tags.
+	 * The html() method adds user-supplied scripts and stylesheets to this content. The content provided by this method
+	 * **must not** include the `<head>` or `</head>` tags.
 	 *
 	 * @return string The core head content for the page template.
 	 */
-	protected function templateHeadContent() {
-		static $s_head = null;
-
-		if(is_null($s_head)) {
-			$db = Application::instance()->dataController();
-
-			if($db instanceof DataController) {
-				$s_head = (string) $db->setting("page.head.content", "");
-			}
-			else {
-				$s_head = "";
-			}
-		}
-
-		return "<!-- head content supplied by LibEquit\Page class-->$s_head";
+	protected function templateHeadContent(): string {
+		return "";
 	}
-
 
 	/**
 	 * Provides the core content for the top part of the page template.
 	 *
-	 * This base implementation provides content specified in the `page.body.head.content` or
-	 * `page.body.head.file` setting. Both of these settings support language-specific localisation.
-	 * If both are provided, the content setting is preferred over the file setting.
-	 *
-	 * You can alter the behaviour of this method by reimplementing it in your subclasses. The
-	 * content provided by this method **must not** include the `<body>` or `</body>` tags.
+	 * This base implementation provides no content. You can alter the behaviour of this method by reimplementing it in
+	 * your subclasses. The content provided by this method **must not** include the `<body>` or `</body>` tags.
 	 *
 	 * @return string The core content for the top part of the page template.
 	 */
-	protected function templateBodyHeadContent() {
-		static $s_bodyHead = null;
-
-		if(is_null($s_bodyHead)) {
-			$app = Application::instance();
-			$db  = $app->dataController();
-
-			if($db instanceof dataController) {
-				$lang = null;
-				$t    = $app->translator();
-
-				if($t instanceof Translator) {
-					$lang = $t->language();
-				}
-
-				if(!empty($lang)) {
-					$s_bodyHead = $db->setting("page.body.head.content.$lang");
-				}
-
-				if(empty($s_bodyHead)) {
-					$s_bodyHead = $db->setting("page.body.head.content");
-				}
-
-				if(empty($s_bodyHead)) {
-					if(!empty($lang)) {
-						$s_bodyHead = $db->setting("page.body.head.file.$lang");
-					}
-
-					if(empty($s_bodyHead)) {
-						$s_bodyHead = $db->setting("page.body.head.file");
-					}
-				}
-			}
-
-			if(empty($s_bodyHead)) {
-				$s_bodyHead = "<header><p>" . html($app->title()) . "</p></header><section id=\"app-main-container\">";
-			}
-		}
-
-		return $s_bodyHead;
+	protected function templateBodyHeadContent(): string {
+		return "";
 	}
 
 
@@ -581,46 +521,8 @@ class Page {
 	 *
 	 * @return string The core content for the bottom part of the page template.
 	 */
-	protected function templateBodyTailContent() {
-		static $s_bodyTail = null;
-
-		if(is_null($s_bodyTail)) {
-			$app = Application::instance();
-			$db  = $app->dataController();
-
-			if($db instanceof dataController) {
-				$lang = null;
-				$t    = $app->translator();
-
-				if($t instanceof Translator) {
-					$lang = $t->language();
-				}
-
-				if(!empty($lang)) {
-					$s_bodyTail = $db->setting("page.body.tail.content." . $lang);
-				}
-
-				if(empty($s_bodyTail)) {
-					$s_bodyTail = $db->setting("page.body.tail.content");
-				}
-
-				if(empty($s_bodyTail)) {
-					if(!empty($lang)) {
-						$s_bodyTail = $db->setting("page.body.tail.file." . $lang);
-					}
-
-					if(empty($s_bodyTail)) {
-						$s_bodyTail = $db->setting("page.body.tail.file");
-					}
-				}
-			}
-
-			if(empty($s_bodyTail)) {
-				$s_bodyTail = "</section><footer></footer>";
-			}
-		}
-
-		return $s_bodyTail;
+	protected function templateBodyTailContent(): string {
+		return "";
 	}
 
 	/**
@@ -633,24 +535,18 @@ class Page {
 	 * @return string The HTML for the page.
 	 */
 	public function html(): string {
-		$app           = Application::instance();
-		$db            = $app->dataController();
-		$doNavbar      = $db->setting("page.navbar.enabled", true);
-		$doMainSection = $db->setting("page.main.enabled", true);
-// 		$doMenuBar = $db->setting("page.menubar.enabled", true);
+		// generate all content first so that scripts required by that content, which may not be known until it is
+		// generated, are added to the page
+		$title = html(Application::instance()->title());
+		$headTemplateContent = $this->templateHeadContent();
+		$bodyHeadTemplateContent = $this->templateBodyHeadContent();
+		$main = $this->m_sections["main"]->html();
+		$navBar = $this->m_sections["navbar"]->html();
+		$bodyTailTemplateContent = $this->templateBodyTailContent();
 
-		$head = "<!DOCTYPE html>\n<html><head><title>" . html($app->title()) . "</title>" . $this->templateHeadContent();
-		$body = $this->templateBodyHeadContent() .
-			($doMainSection ? chr(10) . $this->m_sections["main"]->html() : "") .
-			($doNavbar ? chr(10) . $this->m_sections["navbar"]->html() : "") .
-			$this->templateBodyTailContent() .
-			"\n</body></html>";
-
-		/* now all the main content has been generated, add the stylesheets and
-		 * scripts to the head section. this is done afterwards so that any
-		 * stylesheets or scripts that are added to the page only while page
-		 * element HTML is being generated are not missed out */
+		// now all the main content has been generated, add the stylesheets and scripts to the head section.
 		$seenUrls = [];
+		$styleSheets = "";
 
 		foreach($this->m_stylesheets as $sheet) {
 			switch($sheet->type) {
@@ -660,21 +556,22 @@ class Page {
 						break;
 					}
 
-					$head       .= "<link rel=\"stylesheet\" type=\"" . html($sheet->mimetype) . "\" href=\"" . html($sheet->url) . "\" />\n";
+					$styleSheets .= "<link rel=\"stylesheet\" type=\"" . html($sheet->mimetype) . "\" href=\"" . html($sheet->url) . "\" />\n";
 					$seenUrls[] = $sheet->url;
 					break;
 
 				case self::SheetTypeCssSource:
-					$head .= "<style type=\"text/css\">\n" . html($sheet->css) . "\n</style>\n";
+					$styleSheets .= "<style type=\"text/css\">\n" . html($sheet->css) . "\n</style>\n";
 					break;
 			}
 		}
 
 		$seenUrls = [];
+		$scripts = "";
 
 		foreach($this->m_scripts as $script) {
-			$attrs = ($script->flags & self::DeferScript ? " defer=\"defer\"" : "");
-			$attrs .= ($script->flags & self::AsyncScript ? " async=\"async\"" : "");
+			$attrs = ($script->flags & self::DeferScript ? " defer=\"defer\"" : "") .
+				($script->flags & self::AsyncScript ? " async=\"async\"" : "");
 
 			switch($script->type) {
 				case self::ScriptTypeUrl:
@@ -683,17 +580,33 @@ class Page {
 						break;
 					}
 
-					$head       .= "<script type=\"" . html($script->mimetype) . "\" src=\"" . html($script->url) . "\"$attrs></script>\n";
+					$scripts    .= sprintf("<script type=\"%s\" src=\"%s\" $attrs></script>\n", html($script->mimetype), html($script->url));
 					$seenUrls[] = $script->url;
 					break;
 
 				case self::ScriptTypeJsSource:
-					$head .= "<script type=\"text/javascript\"$attrs>\n{$script->src}\n</script>\n";
+					$scripts .= "<script type=\"text/javascript\" $attrs>\n{$script->src}\n</script>\n";
 					break;
 			}
 		}
 
-		return "$head</head><body>$body";
+		return <<<HTML
+<!DOCTYPE html>
+<html lang="">
+<head>
+<title>$title</title>
+$headTemplateContent
+$styleSheets
+$scripts
+</head>
+<body>
+$bodyHeadTemplateContent
+$main
+$navBar
+$bodyTailTemplateContent
+</body>
+</html>
+HTML;
 	}
 
 	/**

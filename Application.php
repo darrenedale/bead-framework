@@ -10,6 +10,8 @@
 namespace Equit {
 	use Equit\Html\HtmlLiteral;
 	use Equit\Html\Page;
+	use ReflectionClass;
+	use ReflectionException;
 
 	/**
 	 * Core Application class for sites/applications using the framework.
@@ -173,7 +175,7 @@ namespace Equit {
 		/** The singleton instance. */
 		private static $s_instance = null;
 
-		/** @var \Aio\AioDataController The data controller. */
+		/** @var DataController The data controller. */
 		private $m_dataController = null;
 
 		/** @var string Where plugins are loaded from. */
@@ -203,6 +205,9 @@ namespace Equit {
 
 		private $m_isRunning = false;
 
+		/** @var Page The page template to use. */
+		private $m_page;
+
 		/** @var null|\Equit\Translator The currently installed translator */
 		private $m_translator = null;
 
@@ -213,8 +218,9 @@ namespace Equit {
 		 * a fatal error.
 		 *
 		 * @param $dataController DataController|null The data controller for the application.
+		 * @param Page|null $pageTemplate
 		 */
-		public function __construct(?DataController $dataController) {
+		public function __construct(?DataController $dataController = null, ?Page $pageTemplate = null) {
 			if(isset(self::$s_instance)) {
 				AppLog::error("attempt to create more than one application", __FILE__, __LINE__, __FUNCTION__);
 				trigger_error(tr("A fatal application error occurred. Please contact the system administrator (%1).", __FILE__, __LINE__, "ERR_APPLICATION_MULTIPLE_INSTANCE"), E_USER_ERROR);
@@ -236,6 +242,7 @@ namespace Equit {
 			// do this first in case the setting contains an invalid language specifier
 			$this->m_translator->setLanguage("en-GB");
 			$this->setDataController($dataController);
+			$this->setPage($pageTemplate);
 		}
 
 		/**
@@ -414,6 +421,15 @@ namespace Equit {
 			return $session;
 		}
 
+		/**
+		 * Don't set the page after content has been generated or added to it, unless you want to discard that content.
+		 *
+		 * @param \Equit\Html\Page|null $page The page to use or `null` to unset the existing page.
+		 */
+		public function setPage(?Page $page): void {
+			$this->m_page = $page;
+		}
+
 		/** Fetch the application's page object.
 		 *
 		 * The page object is the page where all of the application's output is generated. Client code should almost
@@ -422,13 +438,7 @@ namespace Equit {
 		 * @return Page The application's page.
 		 */
 		public function page(): Page {
-			static $s_page = null;
-
-			if(is_null($s_page)) {
-				$s_page = new Page();
-			}
-
-			return $s_page;
+			return $this->m_page;
 		}
 
 		/** Fetch the application's translator.
@@ -497,9 +507,9 @@ namespace Equit {
 			}
 
 			try {
-				$pluginClassInfo = new \ReflectionClass($className);
+				$pluginClassInfo = new ReflectionClass($className);
 			}
-			catch(\ReflectionException $err) {
+			catch(ReflectionException $err) {
 				AppLog::error("failed to introspect plugin class $className: [" . $err->getCode() . "] " . $err->getMessage(), __FILE__, __LINE__, __FUNCTION__);
 				return false;
 			}
@@ -512,7 +522,7 @@ namespace Equit {
 			try {
 				$instanceFn = $pluginClassInfo->getMethod("instance");
 			}
-			catch(\ReflectionException $err) {
+			catch(ReflectionException $err) {
 				AppLog::error("exception introspecting $className::instance() method: [" . $err->getCode() . "] " . $err->getMessage(), __FILE__, __LINE__, __FUNCTION__);
 				return false;
 			}
@@ -549,7 +559,7 @@ namespace Equit {
 			try {
 				$actionsFn = $pluginClassInfo->getMethod("supportedActions");
 			}
-			catch(\ReflectionException $err) {
+			catch(ReflectionException $err) {
 				AppLog::error("exception introspecting $className::supportedActions() method: [" . $err->getCode() . "] " . $err->getMessage(), __FILE__, __LINE__, __FUNCTION__);
 				return false;
 			}
