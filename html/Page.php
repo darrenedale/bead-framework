@@ -191,65 +191,67 @@ use StdClass;
  * @session _None_
  */
 class Page {
-	/** Script flag for no special treatment. */
+	/** @var int Script flag for no special treatment. */
 	const NoScriptFlags = 0x00;
 
-	/** Script flag to defer loading of the script. */
+	/** @var int Script flag to defer loading of the script. */
 	const DeferScript = 0x01;
 
-	/** Script flag to loading the script asynchronously. */
+	/** @var int Script flag to loading the script asynchronously. */
 	const AsyncScript = 0x02;
 
-	/** Default script flags. */
+	/** @var int Default script flags. */
 	const DefaultScriptFlags = self::NoScriptFlags;
 
-	/** Internal type identifier for scripts that are URLs. */
+	/** @var int Internal type identifier for scripts that are URLs. */
 	const ScriptTypeUrl = 1;
 
-	/** Internal type identifier for scripts that are literal js source code. */
+	/** @var int Internal type identifier for scripts that are literal js source code. */
 	const ScriptTypeJsSource = 2;
 
-	/** Internal type identifier for stylesheets that are URLs. */
+	/** @var int Internal type identifier for stylesheets that are URLs. */
 	const SheetTypeUrl = 1;
 
-	/** Internal type identifier for stylesheets that are literal css source. */
+	/** @var int Internal type identifier for stylesheets that are literal css source. */
 	const SheetTypeCssSource = 2;
 
-	/** The page sections. */
+	/** @var array[PageSection] The page sections. */
 	private $m_sections = [];
 
-	/** The stylesheets added to the page. */
+	/** @var array[StdClass] The stylesheets added to the page. */
 	private $m_stylesheets = [];
 
-	/** The scripts added to the page. */
+	/** @var array[StdClass] The scripts added to the page. */
 	private $m_scripts = [];
 
 	/**
-	 * Create a new LibEquit\Page object.
+	 * Create a new Page object.
 	 */
 	public function __construct() {
 		$uid                         = @constant("app.uid");
-		$this->m_sections["main"]    = new Division("$uid-main");
-		$this->m_sections["menubar"] = new Division("$uid-menubar");
-		$this->m_sections["navbar"]  = new Division("$uid-navbar");
+		$this->m_sections["main"]    = new Section("$uid-main");
+		$this->m_sections["menubar"] = new Section("$uid-menubar");
+		// TODO refactor: when created, use <nav> for this
+		$this->m_sections["navbar"]  = new Section("$uid-navbar");
+
 		$this->m_sections["main"]->addChild($this->m_sections["menubar"]);
 	}
 
 	/**
 	 * Add an element to a section.
 	 *
-	 * @param $section `string` The name of the section to add to.
-	 * @param $e PageElement The element to add.
-	 *
 	 * This is an internal helper method that is used when adding content to any known page section.
 	 * It helps keep the class futureproof by making it easy to add or remove sections in future.
+	 *
+	 * @param $section `string` The name of the section to add to.
+	 * @param $e PageElement The element to add.
 	 *
 	 * @return bool _true_ if the element was added to the section, _false_
 	 * otherwise.
 	 */
-	protected function addSectionElement($section, $e) {
-		if(!($e instanceof PageElement)) {
-			AppLog::error("invalid page element", __FILE__, __LINE__, __FUNCTION__);
+	protected final function addSectionElement(string $section, PageElement $e): bool {
+		if(!isset($this->m_sections[$section])) {
+			AppLog::error("section $section does not exist", __FILE__, __LINE__, __FUNCTION__);
 			return false;
 		}
 
@@ -259,27 +261,27 @@ class Page {
 	/**
 	 * Fetch the main page section.
 	 *
-	 * @return Division The main page section.
+	 * @return Section The main page section.
 	 */
-	public function mainSection(): Division {
+	public function mainSection(): Section {
 		return $this->m_sections["main"];
 	}
 
 	/**
 	 * Fetch the menubar page section.
 	 *
-	 * @return Division The menubar page section.
+	 * @return Section The menubar page section.
 	 */
-	public function menuBar() {
+	public function menuBar(): Section {
 		return $this->m_sections["menubar"];
 	}
 
 	/**
 	 * Fetch the navbar page section.
 	 *
-	 * @return Division The navbar page section.
+	 * @return Section The navbar page section.
 	 */
-	public function navbar() {
+	public function navBar(): Section {
 		return $this->m_sections["navbar"];
 	}
 
@@ -294,7 +296,7 @@ class Page {
 	 *
 	 * @return bool _true_ if the element was added, _false_ otherwise.
 	 */
-	public function addMainElement($element) {
+	public function addMainElement($element): bool {
 		return $this->addSectionElement("main", $element);
 	}
 
@@ -311,7 +313,7 @@ class Page {
 	 *
 	 * @return bool _true_ if the element was added, _false_ otherwise.
 	 */
-	public function addMenubarElement($element) {
+	public function addMenubarElement($element): bool {
 		return $this->addSectionElement("menubar", $element);
 	}
 
@@ -328,7 +330,7 @@ class Page {
 	 *
 	 * @return bool _true_ if the element was added, _false_ otherwise.
 	 */
-	public function addNavbarElement(PageElement $element): bool {
+	public function addNavBarElement(PageElement $element): bool {
 		return $this->addSectionElement("navbar", $element);
 	}
 
@@ -347,17 +349,7 @@ class Page {
 	 *
 	 * @return bool _true_ if the stylesheet URL was added to the page, _false_ otherwise.
 	 */
-	public function addStylesheetUrl(string $url, string $mimetype = "text/css") {
-		if(!is_string($url)) {
-			AppLog::error("invalid stylesheet URL", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
-		if(!is_string($mimetype)) {
-			AppLog::error("invalid stylesheet mimetype", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
+	public final function addStylesheetUrl(string $url, string $mimetype = "text/css"): bool {
 		$sheet                 = new StdClass;
 		$sheet->type           = self::SheetTypeUrl;
 		$sheet->url            = $url;
@@ -370,22 +362,17 @@ class Page {
 	/**
 	 * Add CSS to the page.
 	 *
-	 * @param $css `string` The CSS source to add to the page.
-	 *
 	 * The CSS will be added using a `<style>` element, with the content between the opening and
 	 * closing tags, in the page's `<head>` section. The element's `type` attribute will be set to
 	 * `text/css`.
 	 *
 	 * The CSS content will automatically be escaped for HTML when the page is generated.
 	 *
+	 * @param $css string The CSS source to add to the page.
+	 *
 	 * @return bool _true_ if the CSS was added to the page, _false_ otherwise.
 	 */
-	public function addCss($css) {
-		if(!is_string($css)) {
-			AppLog::error("invalid CSS", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
+	public final function addCss(string $css): bool {
 		$sheet                 = new StdClass;
 		$sheet->type           = self::SheetTypeCssSource;
 		$sheet->css            = $css;
@@ -416,21 +403,7 @@ class Page {
 	 *
 	 * @return bool _true_ if the script URL was added to the page, _false_ otherwise.
 	 */
-	public function addScriptUrl($url, $mimeType = "text/javascript", $flags = self::DefaultScriptFlags) {
-		if(!is_string($url)) {
-			AppLog::error("invalid script URL", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
-		if(!is_string($mimeType)) {
-			AppLog::error("invalid script MIME type", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
-		if(!is_int($flags)) {
-			$flags = self::DefaultScriptFlags;
-		}
-
+	public final function addScriptUrl(string $url, string $mimeType = "text/javascript", int $flags = self::DefaultScriptFlags): bool {
 		$this->m_scripts[] = (object) [
 			"type" => self::ScriptTypeUrl,
 			"url" => $url,
@@ -461,16 +434,7 @@ class Page {
 	 *
 	 * @return bool _true_ if the javascript was added to the page, _false_ otherwise.
 	 */
-	public function addJavascript($src, $flags = self::DefaultScriptFlags) {
-		if(!is_string($src)) {
-			AppLog::error("invalid script URL", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
-		if(!is_int($flags)) {
-			$flags = self::DefaultScriptFlags;
-		}
-
+	public final function addJavascript(string $src, int $flags = self::DefaultScriptFlags): bool {
 		$script            = new StdClass;
 		$script->type      = self::ScriptTypeJsSource;
 		$script->src       = $src;
@@ -526,27 +490,13 @@ class Page {
 	}
 
 	/**
-	 * Generate the page's HTML.
+	 * Generate The HTML for the page stylesheets.
 	 *
-	 * The HTML generated is XHTML1.0 Strict compliant, encoded as UTF-8. The one exception to this is any HtmlLiteral
-	 * objects that are in the document tree. These output their content verbatim, and therefore it will only be
-	 * compliant if all the HtmlLiteral objects were provided with compliant content.
-	 *
-	 * @return string The HTML for the page.
+	 * @return string The HTML.
 	 */
-	public function html(): string {
-		// generate all content first so that scripts required by that content, which may not be known until it is
-		// generated, are added to the page
-		$title = html(Application::instance()->title());
-		$headTemplateContent = $this->templateHeadContent();
-		$bodyHeadTemplateContent = $this->templateBodyHeadContent();
-		$main = $this->m_sections["main"]->html();
-		$navBar = $this->m_sections["navbar"]->html();
-		$bodyTailTemplateContent = $this->templateBodyTailContent();
-
-		// now all the main content has been generated, add the stylesheets and scripts to the head section.
-		$seenUrls = [];
+	protected function emitStylesheets(): string {
 		$styleSheets = "";
+		$seenUrls = [];
 
 		foreach($this->m_stylesheets as $sheet) {
 			switch($sheet->type) {
@@ -566,6 +516,15 @@ class Page {
 			}
 		}
 
+		return $styleSheets;
+	}
+
+	/**
+	 * Generate the HTML for the page scripts.
+	 *
+	 * @return string The HTML.
+	 */
+	protected function emitScripts(): string {
 		$seenUrls = [];
 		$scripts = "";
 
@@ -590,14 +549,38 @@ class Page {
 			}
 		}
 
+		return $scripts;
+	}
+
+	/**
+	 * Generate the page's HTML.
+	 *
+	 * The HTML generated is XHTML1.0 Strict compliant, encoded as UTF-8. The one exception to this is any HtmlLiteral
+	 * objects that are in the document tree. These output their content verbatim, and therefore it will only be
+	 * compliant if all the HtmlLiteral objects were provided with compliant content.
+	 *
+	 * @return string The HTML for the page.
+	 */
+	public function html(): string {
+		// generate all content first so that scripts required by that content, which may not be known until it is
+		// generated, are added to the page
+		$title = html(Application::instance()->title());
+		$headTemplateContent = $this->templateHeadContent();
+		$bodyHeadTemplateContent = $this->templateBodyHeadContent();
+		$main = $this->m_sections["main"]->html();
+		$navBar = $this->m_sections["navbar"]->html();
+		$bodyTailTemplateContent = $this->templateBodyTailContent();
+
+		// now all the main content has been generated, we can add the stylesheets and scripts
+
 		return <<<HTML
 <!DOCTYPE html>
 <html lang="">
 <head>
 <title>$title</title>
 $headTemplateContent
-$styleSheets
-$scripts
+{$this->emitStylesheets()}
+{$this->emitScripts()}
 </head>
 <body>
 $bodyHeadTemplateContent
@@ -615,7 +598,7 @@ HTML;
 	 * The page is output to the current output stream. This is usually standard output which is usually what is sent to
 	 * the user agent.
 	 */
-	public function output() {
+	public function output(): void {
 		echo $this->html();
 	}
 }
