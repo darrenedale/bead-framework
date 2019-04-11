@@ -10,10 +10,16 @@ trait ChildElements {
 	 * Child elements are added after the last existing child element; or, put another way, child elements are always
 	 * added in series. There is, as yet, no facility to add a child at any other point in the element's child list.
 	 *
+	 * The base method always succeeds; the return value is for subclasses that reimplement this method to place
+	 * restrictions on the types of children that may be added.
+	 *
 	 * @param $child PageElement The element to add.
+	 *
+	 * @return bool `true` if the child element was added, `false` if not.
 	 */
-	public function addChild(PageElement $child): void {
+	public function addChild(PageElement $child): bool {
 		$this->m_children[] = $child;
+		return true;
 	}
 
 	/**

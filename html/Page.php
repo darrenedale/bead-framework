@@ -255,7 +255,8 @@ class Page {
 			return false;
 		}
 
-		return $this->m_sections[$section]->addChild($e);
+		$this->m_sections[$section]->addChild($e);
+		return true;
 	}
 
 	/**

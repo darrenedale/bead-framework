@@ -64,8 +64,6 @@ use Equit\AppLog;
  * @package libequit
  */
 class Popup extends Division {
-	use Data;
-
 	/** @var int Trigger the popup on click. */
 	public const ClickTrigger = 0x01;
 

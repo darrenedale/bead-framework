@@ -63,13 +63,6 @@ require_once("includes/string.php");
  * @session _None_
  */
 abstract class PageElement {
-	/** The common attributes supported by all element types. */
-	private static $s_commonAttributeNames = ["id", "class", "style"];
-
-	/** The element attributes. */
-	private $m_attributes = [];
-
-
 	/**
 	 * Create a new page element.
 	 *
@@ -78,14 +71,9 @@ abstract class PageElement {
 	 * @param $id string _optional_ The ID for the page element.
 	 */
 	public function __construct(?string $id = null) {
-		foreach(self::$s_commonAttributeNames as $name) {
-			$this->m_attributes[$name] = null;
-		}
-
 		$this->m_attributes["class"] = [];
 		$this->setId($id);
 	}
-
 
 	/**
 	 * Generate a new unique ID for an element.
@@ -102,9 +90,8 @@ abstract class PageElement {
 	protected static function generateUid(): string {
 		static $s_seq = 0;
 		$s_seq++;
-		return "elementuid$s_seq";
+		return "elementuid{$s_seq}";
 	}
-
 
 	/**
 	 * Set the value of a named attribute.
@@ -117,30 +104,22 @@ abstract class PageElement {
 	 *
 	 * Subclasses should obviously validate the attribute name and value before calling this method.
 	 *
+	 * @warning **Never** set the class attribute to anything other than an array of strings (or an empty array).
+	 *
 	 * @param $name string The name of the attribute to set.
 	 * @param $value string|array|null The value for the attribute.
-	 *
-	 * @return bool _true_ if the attribute value was set, _false_ otherwise.
 	 */
-	protected function setAttribute(string $name, $value): bool {
-		if(!is_string($value) && !is_null($value) && !is_array($value)) {
-			AppLog::error("invalid attribute value", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
+	protected function setAttribute(string $name, $value): void {
+		assert(is_string($value) || is_null($value) || is_array($value), "invalid attribute value");
 
 		if(is_array($value)) {
 			foreach($value as $v) {
-				if(!is_string($v)) {
-					AppLog::error("invalid (non-string) element in array type attribute value", __FILE__, __LINE__, __FUNCTION__);
-					return false;
-				}
+				assert(is_string($v), "invalid (non-string) element in array type attribute value");
 			}
 		}
 
 		$this->m_attributes[$name] = $value;
-		return true;
 	}
-
 
 	/**
 	 * Fetch the value of an attribute.
@@ -153,18 +132,14 @@ abstract class PageElement {
 		return $this->m_attributes[$name] ?? null;
 	}
 
-
 	/**
 	 * Set the ID of the page element.
 	 *
 	 * @param $id string The ID.
-	 *
-	 * @return bool _true_ if the ID was set, _false_ otherwise.
 	 */
-	public function setId(?string $id) {
-		return $this->setAttribute("id", $id);
+	public function setId(?string $id): void {
+		$this->setAttribute("id", $id);
 	}
-
 
 	/**
 	 * Fetch the ID of the page element.
@@ -174,7 +149,6 @@ abstract class PageElement {
 	public function id(): ?string {
 		return $this->m_attributes["id"] ?? null;
 	}
-
 
 	/**
 	 * Set the elements"s class.
@@ -190,13 +164,10 @@ abstract class PageElement {
 	 * \see setClassNames(), addClassName()
 	 *
 	 * @param $class string The class.
-	 *
-	 * @return bool _true_ if the class was set, _false_ otherwise.
 	 */
-	public function setClassName(string $class) {
-		return $this->setClassNames([$class]);
+	public function setClassName(string $class): void {
+		$this->setAttribute("class", [$class]);
 	}
-
 
 	/**
 	 * Set the element"s classes.
@@ -212,14 +183,10 @@ abstract class PageElement {
 	 *
 	 * @see setClassName(), addClassName()
 	 *
-	 * @param $class [string] The classes.
-	 *
-	 * @return bool _true_ if the classes were set, _false_ otherwise.
-	 */
-	public function setClassNames(?array $class) {
-		return $this->setAttribute("class", $class ?? []);
+	 * @param $classes [string] The classes. */
+	public function setClassNames(?array $classes): void {
+		$this->setAttribute("class", $classes ?? []);
 	}
-
 
 	/**
 	 * Add a class to the element.
@@ -241,7 +208,6 @@ abstract class PageElement {
 	public function addClassName(string $class): void {
 		$this->m_attributes["class"][] = $class;
 	}
-
 
 	/**
 	 * Remove a class from the element.
@@ -266,7 +232,6 @@ abstract class PageElement {
 		}
 	}
 
-
 	/**
 	 * Fetch the element's list of classes.
 	 *
@@ -277,7 +242,6 @@ abstract class PageElement {
 	public function classNames(): array {
 		return $this->m_attributes["class"];
 	}
-
 
 	/**
 	 * Fetch the element's list of classes.
@@ -293,7 +257,6 @@ abstract class PageElement {
 		return implode(" ", $this->m_attributes["class"]);
 	}
 
-
 	/**
 	 * Set the style of the page element.
 	 *
@@ -308,7 +271,6 @@ abstract class PageElement {
 		$this->setAttribute("style", $css);
 	}
 
-
 	/**
 	 * Fetch the style attribute of the page element.
 	 *
@@ -318,6 +280,30 @@ abstract class PageElement {
 		return $this->m_attributes["style"];
 	}
 
+	/**
+	 * Set a data item on the element.
+	 *
+	 * Set a `null` value to unset the data item.
+	 *
+	 * @param string $name The name of the data item to set. You **must** ensure this is valid.
+	 * @param string|null $value The value to set.
+	 */
+	public function setData(string $name, ?string $value): void {
+		$this->setAttribute("data-$name", $value);
+	}
+
+	/**
+	 * Fetch a data attribute from the element.
+	 *
+	 * The data returned will be _null_ if no such data item is set.
+	 *
+	 * @param $name string The name of the data item to fetch.
+	 *
+	 * @return null|string The tooltip.
+	 */
+	public function data($name): ?string {
+		return $this->attribute("data-$name");
+	}
 
 	/**
 	 * Generate all the attributes for the element.
@@ -332,7 +318,7 @@ abstract class PageElement {
 		$ret = "";
 
 		foreach($this->m_attributes as $name => $attr) {
-			if(is_null($attr)) {
+			if(!isset($attr) || (is_array($attr) && empty($attr))) {
 				continue;
 			}
 
@@ -345,7 +331,7 @@ abstract class PageElement {
 				$ret .= html(implode(" ", $attr));
 			}
 			else {
-				AppLog::warning("invalid value for attribute \"$name\" ignored", __FILE__, __LINE__, __FUNCTION__);
+				assert(false, "found invalid attribute value for attribute $name");
 			}
 
 			$ret .= "\"";
@@ -353,7 +339,6 @@ abstract class PageElement {
 
 		return $ret;
 	}
-
 
 	/**
 	 * Get the HTML for the element.
@@ -365,7 +350,6 @@ abstract class PageElement {
 	 */
 	public abstract function html(): string;
 
-
 	/**
 	 * Output the element.
 	 *
@@ -375,4 +359,7 @@ abstract class PageElement {
 	final public function output(): void {
 		echo $this->html();
 	}
+
+	/** @var array The element attributes. */
+	private $m_attributes = [];
 }
