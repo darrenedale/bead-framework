@@ -19,7 +19,19 @@ trait ListItems {
 	 */
 	public function addItem($item): void {
 		assert(is_string($item) || $item instanceof PageElement);
-		$this->m_items[] = $item;
+
+		if($item instanceof ListItem) {
+			$this->m_items[] = $item;
+			return;
+		}
+
+		if(is_string($item)) {
+			$item = new HtmlLiteral(html($item));
+		}
+
+		$listItem = new ListItem();
+		$listItem->addChild($item);
+		$this->m_items[] = $listItem;
 	}
 
 	/**
@@ -29,9 +41,9 @@ trait ListItems {
 	 *
 	 * @param int $idx The 0-based index of the item.
 	 *
-	 * @return string|PageElement The item at the specified index.
+	 * @return ListItem The item at the specified index.
 	 */
-	public function item(int $idx) {
+	public function item(int $idx): ListItem {
 		assert(0 <= $idx && $this->itemCount() > $idx);
 		return $this->m_items[$idx];
 	}
@@ -58,19 +70,14 @@ trait ListItems {
 		$html = "";
 
 		foreach($this->items() as $item) {
-			if(is_string($item)) {
-				$html .= "<li>" . html($item) . "</li>";
-			}
-			else {
-				$html .= "<li>{$item->html()}</li>";
-			}
+			$html .= $item->html();
 		}
 
 		return $html;
 	}
 
 	/**
-	 * @var array The items in the list.
+	 * @var array[ListItem] The items in the list.
 	 */
 	private $m_items = [];
 }
