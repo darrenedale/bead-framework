@@ -7,8 +7,8 @@
  */
 
 namespace Equit\Test {
-	require_once("libs/equit/AppLog.php");
-	require_once("libs/equit/DataController.php");
+	use Equit\AppLog;
+	use Equit\DataController;
 
 	class Entity {
 		private $m_id = null;
@@ -105,8 +105,6 @@ namespace Equit\Test {
 		}
 	}
 
-	use Equit\DataController;
-	use Equit\AppLog;
 	use PHPUnit\Framework\TestCase;
 
 	class DataControllerEntityMappingTest extends TestCase {
