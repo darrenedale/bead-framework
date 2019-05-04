@@ -2250,7 +2250,7 @@ class ResultsPager extends PageElement {
 	 *
 	 * @return string The MIME type data, or an empty string if the MIME type is not supported.
 	 */
-	public function data(string $mimeType = "text/html", int $flags = self::DefaultOutputFlags, array $options = []): string {
+	public function pagedData(string $mimeType = "text/html", int $flags = self::DefaultOutputFlags, array $options = []): string {
 		if(array_key_exists($mimeType, self::$s_supportedMimeTypes)) {
 			$method = self::$s_supportedMimeTypes[$mimeType];
 			return $this->$method($flags, $options);

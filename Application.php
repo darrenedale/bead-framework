@@ -171,6 +171,7 @@ namespace Equit {
 	 */
 	class Application {
 		const SessionDataContext = "application";
+		private const DefaultPluginsPath = "plugins/generic";
 
 		/** The singleton instance. */
 		private static $s_instance = null;
@@ -179,7 +180,7 @@ namespace Equit {
 		private $m_dataController = null;
 
 		/** @var string Where plugins are loaded from. */
-		private $m_pluginsPath = "plugins/generic/";
+		private $m_pluginsPath = self::DefaultPluginsPath;
 
 		/** @var string Optional application title. */
 		private $m_title = "";
@@ -353,6 +354,42 @@ namespace Equit {
 		 */
 		public function dataController(): ?DataController {
 			return $this->m_dataController;
+		}
+
+		/**
+		 * Set the plugins path.
+		 *
+		 * The plugins path can only be set before exec() is called. If exec() has been called, calling setPluginPath()
+		 * will fail.
+		 *
+		 * @param string $path The path to load plugins from.
+		 *
+		 * @return bool `true` If the provided path was valid and was set, `false` otherwise.
+		 */
+		public function setPluginsPath(string $path): bool {
+			if($this->isRunning()) {
+				AppLog::error("can't set plugins path while application is running", __FILE__, __LINE__, __FUNCTION__);
+				return false;
+			}
+
+			if(!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $path)) {
+				AppLog::error("invalid plugins path: \"$path\"", __FILE__, __LINE__, __FUNCTION__);
+				return false;
+			}
+
+			$this->m_pluginsPath = $path;
+			return true;
+		}
+
+		/**
+		 * Fetch the plugins path.
+		 *
+		 * This is the path from which plugins will be/were loaded.
+		 *
+		 * @return string The plugins path.
+		 */
+		public function pluginsPath(): string {
+			return $this->m_pluginsPath;
 		}
 
 		/** Determine whether the application is currently running or not.
@@ -643,7 +680,7 @@ namespace Equit {
 					}
 					else {
 						foreach($pluginLoadOrder as $pluginName) {
-							$path = @realpath("{$this->m_pluginsPath}{$pluginName}.php");
+							$path = @realpath($this->m_pluginsPath . DIRECTORY_SEPARATOR . $pluginName . ".php");
 
 							if(is_string($path)) {
 								$this->loadPlugin($path);
@@ -664,7 +701,7 @@ namespace Equit {
 						continue;
 					}
 
-					$this->loadPlugin(realpath($this->m_pluginsPath . $f));
+					$this->loadPlugin(realpath($this->m_pluginsPath . DIRECTORY_SEPARATOR . $f));
 				}
 
 				$s_done = true;

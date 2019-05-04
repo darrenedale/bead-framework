@@ -217,7 +217,8 @@ class AutocompleteTextEdit extends TextEdit {
 	 */
 	public static function runtimeScriptUrls(): array {
 		/** @noinspection SpellCheckingInspection */
-		return ["js/autocompletetextedit.js"];
+		return ["js/AutocompleteTextEdit.js"];
+//		return ["js/autocompletetextedit.js"];
 	}
 
 	/**
