@@ -213,7 +213,7 @@ class AutocompleteTextEdit extends TextEdit {
 	/**
 	 * Fetch the URL of the runtime support javascript.
 	 *
-	 * @return array[string] The support javascript URL.
+	 * @return array[string] The support javascript URLs.
 	 */
 	public static function runtimeScriptUrls(): array {
 		/** @noinspection SpellCheckingInspection */

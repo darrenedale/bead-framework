@@ -105,7 +105,7 @@ export class AutocompleteTextEdit {
         });
 
         this.container = edit;
-        this.internalEditor = internalEditor[0];
+        this.internalEditor = <HTMLInputElement> internalEditor[0];
         this.suggestionsList = <HTMLSuggestionListElement>suggestionsList[0];
         this.suggestionsApiFunction = apiFnName;
         this.suggestionsApiParameterName = apiParamName;
@@ -123,98 +123,99 @@ export class AutocompleteTextEdit {
             }
         }
 
-        this.internalEditor.addEventListener("onKeyDown", function (ev: KeyboardEvent) {
-            switch (ev.key) {
-                case "Escape":
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.hideSuggestions();
-                    break;
-
-                case " ":
-                    /* NOTE alt-space is sometimes swallowed by OS/browser */
-                    if (ev.altKey) {
-                        /* alt-space opens suggestions list */
-                        // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                        this.showSuggestions();
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                    }
-                    break;
-
-                case "ArrowUp":
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.showSuggestions();
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.previousSuggestion();
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    break;
-
-                case "ArrowDown":
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.showSuggestions();
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.nextSuggestion();
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    break;
-
-                case "Enter":
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    if (this.suggestionsVisible()) {
-                        // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                        let value = this.currentSuggestion;
-                        // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                        this.currentIndex = -1;
-                        // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                        this.hideSuggestions();
-
-                        if (!(value instanceof undefined)) {
-                            // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                            this.value = value;
-                        }
-
-                        ev.preventDefault();
-                        ev.stopPropagation();
-                    }
-                    break;
-            }
+        this.internalEditor.addEventListener("keydown", function (ev: KeyboardEvent) {
+            // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to suggestionItem)
+            this.onKeyDown(ev);
         }.bind(this));
 
-        this.internalEditor.addEventListener("onKeyDown", function (ev: KeyboardEvent) {
-            if ("Delete" === ev.key || "Backspace" === ev.key) {
-                if(this.timerId) {
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    window.clearTimeout(this.m_timerId);
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.m_timerId = 0;
-                }
-
-                let self = this;
-
-                // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                if ("" === this.value) {
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.clear();
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.hideSuggestions();
-                }
-                // TODO oldValue is on internalEditor - put it on this instead
-                else if (this.value !== this.m_oldValue) {
-                    /* if user doesn't type for 0.5s, fetch suggestions */
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.m_timerId = window.setTimeout(function () {
-                        // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                        this.fetchSuggestions();
-                    }, 500);
-
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.m_oldValue = this.value;
-                }
-            }
+        this.internalEditor.addEventListener("keypress", function(ev: KeyboardEvent) {
+            // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to suggestionItem)
+            this.onKeyPress(ev);
         }.bind(this));
 
-        // TODO bind keypress
+        this.internalEditor.addEventListener("keyup", function(ev: KeyboardEvent) {
+            // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
+            this.onKeyUp(ev);
+        }.bind(this));
+    }
+
+    protected onKeyDown(ev: KeyboardEvent) {
+        switch (ev.key) {
+            case "Escape":
+                this.hideSuggestions();
+                break;
+
+            case " ":
+                /* NOTE alt-space is sometimes swallowed by OS/browser */
+                if (ev.altKey) {
+                    /* alt-space opens suggestions list */
+                    this.showSuggestions();
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                }
+                break;
+
+            case "ArrowUp":
+                this.showSuggestions();
+                this.previousSuggestion();
+                ev.preventDefault();
+                ev.stopPropagation();
+                break;
+
+            case "ArrowDown":
+                this.showSuggestions();
+                this.nextSuggestion();
+                ev.preventDefault();
+                ev.stopPropagation();
+                break;
+
+            case "Enter":
+                if (this.suggestionsVisible()) {
+                    let value = this.currentSuggestion;
+                    this.currentIndex = -1;
+                    this.hideSuggestions();
+
+                    if ("undefined" != typeof value) {
+                        this.value = value;
+                    }
+
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                }
+                break;
+        }
+    }
+
+    protected onKeyPress(ev: KeyboardEvent) {
+        if ("Delete" === ev.key || "Backspace" === ev.key) {
+            if(this.m_timerId) {
+                window.clearTimeout(this.m_timerId);
+                this.m_timerId = 0;
+            }
+
+            if ("" === this.value) {
+                this.clear();
+                this.hideSuggestions();
+            }
+            // TODO oldValue is on internalEditor - put it on this instead
+            else if (this.value !== this.m_oldValue) {
+                /* if user doesn't type for 0.5s, fetch suggestions */
+                this.m_timerId = window.setTimeout(function () {
+                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
+                    this.fetchSuggestions();
+                }.bind(this), 500);
+
+                this.m_oldValue = this.value;
+            }
+        }
+    }
+
+    protected onKeyUp(ev: KeyboardEvent) {
+        /* 8 = backspace; 46 = delete */
+        if ("Delete" === ev.key || "Backspace" === ev.key) {
+//			if (8 === ev.keyCode || 46 === ev.keyCode) {
+            this.onKeyPress(ev);
+        }
     }
 
     get objectDescriptor() {
