@@ -7,8 +7,8 @@
  */
 
 namespace Equit\Test {
-	require_once("classes/equit/AppLog.php");
-	require_once("classes/equit/DataController.php");
+	require_once("libs/equit/AppLog.php");
+	require_once("libs/equit/DataController.php");
 
 	class Entity {
 		private $m_id = null;
