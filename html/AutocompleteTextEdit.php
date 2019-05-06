@@ -211,13 +211,13 @@ class AutocompleteTextEdit extends TextEdit {
 	}
 
 	/**
-	 * Fetch the URL of the runtime support javascript.
+	 * Fetch the URLs of the runtime support javascript modules.
 	 *
 	 * @return array[string] The support javascript URLs.
 	 */
 	public static function runtimeScriptUrls(): array {
 		/** @noinspection SpellCheckingInspection */
-		return ["js/AutocompleteTextEdit.js"];
+		return ["js/AutocompleteTextEdit.js", "js/ApiCall.js", "js/ApiCallResponse.js", "js/Application.js"];
 //		return ["js/autocompletetextedit.js"];
 	}
 

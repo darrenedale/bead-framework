@@ -39,8 +39,9 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class Paragraph extends PageElement {
+class Paragraph extends PageElement implements ContainerPageElement {
 	use Tooltip;
+	use ChildElements;
 
 	/** @var array[PageElement] The child elements for the section. */
 	private $m_children = [];
@@ -61,37 +62,8 @@ class Paragraph extends PageElement {
 				$content = new HtmlLiteral(html($content));
 			}
 
-			$this->addChild($content);
+			$this->addChildElement($content);
 		}
-	}
-
-	/** Add a child element to the paragraph.
-	 *
-	 * Child elements are added after the last existing child element; or, put another way, child elements are always
-	 * added in series. There is, as yet, no facility to add a child at any other point in the paragraph's child list.
-	 *
-	 * @param $child PageElement The element to add.
-	 */
-	public function addChild(PageElement $child): void {
-		$this->m_children[] = $child;
-	}
-
-	/** Fetch the paragraph's children.
-	 *
-	 * The children are returned in the order in which they will appear in the paragraph when the HTML is generated.
-	 *
-	 * @return array[LibEquit\PageElement] The paragraph's children.
-	 */
-	public function children(): array {
-		return $this->m_children;
-	}
-
-	/** Clear the section.
-	 *
-	 * All child elements are removed.
-	 */
-	public function clear(): void {
-		$this->m_children = [];
 	}
 
 	/** Generate the opening HTML for the paragraph.
@@ -122,24 +94,6 @@ class Paragraph extends PageElement {
 	 */
 	protected function emitParagraphEnd(): string {
 		return "</p>";
-	}
-
-	/**
-	 * Generate the HTML for the paragraph's child elements.
-	 *
-	 * This is a helper method for use when generating the HTML. It could be useful for subclasses to call so that they
-	 * don't need to replicate the common HTML for the child elements and need only implement their custom content.
-	 *
-	 * @return string The HTML for the child elements.
-	 */
-	protected function emitChildElements(): string {
-		$ret = "";
-
-		foreach($this->m_children as $child) {
-			$ret .= $child->html();
-		}
-
-		return $ret;
 	}
 
 	/**

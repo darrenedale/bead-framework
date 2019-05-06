@@ -270,7 +270,7 @@ class Popup extends Division {
 		$ret = $this->emitDivisionStart() . "<div class=\"popup-anchor\">" . $anchor->html() . "</div><div class=\"popup-content\">";
 
 		/** @var \Equit\Html\PageElement $child */
-		foreach($this->children() as $child) {
+		foreach($this->childElements() as $child) {
 			$ret .= $child->html();
 		}
 

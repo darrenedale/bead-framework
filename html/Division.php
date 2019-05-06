@@ -39,8 +39,9 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class Division extends PageElement {
+class Division extends PageElement implements ContainerPageElement {
 	use Tooltip;
+	use ChildElements;
 
 	/** @var array[PageElement] The child elements for the division. */
 	private $m_children = [];
@@ -53,35 +54,6 @@ class Division extends PageElement {
 	 */
 	public function __construct(?string $id = null) {
 		parent::__construct($id);
-	}
-
-	/** Add a child element to the division.
-	 *
-	 * Child elements are added after the last existing child element; or, put another way, child elements are always
-	 * added in series. There is, as yet, no facility to add a child at any other point in the division's child list.
-	 *
-	 * @param $child PageElement The element to add.
-	 */
-	public function addChild(PageElement $child): void {
-		$this->m_children[] = $child;
-	}
-
-	/** Fetch the division's children.
-	 *
-	 * The children are returned in the order in which they will appear in the division when the HTML is generated.
-	 *
-	 * @return array[LibEquit\PageElement] The division's children.
-	 */
-	public function children(): array {
-		return $this->m_children;
-	}
-
-	/** Clear the division.
-	 *
-	 * All child elements are removed.
-	 */
-	public function clear(): void {
-		$this->m_children = [];
 	}
 
 	/** Generate the opening HTML for the division.
@@ -111,24 +83,6 @@ class Division extends PageElement {
 	 */
 	protected function emitDivisionEnd(): string {
 		return "</div>";
-	}
-
-	/**
-	 * Generate the HTML for the division's child elements.
-	 *
-	 * This is a helper method for use when generating the HTML. It could be useful for subclasses to call so that they
-	 * don't need to replicate the common HTML for the child elements and need only implement their custom content.
-	 *
-	 * @return string The HTML for the child elements.
-	 */
-	protected function emitChildElements(): string {
-		$ret = "";
-
-		foreach($this->m_children as $child) {
-			$ret .= $child->html();
-		}
-
-		return $ret;
 	}
 
 	/**

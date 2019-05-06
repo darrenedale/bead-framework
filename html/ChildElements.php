@@ -2,6 +2,15 @@
 
 namespace Equit\Html;
 
+/**
+ * Basic implementation of the ContainerPageElement interface to be used in PageElement subclasses that implement the
+ * interface.
+ *
+ * It also provides a convenience protected method to emit the HTML for the child elements. This is not part of the
+ * ContainerPageElement interface.
+ *
+ * @package Equit\Html
+ */
 trait ChildElements {
 
 	/**
@@ -17,7 +26,7 @@ trait ChildElements {
 	 *
 	 * @return bool `true` if the child element was added, `false` if not.
 	 */
-	public function addChild(PageElement $child): bool {
+	public function addChildElement(PageElement $child): bool {
 		$this->m_children[] = $child;
 		return true;
 	}
@@ -29,17 +38,15 @@ trait ChildElements {
 	 *
 	 * @return array[PageElement] The element's children.
 	 */
-	public function children(): array {
+	public function childElements(): array {
 		return $this->m_children;
 	}
 
 	/** Clear the child elements.
 	 *
 	 * All child elements are removed.
-	 *
-	 * @todo refactor: rename clearChildren()
 	 */
-	public function clear(): void {
+	public function clearChildElements(): void {
 		$this->m_children = [];
 	}
 

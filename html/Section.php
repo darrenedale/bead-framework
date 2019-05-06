@@ -33,7 +33,7 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class Section extends PageElement {
+class Section extends PageElement implements ContainerPageElement {
 	use Tooltip;
 	use ChildElements;
 

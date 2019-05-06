@@ -30,7 +30,7 @@ trait ListItems {
 		}
 
 		$listItem = new ListItem();
-		$listItem->addChild($item);
+		$listItem->addChildElement($item);
 		$this->m_items[] = $listItem;
 	}
 

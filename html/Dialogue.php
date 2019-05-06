@@ -168,8 +168,8 @@ class Dialogue extends Division {
 	 *
 	 * The message is set to _null_ and the flags are reset to default.
 	 */
-	public function clear(): void {
-		parent::clear();
+	public function clearChildElements(): void {
+		parent::clearChildElements();
 		$this->m_message = null;
 		$this->m_flags   = self::DefaultFlags;
 	}

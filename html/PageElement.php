@@ -94,6 +94,19 @@ abstract class PageElement {
 	}
 
 	/**
+	 * Fetch the URLs of the runtime support scripts for the element.
+	 *
+	 * Most simple elements won't need to implement this method. More complex elements might require some runtime logic,
+	 * which is implemented in scripts. This method provides the URLs for the scripts required for the type of
+	 * element.
+	 *
+	 * @return array[string] The support javascript URLs.
+	 */
+	public static function runtimeScriptUrls(): array {
+		return [];
+	}
+
+	/**
 	 * Set the value of a named attribute.
 	 *
 	 * This is an internal helper method that implementing classes can use to set attribute values for the attributes
