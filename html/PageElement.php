@@ -100,6 +100,10 @@ abstract class PageElement {
 	 * which is implemented in scripts. This method provides the URLs for the scripts required for the type of
 	 * element.
 	 *
+	 * For elements provided by the equit library, the script URLs are relative to the installation path of the
+	 * library. This usually means you need to prefix the URL with the installation path in the <script> element on
+	 * the page. Alternatives include setting up path aliases in your web server configuration or using symbolic links.
+	 *
 	 * @return array[string] The support javascript URLs.
 	 */
 	public static function runtimeScriptUrls(): array {

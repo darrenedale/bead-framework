@@ -101,6 +101,16 @@ class Popup extends Division {
 	}
 
 	/**
+	 * Fetch the URL of the runtime support javascript.
+	 *
+	 * @return array The support javascript URLs.
+	 */
+	public static function runtimeScriptUrls(): array {
+		return ["js/Popup.js"];
+//		return ["js/popup.js"];
+	}
+
+	/**
 	 * Set the anchor for the PopupSection.
 	 *
 	 * @param $anchor string|PageElement The anchor.
@@ -200,15 +210,6 @@ class Popup extends Division {
 	 */
 	public function hoverTriggers(): bool {
 		return (bool)($this->m_triggers & self::HoverTrigger);
-	}
-
-	/**
-	 * Fetch the URL of the runtime support javascript.
-	 *
-	 * @return array The support javascript URLs.
-	 */
-	public static function runtimeScriptUrls(): array {
-		return ["js/popup.js"];
 	}
 
 	/**

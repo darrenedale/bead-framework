@@ -20,9 +20,9 @@ interface HTMLSuggestionListItemElement extends HTMLLIElement {
 }
 
 export class AutocompleteTextEdit {
-    public static readonly CssClassName: string = "autocomplete-text-edit";
-    public static readonly InternalEditorCssClassName: string = "autocomplete-text-edit-editor";
-    public static readonly SuggestionsListCssClassName: string = "autocomplete-text-edit-suggestions";
+    public static readonly HtmlClassName: string = "autocomplete-text-edit";
+    public static readonly InternalEditorHtmlClassName: string = "autocomplete-text-edit-editor";
+    public static readonly SuggestionsListHtmlClassName: string = "autocomplete-text-edit-suggestions";
 
     private container: HTMLDivElement;
     public readonly suggestionsApiFunction: string;
@@ -30,16 +30,21 @@ export class AutocompleteTextEdit {
     public readonly suggestionsApiOtherArguments: object;
     public readonly internalEditor: HTMLInputElement;
     public readonly suggestionsList: HTMLSuggestionListElement;
+    private static initDone: boolean = false;
     private readonly customResponseProcessor?: ResponseProcessor;
     private m_timerId: number;
     private m_oldValue: string;
 
     public static initialise() {
-        let editors = document.getElementsByClassName(AutocompleteTextEdit.CssClassName);
+        if(AutocompleteTextEdit.initDone) {
+            return;
+        }
+
+        let editors = document.getElementsByClassName(AutocompleteTextEdit.HtmlClassName);
 
         for (let idx = 0; idx < editors.length; ++idx) {
             if(!(editors[idx] instanceof HTMLDivElement)) {
-                console.warn("ignored invalid element type with " + AutocompleteTextEdit.CssClassName + " class");
+                console.warn("ignored invalid element type with " + AutocompleteTextEdit.HtmlClassName + " class");
                 continue;
             }
 
@@ -50,10 +55,12 @@ export class AutocompleteTextEdit {
                 console.error("Failed to initialise AutocompleteTextEdit: " + err);
             }
         }
+
+        AutocompleteTextEdit.initDone = true;
     }
 
     public constructor(edit: HTMLDivElement) {
-        let internalEditor = edit.getElementsByClassName(AutocompleteTextEdit.InternalEditorCssClassName);
+        let internalEditor = edit.getElementsByClassName(AutocompleteTextEdit.InternalEditorHtmlClassName);
 
         if (!internalEditor || 1 !== internalEditor.length) {
             throw new Error("failed to find text edit element for autocomplete text edit");
@@ -63,7 +70,7 @@ export class AutocompleteTextEdit {
             throw new TypeError("text edit for autocomplete text edit is not of correct type");
         }
 
-        let suggestionsList = edit.getElementsByClassName(AutocompleteTextEdit.SuggestionsListCssClassName);
+        let suggestionsList = edit.getElementsByClassName(AutocompleteTextEdit.SuggestionsListHtmlClassName);
 
         if (!suggestionsList || 1 !== suggestionsList.length) {
             throw new Error("failed to find suggestions list element for autocomplete text edit");
@@ -456,5 +463,5 @@ export class AutocompleteTextEdit {
 (function() {
    window.addEventListener("load", function() {
        AutocompleteTextEdit.initialise();
-   })
+   });
 })();

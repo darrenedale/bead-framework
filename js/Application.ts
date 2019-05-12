@@ -33,11 +33,30 @@ interface ToastContent extends HTMLElement {
     readonly toast: ToastContainer;
 }
 
+export class LogicError extends Error {}
+export class ContentStructureError extends Error {}
+
 export class Application {
     /* this is temporarily forced to aio.php while migrating to ts */
     public static readonly baseUrl = "aio.php";
     public static readonly DefaultToastTimeout: number = 2500;
     public static readonly NewWindowFlag: number = 0x01;
+
+    private static m_instance: Application = null;
+
+    public baseUrl: string = "";
+
+    constructor() {
+        if(Application.m_instance) {
+            throw new LogicError("An Application instance already exists and Application is a singleton.");
+        }
+
+        Application.m_instance = this;
+    }
+
+    public static get instance(): Application {
+        return Application.m_instance;
+    }
 
     /** @deprecated Pass timeout as a property in an options object instead. */
     public static toast(content: string, timeout: number): void;

@@ -144,8 +144,7 @@ class TabbedView extends PageElement {
 	 * @return array The support javascript URLs.
 	 */
 	public static function runtimeScriptUrls(): array {
-		/** @noinspection SpellCheckingInspection */
-		return ["js/tabbedview.js"];
+		return ["js/TabbedView.js"];
 	}
 
 	/**
