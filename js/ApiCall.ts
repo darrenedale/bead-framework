@@ -1,5 +1,5 @@
-import {ApiCallResponse} from "./ApiCallResponse";
-import {Application} from "./Application";
+import {ApiCallResponse} from "./ApiCallResponse.js";
+import {Application} from "./Application.js";
 
 // a callback for when an API call succeeded in getting a valid response from the server
 export interface SuccessfulApiCallCallback {

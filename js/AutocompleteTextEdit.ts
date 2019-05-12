@@ -1,5 +1,5 @@
-import {ApiCallResponse} from "./ApiCallResponse";
-import {ApiCall} from "./ApiCall";
+import {ApiCallResponse} from "./ApiCallResponse.js";
+import {ApiCall} from "./ApiCall.js";
 
 interface Suggestion {
     label: string,
@@ -59,7 +59,7 @@ export class AutocompleteTextEdit {
             throw new Error("failed to find text edit element for autocomplete text edit");
         }
 
-        if ((internalEditor[0] instanceof HTMLInputElement)) {
+        if (!(internalEditor[0] instanceof HTMLInputElement)) {
             throw new TypeError("text edit for autocomplete text edit is not of correct type");
         }
 
@@ -97,13 +97,6 @@ export class AutocompleteTextEdit {
             otherArgs[result[1]] = edit.dataset[paramName];
         }
 
-        Object.defineProperty(suggestionsList[0], "currentIndex", {
-            configurable: false,
-            enumerable: true,
-            writable: true,
-            value: -1,
-        });
-
         this.container = edit;
         this.internalEditor = <HTMLInputElement> internalEditor[0];
         this.suggestionsList = <HTMLSuggestionListElement>suggestionsList[0];
@@ -112,8 +105,15 @@ export class AutocompleteTextEdit {
         this.suggestionsApiOtherArguments = otherArgs;
 
         Object.defineProperty(edit, "autocompleteTextEdit", this.objectDescriptor);
-        Object.defineProperty(edit, "internalEditor", this.objectDescriptor);
-        Object.defineProperty(edit, "suggestionsList", this.objectDescriptor);
+        Object.defineProperty(this.internalEditor, "autocompleteTextEdit", this.objectDescriptor);
+        Object.defineProperty(this.suggestionsList, "autocompleteTextEdit", this.objectDescriptor);
+
+        Object.defineProperty(this.suggestionsList, "currentIndex", {
+            configurable: false,
+            enumerable: true,
+            writable: true,
+            value: -1,
+        });
 
         if (edit.dataset.apiFunctionResponseProcessor) {
             if (!edit.dataset.apiFunctionResponseProcessor.match(/^[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9_]$/)) {
@@ -137,6 +137,8 @@ export class AutocompleteTextEdit {
             // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
             this.onKeyUp(ev);
         }.bind(this));
+
+        this.hideSuggestions();
     }
 
     protected onKeyDown(ev: KeyboardEvent) {
@@ -188,25 +190,24 @@ export class AutocompleteTextEdit {
 
     protected onKeyPress(ev: KeyboardEvent) {
         if ("Delete" === ev.key || "Backspace" === ev.key) {
-            if(this.m_timerId) {
+            if (this.m_timerId) {
                 window.clearTimeout(this.m_timerId);
                 this.m_timerId = 0;
             }
+        }
 
-            if ("" === this.value) {
-                this.clear();
-                this.hideSuggestions();
-            }
-            // TODO oldValue is on internalEditor - put it on this instead
-            else if (this.value !== this.m_oldValue) {
-                /* if user doesn't type for 0.5s, fetch suggestions */
-                this.m_timerId = window.setTimeout(function () {
-                    // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
-                    this.fetchSuggestions();
-                }.bind(this), 500);
+        if ("" === this.value) {
+            this.clear();
+            this.hideSuggestions();
+        }
+        else if (this.value !== this.m_oldValue) {
+            /* if user doesn't type for 0.5s, fetch suggestions */
+            this.m_timerId = window.setTimeout(function () {
+                // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
+                this.fetchSuggestions();
+            }.bind(this), 500);
 
-                this.m_oldValue = this.value;
-            }
+            this.m_oldValue = this.value;
         }
     }
 
@@ -239,7 +240,7 @@ export class AutocompleteTextEdit {
         for(let item of items) {
             suggestions.push({
                 "value":  item,
-                "display": item,
+                "label": item,
             });
         }
 
@@ -262,7 +263,7 @@ export class AutocompleteTextEdit {
         let display: Node;
 
         if("string" === typeof label) {
-            display = document.createTextNode(value);
+            display = document.createTextNode(label);
         }
 
         if("object" !== typeof display || !display.nodeName) {
@@ -273,14 +274,14 @@ export class AutocompleteTextEdit {
         suggestionItem.setAttribute("class", "autocomplete-suggestion");
         suggestionItem.appendChild(display);
         Object.defineProperty(suggestionItem, "suggestion", {"configurable": false, "enumerable": false, "writable": false, "value": value});
-        Object.defineProperty(suggestionItem, "autocompleteTextEdit", {"configurable": false, "enumerable": false, "writable": false, "value": this});
+        Object.defineProperty(suggestionItem, "autocompleteTextEdit", this.objectDescriptor);
 
         this.suggestionsList.appendChild(suggestionItem);
 
         suggestionItem.addEventListener("click", function () {
             // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to suggestionItem)
             this.autocompleteTextEdit.value = this.suggestion;
-            this.autocompleteTextEdit.hide();
+            this.autocompleteTextEdit.hideSuggestions();
         }.bind(suggestionItem));
     }
 
@@ -385,26 +386,26 @@ export class AutocompleteTextEdit {
             n = 0;
         }
 
-        if(idx >= -1 && idx < n) {
-            if(0 <= this.suggestionsList.currentIndex) {
-                let item = this.suggestionsList.children[this.suggestionsList.currentIndex];
-                item.classList.remove("current");
-            }
-
-            this.suggestionsList.currentIndex = idx;
-
-            if(-1 < this.suggestionsList.currentIndex) {
-                let item = this.suggestionsList.children[this.suggestionsList.currentIndex];
-                item.classList.add("current");
-            }
-
-            if(this.internalEditor) {
-                this.syncToCurrentSuggestion();
-            }
+        if(idx < -1 || idx >= n) {
+            console.log(`invalid index: ${idx}`);
+            return;
         }
 
-        console.log(`invalid index: ${idx}`);
-        return;
+        if(0 <= this.suggestionsList.currentIndex) {
+            let item = this.suggestionsList.children[this.suggestionsList.currentIndex];
+            item.classList.remove("current");
+        }
+
+        this.suggestionsList.currentIndex = idx;
+
+        if(-1 < this.suggestionsList.currentIndex) {
+            let item = this.suggestionsList.children[this.suggestionsList.currentIndex];
+            item.classList.add("current");
+        }
+
+        if(this.internalEditor) {
+            this.syncToCurrentSuggestion();
+        }
     }
 
     public get suggestionCount(): number {
@@ -435,11 +436,8 @@ export class AutocompleteTextEdit {
 
     public suggestion(idx: number): string {
         if (idx >= 0 && idx < this.suggestionsList.children.length) {
-            let item = this.suggestionsList.children[idx];
-
-            if (item && item.tagName && "LI" === item.tagName) {
-                return item.childNodes[0]["suggestion"];
-            }
+            let item = <HTMLSuggestionListItemElement> this.suggestionsList.children[idx];
+            return item.suggestion;
         }
 
         console.warn(`invalid index: ${idx}`);

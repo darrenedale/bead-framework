@@ -171,7 +171,8 @@ namespace Equit {
 	 */
 	class Application {
 		const SessionDataContext = "application";
-		private const DefaultPluginsPath = "plugins/generic";
+		protected const DefaultPluginsPath = "plugins/generic";
+		protected const DefaultLibsPath = "";
 
 		/** The singleton instance. */
 		private static $s_instance = null;
@@ -181,6 +182,9 @@ namespace Equit {
 
 		/** @var string Where plugins are loaded from. */
 		private $m_pluginsPath = self::DefaultPluginsPath;
+
+		/** @var string Where the application should look for any third-party content (including Equit lib). */
+		private $m_libsPath = self::DefaultLibsPath;
 
 		/** @var string Optional application title. */
 		private $m_title = "";
@@ -233,6 +237,7 @@ namespace Equit {
 			}
 
 			self::$s_instance = $this;
+			$this->setLibraryPath(constant("app.libs.path") ?? self::DefaultLibsPath);
 			self::initialiseSession();
 
 			$this->m_session = &$this->sessionData(self::SessionDataContext);
@@ -390,6 +395,54 @@ namespace Equit {
 		 */
 		public function pluginsPath(): string {
 			return $this->m_pluginsPath;
+		}
+
+		/**
+		 * Set the library path.
+		 *
+		 * The library path can only be set before exec() is called. If exec() has been called, calling setPluginPath()
+		 * will fail.
+		 *
+		 * The library path is where your application should look for third-party content. It can be useful for
+		 * including PHP files, setting the path to runtime scripts and stylesheets, etc.
+		 *
+		 * @param string $path The base path where third party libraries are installed.
+		 *
+		 * @return bool `true` If the provided path was valid and was set, `false` otherwise.
+		 */
+		public function setLibraryPath(string $path): bool {
+			if($this->isRunning()) {
+				AppLog::error("can't set library path while application is running", __FILE__, __LINE__, __FUNCTION__);
+				return false;
+			}
+
+			if(!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $path)) {
+				AppLog::error("invalid library path: \"$path\"", __FILE__, __LINE__, __FUNCTION__);
+				return false;
+			}
+
+			$this->m_libsPath = $path;
+			return true;
+		}
+
+		/**
+		 * Fetch the library path.
+		 *
+		 * @param $libName string The third-party library whose path is sought.
+		 *
+		 * This is the path from which third-party content will be loaded. You can specify the library name and it will
+		 * be appended to the path. You can also use this argument in reimplementations of this method to customise
+		 * the path according to the library, if that's what your application needs.
+		 *
+		 * @return string The library path.
+		 */
+		public function libraryPath(string $libName = ""): string {
+			if(empty($libName)) {
+				return $this->m_libsPath;
+			}
+
+			// TODO sanitise library name?
+			return "{$this->m_libsPath}/$libName";
 		}
 
 		/** Determine whether the application is currently running or not.

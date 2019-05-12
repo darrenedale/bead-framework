@@ -234,7 +234,7 @@ class Page {
 		// TODO refactor: when created, use <nav> for this
 		$this->m_sections["navbar"]  = new Section("$uid-navbar");
 
-		$this->m_sections["main"]->addChild($this->m_sections["menubar"]);
+		$this->m_sections["main"]->addChildElement($this->m_sections["menubar"]);
 	}
 
 	/**
@@ -255,7 +255,7 @@ class Page {
 			return false;
 		}
 
-		$this->m_sections[$section]->addChild($e);
+		$this->m_sections[$section]->addChildElement($e);
 		return true;
 	}
 
