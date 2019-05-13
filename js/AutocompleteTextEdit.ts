@@ -14,9 +14,17 @@ interface HTMLSuggestionListElement extends HTMLUListElement {
     currentIndex: number;
 }
 
-interface HTMLSuggestionListItemElement extends HTMLLIElement {
+export interface HTMLSuggestionListItemElement extends HTMLLIElement {
     suggestion: string,
-    autocompleteTextEdit: AutocompleteTextEdit,
+    readonly autocompleteTextEdit: AutocompleteTextEdit,
+}
+
+export interface HTMLAutocompleteInternalTextEdit extends HTMLInputElement {
+    readonly autocompleteTextEdit: AutocompleteTextEdit,
+}
+
+export interface HTMLAutocompleteTextEditRootElement extends HTMLDivElement {
+    readonly autocompleteTextEdit: AutocompleteTextEdit,
 }
 
 export class AutocompleteTextEdit {
@@ -24,11 +32,11 @@ export class AutocompleteTextEdit {
     public static readonly InternalEditorHtmlClassName: string = "autocomplete-text-edit-editor";
     public static readonly SuggestionsListHtmlClassName: string = "autocomplete-text-edit-suggestions";
 
-    private container: HTMLDivElement;
+    private container: HTMLAutocompleteTextEditRootElement;
     public readonly suggestionsApiFunction: string;
     public readonly suggestionsApiParameterName: string;
     public readonly suggestionsApiOtherArguments: object;
-    public readonly internalEditor: HTMLInputElement;
+    public readonly internalEditor: HTMLAutocompleteInternalTextEdit;
     public readonly suggestionsList: HTMLSuggestionListElement;
     private static initDone: boolean = false;
     private readonly customResponseProcessor?: ResponseProcessor;
@@ -49,7 +57,7 @@ export class AutocompleteTextEdit {
             }
 
             try {
-                new AutocompleteTextEdit(<HTMLDivElement> editors[idx]);
+                new AutocompleteTextEdit(<HTMLAutocompleteTextEditRootElement> editors[idx]);
             }
             catch(err) {
                 console.error("Failed to initialise AutocompleteTextEdit: " + err);
@@ -59,7 +67,7 @@ export class AutocompleteTextEdit {
         AutocompleteTextEdit.initDone = true;
     }
 
-    public constructor(edit: HTMLDivElement) {
+    public constructor(edit: HTMLAutocompleteTextEditRootElement) {
         let internalEditor = edit.getElementsByClassName(AutocompleteTextEdit.InternalEditorHtmlClassName);
 
         if (!internalEditor || 1 !== internalEditor.length) {
@@ -105,12 +113,13 @@ export class AutocompleteTextEdit {
         }
 
         this.container = edit;
-        this.internalEditor = <HTMLInputElement> internalEditor[0];
-        this.suggestionsList = <HTMLSuggestionListElement>suggestionsList[0];
+        this.internalEditor = <HTMLAutocompleteInternalTextEdit> internalEditor[0];
+        this.suggestionsList = <HTMLSuggestionListElement> suggestionsList[0];
         this.suggestionsApiFunction = apiFnName;
         this.suggestionsApiParameterName = apiParamName;
         this.suggestionsApiOtherArguments = otherArgs;
 
+        // these are readonly in the interface, so we cheat to set them. it's OK, because these are interfaces we "own"
         Object.defineProperty(edit, "autocompleteTextEdit", this.objectDescriptor);
         Object.defineProperty(this.internalEditor, "autocompleteTextEdit", this.objectDescriptor);
         Object.defineProperty(this.suggestionsList, "autocompleteTextEdit", this.objectDescriptor);
