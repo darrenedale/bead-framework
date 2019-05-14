@@ -460,7 +460,8 @@ class ListEdit extends PageElement {
 		static $s_scripts = null;
 
 		if(!is_array($s_scripts)) {
-			$s_scripts = array_merge(["js/listedit.js"], AutocompleteTextEdit::runtimeScriptUrls());
+			$s_scripts = ["js/ListEdit.js"];
+//			$s_scripts = array_merge(["js/listedit.js"], AutocompleteTextEdit::runtimeScriptUrls());
 		}
 
 		return $s_scripts;
