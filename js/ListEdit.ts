@@ -25,10 +25,10 @@ export class ListEdit {
 
     constructor(edit: HTMLListEditRootElement) {
         let findChildElement = (element: string, propertyName: string): boolean => {
-            let elems = edit.getElementsByClassName("listedit-" + element);
+            let elems = edit.getElementsByClassName("eq-listedit-" + element);
 
             if(1 != elems.length) {
-                console.log("invalid listedit - found != 1 listedit-" + element + " child element");
+                console.log("invalid listedit - found != 1 eq-listedit-" + element + " child element");
                 return false;
             }
 
@@ -338,7 +338,7 @@ export class ListEdit {
             throw new Error("failed to bootstrap AutocompleteTextEdit - ListEdit cannot be bootstrapped");
         }
 
-        let edits = document.getElementsByClassName("listedit");
+        let edits = document.getElementsByClassName("eq-listedit");
 
         for(let edit of edits) {
             if(!(edit instanceof HTMLElement)) {

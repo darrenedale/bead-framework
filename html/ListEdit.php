@@ -35,45 +35,33 @@ require_once "includes/i18n.php";
 /**
  * An editable list for inclusion in forms.
  *
- * This class represents a widget on a form that enables the user to create a
- * list of items.
+ * This class represents a widget on a form that enables the user to create a list of items.
  *
- * Upon form submission, all of the items in the list are submitted. If the list
- * is empty, the data is still submitted, it will just be empty. This means that
- * in processing scripts it may be difficult to distinguish between an empty list
+ * Upon form submission, all of the items in the list are submitted. If the list is empty, the data is still submitted,
+ * it will just be empty. This means that in processing scripts it may be difficult to distinguish between an empty list
  * and a list containing one empty item.
  *
- * The HTML element behind the list that stores its submitted data is a hidden
- * `<input>` element. The hidden element stores the items in the list
- * separated by newlines, which means that individual elements in the list can't
- * contain any newline characters. This constraint should be fine because, by
- * design, the widget is intended to capture lists of small snippets of text,
- * usually just a few words each. The display part of the ListEdit is a
- * `<ul>` element, which is kept synchronised with the list of items
- * stored in the form element by runtime javascript. Its items can be clicked to
- * select them. Only one item can be selected at a time.
+ * The HTML element behind the list that stores its submitted data is a hidden `<input>` element. The hidden element
+ * stores the items in the list separated by newlines, which means that individual elements in the list can't contain
+ * any newline characters. This constraint should be fine because, by design, the widget is intended to capture lists of
+ * small snippets of text, usually just a few words each. The display part of the ListEdit is a `<ul>` element, which is
+ * kept synchronised with the list of items stored in the form element by runtime javascript. Its items can be clicked
+ * to select them. Only one item can be selected at a time.
  *
- * The ListEdit also contains a single-line text input widget and buttons to add
- * and remove items. When the add button is clicked, whatever is in the text input
- * widget is added to the list. (If the text input widget is empty, an empty item
- * is added to the list.) When the remove button is clicked, the selected item in
- * the display list is removed. (If no item is selected, no action is taken.) After
- * removal, the item following the one removed becomes the selected item, unless
- * the selected item was the last in the list, in which case the item preceding it
- * becomes the selected item. If there are no items left in the list, the list
- * will have no selected item.
+ * The ListEdit also contains a single-line text input widget and buttons to add and remove items. When the add button
+ * is clicked, whatever is in the text input widget is added to the list. (If the text input widget is empty, an empty
+ * item is added to the list.) When the remove button is clicked, the selected item in the display list is removed. (If
+ * no item is selected, no action is taken.) After removal, the item following the one removed becomes the selected
+ * item, unless the selected item was the last in the list, in which case the item preceding it becomes the selected
+ * item. If there are no items left in the list, the list will have no selected item.
  *
- * The hidden `<input>` element is the only form element in the ListEdit layout
- * that has a `name` attribute and as such is the only one that will result in
- * data being submitted with the parent form. This means that the data submitted
- * for the list is a newline-separated list of the items in the list. Alternatively,
- * the "main" ListEdit page element (which is not a form element as such) is blessed
- * with some methods and properties to manipulate the list. This element has a
- * `value` attribute that provides the items in the list in an array. You can
- * fetch a reference to this element either by using
- * `document.getElementById()` with the ID you gave the
- * ListEdit object, or by querying the form's `elements` collection for the
- * element with the ListEdit's `name` attribute and reading the `parentListEdit`
+ * The hidden `<input>` element is the only form element in the ListEdit layout that has a `name` attribute and as such
+ * is the only one that will result in data being submitted with the parent form. This means that the data submitted
+ * for the list is a newline-separated list of the items in the list. Alternatively, the "main" ListEdit page element
+ * (which is not a form element as such) is blessed with some methods and properties to manipulate the list. This
+ * element has a `value` attribute that provides the items in the list in an array. You can fetch a reference to this
+ * element either by using `document.getElementById()` with the ID you gave the ListEdit object, or by querying the
+ * form's `elements` collection for the element with the ListEdit's `name` attribute and reading the `listEdit`
  * property.
  *
  * \par Element layout
@@ -114,30 +102,9 @@ require_once "includes/i18n.php";
  * +-----------------------------------------------------------------------------------------+
  * \endverbatim
  *
- * \par Javascript object model
- * The public interface of a ListEdit object in javascript looks like this pseudo-code:
- *
  * \par
- * ~~~
- * class ListEdit {
- *    HTMLInputElement dataWidget;
- *    HTMLInputElement textEdit;
- *    HTMLUListElement displayWidget;
- *    HTMLInputElement addButton;
- *    HTMLInputElement removeButton;
- *
- *    Array value;           // read-write
- *    Number selectedIndex;  // read-write
- *    String selectedItem;   // read-only
- *
- *    Boolean addItem( String text );
- *    Boolean removeItem( Number index );
- * }
- * ~~~
- *
- * \par
- * Each of the HTML elements in the ListEdit object has a read-only `parentListEdit`
- * property added that provides a reference to the parent ListEdit in which it is embedded.
+ * Each of the HTML elements in the ListEdit object has a read-only `parentListEdit` property added that provides a
+ * reference to the parent ListEdit in which it is embedded.
  *
  * ### Actions
  * This module does not support any actions.
@@ -157,17 +124,16 @@ require_once "includes/i18n.php";
  * ### Session Data
  * This module does not create a session context.
  *
- * @class ListEdit
- * @author Darren Edale
- * @ingroup libequit
- * @package libequit
- *
  * @actions _None_
  * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
  * @session _None_
+ *
+ * @class ListEdit
+ * @author Darren Edale
+ * @package libequit
  */
 class ListEdit extends PageElement {
 	use Name;
@@ -187,7 +153,7 @@ class ListEdit extends PageElement {
 	/** @var \Equit\Html\HiddenValueWidget|null The widget containing the list of items for form submission. */
 	private $m_list = null;
 
-	/** @var \Equit\Html\HtmlLiteral|null The display for the list. */
+	/** @var \Equit\Html\UnorderedList|null The display for the list. */
 	private $m_display = null;
 
 	/** @var null|\Equit\Html\PushButton The _remove item_ push button. */
@@ -217,25 +183,26 @@ class ListEdit extends PageElement {
 		}
 
 		$this->m_layout = new GridLayout();
-		$this->m_layout->addClassName("listedit");
-		$this->m_layout->addClassName("listedit-layout");
+		$this->m_layout->addClassName("eq-listedit");
+		$this->m_layout->addClassName("eq-listedit-layout");
 
 		$this->m_item = new AutocompleteTextEdit();
-		$this->m_item->addClassName("listedit-itemedit");
+		$this->m_item->addClassName("eq-listedit-itemedit");
 
 		$this->m_add = new PushButton("+");
-		$this->m_add->addClassName("listedit-add");
-		$this->m_add->addClassName("listedit-button");
+		$this->m_add->addClassName("eq-listedit-add");
+		$this->m_add->addClassName("eq-listedit-button");
 		$this->m_add->setTooltip(tr("Add this item to the list."));
 
 		$this->m_list = new HiddenValueWidget();
-		$this->m_list->addClassName("listedit-data");
+		$this->m_list->addClassName("eq-listedit-data");
 
-		$this->m_display = new HtmlLiteral();
+		$this->m_display = new UnorderedList();
+		$this->m_display->addClassName("eq-listedit-display");
 
 		$this->m_remove = new PushButton("-");
-		$this->m_remove->addClassName("listedit-remove");
-		$this->m_remove->addClassName("listedit-button");
+		$this->m_remove->addClassName("eq-listedit-remove");
+		$this->m_remove->addClassName("eq-listedit-button");
 		$this->m_remove->setTooltip(tr("Remove the selected item from the list."));
 
 		$row = 0;
@@ -249,7 +216,6 @@ class ListEdit extends PageElement {
 		++$row;
 		$this->m_layout->addElement($this->m_list, $row, 0, 1, 2);
 	}
-
 
 	/**
 	 * Fetch the _add item_ button.
@@ -265,7 +231,6 @@ class ListEdit extends PageElement {
 		return $this->m_add;
 	}
 
-
 	/**
 	 * Fetch the *remove item* button.
 	 *
@@ -279,7 +244,6 @@ class ListEdit extends PageElement {
 	public function removeButton(): PushButton {
 		return $this->m_remove;
 	}
-
 
 	/**
 	 * Fetch the item text editor.
@@ -303,7 +267,6 @@ class ListEdit extends PageElement {
 	public function itemTextEdit(): TextEdit {
 		return $this->m_item;
 	}
-
 
 	/**
 	 * Fetch the ListEdit's layout.
@@ -473,28 +436,23 @@ class ListEdit extends PageElement {
 		$items   = $this->items();
 		$id      = $this->id();
 		$name    = $this->name();
-		$tooltip = $this->tooltip();
 
 		$this->m_list->setValue(implode(chr(10), $items));
-		$displayHtml = "<ul class=\"listedit-display\" id=\"" . html($id) . "-display\"";
+		$this->m_display->setTooltip($this->tooltip());
 
-		if(!empty($tooltip)) {
-			$displayHtml .= " title=\"" . html($tooltip) . "\"";
+		foreach($items as $itemText) {
+			$item = new ListItem();
+			$item->addClassName("eq-listedit-item");
+			$item->addChildElement(new HtmlLiteral(html($itemText)));
+			$this->m_display->addItem($item);
 		}
-
-		$displayHtml .= ">\n";
-
-		foreach($items as $i) {
-			$displayHtml .= "<li class=\"listedit-item\">" . html($i) . "</li>\n";
-		}
-
-		$this->m_display->setHtml("$displayHtml</ul>\n");
 
 		$this->m_layout->setId($id);
 		$this->m_item->setId("$id-itemedit");
 		$this->m_add->setId("$id-add");
 		$this->m_list->setId("$id-data");
 		$this->m_remove->setId("$id-remove");
+		$this->m_display->setId("$id-display");
 
 		if(!empty($name)) {
 			if("[]" != substr($name, -2)) {

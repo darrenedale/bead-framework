@@ -6,17 +6,17 @@ $hovered-background: scale_color($selected-background, $lightness: 75%);
 $selected-foreground: white;
 $hovered-foreground: $foreground;
 
-.listedit {
+.eq-listedit {
   td {
     padding-bottom: 0;
     vertical-align: top;
   }
 
-  .listedit-button {
+  .eq-listedit-button {
     width: 2em;
   }
 
-  .listedit-display {
+  .eq-listedit-display {
     margin: 0;
     padding: 0;
     border: 1px solid #aaaaaa;
