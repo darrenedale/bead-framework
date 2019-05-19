@@ -64,6 +64,10 @@ export class ListEdit {
             throw new ContentStructureError("could not find ListEdit's remove button");
         }
 
+        if(!AutocompleteTextEdit) {
+            throw new Error("Failed to load AutocompleteTextEdit module");
+        }
+
         if(!this.textEdit.autocompleteTextEdit) {
             throw new Error("AutocompleteTextEdit for ListEdit " + edit + " was not initialised, ListEdit cannot be initialised");
         }
@@ -332,11 +336,6 @@ export class ListEdit {
             writable: false,
             value: true,
         });
-
-        // ensure autocomplete text edit has been initialised
-        if(!AutocompleteTextEdit.bootstrap()) {
-            throw new Error("failed to bootstrap AutocompleteTextEdit - ListEdit cannot be bootstrapped");
-        }
 
         let edits = document.getElementsByClassName("eq-listedit");
 
