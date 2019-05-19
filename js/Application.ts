@@ -108,20 +108,23 @@ export class Application {
         let toastContainer = <ToastContainer> document.createElement("DIV");
         toastContainer.classList.add("class", "toast appearing");
 
-        let closeToast = function() {
-            this.classList.add("disappearing");
-            window.setTimeout(
-                function() {
-                    this.parentNode.removeChild(this);
-                }.bind(this),
-                1000);
-        }.bind(toastContainer);
-
         Object.defineProperty(
             toastContainer,
             "close",
-            {enumerable: true, configurable: false, writable: false, value: closeToast}
-            );
+            {
+                enumerable: true,
+                configurable: false,
+                writable: false,
+                value: function() {
+                    this.classList.add("disappearing");
+                    window.setTimeout(
+                        function() {
+                            this.parentNode.removeChild(this);
+                        }.bind(this),
+                        1000);
+                }.bind(toastContainer),
+            }
+        );
 
         let toastContent: ToastContent;
 
@@ -218,6 +221,8 @@ export class Application {
      *
      * @param root Element The root element within which to look for elements.
      * @param className string The class name to look for on child elements.
+     *
+     * @deprecated Use document.getElementsByClassName() instead.
      */
     public static findElementsWithClass(root: Element, className: string): Element[] {
         let ret = <Element[]> [];
@@ -258,6 +263,15 @@ export class Application {
         return ret;
     }
 
+    /**
+     *
+     * @param object
+     * @param event
+     * @param callback
+     * @param capture
+     *
+     * @deprecated use Object.addEventListener() instead.
+     */
     public static bindEvent(object: BindEventTarget, event: string, callback: EventListener|EventListenerCallback, capture: boolean = false): boolean {
         if(object.addEventListener) {
             object.addEventListener(event, callback, capture);
@@ -276,6 +290,10 @@ export class Application {
 
         if("object" == typeof parameters) {
             for(let pName in parameters) {
+                if(!parameters.hasOwnProperty(pName)) {
+                    continue;
+                }
+
                 url += "&" + encodeURIComponent(pName) + "=" + encodeURIComponent(parameters[pName]);
             }
         }

@@ -1,5 +1,6 @@
 import {ApiCallResponse} from "./ApiCallResponse.js";
 import {ApiCall} from "./ApiCall.js";
+import {LogicError} from "./Application.js";
 
 interface Suggestion {
     label: string,
@@ -38,14 +39,13 @@ export class AutocompleteTextEdit {
     public readonly suggestionsApiOtherArguments: object;
     public readonly internalEditor: HTMLAutocompleteInternalTextEdit;
     public readonly suggestionsList: HTMLSuggestionListElement;
-    private static initDone: boolean = false;
     private readonly customResponseProcessor?: ResponseProcessor;
     private m_timerId: number;
     private m_oldValue: string;
 
-    public static initialise() {
-        if(AutocompleteTextEdit.initDone) {
-            return;
+    public static bootstrap(): boolean {
+        if(AutocompleteTextEdit.bootstrap.hasOwnProperty("success")) {
+            return AutocompleteTextEdit.bootstrap["success"];
         }
 
         let editors = document.getElementsByClassName(AutocompleteTextEdit.HtmlClassName);
@@ -64,7 +64,14 @@ export class AutocompleteTextEdit {
             }
         }
 
-        AutocompleteTextEdit.initDone = true;
+        Object.defineProperty(AutocompleteTextEdit.bootstrap, "success", {
+            enumerable: false,
+            configurable: false,
+            writable: false,
+            value: true,
+        });
+
+        return AutocompleteTextEdit.bootstrap["success"];
     }
 
     public constructor(edit: HTMLAutocompleteTextEditRootElement) {
@@ -90,13 +97,13 @@ export class AutocompleteTextEdit {
 
         let apiFnName = edit.dataset.apiFunctionName;
 
-        if (!apiFnName) {
+        if (undefined == apiFnName) {
             throw new Error("failed to find API function name for autocomplete text edit");
         }
 
         let apiParamName = edit.dataset.apiFunctionContentParameterName;
 
-        if (!apiParamName) {
+        if (undefined == apiParamName) {
             throw new Error("failed to find API parameter name for autocomplete text edit");
         }
 
@@ -217,11 +224,10 @@ export class AutocompleteTextEdit {
             this.hideSuggestions();
         }
         else if (this.value !== this.m_oldValue) {
-            /* if user doesn't type for 0.5s, fetch suggestions */
-            this.m_timerId = window.setTimeout(function () {
-                // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
+            // if user doesn't type for 0.5s, fetch suggestions
+            this.m_timerId = window.setTimeout(() => {
                 this.fetchSuggestions();
-            }.bind(this), 500);
+            }, 500);
 
             this.m_oldValue = this.value;
         }
@@ -269,6 +275,18 @@ export class AutocompleteTextEdit {
         }
     }
 
+    /**
+     * Add a suggestion to the list.
+     *
+     * Suggestions have a value and display label. The value is what is set and displayed in the editor when the
+     * suggestion is selected; the display label is what is shown in the list of suggestions. This enables context
+     * to be shown in the list of suggestions to disambiguate suggestions with the same value.
+     *
+     * The display label is optional - if omitted, the value will be used for display in the suggestions list.
+     *
+     * @param value The value for the suggestion.
+     * @param label The display label for the suggestion.
+     */
     public add(value: string, label?: string|Node): void {
         let suggestionItem = <HTMLSuggestionListItemElement> document.createElement("LI");
 
@@ -302,6 +320,11 @@ export class AutocompleteTextEdit {
     }
 
     public fetchSuggestions(): void {
+        // no API function = no suggestions
+        if("" == this.suggestionsApiFunction) {
+            return;
+        }
+
         if (0 <= this.currentIndex) {
             let item = this.suggestionsList.children[this.currentIndex];
             item.classList.remove("current");
@@ -312,7 +335,7 @@ export class AutocompleteTextEdit {
         let params = this.suggestionsApiOtherArguments;
         params[this.suggestionsApiParameterName] = this.value;
 
-        let successFn = function(response: ApiCallResponse) {
+        let successFn = (response: ApiCallResponse) => {
             if (0 === response.code) {
                 let items = self.processResponse(response.data);
                 let count = 0;
@@ -336,11 +359,9 @@ export class AutocompleteTextEdit {
                 }
             }
 
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
             this.currentIndex = -1;
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (explicityly bound to this)
             this.showSuggestions();
-        }.bind(this);
+        };
 
         this.clear();
         let apiCall = new ApiCall(this.suggestionsApiFunction, params, null, {onSuccess: successFn});
@@ -471,6 +492,6 @@ export class AutocompleteTextEdit {
 
 (function() {
    window.addEventListener("load", function() {
-       AutocompleteTextEdit.initialise();
+       AutocompleteTextEdit.bootstrap();
    });
 })();
