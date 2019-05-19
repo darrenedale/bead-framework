@@ -20,7 +20,7 @@
 
 namespace Equit;
 
-require_once("includes/string.php");
+require_once __DIR__ . "/includes/string.php";
 
 /**
  * Represents a file uploaded to the application.

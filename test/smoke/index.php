@@ -7,8 +7,8 @@
 <h1>libequit Smoke Test Index</h1>
 <?php
 
-require_once("bootstrap.php");
-require_once("includes/string.php");
+require_once "bootstrap.php";
+require_once "libs/equit/includes/string.php";
 
 function listEntryInIndex(string $entry): bool {
 	if ("bootstrap.php" == $entry) {

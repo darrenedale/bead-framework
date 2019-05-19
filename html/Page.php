@@ -27,7 +27,7 @@
 
 namespace Equit\Html;
 
-require_once("includes/string.php");
+require_once __DIR__ . "/../includes/string.php";
 
 use Equit\Application;
 use Equit\AppLog;

@@ -4,7 +4,7 @@ namespace {
 
 	use Equit\Application;
 
-	include_once "string.php";
+	require_once "string.php";
 
 	/**
 	 * Convenience function to ease UI string translation.

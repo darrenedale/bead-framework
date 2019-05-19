@@ -21,7 +21,7 @@ namespace Equit\Html;
 
 use Equit\AppLog;
 
-require_once "includes/i18n.php";
+require_once __DIR__ . "/../includes/i18n.php";
 
 /**
  * A pick list for inclusion in forms.

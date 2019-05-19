@@ -39,8 +39,8 @@ use Equit\Request;
 use PDO;
 use PDOStatement;
 
-require_once "includes/string.php";
-require_once "includes/i18n.php";
+require_once __DIR__ . "../includes/string.php";
+require_once __DIR__ . "../includes/i18n.php";
 
 /**
  * Display or output a set of results as a table.

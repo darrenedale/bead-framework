@@ -34,8 +34,8 @@ use ReflectionException;
 use ReflectionMethod;
 use StdClass;
 
-require_once("includes/array.php");
-require_once("includes/string.php");
+require_once __DIR__ . "/includes/array.php";
+require_once __DIR__ . "/includes/string.php";
 
 /**
  * Provides an interface between application objects and data entities - it links the database to the objects used in
