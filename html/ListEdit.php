@@ -29,15 +29,8 @@
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\AutocompleteTextEdit;
-use Equit\Html\GridLayout;
-use Equit\Html\HiddenValueWidget;
-use Equit\Html\HtmlLiteral;
-use Equit\Html\Name;
-use Equit\Html\Tooltip;
-use Equit\Html\PageElement;
-use Equit\Html\PushButton;
-use Equit\Html\TextEdit;
+
+include_once "includes/string.php";
 
 /**
  * An editable list for inclusion in forms.
@@ -232,6 +225,7 @@ class ListEdit extends PageElement {
 
 		$this->m_add = new PushButton("+");
 		$this->m_add->addClassName("listedit-add");
+		$this->m_add->addClassName("listedit-button");
 		$this->m_add->setTooltip(tr("Add this item to the list."));
 
 		$this->m_list = new HiddenValueWidget();
@@ -241,6 +235,7 @@ class ListEdit extends PageElement {
 
 		$this->m_remove = new PushButton("-");
 		$this->m_remove->addClassName("listedit-remove");
+		$this->m_remove->addClassName("listedit-button");
 		$this->m_remove->setTooltip(tr("Remove the selected item from the list."));
 
 		$row = 0;

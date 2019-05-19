@@ -578,11 +578,13 @@ class GridLayout extends Layout {
 		$class = $this->classNamesString();
 		$id = $this->id();
 		$ret = "<table" . (!empty($id) ? " id=\"" . html($id) . "\"" : "") . " class=\"layout" . (!empty($class) ? " " . html($class) : "") . "\"><tbody>";
+		$nRows = $this->rowCount();
+		$nCols = $this->columnCount();
 
-		for($row = 0; $row < $this->rowCount(); $row++) {
+		for($row = 0; $row < $nRows; $row++) {
 			$ret .= "<tr>";
 
-			for($col = 0; $col < $this->columnCount(); $col++) {
+			for($col = 0; $col < $nCols; $col++) {
 				$item = $this->itemAt($row, $col);
 
 				if(!($item instanceof GridLayoutItem)) {
