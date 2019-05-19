@@ -26,8 +26,9 @@
  * @package libequit
  */
 
-
 namespace Equit;
+
+require_once "includes/i18n.php";
 
 /**
  * Class representing a part of a multipart email message.

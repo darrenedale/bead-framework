@@ -18,6 +18,8 @@
 
 namespace Equit\Html;
 
+require_once "includes/i18n.php";
+
 /**
  * A heading element for use in HTML pages.
  *

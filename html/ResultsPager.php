@@ -35,12 +35,12 @@
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\PageElement;
 use Equit\Request;
 use PDO;
 use PDOStatement;
 
-require_once("includes/string.php");
+require_once "includes/string.php";
+require_once "includes/i18n.php";
 
 /**
  * Display or output a set of results as a table.
@@ -2116,7 +2116,7 @@ class ResultsPager extends PageElement {
 		else {
 			$start           = 0;
 			$end             = $max;
-			$maxPage         = 1;
+//			$maxPage         = 1;
 			$checkedRowCount = count($this->m_checkedRows);
 		}
 

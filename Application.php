@@ -13,6 +13,8 @@ namespace Equit {
 	use ReflectionClass;
 	use ReflectionException;
 
+	require_once "includes/i18n.php";
+
 	/**
 	 * Core Application class for sites/applications using the framework.
 	 *

@@ -25,6 +25,9 @@
 */
 
 namespace Equit;
+
+require_once "includes/i18n.php";
+
 /**
  * Class encapsulating an email message.
  *

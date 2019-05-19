@@ -30,7 +30,7 @@ namespace Equit\Html;
 
 use Equit\AppLog;
 
-include_once "includes/string.php";
+require_once "includes/i18n.php";
 
 /**
  * An editable list for inclusion in forms.
