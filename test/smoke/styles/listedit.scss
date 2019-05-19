@@ -1,0 +1,50 @@
+
+$background: inherit;
+$foreground: inherit;
+$selected-background: #0e366a;
+$hovered-background: scale_color($selected-background, $lightness: 75%);
+$selected-foreground: white;
+$hovered-foreground: $foreground;
+
+.listedit {
+  td {
+    padding-bottom: 0;
+    vertical-align: top;
+  }
+
+  .listedit-button {
+    width: 2em;
+  }
+
+  .listedit-display {
+    margin: 0;
+    padding: 0;
+    border: 1px solid #aaaaaa;
+    min-height: 5em;
+    height: 8em;
+    list-style-type: none;
+    overflow: scroll;
+
+    li {
+      display: block;
+      margin: 0;
+      padding: 0 5px;
+      font-size: 85%;
+
+      &:last-child {
+        border-bottom: 1px dotted #cccccc;
+      }
+
+      &:hover {
+        background-color: $hovered-background;
+        color: $hovered-foreground;
+        cursor: pointer;
+      }
+
+      &.selected {
+        color: $selected-foreground;
+        background-color: $selected-background;
+      }
+    }
+  }
+}

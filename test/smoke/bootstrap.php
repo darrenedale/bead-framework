@@ -20,7 +20,7 @@ spl_autoload_register(function(string $className) {
 	}
 
 	// we already know we're in the equit base path, so remove that part of the namespace
-	array_unshift($path);
+	array_shift($path);
 
 	array_walk($path, function(string &$str) {
 		$str = mb_strtolower($str, "UTF-8");
@@ -36,3 +36,5 @@ spl_autoload_register(function(string $className) {
 	/** @noinspection PhpIncludeInspection */
 	@include($baseDir . DIRECTORY_SEPARATOR . $path . $className . ".php");
 });
+
+set_include_path(realpath(dirname(__FILE__) . DIRECTORY_SEPARATOR . ".." . DIRECTORY_SEPARATOR . "..") . PATH_SEPARATOR . get_include_path());
