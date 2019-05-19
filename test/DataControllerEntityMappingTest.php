@@ -155,7 +155,7 @@ namespace Equit\Test {
 			AppLog::setWarningLog($log);
 		}
 
-		public function setUp() {
+		public function setUp(): void {
 			$this->db->exec("DELETE FROM `{$this->table}`");
 
 			$this->db->exec("INSERT INTO `{$this->table}` VALUES " . <<<EOT
