@@ -24,7 +24,7 @@ namespace Equit\Html;
 use Equit\AppLog;
 use Equit\DataValidationReport;
 
-require_once "includes/i18n.php";
+require_once __DIR__ . "/../includes/i18n.php";
 
 /**
  * A dialogue to show the content of a DAO validation report.

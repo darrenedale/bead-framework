@@ -18,7 +18,7 @@
 
 namespace Equit\Html;
 
-require_once "includes/i18n.php";
+require_once __DIR__ . "/../includes/i18n.php";
 
 /**
  * A heading element for use in HTML pages.

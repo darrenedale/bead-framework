@@ -30,7 +30,7 @@ namespace Equit\Html;
 
 use Equit\AppLog;
 
-require_once "libs/equit/includes/i18n.php";
+require_once __DIR__ . "/../includes/i18n.php";
 
 /**
  * An editable list for inclusion in forms.
