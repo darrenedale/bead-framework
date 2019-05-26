@@ -242,15 +242,14 @@ class AutocompleteTextEdit extends TextEdit {
 			$this->addClassName("autocomplete-text-edit");
 		}
 
-		$apiFn        = html($this->m_apiFn);
-		$apiParamName = html($this->m_apiParamName);
+		$apiFn        = html($this->m_apiFn ?? "");
+		$apiParamName = html($this->m_apiParamName ?? "");
 		$classNames   = $this->classNamesString();
 		$placeholder  = $this->placeholder();
 		$name         = $this->name();
 		$value        = $this->text();
 		$tt           = $this->tooltip();
 
-		// autocomplete=off tells the browser not to do its own auto-completion
 		$ret = "<div id=\"" . html($id) . "\" class=\"" . html($classNames) . "\" data-api-function-name=\"$apiFn\" data-api-function-content-parameter-name=\"$apiParamName\"";
 
 		foreach($this->m_otherArgs as $paramName => $paramValue) {
@@ -284,7 +283,7 @@ class AutocompleteTextEdit extends TextEdit {
 				break;
 		}
 
-		/* hint the browser not to do its own auto-completion */
+		// hint the browser not to do its own auto-completion
 		$ret .= "\" autocomplete=\"off\" ";
 
 		if(!empty($placeholder)) {

@@ -20,6 +20,8 @@ export interface ApiCallOptions {
 
 /**
  * Encapsulates a call to an API endpoint.
+ *
+ * At present, the API endpoint is not customisable, only the URL parameters that are provided to that API call.
  */
 export class ApiCall extends XMLHttpRequest {
     private m_action: string;
@@ -116,20 +118,17 @@ export class ApiCall extends XMLHttpRequest {
     public send(): void {
         let url = Application.baseUrl + "?action=" + encodeURIComponent(this.action);
 
-        this.addEventListener("load", function () {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("load", () => {
             this.onApiCallLoad();
-        }.bind(this), true);
+        }, true);
 
-        this.addEventListener("abort", function () {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("abort", () => {
             this.onApiCallAbort();
-        }.bind(this), true);
+        }, true);
 
-        this.addEventListener("error", function () {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("error", () => {
             this.onApiCallError();
-        }.bind(this), true);
+        }, true);
 
         if (this.parameters) {
             for (let pName in this.parameters) {

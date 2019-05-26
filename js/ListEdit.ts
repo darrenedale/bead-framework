@@ -1,11 +1,12 @@
 import {LogicError, ContentStructureError} from "./Application.js";
-import {HTMLAutocompleteTextEditRootElement} from "./AutocompleteTextEdit.js";
+import {AutocompleteTextEdit, HTMLAutocompleteTextEditRootElement} from "./AutocompleteTextEdit.js";
 
 interface HTMLListEditChildElement extends HTMLElement {
-    listEdit: ListEdit;
+    readonly listEdit: ListEdit;
 }
 
-interface HTMLListEditRootElement extends HTMLElement {
+interface HTMLListEditRootElement extends HTMLTableElement {
+    readonly listEdit: ListEdit;
     value: string[];
     selectedIndex: number;
     readonly selectedItem: string;
@@ -39,21 +40,23 @@ export class ListEdit {
 
     constructor(edit: HTMLListEditRootElement) {
         let findChildElement = (element: string, propertyName: string): boolean => {
-            let elems = edit.getElementsByClassName("listedit-" + element);
+            let elems = edit.getElementsByClassName("eq-listedit-" + element);
 
             if(1 != elems.length) {
-                console.log("invalid listedit - found != 1 listedit-" + element + " child element");
+                console.log("invalid listedit - found != 1 eq-listedit-" + element + " child element");
                 return false;
             }
 
             let elem = <HTMLListEditChildElement> elems[0];
-            elem.listEdit = this;
+            // this is readonly in the interface, so we cheat to set it. it's OK, because it's an interface we "own"
+            Object.defineProperty(elem,"listEdit", this.objectDescriptor);
             this[`m_${propertyName}`] = elem;
 
             return true;
         };
 
-        console.log("initialising listedit \"" + edit.id + "\"");
+        // this is readonly in the interface, so we cheat to set it. it's OK, because it's an interface we "own"
+        Object.defineProperty(edit,"listEdit", this.objectDescriptor);
 
         // find the child widgets and set the properties on the main edit widget
         if(	!findChildElement("data", "dataWidget")) {
@@ -74,6 +77,14 @@ export class ListEdit {
 
         if(!findChildElement("remove", "removeButton")) {
             throw new ContentStructureError("could not find ListEdit's remove button");
+        }
+
+        if(!AutocompleteTextEdit) {
+            throw new Error("Failed to load AutocompleteTextEdit module");
+        }
+
+        if(!this.textEdit.autocompleteTextEdit) {
+            throw new Error("AutocompleteTextEdit for ListEdit " + edit + " was not initialised, ListEdit cannot be initialised");
         }
 
         this.m_addButton.addEventListener("click", () => {
@@ -142,6 +153,15 @@ export class ListEdit {
         // ensure the buttons are initially in the correct state
         this.synchroniseAddButtonState();
         this.synchroniseRemoveButtonState();
+    }
+
+    private get objectDescriptor() {
+        return {
+            enumerable: true,
+            configurable: false,
+            writable: false,
+            value: this,
+        };
     }
 
     public get value(): string[] {
@@ -341,7 +361,7 @@ export class ListEdit {
             value: true,
         });
 
-        let edits = document.getElementsByClassName("listedit");
+        let edits = document.getElementsByClassName("eq-listedit");
 
         for(let edit of toArray<Element>(edits)) {
             if(!(edit instanceof HTMLElement)) {
@@ -353,7 +373,7 @@ export class ListEdit {
                 new ListEdit(<HTMLListEditRootElement> edit);
             }
             catch(err) {
-                console.error("failed to initialise ListEdit for element " + edit);
+                console.error("failed to initialise ListEdit for element " + edit + ": " + err);
             }
         }
     }

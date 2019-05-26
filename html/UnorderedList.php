@@ -10,6 +10,7 @@ namespace Equit\Html;
 
 class UnorderedList extends PageElement {
 	use ListItems;
+	use Tooltip;
 
 	public function __construct(?string $id = null) {
 		parent::__construct($id);
