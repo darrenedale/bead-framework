@@ -42,46 +42,33 @@ use Equit\Html\TextEdit;
 /**
  * An editable list for inclusion in forms.
  *
- * This class represents a widget on a form that enables the user to create a
- * list of items.
+ * This class represents a widget on a form that enables the user to create a list of items.
  *
- * Upon form submission, all of the items in the list are submitted. If the list
- * is empty, the data is still submitted, it will just be empty. This means that
- * in processing scripts it may be difficult to distinguish between an empty list
+ * Upon form submission, all of the items in the list are submitted. If the list is empty, the data is still submitted,
+ * it will just be empty. This means that in processing scripts it may be difficult to distinguish between an empty list
  * and a list containing one empty item.
  *
- * The HTML element behind the list that stores its submitted data is a hidden
- * `<input>` element. The hidden element stores the items in the list
- * separated by newlines, which means that individual elements in the list can't
- * contain any newline characters. This constraint should be fine because, by
- * design, the widget is intended to capture lists of small snippets of text,
- * usually just a few words each. The display part of the ListEdit is a
- * `<ul>` element, which is kept synchronised with the list of items
- * stored in the form element by runtime javascript. Its items can be clicked to
- * select them. Only one item can be selected at a time.
+ * The HTML element behind the list that stores its submitted data is a hidden `<input>` element. The hidden element
+ * stores the items in the list separated by newlines, which means that individual elements in the list can't contain
+ * any newline characters. This constraint should be fine because, by design, the widget is intended to capture lists of
+ * small snippets of text, usually just a few words each. The display part of the ListEdit is a `<ul>` element, which is
+ * kept synchronised with the list of items stored in the form element by runtime javascript. Its items can be clicked
+ * to select them. Only one item can be selected at a time.
  *
- * The ListEdit also contains a single-line text input widget and buttons to add
- * and remove items. When the add button is clicked, whatever is in the text input
- * widget is added to the list. (If the text input widget is empty, an empty item
- * is added to the list.) When the remove button is clicked, the selected item in
- * the display list is removed. (If no item is selected, no action is taken.) After
- * removal, the item following the one removed becomes the selected item, unless
- * the selected item was the last in the list, in which case the item preceding it
- * becomes the selected item. If there are no items left in the list, the list
- * will have no selected item.
+ * The ListEdit also contains a single-line text input widget and buttons to add and remove items. When the add button
+ * is clicked, whatever is in the text input widget is added to the list. (If the text input widget is empty, an empty
+ * item is added to the list.) When the remove button is clicked, the selected item in the display list is removed. (If
+ * no item is selected, no action is taken.) After removal, the item following the one removed becomes the selected
+ * item, unless the selected item was the last in the list, in which case the item preceding it becomes the selected
+ * item. If there are no items left in the list, the list will have no selected item.
  *
- * The hidden `<input>` element is the only form element in the ListEdit layout
- * that has a `name` attribute and as such is the only one that will result in
- * data being submitted with the parent form. This means that the data submitted
- * for the list is a newline-separated list of the items in the list. Alternatively,
- * the "main" ListEdit page element (which is not a form element as such) is blessed
- * with some methods and properties to manipulate the list. This element has a
- * `value` attribute that provides the items in the list in an array. You can
- * fetch a reference to this element either by using
- * `document.getElementById()` with the ID you gave the
- * ListEdit object, or by querying the form's `elements` collection for the
- * element with the ListEdit's `name` attribute and reading the `parentListEdit`
- * property.
+ * The hidden `<input>` element is the only form element in the ListEdit layout that has a `name` attribute and as such
+ * is the only one that will result in data being submitted with the parent form. This means that the data submitted for
+ * the list is a newline-separated list of the items in the list. Alternatively, the "main" ListEdit page element (which
+ * is not a form element as such) is blessed with some methods and properties to manipulate the list. This element has a
+ * `value` attribute that provides the items in the list in an array. You can fetch a reference to this element either
+ * by using `document.getElementById()` with the ID you gave the ListEdit object, or by querying the form's `elements`
+ * collection for the element with the ListEdit's `name` attribute and reading the `parentListEdit` property.
  *
  * \par Element layout
  * Each ListEdit widget is laid out on the page like this:
@@ -143,8 +130,8 @@ use Equit\Html\TextEdit;
  * ~~~
  *
  * \par
- * Each of the HTML elements in the ListEdit object has a read-only `parentListEdit`
- * property added that provides a reference to the parent ListEdit in which it is embedded.
+ * Each of the HTML elements in the ListEdit object has a read-only `parentListEdit` property added that provides a
+ * reference to the parent ListEdit in which it is embedded.
  *
  * ### Actions
  * This module does not support any actions.
@@ -465,6 +452,10 @@ class ListEdit extends PageElement {
 		}
 
 		return $s_scripts;
+	}
+
+	public static function thing(): string {
+		return "some";
 	}
 
 	/**

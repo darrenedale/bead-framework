@@ -4,6 +4,8 @@ if(!defined("NAMESPACE_SEPARATOR")) {
 	define("NAMESPACE_SEPARATOR", "\\");
 }
 
+set_include_path("../../" . PATH_SEPARATOR . get_include_path());
+
 spl_autoload_register(function(string $className) {
 	static $baseDir = null;
 
@@ -20,7 +22,7 @@ spl_autoload_register(function(string $className) {
 	}
 
 	// we already know we're in the equit base path, so remove that part of the namespace
-	array_unshift($path);
+	array_shift($path);
 
 	array_walk($path, function(string &$str) {
 		$str = mb_strtolower($str, "UTF-8");

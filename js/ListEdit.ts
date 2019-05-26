@@ -14,6 +14,21 @@ interface HTMLListEditRootElement extends HTMLElement {
     removeItem(idx: number): boolean;
 }
 
+interface Collection<T> {
+    length: number;
+}
+
+function toArray<T>(collection: Collection<T>): T[] {
+    let n = collection.length;
+    let ret: T[];
+
+    for(let idx = 0; idx < n; ++idx) {
+        ret.push(collection[idx]);
+    }
+
+    return ret;
+}
+
 export class ListEdit {
 
     private m_dataWidget;
@@ -118,7 +133,7 @@ export class ListEdit {
         });
 
         // for all existing displayed items, add the onClick event listener
-        for(let item of this.displayWidget.children) {
+        for(let item of toArray<HTMLElement>(this.displayWidget.children)) {
             item.addEventListener("click", (ev: Event) => {
                 this.onItemClicked(ev);
             });
@@ -230,7 +245,16 @@ export class ListEdit {
     }
 
     public removeItem(idx: number): boolean {
-        if(!Number.isInteger(idx)) {
+        let isInt = function (val: number): boolean {
+            if (isNaN(val)) {
+                return false;
+            }
+
+            let floatVal = parseFloat(`${val}`);
+            return (floatVal | 0) === floatVal;
+        };
+
+        if(!isInt(idx)) {
             console.error("item indices must be integers");
             return false;
         }
@@ -271,7 +295,7 @@ export class ListEdit {
 
         let ul = clickedItem.parentElement;
 
-        for(let itemElement of ul.children) {
+        for(let itemElement of toArray<HTMLElement>(ul.children)) {
             itemElement.classList.remove("selected");
         }
 
@@ -319,7 +343,7 @@ export class ListEdit {
 
         let edits = document.getElementsByClassName("listedit");
 
-        for(let edit of edits) {
+        for(let edit of toArray<Element>(edits)) {
             if(!(edit instanceof HTMLElement)) {
                 console.log("skipped non-HTMLElement: " + edit);
                 continue;

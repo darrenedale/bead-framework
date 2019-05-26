@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <?php
 	require_once "bootstrap.php";
-	use Equit\Html\ListEdit;
 ?>
 <html>
 <head>
 <?php
+use Equit\Html\ListEdit;
 
 foreach(ListEdit::runtimeScriptUrls() as $url) {
-	echo <<<HTML
-	<script type = "module" src = "../../$url"></script>
-HTML;
+	echo "<script type=\"module\" src=\"../../$url\"></script>";
 }
 
 ?>
@@ -20,8 +18,9 @@ HTML;
 <section class="test-content">
 <?php
 
-$listEdit = new ListEdit();
-echo $listEdit->html();
+//echo (class_exists("Equit\Html\ListEdit") ? "class exists" : "class does not exist");
+//$listEdit = new ListEdit();
+//echo $listEdit->html();
 
 ?>
 </section>
