@@ -102,7 +102,7 @@ class DataController extends PDO {
 	public const ErrNoStatementParameterBind = 3;
 	public const ErrExecuteStatementFailed   = 4;
 
-	// these two are effectively the same set of mappings, except one is indexed by db entity and the other by DAO class
+	// these two are effectively the same set of mappings, except one is indexed by db entity and the other by DVO class
 	// name
 	/** @var array Maps database entities to PHP classes. */
 	private $m_entityMappings = [];
@@ -470,7 +470,7 @@ class DataController extends PDO {
 	 * The _$fields_ array is keyed by the name of the field in the database table. Each entry has the following
 	 * properties:
 	 * - **type** int The type of the field. This is required, and must be one of the class field type constants. This
-	 *   will be used to determine how to transform the data from the database before it is provided to the DAO mutator
+	 *   will be used to determine how to transform the data from the database before it is provided to the DVO mutator
 	 *   method for the field.
 	 * - **accessor** _string_ The name of the method to use to read the field's data from the object. Just provide the
 	 *   name of the method, do not include the class name nor any arguments or parentheses. The accessor method will be
@@ -484,7 +484,7 @@ class DataController extends PDO {
 	 *   least one argument of a type that can implicitly be coerced from the PHP type appropriate to the field type
 	 *   specified in the **type** property.
 	 *   The mutator is optional. If not given, the mutator will default to the upper-cased name of the field prefixed
-	 *   with _get_ (i.e. _$class::get$fieldName()_ will be used as the mutator).
+	 *   with _set_ (i.e. _$class::set$fieldName()_ will be used as the mutator).
 	 *
 	 * Mutators will be given data of a type determined by the field type given in the mapping. The types are as
 	 * follows:
@@ -499,7 +499,7 @@ class DataController extends PDO {
 	 * | DataController::TimeField     | DateTime                  |
 	 * | DataController::DateTimeField | DateTime                  |
 	 *
-	 * Generally, if you design your DAO classes with well-named accessors and mutators, you won't need to specify much
+	 * Generally, if you design your DVO classes with well-named accessors and mutators, you won't need to specify much
 	 * beyond the field type in the field mapping data. As a crude example, the class
 	 *
      *     class Person {
@@ -528,7 +528,7 @@ class DataController extends PDO {
      *         }
      *     }
 	 *
-	 * can be used as a DAO by adding the following mapping:
+	 * can be used as a DVO by adding the following mapping:
 	 *
 	 *     $db->addEntityMapping("person", "Person", (object) ["fieldName" => "id", "propertyName" => "m_id"], [
 	 *     		"firstname" => (object) ["type" => DataController::CharField],
@@ -677,15 +677,15 @@ class DataController extends PDO {
 	}
 
 	/**
-	 * Helper function to read a row of data into a DAO.
+	 * Helper function to read a row of data into a DVO.
 	 *
-	 * This is generally used by DAO fetch methods to create an instance of the DAO once the data has been read from the
+	 * This is generally used by DVO fetch methods to create an instance of the DVO once the data has been read from the
 	 * database. Since there are a number of ways to fetch the data, serving different purposes, this code has been
 	 * abstracted out to avoid repetition and ease maintenance.
 	 *
 	 * @internal
 	 *
-	 * @param string $class The class name of the DAO to read into.
+	 * @param string $class The class name of the DVO to read into.
 	 * @param StdClass $mapping The mapping object that describes how the data gets into the object.
 	 * @param array $data The data to read into the object.
 	 *
@@ -819,7 +819,7 @@ class DataController extends PDO {
 	/**
 	 * Fetch instances of a mapped entity from the database, matching on multiple fields.
 	 *
-	 * @param string $class The DAO class of the mapped entity to be searched.
+	 * @param string $class The DVO class of the mapped entity to be searched.
 	 * @param array $criteria The search criteria.
 	 *
 	 * @return array|null Objects representing the matched entities. This will be empty if no matches are found, or
@@ -921,7 +921,7 @@ class DataController extends PDO {
 	 * The value to search for should be the value used for the field when mapped to an object. For example, a DateTime
 	 * object (not a string) to search in a datetime field in the database.
 	 *
-	 * @param string $class The DAO class of the mapped entity to be searched.
+	 * @param string $class The DVO class of the mapped entity to be searched.
 	 * @param string $matchFieldName The name of the entity field to match.
 	 * @param mixed $value The value to search for in the field.
 	 *
@@ -1083,14 +1083,14 @@ class DataController extends PDO {
 	}
 
 	/**
-	 * Insert content represented by a DAO into the database.
+	 * Insert content represented by a DVO into the database.
 	 *
 	 * The class of object provided must have an entity mapping available. This is usually achieved by a prior call to
 	 * _addEntityMapping()_.
 	 *
-	 * @param $dao mixed The DAO to insert.
+	 * @param $dao mixed The DVO to insert.
 	 *
-	 * @return bool _true_ if the DAO was inserted successfully, _false_ otherwise.
+	 * @return bool _true_ if the DVO was inserted successfully, _false_ otherwise.
 	 */
 	public function insert($dao): bool {
 		static $s_statementCache = [];
@@ -1107,7 +1107,7 @@ class DataController extends PDO {
 			$primaryKeyPropertyInfo = new \ReflectionProperty($dao, $classMapping->primaryKeyPropertyName);
 		}
 		catch(ReflectionException $err) {
-			AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DAO class $className");
+			AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DVO class $className");
 			return false;
 		}
 
@@ -1173,18 +1173,18 @@ class DataController extends PDO {
 	}
 
 	/**
-	 * Update database content represented by a DAO.
+	 * Update database content represented by a DVO.
 	 *
 	 * The class of object provided must have an entity mapping available. This is usually achieved by a prior call to
 	 * _addEntityMapping()_.
 	 *
-	 * @param $dao mixed The DAO to update.
+	 * @param $dvo mixed The DVO to update.
 	 *
-	 * @return bool _true_ if the DAO was updated successfully, _false_ otherwise.
+	 * @return bool _true_ if the DVO was updated successfully, _false_ otherwise.
 	 */
-	public function update($dao): bool {
+	public function update($dvo): bool {
 		static $s_statementCache = [];
-		$className = get_class($dao);
+		$className = get_class($dvo);
 
 		if(!isset($this->m_classMappings[$className])) {
 			AppLog::error("no entity mapping found for class \"$className\"", __FILE__, __LINE__, __FUNCTION__);
@@ -1194,10 +1194,10 @@ class DataController extends PDO {
 		$classMapping =& $this->m_classMappings[$className];
 
 		try {
-			$primaryKeyPropertyInfo = new \ReflectionProperty($dao, $classMapping->primaryKeyPropertyName);
+			$primaryKeyPropertyInfo = new \ReflectionProperty($dvo, $classMapping->primaryKeyPropertyName);
 		}
 		catch(ReflectionException $err) {
-			AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DAO class $className");
+			AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DVO class $className");
 			return false;
 		}
 
@@ -1235,16 +1235,16 @@ class DataController extends PDO {
 			}
 		}
 
-		if(!$stmt->bindValue(":id", $primaryKeyPropertyInfo->getValue($dao))) {
+		if(!$stmt->bindValue(":id", $primaryKeyPropertyInfo->getValue($dvo))) {
 			[$code, , $msg] = $stmt->errorInfo();
-			AppLog::error("failed to bind id " . stringify($primaryKeyPropertyInfo->getValue($dao)) . " for primary key to statement to update \"$className\" object in \"{$classMapping->tableName}\": [$code] $msg", __FILE__, __LINE__, __FUNCTION__);
+			AppLog::error("failed to bind id " . stringify($primaryKeyPropertyInfo->getValue($dvo)) . " for primary key to statement to update \"$className\" object in \"{$classMapping->tableName}\": [$code] $msg", __FILE__, __LINE__, __FUNCTION__);
 			return false;
 		}
 
 		$i = 1;
 
 		foreach($classMapping->fields as $fieldMapping) {
-			$value = $dao->{$fieldMapping->accessor}();
+			$value = $dvo->{$fieldMapping->accessor}();
 
 			if(isset($fieldMapping->writeFilter)) {
 				$value = call_user_func($fieldMapping->writeFilter, $value);
@@ -1269,7 +1269,7 @@ class DataController extends PDO {
 	}
 
 	/**
-	 * Delete database content represented by a DAO.
+	 * Delete database content represented by a DVO.
 	 *
 	 * The class of object provided must have an entity mapping available. This is usually achieved by a prior call to
 	 * _addEntityMapping()_.
@@ -1278,7 +1278,7 @@ class DataController extends PDO {
 	 * @param int|null $id If the first argument is the name of a class, this provides the ID of the object to delete.
 	 * Otherwise it is ignored and should not be provided.
 	 *
-	 * @return bool _true_if the DAO was deleted successfully, _false_ otherwise.
+	 * @return bool _true_if the DVO was deleted successfully, _false_ otherwise.
 	 */
 	public function delete($daoOrClass, ?int $id = null): bool {
 		static $s_statementCache = [];
@@ -1312,7 +1312,7 @@ class DataController extends PDO {
 				$primaryKeyPropertyInfo = new \ReflectionProperty($daoOrClass, $classMapping->primaryKeyPropertyName);
 			}
 			catch(ReflectionException $err) {
-				AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DAO class $className");
+				AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DVO class $className");
 				return false;
 			}
 
