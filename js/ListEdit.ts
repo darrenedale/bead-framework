@@ -21,7 +21,7 @@ interface Collection<T> {
 
 function toArray<T>(collection: Collection<T>): T[] {
     let n = collection.length;
-    let ret: T[];
+    let ret: T[] = [];
 
     for(let idx = 0; idx < n; ++idx) {
         ret.push(collection[idx]);

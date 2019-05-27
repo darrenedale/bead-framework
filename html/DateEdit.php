@@ -136,7 +136,8 @@ class DateEdit extends PageElement {
 		}
 
 		if(is_string($date) || is_null($date)) {
-			return $this->setAttribute("value", $date);
+			$this->setAttribute("value", $date);
+			return true;
 		}
 
 		AppLog::error("invalid date", __FILE__, __LINE__, __FUNCTION__);
@@ -187,7 +188,8 @@ class DateEdit extends PageElement {
 		}
 
 		if(is_string($min) || is_null($min)) {
-			return $this->setAttribute("min", $min);
+			$this->setAttribute("min", $min);
+			return true;
 		}
 
 		AppLog::error("invalid minimum date", __FILE__, __LINE__, __FUNCTION__);
@@ -238,7 +240,8 @@ class DateEdit extends PageElement {
 		}
 
 		if(is_string($max) || is_null($max)) {
-			return $this->setAttribute("max", $max);
+			$this->setAttribute("max", $max);
+			return true;
 		}
 
 		AppLog::error("invalid maximum date", __FILE__, __LINE__, __FUNCTION__);

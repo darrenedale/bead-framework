@@ -79,6 +79,7 @@ export class ApiCall extends XMLHttpRequest {
         }
 
         let response = new ApiCallResponse(this.responseText);
+        console.debug(this.responseText);
 
         if (this.options.onFinished) {
             this.options.onFinished(response);

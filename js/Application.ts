@@ -15,7 +15,7 @@ export interface ToastCustomButtonFunction {
 }
 
 export interface ToastCustomButton {
-    buttonContent: string|HTMLElement,
+    content: string|HTMLElement,
     fn: ToastCustomButtonFunction,
 }
 
@@ -25,7 +25,7 @@ export interface ToastOptions {
     customButtons?: [ToastCustomButton],
 }
 
-interface ToastContainer extends HTMLElement {
+export interface ToastContainer extends HTMLElement {
     close(): void;
 }
 
@@ -60,13 +60,13 @@ export class Application {
     }
 
     /** @deprecated Pass timeout as a property in an options object instead. */
-    public static toast(content: string, timeout: number): void;
+    public static toast(content: string, timeout: number): ToastContainer;
 
     /** @deprecated Pass timeout as a property in an options object instead. */
-    public static toast(content: HTMLElement, timeout: number): void;
+    public static toast(content: HTMLElement, timeout: number): ToastContainer;
 
-    public static toast(content: string, options: ToastOptions): void;
-    public static toast(content: HTMLElement, options: ToastOptions): void;
+    public static toast(content: string, options: ToastOptions): ToastContainer;
+    public static toast(content: HTMLElement, options: ToastOptions): ToastContainer;
 
     /**
      * Present a pop-up message to the user on the current page.
@@ -98,7 +98,7 @@ export class Application {
      * @param content HTMLElement|string The message to show. This can be a DOM HTMLElement or a plain string
      * @param options ToastOptions Options controlling how the toast operates.
      */
-    public static toast(content: any, options: any): void {
+    public static toast(content: any, options: any): ToastContainer {
         /* for backward compatibility with old code - signature used
          * to be toast(content, timeout) */
         if("number" == typeof options) {
@@ -107,7 +107,7 @@ export class Application {
         }
 
         let toastContainer = <ToastContainer> document.createElement("DIV");
-        toastContainer.classList.add("class", "toast appearing");
+        toastContainer.classList.add("toast", "appearing");
 
         Object.defineProperty(
             toastContainer,
@@ -117,13 +117,13 @@ export class Application {
                 configurable: false,
                 writable: false,
                 value: function() {
-                    this.classList.add("disappearing");
+                    toastContainer.classList.add("disappearing");
                     window.setTimeout(
                         function() {
-                            this.parentNode.removeChild(this);
-                        }.bind(this),
+                            toastContainer.parentNode.removeChild(toastContainer);
+                        },
                         1000);
-                }.bind(toastContainer),
+                },
             }
         );
 
@@ -198,7 +198,7 @@ export class Application {
         // style a finished toast with an opacity of 0 and a z-index below everything else on the page.
         window.setTimeout(
             function() {
-                toastContainer.classList.add("toast");
+                toastContainer.classList.remove("appearing");
 
                 if(0 < options.timeout) {
                     window.setTimeout(toastContainer.close, options.timeout);
@@ -206,6 +206,8 @@ export class Application {
             },
             0
         );
+
+        return toastContainer;
     }
 
     /**

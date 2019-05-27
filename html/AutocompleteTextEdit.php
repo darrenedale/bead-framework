@@ -83,6 +83,9 @@ use Equit\AppLog;
  * @package libequit
  */
 class AutocompleteTextEdit extends TextEdit {
+	/** @var string The HTML class name to identify AutocompleteTextEdits. */
+	private const HtmlClassName = "autocomplete-text-edit";
+
 	/** @var string The name of the API function that will provide suggestions. */
 	private $m_apiFn = null;
 
@@ -216,9 +219,7 @@ class AutocompleteTextEdit extends TextEdit {
 	 * @return array[string] The support javascript URLs.
 	 */
 	public static function runtimeScriptUrls(): array {
-		/** @noinspection SpellCheckingInspection */
 		return ["js/AutocompleteTextEdit.js"];
-//		return ["js/autocompletetextedit.js"];
 	}
 
 	/**
@@ -230,25 +231,25 @@ class AutocompleteTextEdit extends TextEdit {
 	 */
 	public function html(): string {
 		$classNames = $this->classNames();
-		$id         = $this->id();
+		$id = $this->id();
 
 		if(empty($id)) {
 			$id = self::generateUid();
 		}
 
-		$hasClass = is_array($classNames) && in_array("autocomplete-text-edit", $classNames);
+		$hasClass = is_array($classNames) && in_array(self::HtmlClassName, $classNames);
 
 		if(!$hasClass) {
-			$this->addClassName("autocomplete-text-edit");
+			$this->addClassName(self::HtmlClassName);
 		}
 
-		$apiFn        = html($this->m_apiFn ?? "");
+		$apiFn = html($this->m_apiFn ?? "");
 		$apiParamName = html($this->m_apiParamName ?? "");
-		$classNames   = $this->classNamesString();
-		$placeholder  = $this->placeholder();
-		$name         = $this->name();
-		$value        = $this->text();
-		$tt           = $this->tooltip();
+		$classNames = $this->classNamesString();
+		$placeholder = $this->placeholder();
+		$name = $this->name();
+		$value = $this->text();
+		$tt = $this->tooltip();
 
 		$ret = "<div id=\"" . html($id) . "\" class=\"" . html($classNames) . "\" data-api-function-name=\"$apiFn\" data-api-function-content-parameter-name=\"$apiParamName\"";
 
@@ -263,8 +264,7 @@ class AutocompleteTextEdit extends TextEdit {
 		$ret .= "><input class=\"autocomplete-text-edit-editor\" type=\"";
 
 		switch($this->type()) {
-			/* type = MultiLine and type=Password are not supported with autocomplete
-			 * edits */
+			// type = MultiLine and type=Password are not supported with autocomplete edits
 			default:
 			case TextEdit::SingleLine:
 				$ret .= "text";
@@ -302,10 +302,10 @@ class AutocompleteTextEdit extends TextEdit {
 			$ret .= "title=\"" . html($tt) . "\" ";
 		}
 
-		$ret .= "/><ul class=\"autocomplete-text-edit-suggestions\"></ul></div>";
+		$ret .= "/><ul class=\"" . self::HtmlClassName . "-suggestions\"></ul></div>";
 
 		if(!$hasClass) {
-			$this->removeClassName("autocomplete-text-edit");
+			$this->removeClassName(self::HtmlClassName);
 		}
 
 		return $ret;
