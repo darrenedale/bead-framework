@@ -117,6 +117,7 @@ export class Application {
                 configurable: false,
                 writable: false,
                 value: function() {
+                    toastContainer.dispatchEvent(new Event("close"));
                     toastContainer.classList.add("disappearing");
                     window.setTimeout(
                         function() {
