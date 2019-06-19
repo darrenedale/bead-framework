@@ -612,11 +612,10 @@ class ResultsPager extends PageElement {
 	 *
 	 * The request can be set to _null_ to remove the existing paging request.
 	 *
-	 * The paging request is used in the navigation panel that enables users to
-	 * switch between pages in the results. The pager object will add some of
-	 * its own URL parameters to the request that indicate the ID of the results
-	 * (so that the pager can be retrieved from the cache), the page size and
-	 * the page index. Any POST data in the request is ignored.
+	 * The paging request is used in the navigation panel that enables users to switch between pages in the results. The
+	 * pager object will add some of its own URL parameters to the request that indicate the ID of the results (so that
+	 * the pager can be retrieved from the cache), the page size and the page index. Any POST data in the request is
+	 * ignored.
 	 *
 	 * @param $req ?Request The request to use.
 	 */
@@ -1717,7 +1716,7 @@ class ResultsPager extends PageElement {
 		$to   = [];
 
 		foreach($row as $field => $value) {
-			$from[] = "{$field}";
+			$from[] = "{{$field}}";
 			$to[]   = $value;
 		}
 

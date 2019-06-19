@@ -306,7 +306,7 @@ class DataController extends PDO {
 	 *
 	 * @return \DateTime|null The parsed _DateTime_, or _null_ on error.
 	 */
-	public static function stringToDate(string $dateStr): DateTime {
+	public static function stringToDate(string $dateStr): ?DateTime {
 		$ret = DateTime::createFromFormat(self::DateFormat, $dateStr);
 
 		if(false === $ret) {

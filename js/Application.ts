@@ -165,6 +165,13 @@ export class Application {
 
             button.appendChild(buttonContent);
             button.addEventListener("click", fn);
+            Object.defineProperty(button, "toast",
+                {
+                    configurable: false,
+                    enumerable: true,
+                    writable: false,
+                    value: toastContainer,
+                });
             return button;
         };
 

@@ -23,14 +23,15 @@ export interface ApiCallOptions {
  *
  * At present, the API endpoint is not customisable, only the URL parameters that are provided to that API call.
  */
-export class ApiCall extends XMLHttpRequest {
+export class ApiCall {
     private m_action: string;
     private m_options: ApiCallOptions;
     private m_parameters: object;
     private m_data: object;
+    private m_xhr: XMLHttpRequest;
 
     constructor(action: string, parameters: object = null, data: object = null, options: ApiCallOptions = null) {
-        super();
+        this.m_xhr = new XMLHttpRequest();
         this.m_action = action;
         this.m_parameters = parameters;
         this.m_data = data;
@@ -73,6 +74,14 @@ export class ApiCall extends XMLHttpRequest {
         this.m_data = data;
     }
 
+    get status(): number {
+        return this.m_xhr.status;
+    }
+
+    get responseText(): string {
+        return this.m_xhr.responseText;
+    }
+
     private onApiCallLoad(): void {
         if (!this.options) {
             return;
@@ -85,7 +94,7 @@ export class ApiCall extends XMLHttpRequest {
             this.options.onFinished(response);
         }
 
-        if (200 <= this.status && 299 >= this.status) {
+        if (200 <= this.m_xhr.status && 299 >= this.status) {
             if (this.options.onSuccess) {
                 this.options.onSuccess(response);
             }
@@ -119,15 +128,15 @@ export class ApiCall extends XMLHttpRequest {
     public send(): void {
         let url = Application.baseUrl + "?action=" + encodeURIComponent(this.action);
 
-        this.addEventListener("load", () => {
+        this.m_xhr.addEventListener("load", () => {
             this.onApiCallLoad();
         }, true);
 
-        this.addEventListener("abort", () => {
+        this.m_xhr.addEventListener("abort", () => {
             this.onApiCallAbort();
         }, true);
 
-        this.addEventListener("error", () => {
+        this.m_xhr.addEventListener("error", () => {
             this.onApiCallError();
         }, true);
 
@@ -146,8 +155,8 @@ export class ApiCall extends XMLHttpRequest {
             let body = "";
             let boundary = "-o-o-o-bndy" + Date.now().toString(16) + "-o-o-o-";
 
-            this.open("POST", url, true);
-            this.setRequestHeader("Content-Type", "multipart\/form-data; boundary=" + boundary);
+            this.m_xhr.open("POST", url, true);
+            this.m_xhr.setRequestHeader("Content-Type", "multipart\/form-data; boundary=" + boundary);
 
             for (let dName in this.data) {
                 if (!this.data.hasOwnProperty(dName)) {
@@ -168,11 +177,11 @@ export class ApiCall extends XMLHttpRequest {
             }
 
             body += "--" + boundary + "--\r\n";
-            super.send(body);
+            this.m_xhr.send(body);
         } else {
             // ... otherwise just GET the response
-            this.open("GET", url, true);
-            super.send();
+            this.m_xhr.open("GET", url, true);
+            this.m_xhr.send();
         }
     }
 }
