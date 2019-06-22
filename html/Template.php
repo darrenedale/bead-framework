@@ -1,7 +1,6 @@
 <?php
-
 /**
- * Defines the Section page element class.
+ * Defines the Template page element class.
  *
  * ### Dependencies
  * - Equit\Html\PageElement
@@ -9,21 +8,21 @@
  * - Equit\Html\ChildElements
  *
  * ### Changes
- * - (2019-04) First version of this file.
+ * - (2019-06) First version of this file.
  *
- * @file Section.php
+ * @file Template.php
  * @author Darren Edale
  * @version 1.1.2
  * @package Equit\Html
- * @date Apr 2019
+ * @date Jun 2019
  */
 
 namespace Equit\Html;
 
 /**
- * A page element intended to act as a major section of a page.
+ * A page element providing template content.
  *
- * @class Section
+ * @class Template
  * @author Darren Edale
  * @package \Equit\Html
  *
@@ -34,22 +33,23 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class Section extends PageElement implements ContainerPageElement {
+class Template extends PageElement {
 	use Tooltip;
 	use ChildElements;
 
-	/** Create a new Section object.
+	/**
+	 * Create a new Template object.
 	 *
-	 * The ID parameter is optional. By default, a section with no ID is created.
+	 * The ID parameter is optional. By default, a template with no ID is created.
 	 *
-	 * @param $id string _optional_ The ID for the section.
+	 * @param $id string _optional_ The ID for the template.
 	 */
 	public function __construct(?string $id = null) {
 		parent::__construct($id);
 	}
 
 	/**
-	 * Generate the opening HTML for the section.
+	 * Generate the opening HTML for the template.
 	 *
 	 * This is a helper method for use when generating the HTML. It could be useful for subclasses to call so that they
 	 * don't need to replicate the common HTML for the start of the section element and need only implement their
@@ -61,11 +61,11 @@ class Section extends PageElement implements ContainerPageElement {
 	 * @return string The opening HTML.
 	 */
 	protected function emitSectionStart(): string {
-		return "<section{$this->emitAttributes()}>";
+		return "<template{$this->emitAttributes()}>";
 	}
 
 	/**
-	 * Generate the closing HTML for the section.
+	 * Generate the closing HTML for the template.
 	 *
 	 * This is a helper method for use when generating the HTML. It could be useful for subclasses to call so that they
 	 * don't need to replicate the common HTML for the end of the section element and need only implement their custom
@@ -76,14 +76,14 @@ class Section extends PageElement implements ContainerPageElement {
 	 * @return string The closing HTML.
 	 */
 	protected function emitSectionEnd(): string {
-		return "</section>";
+		return "</template>";
 	}
 
 	/**
-	 * Generate the HTML for the section.
+	 * Generate the HTML for the template.
 	 *
-	 * The section is output as a single _section_ element. The element will have whatever classes and ID are set for it
-	 * by the code using the section.
+	 * The section is output as a single _template_ element. The element will have whatever classes and ID are set for
+	 * it by the code using the template.
 	 *
 	 * This method generates UTF-8 encoded HTML 5.
 	 *

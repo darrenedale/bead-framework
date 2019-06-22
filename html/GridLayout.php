@@ -122,29 +122,6 @@ class GridLayout extends Layout {
 	/** @var int Alignment flag to align content with the bottom edge of its cell. */
 	public const AlignBottom = 0x40;
 
-	/** @var array The child items in the layout.
-	 *
-	 * This is a 2D array of GridLayoutItems in the correct configuration for the layout.
-	 */
-	private $m_children = [];
-
-	/** @var array A cache of all child items. */
-	private $m_childCache = [];
-
-	/** @var array A cache of just LibEquit\PageElement children. */
-	private $m_elementCache = [];
-
-	/** @var array A cache of just Layout children. */
-	private $m_layoutCache = [];
-
-	/** @var int The number of rows in the layout. */
-	private $m_rowCount = 0;
-
-	/** @var int The number of columns in the layout. */
-	private $m_colCount = 0;
-
-	/** @var bool Flag indicating that the cache arrays need to be repopulated. */
-	private $m_cacheOutOfSync = false;
 
 	/**
 	 * Create a new GridLayout.
@@ -158,121 +135,29 @@ class GridLayout extends Layout {
 	}
 
 	/**
-	 * Rebuilds the caches of elements, layouts and children.
+	 * Rebuilds the cache of element..
 	 *
-	 * The *layouts()*, *elements()* and *children()* methods provide a flat array of items whereas internally the
-	 * grid layout maintains a two-dimensional array of its children. The lists of child layouts, elements and
-	 * children are cached so that they need not be rebuilt on every call to *elements()* *layouts()* or
-	 *children()*. Those accessor methods check a flag that indicates when the caches need to be rebuilt and call
-	 * this method to have that done. The *addElement()* and *addLayout()* methods set the flag when they detect
-	 * that the caches contain children that are no longer in the layout.
+	 * The *elements()* method provides a flat array of items whereas internally the grid layout maintains a
+	 * two-dimensional array of its elements. The list of child elements is cached so that they it not be rebuilt on
+	 * every call to *elements()*. This accessor method checks a flag that indicates when the cache needs to be rebuilt
+	 * and calls this method to have that done. The *addElement()* and *insertElement()* methods set the flag when they
+	 * detect that the cache contains elements that are no longer in the layout.
 	 */
-	protected function rebuildCaches(): void {
-		$this->m_layoutCache = [];
+	protected function rebuildCache(): void {
 		$this->m_elementCache = [];
-		$this->m_childCache = [];
 
-		foreach($this->m_children as $itemRow) {
+		foreach($this->m_grid as $itemRow) {
 			if(!is_array($itemRow)) {
 				continue;
 			}
 
 			foreach($itemRow as $item) {
-				$this->m_childCache[] = $item->content;
-
-				if($item->content instanceof Layout) {
-					$this->m_layoutCache[] = $item->content;
-				}
-				else if($item->content instanceof PageElement) {
-					$this->m_elementCache[] = $item->content;
-				}
+				$this->m_elementCache[] = $item->content;
 			}
 		}
 
 		$this->m_cacheOutOfSync = false;
 	}
-
-	/**
-	 * Add an item to the grid layout.
-	 *
-	 * @param $item PageElement|Layout The item to add.
-	 * @param $row `int` is the row at which to place the element.
-	 * @param $col int is the column at which to place the element.
-	 * @param $rowSpan int is the number of rows over which the element spans.
-	 * @param $colSpan int is the number of columns over which the element
-	 * spans.
-	 * @param $alignment int _optional_ The alignment for the item.
-	 *
-	 * This is a helper method for addElement() and addLayout() that effectively
-	 * is abstracted to ensure that the list of children is managed consistently
-	 * in terms of detecting when an element or layout overlaps another and
-	 * forces its removal from the layout.
-	 *
-	 * The alignment must be one of the class alignment constants.
-	 *
-	 * @return bool _true_ if the item was added, _false_ if not.
-	 */
-	protected function addItem( $item, int $row, int $col, int $rowSpan, int $colSpan, int $alignment = 0 ) {
-		$itemIsLayout = ($item instanceof Layout);
-
-		if(!$itemIsLayout && !($item instanceof PageElement)) {
-			AppLog::error("invalid item", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
-		if(0 > $row || 0 > $col) {
-			AppLog::error("invalid cell index", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
-		if(1 > $rowSpan || 1 > $colSpan) {
-			AppLog::error("invalid cell span", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
-		$myItem = $this->itemAt($row, $col);
-
-		if($myItem instanceof GridLayoutItem) {
-			unset($this->m_children[$row][$col]);
-			$this->m_cacheOutOfSync = true;
-		}
-
-		if(!isset($this->m_children[$row]) || !is_array($this->m_children[$row])) {
-			$this->m_children[$row] = [];
-		}
-
-		$this->m_children[$row][$col] = new GridLayoutItem($item, $row, $col, $rowSpan, $colSpan);
-		$this->m_children[$row][$col]->alignment = $alignment;
-
-		/* if cache is out of sync it means one or more caches contains an item
-		   that is no longer a child of the layout. this can be because item
-		   being added now has replaced an item or because a previous addition
-		   replaced an item and the caches have not been rebuilt since; if cache
-		   is not out of sync it means there are no redundant items in any of
-		   the caches and that therefore simply adding the new item to the end
-		   keeps the caches in sync */
-		if(!$this->m_cacheOutOfSync) {
-			$this->m_childCache[] = $item;
-
-			if($itemIsLayout) {
-				$this->m_layoutCache[] = $item;
-			}
-			else {
-				$this->m_elementCache[] = $item;
-			}
-		}
-
-		if(($row + $rowSpan) > $this->m_rowCount) {
-			$this->m_rowCount = $row + $rowSpan;
-		}
-
-		if(($col + $colSpan) > $this->m_colCount) {
-			$this->m_colCount = $col + $colSpan;
-		}
-
-		return true;
-	}
-
 
 	/**
 	 * Add an element to the grid layout.
@@ -296,35 +181,48 @@ class GridLayout extends Layout {
 	 *
 	 * @return bool _true_ if the element was added to the grid, _false_ otherwise.
 	 */
-	public function addElement(PageElement $element, int $row = 0, int $col = 0, int $rowSpan = 1, int $colSpan = 1, int $alignment = 0 ) {
-		return $this->addItem($element, $row, $col, $rowSpan, $colSpan, $alignment);
-	}
+		public function addElement(PageElement $element, int $row = 0, int $col = 0, int $rowSpan = 1, int $colSpan = 1, int $alignment = 0 ): bool {
+		if(0 > $row || 0 > $col) {
+			AppLog::error("invalid cell index", __FILE__, __LINE__, __FUNCTION__);
+			return false;
+		}
 
+		if(1 > $rowSpan || 1 > $colSpan) {
+			AppLog::error("invalid cell span", __FILE__, __LINE__, __FUNCTION__);
+			return false;
+		}
 
-	/**
-	 * Add a child layout to the grid layout.
-	 *
-	 * The row and column parameters start at 0 for the top-left cell. Using values less than 0 will result in
-	 * failure to add the layout. Adding a layout to a cell that already contains another layout or element will
-	 * remove the other layout or element from the grid layout. The exception is when the other layout or element
-	 * spans multiple cells and you add a layout to a cell that is covered by the other layout or element but is not
-	 * the top-left cell in its span. In such cases, the new layout will be added to the grid layout in addition to
-	 * the existing layout or element but will not be generated by html() because it will be masked by the existing
-	 * layout or element.
-	 *
-	 * The alignment must be one of the class alignment constants.
-	 *
-	 * @param $layout Layout The layout to add.
-	 * @param $row int The row at which to place the layout.
-	 * @param $col int The column at which to place the layout.
-	 * @param $rowSpan int The number of rows over which the layout spans. The default is 1 row.
-	 * @param $colSpan int The number of columns over which the layout spans. The default is 1 column.
-	 * @param $alignment int The alignment for the layout.
-	 *
-	 * @return bool _true_ if the layout was added to the grid, _false_ otherwise.
-	 */
-	public function addLayout(Layout $layout, int $row = 0, int $col = 0, int $rowSpan = 1, int $colSpan = 1, int $alignment = 0 ): bool {
-		return $this->addItem($layout, $row, $col, $rowSpan, $colSpan, $alignment);
+		$myItem = $this->itemAt($row, $col);
+
+		if($myItem instanceof GridLayoutItem) {
+			unset($this->m_grid[$row][$col]);
+			$this->m_cacheOutOfSync = true;
+		}
+
+		if(!isset($this->m_grid[$row]) || !is_array($this->m_grid[$row])) {
+			$this->m_grid[$row] = [];
+		}
+
+		$this->m_grid[$row][$col]            = new GridLayoutItem($element, $row, $col, $rowSpan, $colSpan);
+		$this->m_grid[$row][$col]->alignment = $alignment;
+
+		// if cache is out of sync it means it contains an item that is no longer a child of the layout. this can be
+		// because item being added has replaced an item or because a previous addition replaced an item and the cache
+		// has not been rebuilt since; if cache is not out of sync it means there are no redundant items in the cache
+		// and that therefore simply adding the new item to the end keeps the cache in sync
+		if(!$this->m_cacheOutOfSync) {
+			$this->m_elementCache[] = $element;
+		}
+
+		if(($row + $rowSpan) > $this->m_rowCount) {
+			$this->m_rowCount = $row + $rowSpan;
+		}
+
+		if(($col + $colSpan) > $this->m_colCount) {
+			$this->m_colCount = $col + $colSpan;
+		}
+
+		return true;
 	}
 
 	/**
@@ -337,57 +235,10 @@ class GridLayout extends Layout {
 	 */
 	public function elements(): array {
 		if($this->m_cacheOutOfSync) {
-			$this->rebuildCaches();
+			$this->rebuildCache();
 		}
 
 		return $this->m_elementCache;
-	}
-
-	/**
-	 * Retrieve all the layouts contained in the grid layout.
-	 *
-	 * The layouts appear in the array in no particular order and the order in which they appear may not even be
-	 * consistent between calls to this method.
-	 *
-	 * @return array[Layout] all the layouts in the grid layout.
-	 */
-	public function layouts(): array {
-		if($this->m_cacheOutOfSync) {
-			$this->rebuildCaches();
-		}
-
-		return $this->m_layoutCache;
-	}
-
-	/**
-	 * Retrieve all the children contained in the grid layout.
-	 *
-	 * The elements and layouts appear in the array in no particular order and the order in which they appear may
-	 * not even be consistent between calls to this method.
-	 *
-	 * @return array[Layout|LibEquit\PageElement] all the children in the grid layout.
-	 */
-	public function children(): array {
-		if($this->m_cacheOutOfSync) {
-			$this->rebuildCaches();
-		}
-
-		return $this->m_childCache;
-	}
-
-	/**
-	 * Counts the number of items in the layout.
-	 *
-	 * The count includes both layout and element children of the grid layout.
-	 *
-	 * @return int the number of items in the layout.
-	 */
-	public function childCount(): int {
-		if($this->m_cacheOutOfSync) {
-			$this->rebuildCaches();
-		}
-
-		return count($this->m_childCache);
 	}
 
 	/**
@@ -400,23 +251,20 @@ class GridLayout extends Layout {
 	 */
 	public function elementCount(): int {
 		if($this->m_cacheOutOfSync) {
-			$this->rebuildCaches();
+			$this->rebuildCache();
 		}
 
 		return count($this->m_elementCache);
 	}
 
 	/**
-	 * Counts the number of child layouts in the grid layout.
+	 * Clear all items out of the layout.
 	 *
-	 * @return int the number of child layouts in the grid layout.
+	 * After a call to this method the layout will be empty.
 	 */
-	public function layoutCount(): int {
-		if($this->m_cacheOutOfSync) {
-			$this->rebuildCaches();
-		}
-
-		return count($this->m_layoutCache);
+	public function clear(): void {
+		$this->m_grid         = [];
+		$this->m_elementCache = [];
 	}
 
 	/**
@@ -451,66 +299,18 @@ class GridLayout extends Layout {
 	 * not valid or an error occurred.
 	 */
 	public function elementAt(int $row, int $col): ?PageElement {
-		if(!is_int($row) || !is_int($col) || $row < 0 || $col < 0) {
+		if($row < 0 || $col < 0) {
 			AppLog::error('invalid cell index', __FILE__, __LINE__, __FUNCTION__);
 			return null;
 		}
 
 		$item = $this->itemAt($row, $col);
 
-		if($item instanceof GridLayoutItem && $item->content instanceof PageElement) {
-			return $item->content;
-		}
-
-		return null;
-	}
-
-	/**
-	 * Retrieve the layout in a specified cell.
-	 *
-	 * @param $row int is the row from which the layout is sought.
-	 * @param $col int is the column from which the layout is sought.
-	 *
-	 * @return Layout|null the layout at the cell index, or _null_ if the cell does not contain a layout, is not
-	 * valid or an error occurred.
-	 */
-	public function layoutAt(int $row, int $col): ?Layout {
-		if(!is_int($row) || !is_int($col) || $row < 0 || $col < 0) {
-			AppLog::error('invalid cell index', __FILE__, __LINE__, __FUNCTION__);
+		if(!$item) {
 			return null;
 		}
 
-		$item = $this->itemAt($row, $col);
-
-		if($item instanceof GridLayoutItem && $item->content instanceof PageElement) {
-			return $item->content;
-		}
-
-		return null;
-	}
-
-	/**
-	 * Retrieve the layout or element in a specified cell.
-	 *
-	 * @param $row int is the row from which the layout or element is sought.
-	 * @param $col int is the column from which the layout or element is sought.
-	 *
-	 * @return PageElement|Layout|null the layout at the cell index, or _null_ if the cell index is empty, not valid
-	 * or an error occurred.
-	 */
-	public function childAt(int $row, int $col) {
-		if(0 > $row || 0 > $col) {
-			AppLog::error("invalid cell index", __FILE__, __LINE__, __FUNCTION__);
-			return null;
-		}
-
-		$item = $this->itemAt($row, $col);
-
-		if($item instanceof GridLayoutItem) {
-			return $item->content;
-		}
-
-		return null;
+		return $item->content;
 	}
 
 	/**
@@ -528,7 +328,7 @@ class GridLayout extends Layout {
 			return null;
 		}
 
-		foreach($this->m_children as $itemRow) {
+		foreach($this->m_grid as $itemRow) {
 			foreach($itemRow as $item) {
 				if($row >= $item->anchorRow && $col >= $item->anchorCol && $row < ($item->anchorRow + $item->rowSpan) && $col < ($item->anchorCol + $item->colSpan)) {
 					return $item;
@@ -556,8 +356,8 @@ class GridLayout extends Layout {
 			return null;
 		}
 
-		if(isset($this->m_children[$row]) && isset($this->m_children[$row][$col])) {
-			return $this->m_children[$row][$col];
+		if(isset($this->m_grid[$row]) && isset($this->m_grid[$row][$col])) {
+			return $this->m_grid[$row][$col];
 		}
 
 		return null;
@@ -642,6 +442,24 @@ class GridLayout extends Layout {
 		$ret .= "</tbody></table>";
 		return $ret;
 	}
+
+	/** @var array The child items in the layout.
+	 *
+	 * This is a 2D array of GridLayoutItems in the correct configuration for the layout.
+	 */
+	private $m_grid = [];
+
+	/** @var array A cache of just LibEquit\PageElement children. */
+	private $m_elementCache = [];
+
+	/** @var int The number of rows in the layout. */
+	private $m_rowCount = 0;
+
+	/** @var int The number of columns in the layout. */
+	private $m_colCount = 0;
+
+	/** @var bool Flag indicating that the cache arrays need to be repopulated. */
+	private $m_cacheOutOfSync = false;
 }
 
 
@@ -666,7 +484,7 @@ use Equit\Html\Layout;
  * @package libequit
  */
 class GridLayoutItem {
-	/** @var Layout|PageElement|null */
+	/** @var PageElement|null */
 	public $content   = null;
 	public $anchorRow = null;
 	public $anchorCol = null;

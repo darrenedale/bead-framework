@@ -63,16 +63,7 @@ namespace Equit\Html;
  * @author Darren Edale
  * @package libequit
  */
-class HorizontalLayout extends \Equit\Html\Layout {
-	/** @var array The items in the layout. */
-	private $m_children = [];
-
-	/** @var array A cache of the _PageElement_ items in the horizontal layout. */
-	private $m_elementCache = [];
-
-	/** @var array A cache of the _Layout_ items in the horizontal layout. */
-	private $m_layoutCache = [];
-
+class HorizontalLayout extends Layout {
 	/**
 	 * Create a new HorizontalLayout.
 	 *
@@ -90,9 +81,12 @@ class HorizontalLayout extends \Equit\Html\Layout {
 	 * The element is added after the last current child.
 	 *
 	 * @param $element PageElement is the element to add.
+	 *
+	 * @return bool true
 	 */
-	public function addElement(PageElement $element): void {
-		$this->insertElement($element, $this->childCount());
+	public function addElement(PageElement $element): bool {
+		$this->insertElement($element, $this->elementCount());
+		return true;
 	}
 
 	/**
@@ -106,68 +100,27 @@ class HorizontalLayout extends \Equit\Html\Layout {
 	 * @param $element PageElement is the page element to add.
 	 * @param $insertIndex int _optional_ is the index at which to insert the form element. The default is to insert
 	 * the element at the beginning.
+	 *
+	 * @return bool true
 	 */
-	public function insertElement(PageElement $element, int $insertIndex = 0): void {
-		$childCount = $this->childCount();
+	public function insertElement(PageElement $element, int $insertIndex = 0): bool {
+		$elementCount = $this->elementCount();
 
 		if($insertIndex < 0) {
 			$insertIndex = 0;
 		}
-		else if($insertIndex > $childCount) {
-			$insertIndex = $childCount;
+		else if($insertIndex > $elementCount) {
+			$insertIndex = $elementCount;
 		}
 
-		if($insertIndex < $childCount) {
-			for($i = $childCount - 1; $i >= $insertIndex; --$i) {
-				$this->m_children[$i + 1] = $this->m_children[$i];
+		if($insertIndex < $elementCount) {
+			for($i = $elementCount - 1; $i >= $insertIndex; --$i) {
+				$this->m_elements[$i + 1] = $this->m_elements[$i];
 			}
 		}
 
-		$this->m_children[$insertIndex] = $element;
-		$this->m_elementCache[]         = $element;
-	}
-
-	/**
-	 * Add a layout to the end of the horizontal layout.
-	 *
-	 * The layout is added after the last current child.
-	 *
-	 * @param $layout \Equit\Html\Layout is the element to add.
-	 */
-	public function addLayout(\Equit\Html\Layout $layout): void {
-		$this->insertLayout($layout, $this->childCount());
-	}
-
-	/**
-	 * Add a layout to an indexed position in the horizontal layout.
-	 *
-	 * Indices start at 0 for the leftmost child. If the index is 0 or less the layout is inserted as the first
-	 * child in this layout; if it is equal to or greater than the current child count, it is added as the last
-	 * child in this layout. If the index is already occupied, the existing child and all children to its right are
-	 * shifted one position to the right and the new layout occupies the vacated index.
-	 *
-	 * @param $layout \Equit\Html\Layout is the layout to add.
-	 * @param $insertIndex int _optional_ is the index at which to insert the layout. The default inserts the layout
-	 * at the beginning.
-	 */
-	public function insertLayout(\Equit\Html\Layout $layout, int $insertIndex = 0): void {
-		$childCount = $this->childCount();
-
-		if(0 > $insertIndex) {
-			$insertIndex = 0;
-		}
-		else if($insertIndex > $childCount) {
-			$insertIndex = $childCount;
-		}
-
-		if($insertIndex < $childCount) {
-			for($i = $childCount - 1; $i >= $insertIndex; --$i) {
-				$this->m_children[$i + 1] = $this->m_children[$i];
-			}
-		}
-
-		$this->m_children[$insertIndex] = $layout;
-		$this->m_layoutCache[]          = $layout;
+		$this->m_elements[$insertIndex] = $element;
+		return true;
 	}
 
 	/**
@@ -180,32 +133,7 @@ class HorizontalLayout extends \Equit\Html\Layout {
 	 * @return array[\LibEquit\PageElement] the child elements of the layout.
 	 */
 	public function elements(): array {
-		return $this->m_elementCache;
-	}
-
-	/**
-	 * Get all the layouts that are children of this layout.
-	 *
-	 * The returned array contains just the child layouts (i.e. not the form elements). The order of the layouts in
-	 * the returned array is arbitrary. It is usually the order in which they were added. It cannot be assumed that
-	 * child layouts will appear in this layout in the order in which they appear in the returned array.
-	 *
-	 * @return array[\Layout] the child layouts of the layout.
-	 */
-	public function layouts(): array {
-		return $this->m_layoutCache;
-	}
-
-	/**
-	 * Get all the children of this layout.
-	 *
-	 * The returned array contains all the form elements and layouts that are children of this layout, in the order
-	 * in which they will appear in the layout.
-	 *
-	 * @return array[\Layout|\LibEquit\PageElement] the children of the layout.
-	 */
-	public function children(): array {
-		return $this->m_children;
+		return $this->m_elements;
 	}
 
 	/**
@@ -214,25 +142,16 @@ class HorizontalLayout extends \Equit\Html\Layout {
 	 * @return int The number of child elements.
 	 */
 	public function elementCount(): int {
-		return count($this->m_elementCache);
+		return count($this->m_elements);
 	}
 
 	/**
-	 * Counts the number of child layouts in this layout.
+	 * Clear all content from the layout.
 	 *
-	 * @return int The number of child layouts.
+	 * After a call to this method, the layout will be empty.
 	 */
-	public function layoutCount(): int {
-		return count($this->m_layoutCache);
-	}
-
-	/**
-	 * Counts the form elements and child layouts in this layout.
-	 *
-	 * @return int The number of children of any type.
-	 */
-	public function childCount(): int {
-		return count($this->m_children);
+	public function clear(): void {
+		$this->m_elements = [];
 	}
 
 	/**
@@ -243,7 +162,7 @@ class HorizontalLayout extends \Equit\Html\Layout {
 	 * @return string the HTML.
 	 */
 	public function html(): string {
-		if($this->childCount() < 1) {
+		if($this->elementCount() < 1) {
 			return "";
 		}
 
@@ -251,11 +170,14 @@ class HorizontalLayout extends \Equit\Html\Layout {
 		$id    = $this->id();
 		$ret   = "<div " . (!empty($id) ? "id=\"" . html($id) . "\" " : "") . "class=\"horizontallayout" . (!empty($class) ? " " . html($class) : "") . "\">";
 
-		foreach($this->children() as $e) {
+		foreach($this->elements() as $e) {
 			$ret .= "<div class=\"horizontallayout_cell\">" . $e->html() . "</div>";
 		}
 
 		$ret .= "</div>";
 		return $ret;
 	}
+
+	/** @var array The items in the layout. */
+	private $m_elements = [];
 }

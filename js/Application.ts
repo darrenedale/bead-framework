@@ -35,6 +35,7 @@ interface ToastContent extends HTMLElement {
 
 export class LogicError extends Error {}
 export class InvalidArgumentError extends Error {}
+export class OutOfBoundsError extends Error {}
 export class ContentStructureError extends Error {}
 
 export class Application {
