@@ -33,7 +33,7 @@ export class AutocompleteTextEdit {
     public static readonly InternalEditorHtmlClassName: string = "autocomplete-text-edit-editor";
     public static readonly SuggestionsListHtmlClassName: string = "autocomplete-text-edit-suggestions";
 
-    private container: HTMLAutocompleteTextEditRootElement;
+    public readonly container: HTMLAutocompleteTextEditRootElement;
     public readonly suggestionsApiFunction: string;
     public readonly suggestionsApiParameterName: string;
     public readonly suggestionsApiOtherArguments: object;
@@ -402,6 +402,22 @@ export class AutocompleteTextEdit {
 
     public set placeholder(value: string) {
         this.internalEditor.placeholder = value;
+    }
+
+    public get disabled(): boolean {
+        return this.internalEditor.disabled;
+    }
+
+    public set disabled(val: boolean) {
+        this.internalEditor.disabled = val;
+    }
+
+    public get style(): CSSStyleDeclaration {
+        return this.container.style;
+    }
+
+    public get dataset(): DOMStringMap {
+        return this.container.dataset;
     }
 
     public get currentIndex(): number {
