@@ -302,6 +302,7 @@ class PickList extends PageElement {
 	public function setSelection(?string $selection): void {
 		if(isset($selection)) {
 			$this->setSelections([$selection]);
+			return;
 		}
 
 		$this->setSelections([]);
