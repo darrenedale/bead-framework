@@ -1350,10 +1350,18 @@ class ResultsPager extends PageElement {
 		self::purgeExpiredCacheEntries();
 
 		if(empty($className)) {
-			[$className, , ] = self::readCachedMetaData($resultsId);
+			$metaData = self::readCachedMetaData($resultsId);
+
+			if(!isset($metaData)) {
+				AppLog::error("failed to read results meta data for results (ID = $resultsId)", __FILE__, __LINE__, __FUNCTION__);
+				return null;
+			}
+
+			[$className, , ] = $metaData;
+			unset($metaData);
 		}
 
-		// TODO use reflection API here?
+		// could use reflection API here?
 		// calling is_subclass_of() automatically invokes __autoload()
 		if(empty($className) || (ResultsPager::class != $className && !is_subclass_of($className, ResultsPager::class))) {
 			AppLog::error("invalid pager class \"$className\", using base class " . ResultsPager::class, __FILE__, __LINE__, __FUNCTION__);
@@ -1429,10 +1437,16 @@ class ResultsPager extends PageElement {
 	 *
 	 * @param $id string The ID of the results to read from the cache.
 	 *
-	 * @return array[int] The checked rows list read from the cache file.
+	 * @return array[int]|null The checked rows list read from the cache file.
 	 */
-	protected static function readCachedCheckedRows(string $id): array {
-		return @unserialize(self::readCacheFile("$id.checked"));
+	protected static function readCachedCheckedRows(string $id): ?array {
+		$content = self::readCacheFile("$id.checked");
+
+		if(!isset($content)) {
+			return null;
+		}
+
+		return @unserialize($content);
 	}
 
 // 	protected function readCachedName() {
@@ -1453,10 +1467,16 @@ class ResultsPager extends PageElement {
 	 *
 	 * @param $id string The ID of the results to read from the cache.
 	 *
-	 * @return array The metadata read from the cache file.
+	 * @return array|null The metadata read from the cache file.
 	 */
-	protected static function readCachedMetaData(string $id): array {
-		return @unserialize(self::readCacheFile("$id.meta"));
+	protected static function readCachedMetaData(string $id): ?array {
+		$content = self::readCacheFile("$id.meta");
+
+		if(!isset($content)) {
+			return null;
+		}
+
+		return @unserialize($content);
 	}
 
 	/**
@@ -1466,10 +1486,16 @@ class ResultsPager extends PageElement {
 	 *
 	 * @param $id string The ID of the results to read from the cache.
 	 *
-	 * @return array[string] The hidden columns list read from the cache file.
+	 * @return array[string]|null The hidden columns list read from the cache file.
 	 */
-	protected function readCachedHiddenColumns(string $id): array {
-		return @unserialize(self::readCacheFile("$id.hidden"));
+	protected function readCachedHiddenColumns(string $id): ?array {
+		$content = self::readCacheFile("$id.hidden");
+
+		if(!isset($content)) {
+			return null;
+		}
+
+		return @unserialize($content);
 	}
 
 	/**
@@ -1479,11 +1505,16 @@ class ResultsPager extends PageElement {
 	 *
 	 * @param $id string The ID of the results to read from the cache.
 	 *
-	 * @return array[string=>string] The column titles read from the cache
-	 * file.
+	 * @return array[string=>string]|null The column titles read from the cache file.
 	 */
 	protected static function readCachedColumnTitles(string $id): array {
-		return @unserialize(self::readCacheFile("$id.columntitles"));
+		$content = self::readCacheFile("$id.columntitles");
+
+		if(!isset($content)) {
+			return null;
+		}
+
+		return @unserialize($content);
 	}
 
 	/**
@@ -1561,11 +1592,39 @@ class ResultsPager extends PageElement {
 			return false;
 		}
 
+		$checkedRows = self::readCachedCheckedRows($resultsId);
+
+		if(!isset($checkedRows)) {
+			AppLog::error("failed to read checked rows list for results pager (ID = $resultsId)", __FILE__, __LINE__, __FUNCTION__);
+			return false;
+		}
+
+		$metaData = self::readCachedMetaData($resultsId);
+
+		if(!isset($metaData)) {
+			AppLog::error("failed to read meta data for results pager (ID = $resultsId)", __FILE__, __LINE__, __FUNCTION__);
+			return false;
+		}
+
+		$hiddenColumns = self::readCachedHiddenColumns($resultsId);
+
+		if(!isset($hiddenColumns)) {
+			AppLog::error("failed to hidden columns list for results pager (ID = $resultsId)", __FILE__, __LINE__, __FUNCTION__);
+			return false;
+		}
+
+		$columnTitles  = self::readCachedColumnTitles($resultsId);
+
+		if(!isset($columnTitles)) {
+			AppLog::error("failed to read column titles for results pager (ID = $resultsId)", __FILE__, __LINE__, __FUNCTION__);
+			return false;
+		}
+
 		$this->m_resultsId   = $resultsId;
-		$this->m_checkedRows = self::readCachedCheckedRows($resultsId);
-		[, $this->m_name, $this->m_rowCount] = self::readCachedMetaData($resultsId);
-		$this->m_hiddenColumns = self::readCachedHiddenColumns($resultsId);
-		$this->m_columnTitles  = self::readCachedColumnTitles($resultsId);
+		$this->m_checkedRows = $checkedRows;
+		[, $this->m_name, $this->m_rowCount] = $metaData;
+		$this->m_hiddenColumns = $hiddenColumns;
+		$this->m_columnTitles  = $columnTitles;
 		return true;
 	}
 
