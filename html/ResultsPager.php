@@ -1634,7 +1634,7 @@ class ResultsPager extends PageElement {
 			$doneEllipsis = false;
 
 			$req->setUrlParameter("pager_pagenumber", "" . ($pageNumber - 1));
-			$html .= "<li class=\"previous\">&nbsp;";
+			$html .= "<li class=\"previous\">";
 
 			if(1 < $pageNumber) {
 				$html .= "<a href=\"" . $req->url() . "\" title=\"" . html(tr("Show the previous page of results.")) . "\"><img class=\"icon\" src=\"images/icons/previous.png\" alt=\"&lt;\" /></a>";
@@ -1644,11 +1644,11 @@ class ResultsPager extends PageElement {
 				$html .= "<img class=\"disabled-icon\" src=\"images/icons/previous.png\" alt=\"&lt;\" />";
 			}
 
-			$html .= "&nbsp;</li>\n";
+			$html .= "</li>\n";
 
 			for($i = $start; $i <= $end; ++$i) {
 				if($i == $pageNumber) {
-					$html .= "<li class=\"current\">[&nbsp;$i&nbsp;]</li>\n";
+					$html .= "<li class=\"current\">$i</li>\n";
 
 					// ensure we do ellipsis for distant pages after current page even if we've also done one before
 					// current page
@@ -1663,12 +1663,12 @@ class ResultsPager extends PageElement {
 				}
 				else {
 					$req->setUrlParameter("pager_pagenumber", "$i");
-					$html .= "<li>[&nbsp;<a href=\"" . $req->url() . "\">$i</a>&nbsp;]</li>\n";
+					$html .= "<li><a href=\"{$req->url()}\">$i</a></li>\n";
 				}
 			}
 
 			$req->setUrlParameter("pager_pagenumber", "" . ($pageNumber + 1));
-			$html .= "<li class=\"next\">&nbsp;";
+			$html .= "<li class=\"next\">";
 
 			if($end > $pageNumber) {
 				$html .= "<a href=\"" . $req->url() . "\" title=\"" . html(tr("Show the next page of results.")) . "\"><img class=\"icon\" src=\"images/icons/next.png\" alt=\"&gt;\" /></a>";
@@ -1678,7 +1678,7 @@ class ResultsPager extends PageElement {
 				$html .= "<img class=\"disabled-icon\" src=\"images/icons/next.png\" alt=\"&gt;\" />";
 			}
 
-			$html .= "&nbsp;</li>\n</ul></div>";
+			$html .= "</li>\n</ul></div>";
 		}
 
 		return $html;
