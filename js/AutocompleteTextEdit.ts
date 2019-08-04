@@ -60,7 +60,7 @@ export class AutocompleteTextEdit {
                 new AutocompleteTextEdit(<HTMLAutocompleteTextEditRootElement> editors[idx]);
             }
             catch(err) {
-                console.error("Failed to initialise AutocompleteTextEdit: " + err);
+                console.error("failed to initialise AdvancedSearchForm " + container);
             }
         }
 
@@ -140,7 +140,7 @@ export class AutocompleteTextEdit {
 
         if (edit.dataset.apiFunctionResponseProcessor) {
             if (!edit.dataset.apiFunctionResponseProcessor.match(/^[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9_]$/)) {
-                console.error(`invalid response processor function name "${edit.dataset.apiFunctionResponseProcessor}" - using default processor`);
+                console.error("failed to initialise AdvancedSearchForm " + container);
             } else {
                 this.customResponseProcessor = <ResponseProcessor>new Function("responseData", "return " + edit.dataset.apiFunctionResponseProcessor + "(responseData);");
             }

@@ -23,8 +23,8 @@ class TabbedView {
                 new TabbedView(elem);
             }
             catch(err) {
-                console.error(`failed to initialise TabbedView: ${err}`);
-                console.error(elem);
+                console.error("failed to initialise AdvancedSearchForm " + container);
+                console.error("failed to initialise AdvancedSearchForm " + container);
             }
         }
     }

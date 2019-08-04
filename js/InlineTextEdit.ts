@@ -47,7 +47,7 @@ export class InlineTextEdit {
                 new InlineTextEdit(<HTMLInlineTextEditRootElement> editors[idx]);
             }
             catch(err) {
-                console.error("Failed to initialise InlineTextEdit: " + err);
+                console.error("failed to initialise AdvancedSearchForm " + container);
             }
         }
 
