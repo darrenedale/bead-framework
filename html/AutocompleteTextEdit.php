@@ -261,6 +261,13 @@ class AutocompleteTextEdit extends TextEdit {
 			$ret .= " data-api-function-response-processor=\"" . html($this->m_resultProcessor) . "\"";
 		}
 
+		$styleAttr = $this->attribute("style");
+		$disabledAttr = $this->attribute("disabled");
+
+		if(isset($styleAttr)) {
+			$ret .= $this->emitAttribute("style", $styleAttr);
+		}
+
 		$ret .= "><input class=\"autocomplete-text-edit-editor\" type=\"";
 
 		switch($this->type()) {
@@ -300,6 +307,10 @@ class AutocompleteTextEdit extends TextEdit {
 
 		if(!empty($tt)) {
 			$ret .= "title=\"" . html($tt) . "\" ";
+		}
+
+		if(isset($disabledAttr)) {
+			$ret .= $this->emitAttribute("disabled", $disabledAttr);
 		}
 
 		$ret .= "/><ul class=\"" . self::HtmlClassName . "-suggestions\"></ul></div>";

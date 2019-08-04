@@ -148,25 +148,25 @@ use StdClass;
  */
 class TaggedTextFileReader {
 	/** Return code indicating success. */
-	const ErrOk = 0;
+	public const ErrOk = 0;
 
 	/** Return code indicating no error. */
-	const ErrNone = self::ErrOk;
+	public const ErrNone = self::ErrOk;
 
 	/** Return code indicating the reader has no file path set. */
-	const ErrNoPath = 1;
+	public const ErrNoPath = 1;
 
 	/** Return code indicating the reader could not open the file. */
-	const ErrFailedOpeningFile = 2;
+	public const ErrFailedOpeningFile = 2;
 
 	/** Return code indicating the reader is not open. */
-	const ErrNotOpen = 3;
+	public const ErrNotOpen = 3;
 
 	/**
 	 * Return code indicating the reader encountered a tag it does
 	 * not recognise.
 	 */
-	const ErrUnrecognisedTag = 4;
+	public const ErrUnrecognisedTag = 4;
 
 	/**
 	 * Return code indicating the reader encountered a duplicate tag.
@@ -175,31 +175,31 @@ class TaggedTextFileReader {
 	 * error code should be used when more than one instanceo of the tag
 	 * was found in a record.
 	 */
-	const ErrUnexpectedMultipleTag = 5;
+	public const ErrUnexpectedMultipleTag = 5;
 
 	/** Return code indicating the reader encountered an invalid line . */
-	const ErrInvalidLineFound = 7;
+	public const ErrInvalidLineFound = 7;
 
 	/** Base error code for subclass-specific errors. */
-	const ErrUser = 1000;
+	public const ErrUser = 1000;
 
 	/** Returned by nextRecord() when there are no more records to read. */
-	const NoMoreRecords = -1;
+	public const NoMoreRecords = -1;
 
 	/** Returned by nextRecord() when a malformed record was encountered. */
-	const MalformedRecord = -2;
+	public const MalformedRecord = -2;
 
 	/** A line type that could not be determined. */
-	const InvalidLineType = 0;
+	public const InvalidLineType = 0;
 
 	/** A line that contains a new tag. */
-	const NewTagLineType = 1;
+	public const NewTagLineType = 1;
 
 	/** A line that is a continuation of the previous line. */
-	const ContinuationLineType = 2;
+	public const ContinuationLineType = 2;
 
 	/** A line that is empty. */
-	const EmptyLineType = 3;
+	public const EmptyLineType = 3;
 
 	/**
 	 * Flag to ignore the content of any tags that are not recognised.
@@ -210,7 +210,7 @@ class TaggedTextFileReader {
 	 *
 	 * @flag
 	 */
-	const SilentlyIgnoreUnrecognisedTags = 0x01;
+	public const SilentlyIgnoreUnrecognisedTags = 0x01;
 
 	/**
 	 * Flag to ignore the content of duplicated tags that should only appear once.
@@ -222,7 +222,7 @@ class TaggedTextFileReader {
 	 *
 	 * @flag
 	 */
-	const SilentlySkipDuplicateTags = 0x02;
+	public const SilentlySkipDuplicateTags = 0x02;
 
 	/**
 	 * Flag to allow records to contain continuation lines.
@@ -235,7 +235,7 @@ class TaggedTextFileReader {
 	 *
 	 * @flag
 	 */
-	const PermitContinuationLines = 0x04;
+	public const PermitContinuationLines = 0x04;
 
 	/**
 	 * Flag to parse lines in strict mode.
@@ -253,7 +253,7 @@ class TaggedTextFileReader {
 	 *
 	 * @flag
 	 */
-	const StrictLineFormat = 0x08;
+	public const StrictLineFormat = 0x08;
 
 	/**
 	 * Flag to keep duplicate items in list-type tags.
@@ -265,7 +265,7 @@ class TaggedTextFileReader {
 	 *
 	 * @flag
 	 */
-	const KeepDuplicateListContent = 0x10;
+	public const KeepDuplicateListContent = 0x10;
 
 	/**
 	 * Flag to discard empty items when parsing list-type tags.
@@ -277,25 +277,7 @@ class TaggedTextFileReader {
 	 *
 	 * @flag
 	 */
-	const DiscardEmptyListItems = 0x20;
-
-	/** @var int The flags controlling the reader's mode of operation. */
-	private $m_flags = 0x00;
-
-	/** @var string|null The path to the file to read. */
-	private $m_path = null;
-
-	/** @var resource|null The file handle of the file, once opened. */
-	private $m_fh = false;
-
-	/** @var int The index of the next line the reader will read. */
-	private $m_nextLineIndex = -1;
-
-	/** @var int The code for the last error that occurred. */
-	private $m_lastError = self::ErrNone;
-
-	/** @var string The message for the last error that occurred. */
-	private $m_lastErrorMessage = "";
+	public const DiscardEmptyListItems = 0x20;
 
 	/**
 	 * Create a new reader.
@@ -897,8 +879,9 @@ class TaggedTextFileReader {
 	 * @param $record StdClass The record to validate.
 	 *
 	 * @return bool _true_ if the record is valid, _false_ if not.
+	 * 
 	 */
-	protected function validateRecord(StdClass $record) {
+	protected function validateRecord(/** @noinspection PhpUnusedParameterInspection */ StdClass $record) {
 		return true;
 	}
 
@@ -1014,4 +997,22 @@ class TaggedTextFileReader {
 
 		return $ret;
 	}
+
+	/** @var int The flags controlling the reader's mode of operation. */
+	private $m_flags = 0x00;
+
+	/** @var string|null The path to the file to read. */
+	private $m_path = null;
+
+	/** @var resource|null The file handle of the file, once opened. */
+	private $m_fh = false;
+
+	/** @var int The index of the next line the reader will read. */
+	private $m_nextLineIndex = -1;
+
+	/** @var int The code for the last error that occurred. */
+	private $m_lastError = self::ErrNone;
+
+	/** @var string The message for the last error that occurred. */
+	private $m_lastErrorMessage = "";
 }

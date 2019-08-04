@@ -238,6 +238,12 @@ class InlineTextEdit extends TextEdit {
 			$ret .= " data-api-function-parameter-" . html($paramName) . "=\"" . html($paramValue) . "\"";
 		}
 
+		$styleAttr = $this->attribute("style");
+
+		if(isset($styleAttr)) {
+			$ret .= $this->emitAttribute("style", $styleAttr);
+		}
+
 //		if(isset($this->m_resultProcessor)) {
 //			$ret .= " data-api-function-response-processor=\"" . html($this->m_resultProcessor) . "\"";
 //		}
