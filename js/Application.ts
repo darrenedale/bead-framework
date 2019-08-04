@@ -564,9 +564,9 @@ export interface ApiCallOptions {
             configurable: false,
             writable: false,
             value: {
-                log: function() {},
-                error: function() {},
-                warn: function() {},
+                log: function(msg: string) {},
+                error: function (msg: string) {},
+                warn: function(msg: string) {},
             },
         });
     }

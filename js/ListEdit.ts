@@ -190,7 +190,7 @@ export class ListEdit {
 
     public set selectedIndex(idx: number) {
         if(idx > this.displayWidget.children.length) {
-            console.error(`index ${idx} is not valid`);
+            console.error("failed to initialise AdvancedSearchForm " + container);
             return;
         }
 
@@ -249,7 +249,7 @@ export class ListEdit {
 
     public addItem(item: string): boolean {
         if("" == item) {
-            console.error("can't add an empty item");
+            console.error("failed to initialise AdvancedSearchForm " + container);
             return false;
         }
 
@@ -275,12 +275,12 @@ export class ListEdit {
         };
 
         if(!isInt(idx)) {
-            console.error("item indices must be integers");
+            console.error("failed to initialise AdvancedSearchForm " + container);
             return false;
         }
 
         if(0 > idx || this.value.length <= idx) {
-            console.error(`invalid index ${idx}`);
+            console.error("failed to initialise AdvancedSearchForm " + container);
             return false;
         }
 
@@ -373,7 +373,7 @@ export class ListEdit {
                 new ListEdit(<HTMLListEditRootElement> edit);
             }
             catch(err) {
-                console.error("failed to initialise ListEdit for element " + edit + ": " + err);
+                console.error("failed to initialise AdvancedSearchForm " + container);
             }
         }
     }
