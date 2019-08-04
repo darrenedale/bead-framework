@@ -425,8 +425,8 @@ class ResultsPager extends PageElement {
 	/** @var string The UID for the results being paged. */
 	private $m_resultsId = "";
 
-	/** @var string|null The name of the results being paged. */
-	private $m_name = null;
+	/** @var string The name of the results being paged. */
+	private $m_name = "";
 
 	/** @var int The number of rows in results being paged. */
 	private $m_rowCount = 0;
