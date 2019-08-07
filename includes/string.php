@@ -89,28 +89,6 @@ namespace {
 		return $ret;
 	}
 
-	function snakeToCamel(string $str, ?string $encoding = null): string {
-		if(empty($str)) {
-			return $str;
-		}
-
-		if(isset($encoding)) {
-			$oldEncoding = mb_regex_encoding();
-			mb_regex_encoding($encoding);
-		}
-
-		$prefix = (int) mb_ereg("^_+", $str);
-
-
-		$ret = mb_substr($str, 0, $prefix) . mb_ereg_replace("(_[[:alpha:]])", "\\U\\1", mb_substr($str, $prefix));
-
-		if(isset($oldEncoding)) {
-			mb_regex_encoding($oldEncoding);
-		}
-
-		return $ret;
-	}
-
 	/**
 	 * Escape some content for inclusion in the page.
 	 *
