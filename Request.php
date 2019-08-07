@@ -384,17 +384,11 @@ class Request {
 	 *
 	 * Keys are not case sensitive.
 	 *
-	 * @return string The URL parameter, or the POST data value if the
-	 * URL parameter is not set, or `null` if the neither is set.
+	 * @return string The URL parameter, or the POST data value if the URL parameter is not set, or `null` if  neither
+	 * is set.
 	 */
 	public function urlParameterOrPostData($name) {
-		$ret = $this->urlParameter($name);
-
-		if(is_null($ret)) {
-			$ret = $this->postData($name);
-		}
-
-		return $ret;
+		return $this->urlParameter($name) ?? $this->postData($name);
 	}
 
 
@@ -406,17 +400,11 @@ class Request {
 	 *
 	 * Keys are not case sensitive.
 	 *
-	 * @return string The POST data value, or the URL parameter if the
-	 * POST data is not set, or `null` if the neither is set.
+	 * @return string The POST data value, or the URL parameter if the POST data is not set, or `null` if the neither
+	 * is set.
 	 */
 	public function postDataOrUrlParameter($name) {
-		$ret = $this->postData($name);
-
-		if(is_null($ret)) {
-			$ret = $this->urlParameter($name);
-		}
-
-		return $ret;
+		return $this->postData($name) ?? $this->urlParameter($name);
 	}
 
 	/**
