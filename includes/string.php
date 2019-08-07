@@ -61,6 +61,57 @@ namespace {
 	}
 
 	/**
+	 * Convert a camelCase string to snake_case.
+	 *
+	 * The conversion is multibyte-safe.
+	 *
+	 * @param string $str The string to convert.
+	 * @param string|null $encoding The encoding to use.
+	 *
+	 * @return string The converted string.
+	 */
+	function camelToSnake(string $str, ?string $encoding = null): string {
+		if(empty($str)) {
+			return $str;
+		}
+
+		if(isset($encoding)) {
+			$oldEncoding = mb_regex_encoding();
+			mb_regex_encoding($encoding);
+		}
+
+		$ret = mb_strtolower(mb_substr($str, 0, 1), $encoding) . mb_strtolower(mb_ereg_replace("([[:upper:]])", "_\\1", mb_substr($str, 1)), $encoding);
+
+		if(isset($oldEncoding)) {
+			mb_regex_encoding($oldEncoding);
+		}
+
+		return $ret;
+	}
+
+	function snakeToCamel(string $str, ?string $encoding = null): string {
+		if(empty($str)) {
+			return $str;
+		}
+
+		if(isset($encoding)) {
+			$oldEncoding = mb_regex_encoding();
+			mb_regex_encoding($encoding);
+		}
+
+		$prefix = (int) mb_ereg("^_+", $str);
+
+
+		$ret = mb_substr($str, 0, $prefix) . mb_ereg_replace("(_[[:alpha:]])", "\\U\\1", mb_substr($str, $prefix));
+
+		if(isset($oldEncoding)) {
+			mb_regex_encoding($oldEncoding);
+		}
+
+		return $ret;
+	}
+
+	/**
 	 * Escape some content for inclusion in the page.
 	 *
 	 * Any characters in the string that have syntactic meaning in HTML are escaped such that they will be interpreted by
