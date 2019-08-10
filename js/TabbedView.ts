@@ -23,8 +23,7 @@ class TabbedView {
                 new TabbedView(elem);
             }
             catch(err) {
-                console.error("failed to initialise AdvancedSearchForm " + container);
-                console.error("failed to initialise AdvancedSearchForm " + container);
+                console.error("failed to initialise TabbedView " + elem + ": " + err);
             }
         }
     }
@@ -65,7 +64,7 @@ class TabbedView {
         this.tabs = tabs;
 
         let onTabClicked = (ev: Event) => {
-            this.currentTab = (<TabSwitchHTMLLIElement> ev.target).tabIndex;;
+            this.currentTab = (<TabSwitchHTMLLIElement> ev.target).tabIndex;
         };
 
         let idx = 0;

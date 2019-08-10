@@ -392,21 +392,32 @@ class ListEdit extends PageElement {
 	/**
 	 * Set the API function that the item text edit will use.
 	 *
-	 * The function will be called to retrieve a list of suggested strings based on the
-	 * user's input in the text edit. It can be set to \c _null_ to suppress
-	 * autocomplete functionality.
-	 *
-	 * The parameter name provided will be submitted with the request to the API endpoint
-	 * for the list of suggestions. The parameter's value will be the text the user has
-	 * so far entered into the text edit.
-	 *
 	 * @param $fn string The name of the API function.
-	 * @param $parameterName string _optional_ The name of the parameter for the API function.
+	 * @param $contentParameterName string _optional_ The name of the URL parameter to use to provide the user's
+	 * current input to the API function.
+	 * @param $otherArgs array _optional_ An associative array (_string_ => _string_) of other parameters for the
+	 * API function call. Keys must start with an alpha char and be composed entirely of alphanumeric chars and
+	 * underscores.
 	 *
-	 * @return bool _true_ if the autocomplete API function was set, _false_ otherwise.
+	 * @see \Equit\Html\AutocompleteTextEdit::setAutocompleteApiCall().
+	 *
+	 * @return bool _true_ if the autocomplete API call was set, _false_ otherwise.
 	 */
-	public function setAutocompleteApiFunction(string $fn, ?string $parameterName = null) {
-		return $this->m_item->setAutocompleteApiCall($fn, $parameterName);
+	public function setAutocompleteApiCall(string $fn, ?string $parameterName = null, array $otherArgs = []): bool {
+		return $this->m_item->setAutocompleteApiCall($fn, $parameterName, $otherArgs);
+	}
+
+	/**
+	 * Set the runtime function that will process the result of the API call for the item edit.
+	 *
+	 * @param string|null $fn The runtime callable.
+	 *
+	 * @see \Equit\Html\AutocompleteTextEdit::setAutocompleteApiResultProcessor().
+	 *
+	 * @return bool `true` if the processor was set, `false`  if not.
+	 */
+	public function setAutocompleteApiResultProcessor(?string $fn): bool {
+		return $this->m_item->setAutocompleteApiResultProcessor($fn);
 	}
 
 	/**

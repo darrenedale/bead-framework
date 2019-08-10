@@ -1,7 +1,7 @@
 export class ApiCallResponse {
-    public readonly code: number;
-    public readonly message: string;
-    public readonly data: string;
+    public readonly code: number = NaN;
+    public readonly message: string = "";
+    public readonly data: string = "";
 
     public constructor(responseBody: string) {
         let lines = responseBody.split("\n");
@@ -24,6 +24,6 @@ export class ApiCallResponse {
     }
 
     public isValid(): boolean {
-        return null != this.code;
+        return !isNaN(this.code);
     }
 }

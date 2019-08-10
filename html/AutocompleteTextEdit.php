@@ -176,7 +176,7 @@ class AutocompleteTextEdit extends TextEdit {
 	 * API function call. Keys must start with an alpha char and be composed entirely of alphanumeric chars and
 	 * underscores.
 	 *
-	 * @return bool _true_ if the API function was set successfully, _false_ otherwise.
+	 * @return bool _true_ if the API call was set successfully, _false_ otherwise.
 	 */
 	public function setAutocompleteApiCall(string $fn, ?string $contentParameterName = null, array $otherArgs = []): bool {
 		$isValidName = function(string $name) {
@@ -219,12 +219,14 @@ class AutocompleteTextEdit extends TextEdit {
 	}
 
 	/**
+	 * Set the runtime function that will process the result of the API call for the text edit.
+	 *
 	 * @param string|null $fn The runtime callable that will process the result of the API call for the edit.
 	 *
 	 * The callable must understand the output of the API function call that returns the suggestions and must
 	 * produce a js array of objects with the following properties:
-	 * - value: `string` the value that the suggestion represents. This is the value that will be placed in the editor if the
-	 *   user selects the suggestion.
+	 * - value: `string` the value that the suggestion represents. This is the value that will be placed in the editor
+	 *   if the user selects the suggestion.
 	 * - display: `string|DOM object` the content to display. This is the content that will appear in the
 	 *   suggestions list for the suggestion.
 	 *
