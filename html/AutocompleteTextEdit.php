@@ -112,6 +112,32 @@ class AutocompleteTextEdit extends TextEdit {
 		parent::__construct($type, $id);
 	}
 
+	/**
+	 * Check whether a function name is valid for an API function call.
+	 *
+	 * Valid API function names must be passable as URL parameters. For readability, these are kept to characters that
+	 * do not require escaping. Currently, the function name must start with alpha, underscore or dash, contain at least
+	 * two characters, and be composed entirely of alpha, num, underscore or dash.
+	 *
+	 * @param $fn string The API function name to check.
+	 *
+	 * @return bool
+	 */
+	protected static function isValidApiFunctionName(string $fn): bool {
+		return (bool) preg_match("/^[a-zA-Z_-][a-zA-Z0-9_-]+$/", $fn);
+	}
+
+	/**
+	 * Check whether a function name is valid for a runtime (JS) function call.
+	 *
+	 * @param $fn string The runtime function name to check.
+	 *
+	 * @return bool
+	 */
+	protected static function isValidRuntimeFunctionName(string $fn): bool {
+		return (bool) preg_match("/^[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9_]$/", $fn);
+	}
+
 	/** Set the type of the autocomplete text edit widget.
 	 *
 	 * The type must be one of SingleLine, Email, Url or Search. Anything else is considered an error. Specifically,
@@ -208,7 +234,11 @@ class AutocompleteTextEdit extends TextEdit {
 	 * @return bool `true` if the processor was set, `false`  if not.
 	 */
 	public function setAutocompleteApiResultProcessor(?string $fn): bool {
-		// TODO how can this be validated?
+		if(isset($fn) && !self::isValidRuntimeFunctionName($fn)) {
+			AppLog::error("invalid runtime function name '$fn' provided", __FILE__, __LINE__, __FUNCTION__);
+			return false;
+		}
+
 		$this->m_resultProcessor = $fn;
 		return true;
 	}

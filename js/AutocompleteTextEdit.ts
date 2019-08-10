@@ -1,6 +1,5 @@
 import {ApiCallResponse} from "./ApiCallResponse.js";
 import {ApiCall} from "./ApiCall.js";
-import {LogicError} from "./Application.js";
 
 interface Suggestion {
     label: string,
@@ -60,7 +59,7 @@ export class AutocompleteTextEdit {
                 new AutocompleteTextEdit(<HTMLAutocompleteTextEditRootElement> editors[idx]);
             }
             catch(err) {
-                console.error("failed to initialise AdvancedSearchForm " + container);
+                console.error("failed to initialise AdvancedSearchForm " + editors[idx]);
             }
         }
 
@@ -110,12 +109,14 @@ export class AutocompleteTextEdit {
         let otherArgs = {};
 
         for (let paramName in edit.dataset) {
+            // noinspection JSUnfilteredForInLoop
             let result = paramName.match(/^apiFunctionParameter([a-zA-Z][a-zA-Z0-9_]+)$/);
 
             if (!result) {
                 continue;
             }
 
+            // noinspection JSUnfilteredForInLoop
             otherArgs[result[1]] = edit.dataset[paramName];
         }
 
@@ -140,7 +141,7 @@ export class AutocompleteTextEdit {
 
         if (edit.dataset.apiFunctionResponseProcessor) {
             if (!edit.dataset.apiFunctionResponseProcessor.match(/^[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9_]$/)) {
-                console.error("failed to initialise AdvancedSearchForm " + container);
+                console.error("failed to initialise AdvancedSearchForm " + edit);
             } else {
                 this.customResponseProcessor = <ResponseProcessor>new Function("responseData", "return " + edit.dataset.apiFunctionResponseProcessor + "(responseData);");
             }
