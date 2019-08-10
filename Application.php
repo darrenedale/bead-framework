@@ -1272,8 +1272,7 @@ namespace Equit {
 			ob_start();
 			$page = $this->page();
 
-			$page->addScriptUrl("js/application.js");
-			$page->addJavascript("Application.Private.baseUrl = \"" . Request::baseName() . "\";");
+			$page->addScriptUrl("{$this->libraryPath("equit")}/js/Application.js", "module");
 
 			$this->loadPlugins();
 			$this->emitEvent("application.executionstarted");

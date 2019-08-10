@@ -126,7 +126,7 @@ export class ApiCall {
     }
 
     public send(): void {
-        let url = Application.baseUrl + "?action=" + encodeURIComponent(this.action);
+        let url = Application.instance.baseUrl + "?action=" + encodeURIComponent(this.action);
 
         this.m_xhr.addEventListener("load", () => {
             this.onApiCallLoad();
