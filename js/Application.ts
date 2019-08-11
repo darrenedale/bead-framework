@@ -476,20 +476,17 @@ export class ApiCall extends XMLHttpRequest {
     public send(): void {
         let url = Application.instance.baseUrl + "?action=" + encodeURIComponent(this.action);
 
-        this.addEventListener("load", function() {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("load", () => {
             this.onApiCallLoad();
-        }.bind(this), true);
+        }, true);
 
-        this.addEventListener("abort", function() {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("abort", () => {
             this.onApiCallAbort();
-        }.bind(this), true);
+        }, true);
 
-        this.addEventListener("error", function() {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("error", () => {
             this.onApiCallError();
-        }.bind(this), true);
+        }, true);
 
         if(this.parameters) {
             for(let pName in this.parameters) {
