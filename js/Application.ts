@@ -39,7 +39,7 @@ export class OutOfBoundsError extends Error {}
 export class ContentStructureError extends Error {}
 
 export class Application {
-    /* this is temporarily forced to aio.php while migrating to ts */
+    // this is temporarily forced to aio.php while migrating to ts
     public static readonly baseUrl = "aio.php";
     public static readonly DefaultToastTimeout: number = 2500;
     public static readonly NewWindowFlag: number = 0x01;
