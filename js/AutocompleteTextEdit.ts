@@ -300,6 +300,9 @@ export class AutocompleteTextEdit {
         if("string" === typeof label) {
             display = document.createTextNode(label);
         }
+        else {
+            display = label;
+        }
 
         if("object" !== typeof display || !display.nodeName) {
             console.warn("invalid display object for suggestion - using value instead");
