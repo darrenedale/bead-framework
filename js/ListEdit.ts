@@ -5,7 +5,7 @@ interface HTMLListEditChildElement extends HTMLElement {
     readonly listEdit: ListEdit;
 }
 
-interface HTMLListEditRootElement extends HTMLTableElement {
+export interface HTMLListEditRootElement extends HTMLTableElement {
     readonly listEdit: ListEdit;
     value: string[];
     selectedIndex: number;
@@ -31,12 +31,6 @@ function toArray<T>(collection: Collection<T>): T[] {
 }
 
 export class ListEdit {
-
-    private m_dataWidget;
-    private m_textEdit: HTMLAutocompleteTextEditRootElement;
-    private m_displayWidget;
-    private m_addButton;
-    private m_removeButton;
 
     constructor(edit: HTMLListEditRootElement) {
         let findChildElement = (element: string, propertyName: string): boolean => {
@@ -176,6 +170,14 @@ export class ListEdit {
         this.dataWidget.value = val.join("\n");
         this.resynchroniseDisplayWidget();
         this.synchroniseRemoveButtonState();
+    }
+
+    public get name(): string {
+        return this.m_dataWidget.name;
+    }
+
+    public set name(name: string) {
+        this.m_dataWidget.name = name;
     }
 
     public get selectedIndex(): number {
@@ -377,6 +379,12 @@ export class ListEdit {
             }
         }
     }
+
+    private m_dataWidget;
+    private m_textEdit: HTMLAutocompleteTextEditRootElement;
+    private m_displayWidget;
+    private m_addButton;
+    private m_removeButton;
 }
 
 (function(window) {
