@@ -22,7 +22,7 @@ export interface ToastCustomButton {
 export interface ToastOptions {
     timeout?: number,
     closeButton?: boolean,
-    customButtons?: [ToastCustomButton],
+    customButtons?: ToastCustomButton[],
 }
 
 export interface ToastContainer extends HTMLElement {
