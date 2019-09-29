@@ -118,7 +118,6 @@ function grammaticalImplode(array $array, string $glue = ", ", string $lastGlue 
 }
 
 
-
 /**
  * Remove empty entries from an array.
  *
