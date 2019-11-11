@@ -4,7 +4,7 @@ A basic, and incomplete, PHP application framework.
 
 ## Introduction
 
-This library implements an application framework using the Front Controller pattern. Given a basic application-specific bootstrap script, a single call to the Application::exec() method is sufficient to handle all requests.
+This library implements an application framework using the _Front Controller_ pattern. Given a basic application-specific bootstrap script, a single call to the `Application::exec()` method is sufficient to handle all incoming requests.
 
 ## Key classes
 
@@ -24,7 +24,7 @@ A container class for HTML elements that make up the page generated in response 
 At the end of the call to `Application::exec()`, the content of the `Application`'s `Page` object is sent to the client as the application's response to the request.
 
 ### Request
-An encapsulation of a request from the client. The call to Application::exec() constructs an instance of this class by examining the `$_GET`, `$_POST`, `$_FILES` and `$_SERVER` superglobals. Application components can create and submit additional requests to the Application object to have them processed. The Application maintains a stack of requests, and exec() exits only when handling of the original request is complete. The current request being handled is available from `currentRequest()`; the client's original requests is always available by calling the `Application` object's `originalRequest()` method.
+An encapsulation of a request from the client. The call to Application::exec() constructs an instance of this class by examining the `$_GET`, `$_POST`, `$_FILES` and `$_SERVER` superglobals. Application components can create and submit additional requests to the Application object to have them processed. The Application maintains a stack of requests, and `exec()` exits only when handling of the original request is complete. The current request being handled is available from `currentRequest()`; the client's original requests is always available by calling the `Application` object's `originalRequest()` method.
 
 The URL parameters, POST data and uploaded files, as well as information about the requesting client, can be retrieved from the Request object. There is one special URL parameter - _action_ - which is used by the `Application` object to determine which plugin should be used to handle the request.
 
