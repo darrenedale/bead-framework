@@ -10,6 +10,7 @@
 namespace Equit {
 	use Equit\Html\HtmlLiteral;
 	use Equit\Html\Page;
+	use InvalidArgumentException;
 	use ReflectionClass;
 	use ReflectionException;
 
@@ -495,10 +496,11 @@ namespace Equit {
 		 * @param $context string A unique context identifier for the session data.
 		 *
 		 * @return array[mixed => mixed] A reference to the session data for the given context.
+		 * @throws \InvalidArgumentException If an empty context is given.
 		 */
 		public function & sessionData(string $context): array {
 			if(empty($context)) {
-				return null;
+				throw new InvalidArgumentException("No session context provided.");
 			}
 
 			// ensure context is not numeric (avoids issues when un-serialising session data)
