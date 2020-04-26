@@ -530,6 +530,7 @@ namespace Equit {
 		 * @return Page The application's page.
 		 */
 		public function page(): Page {
+			assert(isset($this->m_page), new \RuntimeException("Application has no Page object set."));
 			return $this->m_page;
 		}
 
