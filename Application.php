@@ -10,6 +10,7 @@
 namespace Equit {
 	use Equit\Html\HtmlLiteral;
 	use Equit\Html\Page;
+	use InvalidArgumentException;
 	use ReflectionClass;
 	use ReflectionException;
 
@@ -495,10 +496,11 @@ namespace Equit {
 		 * @param $context string A unique context identifier for the session data.
 		 *
 		 * @return array[mixed => mixed] A reference to the session data for the given context.
+		 * @ythrows InvalidArgumentException if the provided context is empty.
 		 */
 		public function & sessionData(string $context): array {
 			if(empty($context)) {
-				return null;
+				throw new InvalidArgumentException("Session context must not be empty.");
 			}
 
 			// ensure context is not numeric (avoids issues when un-serialising session data)
@@ -681,7 +683,7 @@ namespace Equit {
 				return false;
 			}
 
-			if($instanceFnReturnType->isBuiltin() || GenericPlugin::class != (string) $instanceFnReturnType) {
+			if($instanceFnReturnType->isBuiltin() || GenericPlugin::class != $instanceFnReturnType->getName()) {
 				AppLog::error("$className::instance() must return an instance of $className", __FILE__, __LINE__, __FUNCTION__);
 				return false;
 			}
@@ -718,7 +720,7 @@ namespace Equit {
 				return false;
 			}
 
-			if(!$actionsFnReturnType->isBuiltin() || "array" != (string) $actionsFnReturnType) {
+			if(!$actionsFnReturnType->isBuiltin() || "array" != $actionsFnReturnType->getName()) {
 				AppLog::error("$className::supportedActions() must return an array of strings", __FILE__, __LINE__, __FUNCTION__);
 				return false;
 			}
