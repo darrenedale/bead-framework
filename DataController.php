@@ -107,10 +107,10 @@ class DataController extends PDO {
 	// these two are effectively the same set of mappings, except one is indexed by db entity and the other by DVO class
 	// name
 	/** @var array Maps database entities to PHP classes. */
-	private $m_entityMappings = [];
+	private array $m_entityMappings = [];
 
 	/** @var array Maps PHP classes to database entities. */
-	private $m_classMappings = [];
+	private array $m_classMappings = [];
 
 	/**
 	 * Create a new instance of a data controller.
@@ -711,7 +711,7 @@ class DataController extends PDO {
 			$primaryKeyPropertyInfo = $classInfo->getProperty($mapping->primaryKeyPropertyName);
 		}
 		catch(ReflectionException $err) {
-			AppLog::error("primary key property \"{$mapping->primaryKeyPropertyName}\" is not available: " . $err->getMessage(), __FILE__, __LINE__, __FUNCTION__);
+			AppLog::error("primary key property \"{$mapping->primaryKeyPropertyName}\" is not available: {$err->getMessage()}", __FILE__, __LINE__, __FUNCTION__);
 			return null;
 		}
 
@@ -795,7 +795,7 @@ class DataController extends PDO {
 			if($mutator->hasReturnType()) {
 				$returnType = $mutator->getReturnType();
 
-				switch($returnType->getName()) {
+				switch($returnType ? $returnType->getName() : "") {
 					case "bool":
 						$result = $mutator->invoke($dao, $fieldData);
 						break;

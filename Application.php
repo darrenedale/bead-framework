@@ -500,7 +500,7 @@ namespace Equit {
 		 */
 		public function & sessionData(string $context): array {
 			if(empty($context)) {
-				throw new InvalidArgumentException("No session context provided.");
+				throw new InvalidArgumentException("Session context must not be empty.");
 			}
 
 			// ensure context is not numeric (avoids issues when un-serialising session data)
@@ -532,6 +532,7 @@ namespace Equit {
 		 * @return Page The application's page.
 		 */
 		public function page(): Page {
+			assert(isset($this->m_page), new \RuntimeException("Application has no Page object set."));
 			return $this->m_page;
 		}
 
