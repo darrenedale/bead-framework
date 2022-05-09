@@ -116,6 +116,7 @@ class TextEdit extends PageElement {
 			$this->setAttribute($name, null);
 		}
 
+		$this->setAutocomplete(false);
 		$this->setType($type);
 	}
 
@@ -181,22 +182,23 @@ class TextEdit extends PageElement {
 	/**
 	 * Set the widget's autocomplete attribute.
 	 *
-	 * The autocomplete attribute can be either of the strings "on" or "off". If the provided value is a _bool_, it is
-	 * converted to "on" if _true_ or "off" if _false_.
+	 * Valid values for the autocomplete attribute can be found at
+	 * https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
+	 *
+	 * If the provided value is a _bool_, it is converted to "on" if _true_ or "off" if _false_.
 	 *
 	 * This method **does not** validate the string you provide. It is your responsibility to ensure that the value is
 	 * valid. If you provide an invalid value, the page in which the widget is used is likely to fail validation.
 	 *
-	 * @param $autocomplete bool|string The autocomplete attribute for the widget.
-	 *
-	 * @return bool _true_ if the autocomplete attribute was set, _false_ otherwise.
+	 * @param $autocomplete bool|string|null The autocomplete attribute for the widget.
 	 */
-	public function setAutocomplete($autocomplete): bool {
+	public function setAutocomplete($autocomplete): void {
 		if(is_bool($autocomplete)) {
 			$autocomplete = ($autocomplete ? "on" : "off");
 		}
 
-		return $this->setAttribute("autocomplete", $autocomplete);
+		assert(is_string($autocomplete) || is_null($autocomplete), "invalid argument to setAutocomplete() - must be bool, string or null");
+		$this->setAttribute("autocomplete", $autocomplete);
 	}
 
 	/**

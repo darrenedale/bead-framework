@@ -339,24 +339,38 @@ abstract class PageElement {
 				continue;
 			}
 
-			$ret .= " $name=\"";
-
-			if(is_string($attr)) {
-				$ret .= html($attr);
-			}
-			else if(is_array($attr)) {
-				$ret .= html(implode(" ", $attr));
-			}
-			else {
-				assert(false, "found invalid attribute value for attribute $name");
-			}
-
-			$ret .= "\"";
+			$ret .= $this->emitAttribute($name, $attr);
 		}
 
 		return $ret;
 	}
 
+	/**
+	 * Emit a single HTML element attribute.
+	 *
+	 * Providing an invalid attribute value will cause your program to fail.
+	 *
+	 * @param string $attrName The attribute name.
+	 * @param string|array $attrValue The attribute value.
+	 *
+	 * @return string
+	 */
+	protected function emitAttribute(string $attrName, $attrValue): string {
+		$ret = " $attrName=\"";
+
+		if(is_string($attrValue)) {
+			$ret .= html($attrValue);
+		}
+		else if(is_array($attrValue)) {
+			$ret .= html(implode(" ", $attrValue));
+		}
+		else {
+			assert(false, "found invalid attribute value for attribute $attrName");
+		}
+
+		$ret .= "\"";
+		return $ret;
+	}
 	/**
 	 * Get the HTML for the element.
 	 *

@@ -22,7 +22,7 @@ export interface ToastCustomButton {
 export interface ToastOptions {
     timeout?: number,
     closeButton?: boolean,
-    customButtons?: [ToastCustomButton],
+    customButtons?: ToastCustomButton[],
 }
 
 export interface ToastContainer extends HTMLElement {
@@ -39,7 +39,7 @@ export class OutOfBoundsError extends Error {}
 export class ContentStructureError extends Error {}
 
 export class Application {
-    /* this is temporarily forced to aio.php while migrating to ts */
+    // this is temporarily forced to aio.php while migrating to ts
     public static readonly baseUrl = "aio.php";
     public static readonly DefaultToastTimeout: number = 2500;
     public static readonly NewWindowFlag: number = 0x01;
@@ -61,13 +61,13 @@ export class Application {
     }
 
     /** @deprecated Pass timeout as a property in an options object instead. */
-    public static toast(content: string, timeout: number): ToastContainer;
+    public toast(content: string, timeout: number): ToastContainer;
 
     /** @deprecated Pass timeout as a property in an options object instead. */
-    public static toast(content: HTMLElement, timeout: number): ToastContainer;
+    public toast(content: HTMLElement, timeout: number): ToastContainer;
 
-    public static toast(content: string, options: ToastOptions): ToastContainer;
-    public static toast(content: HTMLElement, options: ToastOptions): ToastContainer;
+    public toast(content: string, options?: ToastOptions): ToastContainer;
+    public toast(content: HTMLElement, options?: ToastOptions): ToastContainer;
 
     /**
      * Present a pop-up message to the user on the current page.
@@ -97,11 +97,10 @@ export class Application {
      * toast is entirely self-managing.
      *
      * @param content HTMLElement|string The message to show. This can be a DOM HTMLElement or a plain string
-     * @param options ToastOptions Options controlling how the toast operates.
+     * @param options ToastOptions Optional options controlling how the toast operates.
      */
-    public static toast(content: any, options: any): ToastContainer {
-        /* for backward compatibility with old code - signature used
-         * to be toast(content, timeout) */
+    public toast(content: any, options: any = {}): ToastContainer {
+        // for backward compatibility with old code - signature used to be toast(content, timeout)
         if("number" == typeof options) {
             console.warn("passing timeout as argument to toast() is deprecated - pass an object with a timeout property instead");
             options = { "timeout": options };
@@ -297,8 +296,8 @@ export class Application {
         return false;
     }
 
-    public static openUrl(action: string, parameters: object, flags: number): void {
-        let url = Application.baseUrl + "?action=" + encodeURIComponent(action);
+    public openUrl(action: string, parameters: object, flags: number): void {
+        let url = this.baseUrl + "?action=" + encodeURIComponent(action);
 
         if("object" == typeof parameters) {
             for(let pName in parameters) {
@@ -318,7 +317,7 @@ export class Application {
         }
     }
 
-    public static createValidationReportElement(report: ValidationReport): HTMLElement {
+    public createValidationReportElement(report: ValidationReport): HTMLElement {
         let container = document.createElement("DIV");
         container.classList.add("validation-report");
 
@@ -367,7 +366,7 @@ export class Application {
      * @param data object The POST data for the API call.
      * @param options object The API call options.
      */
-    public static doApiCall(action: string, parameters: object = null, data: object = null, options: ApiCallOptions = null) {
+    public doApiCall(action: string, parameters: object = null, data: object = null, options: ApiCallOptions = null) {
         let call = new ApiCall(action, parameters, data, options);
         call.send();
     }
@@ -424,7 +423,7 @@ export class ApiCall extends XMLHttpRequest {
     }
 
     get data(): object {
-        return this.m_parameters;
+        return this.m_data;
     }
 
     set data(data: object|null) {
@@ -475,22 +474,19 @@ export class ApiCall extends XMLHttpRequest {
     }
 
     public send(): void {
-        let url = Application.baseUrl + "?action=" + encodeURIComponent(this.action);
+        let url = Application.instance.baseUrl + "?action=" + encodeURIComponent(this.action);
 
-        this.addEventListener("load", function() {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("load", () => {
             this.onApiCallLoad();
-        }.bind(this), true);
+        }, true);
 
-        this.addEventListener("abort", function() {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("abort", () => {
             this.onApiCallAbort();
-        }.bind(this), true);
+        }, true);
 
-        this.addEventListener("error", function() {
-            // noinspection JSPotentiallyInvalidUsageOfClassThis (function is explicitly bound)
+        this.addEventListener("error", () => {
             this.onApiCallError();
-        }.bind(this), true);
+        }, true);
 
         if(this.parameters) {
             for(let pName in this.parameters) {
@@ -564,9 +560,9 @@ export interface ApiCallOptions {
             configurable: false,
             writable: false,
             value: {
-                log: function() {},
-                error: function() {},
-                warn: function() {},
+                log: function(msg: string) {},
+                error: function (msg: string) {},
+                warn: function(msg: string) {},
             },
         });
     }

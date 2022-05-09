@@ -3,8 +3,6 @@
 /**
  * Defines the Popup class.
  *
- * TODO examine and refactor how triggers are handled?
- *
  * ### Dependencies
  * - classes/equit/AppLog.php
  * - classes/equit/Application.php
@@ -130,7 +128,7 @@ class Popup extends Division {
 	/**
 	 * Fetch the anchor for the PopupSection.
 	 *
-	 * @return string|PageElement The anchor, or _null_ if no anchor is set.
+	 * @return string|PageElement|null The anchor, or _null_ if no anchor is set.
 	 */
 	public function anchor() {
 		return $this->m_anchor;
@@ -231,17 +229,14 @@ class Popup extends Division {
 		$id     = $this->id();
 
 		if(empty($id)) {
-			$this->setId(Division::generateUid());
+			$this->setId(self::generateUid());
 		}
 
-		if(is_string($anchor) && !empty($anchor)) {
-			$anchor = new HtmlLiteral(html($anchor));
+		if(is_string($anchor)) {
+			$anchor = html($anchor);
 		}
 		else if($anchor instanceof PageElement) {
-			/* nothing to do */
-		}
-		else {
-			$anchor = new HtmlLiteral("<img src=\"images/icons/popup.png\" alt=\"\" />");
+			$anchor = $anchor->html();
 		}
 
 		$classNames = $this->classNames();
@@ -268,7 +263,7 @@ class Popup extends Division {
 
 		$this->setData("triggers", implode("|", $triggers));
 
-		$ret = $this->emitDivisionStart() . "<div class=\"popup-anchor\">" . $anchor->html() . "</div><div class=\"popup-content\">";
+		$ret = $this->emitDivisionStart() . "<div class=\"popup-anchor\">$anchor</div><div class=\"popup-content\">";
 
 		/** @var \Equit\Html\PageElement $child */
 		foreach($this->childElements() as $child) {

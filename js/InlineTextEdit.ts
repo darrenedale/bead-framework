@@ -1,6 +1,6 @@
 import {ApiCallResponse} from "./ApiCallResponse.js";
 import {ApiCall} from "./ApiCall.js";
-import {LogicError, Application} from "./Application.js";
+import {Application} from "./Application.js";
 
 
 export interface HTMLInlineInternalTextEdit extends HTMLInputElement {
@@ -35,19 +35,17 @@ export class InlineTextEdit {
             return InlineTextEdit.bootstrap["success"];
         }
 
-        let editors = document.getElementsByClassName(InlineTextEdit.HtmlClassName);
-
-        for (let idx = 0; idx < editors.length; ++idx) {
-            if(!(editors[idx] instanceof HTMLDivElement)) {
+        for (let editor of document.querySelectorAll(`.${InlineTextEdit.HtmlClassName}`)) {
+            if(!(editor instanceof HTMLDivElement)) {
                 console.warn("ignored invalid element type with " + InlineTextEdit.HtmlClassName + " class");
                 continue;
             }
 
             try {
-                new InlineTextEdit(<HTMLInlineTextEditRootElement> editors[idx]);
+                new InlineTextEdit(<HTMLInlineTextEditRootElement> editor);
             }
             catch(err) {
-                console.error("Failed to initialise InlineTextEdit: " + err);
+                console.error("failed to initialise AdvancedSearchForm " + editor + ": " + err);
             }
         }
 
@@ -127,8 +125,8 @@ export class InlineTextEdit {
             this.onKeyDown(ev);
         });
 
-        this.internalEditor.addEventListener("blur", (ev: FocusEvent) => {
-            this.onFocusOut(ev);
+        this.internalEditor.addEventListener("blur", () => {
+            this.onFocusOut();
         });
 
         this.internalDisplay.addEventListener("click", () => {
@@ -178,7 +176,7 @@ export class InlineTextEdit {
     private onSubmitSucceeded(response: ApiCallResponse): void {
         if(0 === response.code) {
             this.m_oldValue = this.value;
-            this.syncDisplayWithEditor()
+            this.syncDisplayWithEditor();
             this.hideEditor();
             return;
         }
@@ -186,7 +184,7 @@ export class InlineTextEdit {
         let msg = document.createElement("div");
         msg.appendChild(document.createTextNode(response.message));
 
-        let toast = Application.toast(msg, {
+        let toast = Application.instance.toast(msg, {
             "timeout": 0,
             "closeButton": true,
             "customButtons": [
@@ -205,7 +203,7 @@ export class InlineTextEdit {
         let msg = document.createElement("div");
         msg.appendChild(document.createTextNode("The API call failed: " + response.message));
 
-        let toast = Application.toast(msg, {
+        let toast = Application.instance.toast(msg, {
             "timeout": 0,
             "closeButton": true,
             "customButtons": [
@@ -243,7 +241,7 @@ export class InlineTextEdit {
         apiCall.send();
     }
 
-    protected onFocusOut(ev: FocusEvent) {
+    protected onFocusOut() {
         this.accept();
     }
 

@@ -112,6 +112,32 @@ class AutocompleteTextEdit extends TextEdit {
 		parent::__construct($type, $id);
 	}
 
+	/**
+	 * Check whether a function name is valid for an API function call.
+	 *
+	 * Valid API function names must be passable as URL parameters. For readability, these are kept to characters that
+	 * do not require escaping. Currently, the function name must start with alpha, underscore or dash, contain at least
+	 * two characters, and be composed entirely of alpha, num, underscore or dash.
+	 *
+	 * @param $fn string The API function name to check.
+	 *
+	 * @return bool
+	 */
+	protected static function isValidApiFunctionName(string $fn): bool {
+		return (bool) preg_match("/^[a-zA-Z_-][a-zA-Z0-9_-]+$/", $fn);
+	}
+
+	/**
+	 * Check whether a function name is valid for a runtime (JS) function call.
+	 *
+	 * @param $fn string The runtime function name to check.
+	 *
+	 * @return bool
+	 */
+	protected static function isValidRuntimeFunctionName(string $fn): bool {
+		return (bool) preg_match("/^[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9_]$/", $fn);
+	}
+
 	/** Set the type of the autocomplete text edit widget.
 	 *
 	 * The type must be one of SingleLine, Email, Url or Search. Anything else is considered an error. Specifically,
@@ -150,7 +176,7 @@ class AutocompleteTextEdit extends TextEdit {
 	 * API function call. Keys must start with an alpha char and be composed entirely of alphanumeric chars and
 	 * underscores.
 	 *
-	 * @return bool _true_ if the API function was set successfully, _false_ otherwise.
+	 * @return bool _true_ if the API call was set successfully, _false_ otherwise.
 	 */
 	public function setAutocompleteApiCall(string $fn, ?string $contentParameterName = null, array $otherArgs = []): bool {
 		$isValidName = function(string $name) {
@@ -193,12 +219,14 @@ class AutocompleteTextEdit extends TextEdit {
 	}
 
 	/**
+	 * Set the runtime function that will process the result of the API call for the text edit.
+	 *
 	 * @param string|null $fn The runtime callable that will process the result of the API call for the edit.
 	 *
 	 * The callable must understand the output of the API function call that returns the suggestions and must
 	 * produce a js array of objects with the following properties:
-	 * - value: `string` the value that the suggestion represents. This is the value that will be placed in the editor if the
-	 *   user selects the suggestion.
+	 * - value: `string` the value that the suggestion represents. This is the value that will be placed in the editor
+	 *   if the user selects the suggestion.
 	 * - display: `string|DOM object` the content to display. This is the content that will appear in the
 	 *   suggestions list for the suggestion.
 	 *
@@ -208,7 +236,11 @@ class AutocompleteTextEdit extends TextEdit {
 	 * @return bool `true` if the processor was set, `false`  if not.
 	 */
 	public function setAutocompleteApiResultProcessor(?string $fn): bool {
-		// TODO how can this be validated?
+		if(isset($fn) && !self::isValidRuntimeFunctionName($fn)) {
+			AppLog::error("invalid runtime function name '$fn' provided", __FILE__, __LINE__, __FUNCTION__);
+			return false;
+		}
+
 		$this->m_resultProcessor = $fn;
 		return true;
 	}
@@ -261,6 +293,13 @@ class AutocompleteTextEdit extends TextEdit {
 			$ret .= " data-api-function-response-processor=\"" . html($this->m_resultProcessor) . "\"";
 		}
 
+		$styleAttr = $this->attribute("style");
+		$disabledAttr = $this->attribute("disabled");
+
+		if(isset($styleAttr)) {
+			$ret .= $this->emitAttribute("style", $styleAttr);
+		}
+
 		$ret .= "><input class=\"autocomplete-text-edit-editor\" type=\"";
 
 		switch($this->type()) {
@@ -300,6 +339,10 @@ class AutocompleteTextEdit extends TextEdit {
 
 		if(!empty($tt)) {
 			$ret .= "title=\"" . html($tt) . "\" ";
+		}
+
+		if(isset($disabledAttr)) {
+			$ret .= $this->emitAttribute("disabled", $disabledAttr);
 		}
 
 		$ret .= "/><ul class=\"" . self::HtmlClassName . "-suggestions\"></ul></div>";

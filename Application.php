@@ -10,6 +10,7 @@
 namespace Equit {
 	use Equit\Html\HtmlLiteral;
 	use Equit\Html\Page;
+	use InvalidArgumentException;
 	use ReflectionClass;
 	use ReflectionException;
 
@@ -495,10 +496,11 @@ namespace Equit {
 		 * @param $context string A unique context identifier for the session data.
 		 *
 		 * @return array[mixed => mixed] A reference to the session data for the given context.
+		 * @throws \InvalidArgumentException If an empty context is given.
 		 */
 		public function & sessionData(string $context): array {
 			if(empty($context)) {
-				return null;
+				throw new InvalidArgumentException("Session context must not be empty.");
 			}
 
 			// ensure context is not numeric (avoids issues when un-serialising session data)
@@ -530,6 +532,7 @@ namespace Equit {
 		 * @return Page The application's page.
 		 */
 		public function page(): Page {
+			assert(isset($this->m_page), new \RuntimeException("Application has no Page object set."));
 			return $this->m_page;
 		}
 
@@ -680,7 +683,7 @@ namespace Equit {
 				return false;
 			}
 
-			if($instanceFnReturnType->isBuiltin() || GenericPlugin::class != (string) $instanceFnReturnType) {
+			if($instanceFnReturnType->isBuiltin() || GenericPlugin::class != $instanceFnReturnType->getName()) {
 				AppLog::error("$className::instance() must return an instance of $className", __FILE__, __LINE__, __FUNCTION__);
 				return false;
 			}
@@ -717,7 +720,7 @@ namespace Equit {
 				return false;
 			}
 
-			if(!$actionsFnReturnType->isBuiltin() || "array" != (string) $actionsFnReturnType) {
+			if(!$actionsFnReturnType->isBuiltin() || "array" != $actionsFnReturnType->getName()) {
 				AppLog::error("$className::supportedActions() must return an array of strings", __FILE__, __LINE__, __FUNCTION__);
 				return false;
 			}
@@ -1272,8 +1275,7 @@ namespace Equit {
 			ob_start();
 			$page = $this->page();
 
-			$page->addScriptUrl("js/application.js");
-			$page->addJavascript("Application.Private.baseUrl = \"" . Request::baseName() . "\";");
+			$page->addScriptUrl("{$this->libraryPath("equit")}/js/Application.js", "module");
 
 			$this->loadPlugins();
 			$this->emitEvent("application.executionstarted");

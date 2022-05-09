@@ -5,7 +5,7 @@ interface HTMLListEditChildElement extends HTMLElement {
     readonly listEdit: ListEdit;
 }
 
-interface HTMLListEditRootElement extends HTMLTableElement {
+export interface HTMLListEditRootElement extends HTMLTableElement {
     readonly listEdit: ListEdit;
     value: string[];
     selectedIndex: number;
@@ -31,12 +31,6 @@ function toArray<T>(collection: Collection<T>): T[] {
 }
 
 export class ListEdit {
-
-    private m_dataWidget;
-    private m_textEdit: HTMLAutocompleteTextEditRootElement;
-    private m_displayWidget;
-    private m_addButton;
-    private m_removeButton;
 
     constructor(edit: HTMLListEditRootElement) {
         let findChildElement = (element: string, propertyName: string): boolean => {
@@ -178,6 +172,14 @@ export class ListEdit {
         this.synchroniseRemoveButtonState();
     }
 
+    public get name(): string {
+        return this.m_dataWidget.name;
+    }
+
+    public set name(name: string) {
+        this.m_dataWidget.name = name;
+    }
+
     public get selectedIndex(): number {
         for(let idx = this.displayWidget.children.length - 1; idx >= 0; --idx) {
             if(this.displayWidget.children[idx].classList.contains("selected")) {
@@ -190,7 +192,7 @@ export class ListEdit {
 
     public set selectedIndex(idx: number) {
         if(idx > this.displayWidget.children.length) {
-            console.error(`index ${idx} is not valid`);
+            console.error(`invalid index ${idx}`);
             return;
         }
 
@@ -249,7 +251,7 @@ export class ListEdit {
 
     public addItem(item: string): boolean {
         if("" == item) {
-            console.error("can't add an empty item");
+            console.error("can't add an empty item to the list");
             return false;
         }
 
@@ -275,7 +277,7 @@ export class ListEdit {
         };
 
         if(!isInt(idx)) {
-            console.error("item indices must be integers");
+            console.error(`invalid index ${idx}`);
             return false;
         }
 
@@ -373,10 +375,16 @@ export class ListEdit {
                 new ListEdit(<HTMLListEditRootElement> edit);
             }
             catch(err) {
-                console.error("failed to initialise ListEdit for element " + edit + ": " + err);
+                console.error("failed to initialise ListEdit " + edit + ": " + err);
             }
         }
     }
+
+    private m_dataWidget;
+    private m_textEdit: HTMLAutocompleteTextEditRootElement;
+    private m_displayWidget;
+    private m_addButton;
+    private m_removeButton;
 }
 
 (function(window) {

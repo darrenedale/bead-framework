@@ -230,9 +230,13 @@ class Page {
 	public function __construct() {
 		$uid                         = @constant("app.uid");
 		$this->m_sections["main"]    = new Section("$uid-main");
+		$this->m_sections["main"]->addClassName("main");
 		$this->m_sections["menubar"] = new Section("$uid-menubar");
+		$this->m_sections["menubar"]->addClassName("menubar");
+
 		// TODO refactor: when created, use <nav> for this
 		$this->m_sections["navbar"]  = new Section("$uid-navbar");
+		$this->m_sections["navbar"]->addClassName("navbar");
 
 		$this->m_sections["main"]->addChildElement($this->m_sections["menubar"]);
 	}

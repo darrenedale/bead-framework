@@ -30,8 +30,10 @@ use DateTime;
 use Exception;
 use PDO;
 use PDOStatement;
+use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
+use ReflectionProperty;
 use StdClass;
 
 require_once __DIR__ . "/includes/array.php";
@@ -105,10 +107,10 @@ class DataController extends PDO {
 	// these two are effectively the same set of mappings, except one is indexed by db entity and the other by DVO class
 	// name
 	/** @var array Maps database entities to PHP classes. */
-	private $m_entityMappings = [];
+	private array $m_entityMappings = [];
 
 	/** @var array Maps PHP classes to database entities. */
-	private $m_classMappings = [];
+	private array $m_classMappings = [];
 
 	/**
 	 * Create a new instance of a data controller.
@@ -289,7 +291,7 @@ class DataController extends PDO {
 	 *
 	 * @return \DateTime|null The parsed _DateTime_, or _null_ on error.
 	 */
-	public static function stringToDateTime(string $dateTimeStr): DateTime {
+	public static function stringToDateTime(string $dateTimeStr): ?DateTime {
 		$ret = DateTime::createFromFormat(self::DateTimeFormat, $dateTimeStr);
 
 		if(false === $ret) {
@@ -323,7 +325,7 @@ class DataController extends PDO {
 	 *
 	 * @return \DateTime|null The parsed _DateTime_, or _null_ on error.
 	 */
-	public static function stringToTime(string $timeStr): DateTime {
+	public static function stringToTime(string $timeStr): ?DateTime {
 		$ret = DateTime::createFromFormat(self::TimeFormat, $timeStr);
 
 		if(false === $ret) {
@@ -693,7 +695,7 @@ class DataController extends PDO {
 	 */
 	private static function readObject(string $class, StdClass $mapping, array $data) {
 		try {
-			$classInfo = new \ReflectionClass($class);
+			$classInfo = new ReflectionClass($class);
 		}
 		catch(ReflectionException $err) {
 			AppLog::error("class $class is not available: " . $err->getMessage(), __FILE__, __LINE__, __FUNCTION__);
@@ -709,9 +711,9 @@ class DataController extends PDO {
 			$primaryKeyPropertyInfo = $classInfo->getProperty($mapping->primaryKeyPropertyName);
 		}
 		catch(ReflectionException $err) {
-				AppLog::error("primary key property \"{$mapping->primaryKeyPropertyName}\" is not available: " . $err->getMessage(), __FILE__, __LINE__, __FUNCTION__);
-				return null;
-			}
+			AppLog::error("primary key property \"{$mapping->primaryKeyPropertyName}\" is not available: {$err->getMessage()}", __FILE__, __LINE__, __FUNCTION__);
+			return null;
+		}
 
 		if(!$primaryKeyPropertyInfo) {
 			AppLog::error("primary key property \"{$mapping->primaryKeyPropertyName}\" is not available in class \"$class\"", __FILE__, __LINE__, __FUNCTION__);
@@ -756,7 +758,11 @@ class DataController extends PDO {
 			$param = $mutator->getParameters()[0];
 
 			if($param->hasType()) {
-				$expected = (string) $param->getType();
+				$expected = $param->getType();
+
+				if ($expected) {
+					$expected = $expected->getName();
+				}
 
 				if(is_object($fieldData)) {
 					$actual = get_class($fieldData);
@@ -789,7 +795,7 @@ class DataController extends PDO {
 			if($mutator->hasReturnType()) {
 				$returnType = $mutator->getReturnType();
 
-				switch((string)$returnType) {
+				switch($returnType ? $returnType->getName() : "") {
 					case "bool":
 						$result = $mutator->invoke($dao, $fieldData);
 						break;
@@ -1104,7 +1110,7 @@ class DataController extends PDO {
 		$classMapping =& $this->m_classMappings[$className];
 
 		try {
-			$primaryKeyPropertyInfo = new \ReflectionProperty($dao, $classMapping->primaryKeyPropertyName);
+			$primaryKeyPropertyInfo = new ReflectionProperty($dao, $classMapping->primaryKeyPropertyName);
 		}
 		catch(ReflectionException $err) {
 			AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DVO class $className");
@@ -1119,6 +1125,7 @@ class DataController extends PDO {
 		if(isset($s_statementCache[$className])) {
 			$stmt = $s_statementCache[$className];
 		} else {
+			/** @noinspection SqlResolve */
 			$sql = "INSERT INTO `{$classMapping->tableName}` SET ";
 			$i   = 1;
 
@@ -1194,7 +1201,7 @@ class DataController extends PDO {
 		$classMapping =& $this->m_classMappings[$className];
 
 		try {
-			$primaryKeyPropertyInfo = new \ReflectionProperty($dvo, $classMapping->primaryKeyPropertyName);
+			$primaryKeyPropertyInfo = new ReflectionProperty($dvo, $classMapping->primaryKeyPropertyName);
 		}
 		catch(ReflectionException $err) {
 			AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DVO class $className");
@@ -1213,6 +1220,7 @@ class DataController extends PDO {
 		if(isset($s_statementCache[$className])) {
 			$stmt = $s_statementCache[$className];
 		} else {
+			/** @noinspection SqlResolve */
 			$sql = "UPDATE `{$classMapping->tableName}` SET ";
 			$i   = 1;
 
@@ -1309,7 +1317,7 @@ class DataController extends PDO {
 			$classMapping =& $this->m_classMappings[$className];
 
 			try {
-				$primaryKeyPropertyInfo = new \ReflectionProperty($daoOrClass, $classMapping->primaryKeyPropertyName);
+				$primaryKeyPropertyInfo = new ReflectionProperty($daoOrClass, $classMapping->primaryKeyPropertyName);
 			}
 			catch(ReflectionException $err) {
 				AppLog::error("failed to interrogate primary key property \"{$classMapping->primaryKeyPropertyName}\" in DVO class $className");
@@ -1331,6 +1339,7 @@ class DataController extends PDO {
 		if(isset($s_statementCache[$className])) {
 			$stmt = $s_statementCache[$className];
 		} else {
+			/** @noinspection SqlResolve */
 			$stmt = $s_statementCache[$className] = $this->prepare("DELETE FROM `{$classMapping->tableName}` WHERE `id` = :id");
 
 			if(!($stmt instanceof PDOStatement)) {

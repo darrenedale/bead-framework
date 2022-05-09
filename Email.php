@@ -140,8 +140,8 @@ class Email {
 	 * @param $from string|null _optional_ The sender of the message.
 	 * @param $headers array[string|EmailHeader] _optional_ The initial set of headers for the message.
 	 */
-	public function __construct(?string $to = null, ?string $subject = null, ?string $msg = null, ?string $from = null, ?array $headers = null) {
-		Email::_initialiseClass();
+	public function __construct(?string $to = null, ?string $subject = "", ?string $msg = null, string $from = "", ?array $headers = null) {
+		Email::initialiseClass();
 
 		$this->addTo($to);
 		$this->setBody($msg);
@@ -166,8 +166,8 @@ class Email {
 	 *
 	 * This method initialises some internal static attributes ready for the first use of objects of the class.
 	 */
-	private static function _initialiseClass(): void {
-		if(is_null(Email::$s_immutableHeaders)) {
+	private static function initialiseClass(): void {
+		if(!isset(Email::$s_immutableHeaders)) {
 			Email::$s_immutableHeaders = [new EmailHeader("Content-Transfer-Encoding", "7bit")];
 		}
 	}
@@ -439,7 +439,7 @@ class Email {
 	 *
 	 * @return EmailHeader|null The header if found, or _null_ if not or on error.
 	 */
-	private function _findHeaderByName(string $name): ?EmailHeader {
+	private function findHeaderByName(string $name): ?EmailHeader {
 		foreach($this->headers() as $header) {
 			if(0 === strcasecmp($header->name(), $name)) {
 				return $header;
@@ -562,8 +562,7 @@ class Email {
 			return;
 		}
 
-		// by default parts have content-type text/plain,
-		// content-transfer-encoding: quoted-printable
+		// by default parts have content-type text/plain, content-transfer-encoding: quoted-printable
 		$this->m_body = [new EmailPart($body)];
 	}
 
@@ -573,7 +572,7 @@ class Email {
 	 * @return string The message subject.
 	 */
 	public function subject(): string {
-		$header = $this->_findHeaderByName("subject");
+		$header = $this->findHeaderByName("subject");
 
 		if(isset($header)) {
 			return $header->value();
@@ -588,7 +587,7 @@ class Email {
 	 * @param $subject string the new subject of the email message.
 	 */
 	public function setSubject(string $subject): void {
-		$header = $this->_findHeaderByName("Subject");
+		$header = $this->findHeaderByName("Subject");
 
 		if(!isset($header)) {
 			$this->m_headers[] = new EmailHeader("Subject", $subject);
@@ -738,7 +737,7 @@ class Email {
 	 * @return string The message sender.
 	 */
 	public function from(): string {
-		$from = $this->_findHeaderByName("From");
+		$from = $this->findHeaderByName("From");
 
 		if(isset($from)) {
 			return $from->value();
@@ -757,7 +756,7 @@ class Email {
 	 * @return bool _true_ if the sender was set, _false_ otherwise.
 	 */
 	public function setFrom(string $sender): bool {
-		$header = $this->_findHeaderByName("From");
+		$header = $this->findHeaderByName("From");
 
 		if(isset($header)) {
 			$header->setValue($sender);

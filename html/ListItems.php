@@ -35,6 +35,13 @@ trait ListItems {
 	}
 
 	/**
+	 * Remove all the items from the list.
+	 */
+	public function clearItems(): void {
+		$this->m_items = [];
+	}
+
+	/**
 	 * Fetch an item from the list.
 	 *
 	 * It is undefined behaviour to request the item at an invalid index.

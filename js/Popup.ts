@@ -74,7 +74,7 @@ export class Popup {
                 this.showPopup();
             });
 
-            container.addEventListener("mouseover", () => {
+            container.addEventListener("mouseout", () => {
                 this.hidePopup();
             });
         }

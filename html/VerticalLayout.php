@@ -107,24 +107,13 @@ class VerticalLayout extends Layout {
 	 * @return bool _true_ if the form element was inserted, _false_ otherwise.
 	 */
 	public function insertElement(PageElement $element, int $insertIndex = 0): bool {
-		$elementCount = $this->elementCount();
-
-		if($insertIndex < 0) {
-			$insertIndex = 0;
-		} else {
-			if($insertIndex > $elementCount) {
-				$insertIndex = $elementCount;
-			}
+		if($insertIndex >= $this->elementCount()) {
+			$this->m_elements[] = $element;
+		}
+		else {
+			array_splice($this->m_elements, max(0, $insertIndex), 0, [$element]);
 		}
 
-		/* TODO use array_splice() instead? */
-		if($insertIndex < $elementCount) {
-			for($j = $elementCount - 1; $j >= $insertIndex; --$j) {
-				$this->m_elements[$j + 1] = $this->m_elements[$j];
-			}
-		}
-
-		$this->m_elements[$insertIndex] = $element;
 		return true;
 	}
 
