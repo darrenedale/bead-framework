@@ -1,17 +1,14 @@
-import {ApiCallResponse} from "./ApiCallResponse.js";
-import {Application} from "./Application.js";
-
 // a callback for when an API call succeeded in getting a valid response from the server
-export interface SuccessfulApiCallCallback {
+interface SuccessfulApiCallCallback {
     (response: ApiCallResponse): void;
 }
 
 // a callback for when an API failed to get a valid response from the server
-export interface AbortedApiCallCallback {
+interface AbortedApiCallCallback {
     (): void;
 }
 
-export interface ApiCallOptions {
+interface ApiCallOptions {
     onSuccess?: SuccessfulApiCallCallback;
     onFailure?: SuccessfulApiCallCallback;
     onFinished?: SuccessfulApiCallCallback;
@@ -23,7 +20,7 @@ export interface ApiCallOptions {
  *
  * At present, the API endpoint is not customisable, only the URL parameters that are provided to that API call.
  */
-export class ApiCall {
+class ApiCall {
     private m_action: string;
     private m_options: ApiCallOptions;
     private m_parameters: object;
@@ -67,7 +64,7 @@ export class ApiCall {
     }
 
     get data(): object {
-        return this.m_parameters;
+        return this.m_data;
     }
 
     set data(data: object | null) {
@@ -157,6 +154,7 @@ export class ApiCall {
 
             this.m_xhr.open("POST", url, true);
             this.m_xhr.setRequestHeader("Content-Type", "multipart\/form-data; boundary=" + boundary);
+            this.m_xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 
             for (let dName in this.data) {
                 if (!this.data.hasOwnProperty(dName)) {
@@ -181,6 +179,7 @@ export class ApiCall {
         } else {
             // ... otherwise just GET the response
             this.m_xhr.open("GET", url, true);
+            this.m_xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
             this.m_xhr.send();
         }
     }

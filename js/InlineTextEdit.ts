@@ -1,21 +1,16 @@
-import {ApiCallResponse} from "./ApiCallResponse.js";
-import {ApiCall} from "./ApiCall.js";
-import {Application} from "./Application.js";
-
-
-export interface HTMLInlineInternalTextEdit extends HTMLInputElement {
+interface HTMLInlineInternalTextEdit extends HTMLInputElement {
     readonly inlineTextEdit: InlineTextEdit,
 }
 
-export interface HTMLInlineInternalDisplayElement extends HTMLSpanElement {
+interface HTMLInlineInternalDisplayElement extends HTMLSpanElement {
     readonly inlineTextEdit: InlineTextEdit,
 }
 
-export interface HTMLInlineTextEditRootElement extends HTMLDivElement {
+interface HTMLInlineTextEditRootElement extends HTMLDivElement {
     readonly inlineTextEdit: InlineTextEdit,
 }
 
-export class InlineTextEdit {
+class InlineTextEdit {
     public static readonly HtmlClassName: string = "eq-inline-text-edit";
     public static readonly InternalEditorHtmlClassName: string = InlineTextEdit.HtmlClassName + "-editor";
     public static readonly InternalDisplayElementHtmlClassName: string = InlineTextEdit.HtmlClassName + "-display";
@@ -264,7 +259,7 @@ export class InlineTextEdit {
         }
     }
 
-    get objectDescriptor() {
+    get objectDescriptor(): PropertyDescriptor {
         return {
             enumerable: true,
             configurable: false,

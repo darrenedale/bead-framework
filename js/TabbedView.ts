@@ -1,5 +1,3 @@
-import {ContentStructureError} from "./Application.js";
-
 interface TabSwitchHTMLLIElement extends HTMLLIElement {
     tabIndex: number;
 }

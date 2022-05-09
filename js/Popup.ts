@@ -1,4 +1,4 @@
-export class Popup {
+class Popup {
     public static readonly HtmlClassName = "equit-popup";
     public static readonly AnchorHtmlClassName = "popup-anchor";
     public static readonly ContentHtmlClassName = "popup-content";

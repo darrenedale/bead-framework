@@ -1,11 +1,8 @@
-import {LogicError, ContentStructureError} from "./Application.js";
-import {AutocompleteTextEdit, HTMLAutocompleteTextEditRootElement} from "./AutocompleteTextEdit.js";
-
 interface HTMLListEditChildElement extends HTMLElement {
     readonly listEdit: ListEdit;
 }
 
-export interface HTMLListEditRootElement extends HTMLTableElement {
+interface HTMLListEditRootElement extends HTMLTableElement {
     readonly listEdit: ListEdit;
     value: string[];
     selectedIndex: number;
@@ -30,7 +27,7 @@ function toArray<T>(collection: Collection<T>): T[] {
     return ret;
 }
 
-export class ListEdit {
+class ListEdit {
 
     constructor(edit: HTMLListEditRootElement) {
         let findChildElement = (element: string, propertyName: string): boolean => {

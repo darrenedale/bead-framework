@@ -1,4 +1,4 @@
-export class ApiCallResponse {
+class ApiCallResponse {
     public readonly code: number = NaN;
     public readonly message: string = "";
     public readonly data: string = "";

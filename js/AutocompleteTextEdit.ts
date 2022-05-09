@@ -1,6 +1,3 @@
-import {ApiCallResponse} from "./ApiCallResponse.js";
-import {ApiCall} from "./ApiCall.js";
-
 interface Suggestion {
     label: string,
     value: string,
@@ -14,20 +11,20 @@ interface HTMLSuggestionListElement extends HTMLUListElement {
     currentIndex: number;
 }
 
-export interface HTMLSuggestionListItemElement extends HTMLLIElement {
+interface HTMLSuggestionListItemElement extends HTMLLIElement {
     suggestion: string,
     readonly autocompleteTextEdit: AutocompleteTextEdit,
 }
 
-export interface HTMLAutocompleteInternalTextEdit extends HTMLInputElement {
+interface HTMLAutocompleteInternalTextEdit extends HTMLInputElement {
     readonly autocompleteTextEdit: AutocompleteTextEdit,
 }
 
-export interface HTMLAutocompleteTextEditRootElement extends HTMLDivElement {
+interface HTMLAutocompleteTextEditRootElement extends HTMLDivElement {
     readonly autocompleteTextEdit: AutocompleteTextEdit,
 }
 
-export class AutocompleteTextEdit {
+class AutocompleteTextEdit {
     public static readonly HtmlClassName: string = "autocomplete-text-edit";
     public static readonly InternalEditorHtmlClassName: string = "autocomplete-text-edit-editor";
     public static readonly SuggestionsListHtmlClassName: string = "autocomplete-text-edit-suggestions";
@@ -242,7 +239,7 @@ export class AutocompleteTextEdit {
         }
     }
 
-    get objectDescriptor() {
+    get objectDescriptor(): PropertyDescriptor {
         return {
             enumerable: true,
             configurable: false,
