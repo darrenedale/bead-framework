@@ -1,0 +1,39 @@
+{
+  "name": "equit/libequit-php",
+  "description": "An (incomplete) PHP application framework",
+  "minimum-stability": "stable",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "Darren Edale",
+      "email": "packagist@equituk.net"
+    }
+  ],
+  "version": "0.9.1",
+  "require": {
+    "ext-mbstring": "*",
+    "ext-dom": "*",
+    "ext-pdo": "*",
+    "ext-iconv": "*",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Equit\\": "src"
+    },
+    "files": [
+      "src/includes/array.php",
+      "src/includes/i18n.php",
+      "src/includes/string.php",
+      "src/includes/traversable.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Equit\\Test\\": "test"
+    }
+  }
+}
