@@ -9,11 +9,16 @@
 
 namespace Equit;
 
+use DirectoryIterator;
+use Equit\Exceptions\InvalidPluginException;
+use Equit\Exceptions\InvalidPluginsPathException;
 use Equit\Html\HtmlLiteral;
 use Equit\Html\Page;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
+use RuntimeException;
+use UnexpectedValueException;
 
 /**
  * Core Application class for sites/applications using the framework.
@@ -178,25 +183,26 @@ class WebApplication extends Application
 	protected const DefaultPluginsNamespace = "";
 
 	/** @var string Where plugins are loaded from. */
-	private $m_pluginsPath = self::DefaultPluginsPath;
+	private string $m_pluginsPath = self::DefaultPluginsPath;
 
 	/** @var string The namespace where plugins are located. */
-	private $m_pluginsNamespace = self::DefaultPluginsNamespace;
+	private string $m_pluginsNamespace = self::DefaultPluginsNamespace;
 
 	/** Application class's session data array. */
-	protected $m_session = null;
+	protected ?array $m_session = null;
 
 	/** Loaded plugin storage.*/
-	private $m_pluginsByName = [];
-	private $m_pluginsByAction = [];
+	private array $m_pluginsByName = [];
+	private array $m_pluginsByAction = [];
 
 	/** Stack of requests passed to handleRequest(). */
-	private $m_requestStack = [];
+	private array $m_requestStack = [];
 
-	private $m_isRunning = false;
+	/** @var bool True when exec() is in progress, false otherwise. */
+	private bool $m_isRunning = false;
 
 	/** @var Page The page template to use. */
-	private $m_page;
+	private Page $m_page;
 
 	/**
 	 * Construct a new Application object.
@@ -204,8 +210,11 @@ class WebApplication extends Application
 	 * Application is a singleton class. Once an instance has been created, attempts to create another will trigger
 	 * a fatal error.
 	 *
+	 * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
 	 * @param $dataController DataController|null The data controller for the application.
 	 * @param Page|null $pageTemplate
+	 *
+	 * @throws \Exception if an Application instance has already been created.
 	 */
 	public function __construct(string $appRoot, ?DataController $dataController = null, ?Page $pageTemplate = null)
 	{
@@ -258,7 +267,8 @@ class WebApplication extends Application
 	 *
 	 * @return bool `true` If the provided path was valid and was set, `false` otherwise.
 	 */
-	public function setPluginsPath(string $path): bool {
+	public function setPluginsPath(string $path): bool
+	{
 		if ($this->isRunning()) {
 			AppLog::error("can't set plugins path while application is running", __FILE__, __LINE__, __FUNCTION__);
 			return false;
@@ -280,15 +290,28 @@ class WebApplication extends Application
 	 *
 	 * @return string The plugins path.
 	 */
-	public function pluginsPath(): string {
+	public function pluginsPath(): string
+	{
 		return $this->m_pluginsPath;
 	}
 
-	public function setPluginsNamespace(string $namespace): void {
+	/**
+	 * Set the namespace for plugins.
+	 *
+	 * @param string $namespace The namespace.
+	 */
+	public function setPluginsNamespace(string $namespace): void
+	{
 		$this->m_pluginsNamespace = $namespace;
 	}
 
-	public function pluginsNamespace(): string {
+	/**
+	 * Fetch the namespace for plugins.
+	 *
+	 * @return string The namespace.
+	 */
+	public function pluginsNamespace(): string
+	{
 		return $this->m_pluginsNamespace;
 	}
 
@@ -318,7 +341,8 @@ class WebApplication extends Application
 	 * @return array[mixed => mixed] A reference to the session data for the given context.
 	 * @throws \InvalidArgumentException If an empty context is given.
 	 */
-	public function & sessionData(string $context): array {
+	public function & sessionData(string $context): array
+	{
 		if (empty($context)) {
 			throw new InvalidArgumentException("Session context must not be empty.");
 		}
@@ -340,7 +364,8 @@ class WebApplication extends Application
 	 *
 	 * @param \Equit\Html\Page|null $page The page to use or `null` to unset the existing page.
 	 */
-	public function setPage(?Page $page): void {
+	public function setPage(?Page $page): void
+	{
 		$this->m_page = $page;
 	}
 
@@ -350,13 +375,25 @@ class WebApplication extends Application
 	 * never output content directly - it should almost always be inserted into the page object.
 	 *
 	 * @return Page The application's page.
+	 * @throws \RuntimeException if there is no Page set.
 	 */
-	public function page(): Page {
-		assert(!is_null($this->m_page), new \RuntimeException("Application has no Page object set."));
+	public function page(): Page
+	{
+		assert(!is_null($this->m_page), new RuntimeException("Application has no Page object set."));
 		return $this->m_page;
 	}
 
-	protected function pluginClassNameForPath(string $path): string {
+	/**
+	 * Fetch the expected fully-qualified name for a plugin loaded from a given path.
+	 *
+	 * The default is to take the basename of the path and append it to the plugins namespace to construct the FQ name.
+	 *
+	 * @param string $path The path from which the plugin is being loaded.
+	 *
+	 * @return string The expected fully-qualified class name.
+	 */
+	protected function pluginClassNameForPath(string $path): string
+	{
 		$className = basename($path, ".php");
 		return "{$this->pluginsNamespace()}\\$className";
 	}
@@ -385,17 +422,16 @@ class WebApplication extends Application
 	 *
 	 * @param $path string The path to the plugin to load.
 	 *
-	 * @return bool true if the plugin was loaded successfully, false otherwise.
+	 * @throws \Equit\Exceptions\InvalidPluginException
 	 */
-	private function loadPlugin(string $path): bool {
+	private function loadPlugin(string $path): void
+	{
 		if (!is_file($path) || !is_readable($path)) {
-			AppLog::error("plugin path \"$path\" is not a file or is not readable", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a file or is not readable.");
 		}
 
 		if (".php" != substr($path, -4)) {
-			AppLog::error("plugin path \"$path\" is not a .php file", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a PHP file.");
 		}
 
 		// NOTE this currently requires plugins to be in the global namespace
@@ -403,119 +439,101 @@ class WebApplication extends Application
 		$classNameKey = mb_convert_case($className, MB_CASE_LOWER, "UTF-8");
 
 		if (isset($this->m_pluginsByName[$classNameKey])) {
-			/* already loaded */
-			return false;
+			return;
 		}
 
 		include_once($path);
 
 		if (!class_exists($className)) {
-			AppLog::error("plugin file \"{$path}\" does not define the \"{$className}\" class", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" does not define the expected \"{$className}\" class.");
 		}
 
         $pluginClassInfo = new ReflectionClass($className);
 
 		if (!$pluginClassInfo->isSubclassOf(GenericPlugin::class)) {
-			AppLog::error("plugin file \"$path\" contains the class \"{$className}\" which does not implement " . GenericPlugin::class, __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" contains the class \"{$className}\" which does not implement " . GenericPlugin::class);
 		}
 
 		try {
 			$instanceFn = $pluginClassInfo->getMethod("instance");
 		}
 		catch (ReflectionException $err) {
-			AppLog::error("exception introspecting {$className}::instance() method: [{$err->getCode()}] {$err->getMessage()}", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "Exception introspecting {$className}::instance() method: [{$err->getCode()}] {$err->getMessage()}", 0, $err);
 		}
 
 		if (!$instanceFn->isPublic() || !$instanceFn->isStatic()) {
-			AppLog::error("{$className}::instance() method must be public static", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "{$className}::instance() method must be public static",);
 		}
 
 		if (0 != $instanceFn->getNumberOfRequiredParameters()) {
-			AppLog::error("{$className}::instance() method must be callable with no arguments", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "{$className}::instance() method must be callable with no arguments");
 		}
 
 		$instanceFnReturnType = $instanceFn->getReturnType();
 
 		if (!$instanceFnReturnType) {
-			AppLog::error("{$className}::instance() has no return type", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "{$className}::instance() has no return type");
 		}
 
 		if ($instanceFnReturnType->isBuiltin() || ("self" != $instanceFnReturnType->getName() && !is_a($instanceFnReturnType->getName(), GenericPlugin::class, true))) {
-			AppLog::error("{$className}::instance() must return an instance of {$className}", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "{$className}::instance() must return an instance of {$className}");
 		}
 
         try {
             $plugin = $instanceFn->invoke(null);
         } catch (ReflectionException $err) {
-            AppLog::error("exception invoking {$className}::instance(): [{$err->getCode()}] {$err->getMessage()}", __FILE__, __LINE__, __FUNCTION__);
-            return false;
+			throw new InvalidPluginException($path, null, "Exception invoking {$className}::instance(): [{$err->getCode()}] {$err->getMessage()}", 0, $err);
         }
 
 		if (!$plugin instanceof $className) {
-			AppLog::error("the method {$className}::instance() did not provide an object of the (correct) plugin class", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, null, "{$className}::instance() did not provide an object of the {$className}.");
 		}
 
 		try {
 			$actionsFn = $pluginClassInfo->getMethod("supportedActions");
 		}
 		catch (ReflectionException $err) {
-			AppLog::error("exception introspecting {$className}::supportedActions() method: [{$err->getCode()}] {$err->getMessage()}", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, $plugin, "Exception introspecting {$className}::supportedActions() method: [{$err->getCode()}] {$err->getMessage()}", 0, $err);
 		}
 
 		if (!$actionsFn->isPublic() || !$actionsFn->isStatic()) {
-			AppLog::error("{$className}::supportedActions() method must be public static", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() method must be public static");
 		}
 
 		if (0 != $actionsFn->getNumberOfRequiredParameters()) {
-			AppLog::error("{$className}::supportedActions() method must be callable with no arguments", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() method must be callable with no arguments");
 		}
 
 		$actionsFnReturnType = $actionsFn->getReturnType();
 
 		if (!$actionsFnReturnType) {
-			AppLog::error("{$className}::supportedActions() has no return type", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() has no return type.");
 		}
 
 		if (!$actionsFnReturnType->isBuiltin() || "array" != $actionsFnReturnType->getName()) {
-			AppLog::error("{$className}::supportedActions() must return an array of strings", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() must return an array of strings");
 		}
 
         try {
             $actions = $actionsFn->invoke(null);
         }
         catch (ReflectionException $err) {
-            AppLog::error("exception invoking {$className}::supportedActions(): [{$err->getCode()}] {$err->getMessage()}", __FILE__, __LINE__, __FUNCTION__);
-            return false;
+			throw new InvalidPluginException($path, $plugin, "Exception invoking {$className}::supportedActions(): [{$err->getCode()}] {$err->getMessage()}", 0, $err);
         }
 
 		if (!is_array($actions)) {
-			AppLog::error("the method {$className}::supportedActions() did not provide a list of supported actions", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() did not provide a list of supported actions");
 		}
 
 		foreach ($actions as $action) {
 			if (!is_string($action)) {
-				AppLog::error("the {$className} plugin listed an invalid supported action: " . stringify($action), __FILE__, __LINE__, __FUNCTION__);
-				continue;
+				throw new InvalidPluginException($path, $plugin, "{$className} plugin listed an invalid supported action: " . stringify($action));
 			}
 
 			$action = strtolower($action);
 
 			if (isset($this->m_pluginsByAction[$action])) {
-				AppLog::warning("the {$className} plugin listed a supported action that is already taken by the " . get_class($this->m_pluginsByAction[$action]) . " plugin.", __FILE__, __LINE__, __FUNCTION__);
+				AppLog::warning("{$className} plugin listed a supported action that is already taken by the " . get_class($this->m_pluginsByAction[$action]) . " plugin.", __FILE__, __LINE__, __FUNCTION__);
 				continue;
 			}
 
@@ -523,7 +541,6 @@ class WebApplication extends Application
 		}
 
 		$this->m_pluginsByName[$classNameKey] = $plugin;
-		return true;
 	}
 
 	/** Load all the available plugins.
@@ -532,45 +549,48 @@ class WebApplication extends Application
 	 * error log will contain details of any plugins that failed to load.
 	 *
 	 * @return bool true if the plugins path was successfully scanned for plugins, false otherwise.
+	 * @throws InvalidPluginsPathException if the plugins path can't be read for some reason.
+	 * @throws InvalidPluginException if the plugins path can't be read for some reason.
 	 */
-	protected function loadPlugins(): bool {
+	protected function loadPlugins(): bool
+	{
 		static $s_done = false;
 
 		if (!$s_done) {
-			if (!is_dir($this->m_pluginsPath)) {
-				AppLog::error("plugin path \"$this->m_pluginsPath\" is not a directory", __FILE__, __LINE__, __FUNCTION__);
-				return false;
+			$info = new \SplFileInfo($this->pluginsPath());
+
+			if (!$info->isDir()) {
+				throw new InvalidPluginsPathException($this->pluginsPath(), "Plugin path \"{$this->pluginsPath()}\" is not a directory.");
 			}
 
-			if (!is_readable($this->m_pluginsPath)) {
-				AppLog::error("plugin path \"$this->m_pluginsPath\" is not readable", __FILE__, __LINE__, __FUNCTION__);
-				return false;
+			if (!$info->isReadable() || !$info->isExecutable()) {
+				throw new InvalidPluginsPathException($this->pluginsPath(), "Plugin path \"{$this->pluginsPath()}\" cannot be scanned for plugins to load.");
 			}
 
 			/* load the ordered plugins, then the rest after */
 			$pluginLoadOrder = $this->config("app.plugins.generic.loadorder", []);
 
 			foreach ($pluginLoadOrder as $pluginName) {
-				$path = @realpath($this->m_pluginsPath . DIRECTORY_SEPARATOR . $pluginName . ".php");
+				$pluginFile = new \SplFileInfo("{$this->pluginsPath()}/{$pluginName}.php");
+				$pluginFilePath = $pluginFile->getRealPath();
 
-				if (is_string($path)) {
-					$this->loadPlugin($path);
+				if (false !== $pluginFilePath) {
+					$this->loadPlugin($pluginFilePath);
 				}
 			}
 
-			$d = dir($this->m_pluginsPath);
-
-			if (!$d) {
-				AppLog::error("entries in plugin path \"$this->m_pluginsPath\" could not be listed", __FILE__, __LINE__, __FUNCTION__);
-				return false;
+			try {
+				$directory = new DirectoryIterator($this->pluginsPath());
+			} catch (UnexpectedValueException $err) {
+				throw new InvalidPluginsPathException($this->pluginsPath(), "Plugin path \"{$this->pluginsPath()}\" cannot be scanned for plugins to load.", 0, $err);
 			}
 
-			while (false != ($f = $d->read())) {
-				if ("." == $f || ".." == $f) {
+			foreach ($directory as $pluginFile) {
+				if ($pluginFile->isDot()) {
 					continue;
 				}
 
-				$this->loadPlugin(realpath($this->m_pluginsPath . DIRECTORY_SEPARATOR . $f));
+				$this->loadPlugin($pluginFile->getRealPath());
 			}
 
 			$s_done = true;
@@ -583,9 +603,10 @@ class WebApplication extends Application
 	/**
 	 * Fetch the list of loaded plugins.
 	 *
-	 * @return array[string] The names of the loaded plugins.
+	 * @return array<string> The names of the loaded plugins.
 	 */
-	public function loadedPlugins(): array {
+	public function loadedPlugins(): array
+	{
 		return array_keys($this->m_pluginsByName);
 	}
 
@@ -595,23 +616,17 @@ class WebApplication extends Application
 	 * If the plugin has been loaded, the created instance of that plugin will be returned.
 	 *
 	 * Plugins can use this method to fetch instances of any other plugins on which they depend. If this method
-	 * returns
-	 * _null_ then plugins should assume that the plugin on which they depend is not available and act accordingly.
+	 * returns _null_ then plugins should assume that the plugin on which they depend is not available and act
+	 * accordingly.
 	 *
 	 * @param $name string The class name of the plugin.
 	 *
 	 * @return GenericPlugin|null The loaded plugin instance if the named plugin was loaded, _null_ otherwise.
 	 */
-	public function pluginByName(string $name): ?GenericPlugin {
-		$name = strtolower($name);
+	public function pluginByName(string $name): ?GenericPlugin
+	{
 		$this->loadPlugins();
-
-		if (!isset($this->m_pluginsByName[$name])) {
-			AppLog::warning("no plugin named \"$name\"", __FILE__, __LINE__, __FUNCTION__);
-			return null;
-		}
-
-		return $this->m_pluginsByName[$name];
+		return $this->m_pluginsByName[mb_strtolower($name, "UTF-8")] ?? null;
 	}
 
 	/**
@@ -622,16 +637,11 @@ class WebApplication extends Application
 	 * @return GenericPlugin|null The plugin registered to handle the named action, or _null_ if no plugin is
 	 * registered for the action.
 	 */
-	public function pluginForAction(string $action): ?GenericPlugin {
-		$action = mb_convert_case($action, MB_CASE_LOWER, "UTF-8");
+	public function pluginForAction(string $action): ?GenericPlugin
+	{
+		$action = mb_strtolower($action, "UTF-8");
 		$this->loadPlugins();
-
-		if (!isset($this->m_pluginsByAction[$action])) {
-			AppLog::warning("no plugin for action \"$action\"", __FILE__, __LINE__, __FUNCTION__);
-			return null;
-		}
-
-		return $this->m_pluginsByAction[$action];
+		return $this->m_pluginsByAction[mb_strtolower($action, "UTF-8")] ?? null;
 	}
 
 	/**
@@ -645,7 +655,8 @@ class WebApplication extends Application
 	 * @param $mimeType string _optional_ the MIME type for the download.
 	 * @param $headers array[string=>string] _optional_ Additional headers to send with the download.
 	 */
-	public function sendDownload(string $data, string $fileName, string $mimeType = "application/octet-stream", array $headers = []): void {
+	public function sendDownload(string $data, string $fileName, string $mimeType = "application/octet-stream", array $headers = []): void
+	{
 		if (0 != ob_get_level() && !ob_end_clean()) {
 			AppLog::error("failed to clear output buffer before sending file download (requested action = \"" . $this->currentRequest()->action() . "\")", __FILE__, __LINE__, __FUNCTION__);
 		}
@@ -672,30 +683,23 @@ class WebApplication extends Application
 	 * @param $data string the data to send.
 	 * @param $mimeType string|null _optional_ the MIME type for the download.
 	 * @param $headers array[string=>string] _optional_ Additional headers to send with the download.
-	 *
-	 * @return bool _false_ if the send failed. On success, the application will exit with return code 0 before the
-	 *     end of the method is reached (i.e. it will not return).
 	 */
-	public function sendRawData(string $data, ?string $mimeType = null, array $headers = []): bool {
-		if (is_string($data)) {
-			ob_end_clean();
+	public function sendRawData(string $data, ?string $mimeType = null, array $headers = []): bool
+	{
+		ob_end_clean();
 
-			if (!empty($mimeType)) {
-				header("content-type: $mimeType", true);
-			} else {
-				header("content-type: application/octet-stream", true);
-			}
-
-			foreach ($headers as $name => $value) {
-				header("$name: $value", false);
-			}
-
-			echo $data;
-			exit(0);
+		if (!empty($mimeType)) {
+			header("content-type: $mimeType", true);
+		} else {
+			header("content-type: application/octet-stream", true);
 		}
 
-		AppLog::error("invalid download data", __FILE__, __LINE__, __FUNCTION__);
-		return false;
+		foreach ($headers as $name => $value) {
+			header("$name: $value", false);
+		}
+
+		echo $data;
+		exit(0);
 	}
 
 	/**
@@ -719,12 +723,13 @@ class WebApplication extends Application
 	 * @param $message string _optional_ A message to go with the code.
 	 * @param $data string _optional_ The data to send as the response.
 	 */
-	public function sendApiResponse(int $code, string $message = "", string $data = ""): void {
+	public function sendApiResponse(int $code, string $message = "", string $data = ""): void
+	{
 		if (0 != ob_get_level() && !ob_end_clean()) {
 			AppLog::error("failed to clear output buffer before sending API response (requested action = \"" . $this->currentRequest()->action() . "\"; response = \"$code $message\")", __FILE__, __LINE__, __FUNCTION__);
 		}
 
-		echo "$code" . (empty($message) ? "" : " $message") . "\n$data";
+		echo "{$code}" . (empty($message) ? "" : " $message") . "\n{$data}";
 		exit(0);
 	}
 
@@ -735,8 +740,9 @@ class WebApplication extends Application
 	 *
 	 * @param $request Request The request to push onto the stack.
 	 */
-	protected function pushRequest(Request $request): void {
-		array_push($this->m_requestStack, $request);
+	protected function pushRequest(Request $request): void
+	{
+		$this->m_requestStack[] = $request;
 	}
 
 	/** Pop a request from the request stack.
@@ -744,7 +750,8 @@ class WebApplication extends Application
 	 * This is a private internal method that maintains the request stack that is used to provide plugins with
 	 * access to the current request. It should only be used by LibEquit\Application::handleRequest()
 	 */
-	protected function popRequest(): void {
+	protected function popRequest(): void
+	{
 		array_pop($this->m_requestStack);
 	}
 
@@ -757,14 +764,10 @@ class WebApplication extends Application
 	 *
 	 * @return Request|null The current request being handled, or _null_ if the request stack is empty.
 	 */
-	public function currentRequest(): ?Request {
-		$l = count($this->m_requestStack);
-
-		if (0 < $l) {
-			return $this->m_requestStack[$l - 1];
-		}
-
-		return null;
+	public function currentRequest(): ?Request
+	{
+		$n = count($this->m_requestStack);
+		return (0 < $n ? $this->m_requestStack[$n - 1] : null);
 	}
 
 	/** Fetch the original request submitted by the user.
@@ -776,7 +779,8 @@ class WebApplication extends Application
 	 *
 	 * @return Request The user's original request.
 	 */
-	public function originalRequest(): Request {
+	public function originalRequest(): Request
+	{
 		return Request::originalUserRequest();
 	}
 
@@ -792,15 +796,11 @@ class WebApplication extends Application
 	 * @return bool _true_ if the request was accepted, _false_ otherwise. A request for an action for which there
 	 *     is no registered plugin will result in a redirect to the home page, and will return _false_.
 	 */
-	public function handleRequest(Request $request): bool {
-		if (!($request instanceof Request)) {
-			AppLog::error("invalid request", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
-
+	public function handleRequest(Request $request): bool
+	{
 		$this->pushRequest($request);
 		$this->emitEvent("application.handlerequest.requestreceived", $request);
-		$action = mb_convert_case($request->action(), MB_CASE_LOWER, "UTF-8");
+		$action = mb_strtolower($request->action(), "UTF-8");
 
 		if (empty($action) || "home" == $action) {
 			$this->page()->addMainElement(new HtmlLiteral("<div id=\"" . html($this->config("app.uid")) . "-homepage-container\" class=\"section container\">"));
@@ -838,17 +838,19 @@ class WebApplication extends Application
 	 * page. It emits some events that may be of interest to plugins.
 	 *
 	 * Once this method returns, the application is considered to have exited.
+	 *
+	 * @throws \RuntimeException if the PHP version does not match or exceed the minimum version
 	 */
-	public function exec(): int {
+	public function exec(): int
+	{
 		if (0 > version_compare(PHP_VERSION, $this->minimumPhpVersion())) {
 			$appName = $this->title();
 
 			if (empty($appName)) {
-				$appName = tr("This application");
+				$appName = "This application";
 			}
 
-			AppLog::error("$appName needs PHP v" . $this->minimumPhpVersion() . " but v" . PHP_VERSION . " is installed", __FILE__, __LINE__, __FUNCTION__);
-			trigger_error(tr("%1 is not able to run on this server.", __FILE__, __LINE__, $appName), E_USER_ERROR);
+			throw new RuntimeException("{$appName} is not able to run on this server.");
 		}
 
 		$this->m_isRunning = true;

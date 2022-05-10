@@ -3,11 +3,9 @@
 /**
  * Defines the LibEquit\Request class.
  *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/UploadedFile.php
- *
  * ### Changes
+ * - (2022-05) Type hinting as far as PHP7.4 permits.
+ *             Throws TypeError instead of using return values to indicate violation of parameter type constraints.
  * - (2017-05) Updated documentation. Migrated from array() to `[]` syntax.
  * - (2013-12-10) First version of this file.
  *
@@ -19,6 +17,8 @@
  */
 
 namespace Equit;
+
+use TypeError;
 
 /**
  * Abstract representation of a request made to the application.
@@ -46,13 +46,6 @@ namespace Equit;
  * parameters on the LibEquit\Request object. The url() and rawUrl() methods do not take account of any POST data or
  * uploaded files in the request.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * @aio-api None
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -68,30 +61,36 @@ namespace Equit;
  * ### Session Data
  * This module does not create a session context.
  *
- * @class LibEquit\Request
  * @author Darren Edale
  * @package libequit
  * @see UploadedFile, WebApplication
  */
 class Request
 {
+	/** @var \Equit\Request|null The request parsed from the superglobals. */
 	private static ?Request $s_originalUserRequest = null;
+
+	/** @var array<string, string> The request's URL parameters. */
 	private array $m_urlParams = [];
+
+	/** @var array<string, array|string> The request's POST data. */
 	private array $m_postData = [];
+
+	/** @var array<string,\Equit\UploadedFile> The files uploaded with the request. */
 	private array $m_files = [];
+
+	/** @var array<string, string> The request's HTTP headers. */
 	private array $m_headers = [];
 
 	/**
 	 * Create a new Request.
 	 *
-	 * @param $action string _optional_ The action the request is for.
+	 * @param $action string|null The action the request is for.
 	 *
-	 * All requests contain one special URL parameter, the action, which is the
-	 * core "thing" that the request is asking the application to do. It is
-	 * matched by the LibEquit\Application object against the actions supported by
-	 * plugins when choosing what to do with the request. The action can be
-	 * `null` (or omitted from the constructor) to create a request with no
-	 * action. Such a request will not be handled by any plugins.
+	 * All requests contain one special URL parameter, the action, which is the core "thing" that the request is asking 
+	 * the application to do. It is matched by the LibEquit\Application object against the actions supported by plugins
+	 * when choosing what to do with the request. The action can be `null` (or omitted from the constructor) to create a
+	 * request with no action. Such a request will not be handled by any plugins.
 	 */
 	public function __construct(?string $action = null)
 	{
@@ -171,99 +170,76 @@ class Request
 		return $url;
 	}
 
-	/* $key and $value must be strings. $key will be converted to lower case.
-	 * $value may also be NULL to unset the parameter. */
 	/**
 	 * Set a URL parameter in the request.
-	 *
-	 * @param $key string The key for the URL parameter.
-	 * @param $value string|null The value for the URL parameter.
 	 *
 	 * The value parameter may be `null` to unset a parameter in the URL. After this is done, the parameter will no
 	 * longer appear in the URL.
 	 *
-	 * URL parameter keys are not case sensitive. All keys are converted to lower-case for consistency. Updating a
+	 * URL parameter keys are not case-sensitive. All keys are converted to lower-case for consistency. Updating a
 	 * parameter that already exists using a version of the key that differs only in case will overwrite the existing
 	 * parameter value.
 	 *
-	 * @return bool `true` if the URL parameter was set, `false` otherwise.
+	 * @param $key string The key for the URL parameter.
+	 * @param $value string|null The value for the URL parameter.
 	 */
-	public function setUrlParameter(string $key, ?string $value): bool
+	public function setUrlParameter(string $key, ?string $value): void
 	{
-		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
+		$key = mb_strtolower($key, "UTF-8");
 
-		/* cannot unset action parameter using this method */
 		if (is_null($value)) {
-			if (array_key_exists($key, $this->m_urlParams)) {
-				unset($this->m_urlParams[$key]);
-			}
-
-			return true;
+			unset($this->m_urlParams[$key]);
 		} else {
-			if (is_string($value)) {
-				$this->m_urlParams[$key] = $value;
-				return true;
-			}
+			$this->m_urlParams[$key] = $value;
 		}
-
-		AppLog::error("invalid parameter value: " . stringify($value), __FILE__, __LINE__, __FUNCTION__);
-		return false;
 	}
 
 	/**
 	 * Set the value for some POST data.
 	 *
-	 * @param $key string The key for the POST data.
-	 * @param $value string|array|null The value for the POST data.
-	 *
 	 * The value parameter may be `null` to unset a piece of POST data. After this is done, the parameter will no
 	 * longer appear in the POST data.
 	 *
-	 * POST data keys are not case sensitive. All keys are converted to lower-case for consistency. Updating some data
+	 * POST data keys are not case-sensitive. All keys are converted to lower-case for consistency. Updating some data
 	 * that already exists using a version of the key that differs only in case will overwrite the existing value.
 	 *
-	 * @return bool `true` if the POST data was set, `false` otherwise.
+	 * @param $key string The key for the POST data.
+	 * @param $value string|array|null The value for the POST data.
+	 *
+	 * @throws TypeError if `$value` is not string, array or null.
 	 */
-	public function setPostData(string $key, $value): bool
+	public function setPostData(string $key, $value): void
 	{
-		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
+		$key = mb_strtolower($key, "UTF-8");
 
 		if (is_null($value)) {
-			if (array_key_exists($key, $this->m_postData)) {
-				unset($this->m_postData[$key]);
-			}
-
-			return true;
-		} else {
-			if (is_string($value) || is_array($value)) {
-				$this->m_postData[$key] = $value;
-				return true;
-			}
+			unset($this->m_postData[$key]);
+		} else if (is_string($value) || is_array($value)) {
+			$this->m_postData[$key] = $value;
 		}
 
-		AppLog::error('invalid data value: ' . stringify($value), __FILE__, __LINE__, __FUNCTION__);
-		return false;
+		throw new TypeError("POST data value required to be string, array or null");
 	}
 
 	/**
-	 * Check whether an URL parameter was provided with the request.
+	 * Check whether a URL parameter was provided with the request.
 	 *
-	 * @param $key `string` They key of the parameter to check.
+	 * Keys are not case-sensitive.
 	 *
-	 * Keys are not case sensitive.
+	 * @param $key string They key of the parameter to check.
 	 *
 	 * @return bool `true` if the URL parameter was provided, `false` otherwise.
 	 */
 	public function hasUrlParameter(string $key): bool
 	{
-		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
+		$key = mb_strtolower($key, 'UTF-8');
 		return array_key_exists($key, $this->m_urlParams);
 	}
 
 	/**
 	 * Fetch the value of a URL parameter.
 	 *
-	 * Keys are not case sensitive.
+	 * Keys are not case-sensitive.
 	 *
 	 * @param $key string They key of the value to fetch.
 	 *
@@ -271,7 +247,7 @@ class Request
 	 */
 	public function urlParameter(string $key): ?string
 	{
-		$key = mb_convert_case($key, MB_CASE_LOWER, "UTF-8");
+		$key = mb_strtolower($key, "UTF-8");
 		return $this->m_urlParams[$key] ?? null;
 	}
 
@@ -281,7 +257,7 @@ class Request
 	 * The URL parameters are provided as an associative array. All parameter
 	 * keys are guaranteed to be all lower-case.
 	 *
-	 * @return array[string=>string] The URL parameters.
+	 * @return array<string, string> The URL parameters.
 	 */
 	public function allUrlParameters(): array
 	{
@@ -291,7 +267,7 @@ class Request
 	/**
 	 * Check whether some POST data was provided with the request.
 	 *
-	 * Keys are not case sensitive.
+	 * Keys are not case-sensitive.
 	 *
 	 * @param $key string The key of the data to check.
 	 *
@@ -299,14 +275,14 @@ class Request
 	 */
 	public function hasPostData(string $key): bool
 	{
-		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
+		$key = mb_strtolower($key, 'UTF-8');
 		return array_key_exists($key, $this->m_postData);
 	}
 
 	/**
 	 * Fetch the value of some POST data.
 	 *
-	 * Keys are not case sensitive.
+	 * Keys are not case-sensitive.
 	 *
 	 * @param $key string They key of the value to fetch.
 	 *
@@ -314,7 +290,7 @@ class Request
 	 */
 	public function postData(string $key)
 	{
-		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
+		$key = mb_strtolower($key, 'UTF-8');
 
 		if (array_key_exists($key, $this->m_postData)) {
 			return $this->m_postData[$key];
@@ -326,10 +302,9 @@ class Request
 	/**
 	 * Fetch all the POST data.
 	 *
-	 * The POST data is provided as an associative array. All POST data keys are
-	 * guaranteed to be all lower-case.
+	 * The POST data is provided as an associative array. All POST data keys are guaranteed to be all lower-case.
 	 *
-	 * @return array[string=>string] The URL parameters.
+	 * @return array<string, string> The POST data.
 	 */
 	public function allPostData(): array
 	{
@@ -337,15 +312,15 @@ class Request
 	}
 
 	/**
-	 * Fetch the value of a URL parameter, or if it is absent the
-	 * POST data.
+	 * Fetch the value of a URL parameter, or if it is absent the POST data.
 	 *
-	 * Keys are not case sensitive.
+	 * The URL parameter takes precedence.
+	 * 
+	 * Keys are not case-sensitive.
 	 *
 	 * @param $key string They key of the value to fetch.
 	 *
-	 * @return string|array|null  The URL parameter, or the POST data value if the URL parameter is not set, or `null`
-	 * if  neither is set.
+	 * @return string|array|null The value or `null` if neither the URL parameter nor POST data is set.
 	 */
 	public function urlParameterOrPostData(string $key)
 	{
@@ -354,15 +329,15 @@ class Request
 
 
 	/**
-	 * Fetch the value of some POST data, or if it is absent the
-	 * URL parameter.
+	 * Fetch the value of some POST data, or if it is absent the URL parameter.
 	 *
-	 * Keys are not case sensitive.
+	 * The POST data takes precedence.
+	 *
+	 * Keys are not case-sensitive.
 	 *
 	 * @param $key string They key of the value to fetch.
 	 *
-	 * @return string|array|null The POST data value, or the URL parameter if the POST data is not set, or `null` if
-	 * the neither is set.
+	 * @return string|array|null The value or `null` if neither the POST data nor the URL parameter is set.
 	 */
 	public function postDataOrUrlParameter(string $key)
 	{
@@ -372,15 +347,15 @@ class Request
 	/**
 	 * Fetch an uploaded file.
 	 *
-	 * Uploaded file identifiers are not cas sensitive.
+	 * Uploaded file identifiers are not case-sensitive.
 	 *
-	 * @param $identifier `string` The identifier of the file to fetch.
+	 * @param $identifier string The identifier of the file to fetch.
 	 *
-	 * @return UploadedFile|null The requested file, or _null_ if the file does not exist.
+	 * @return UploadedFile|null The requested file, or `null` if the file does not exist.
 	 */
 	public function uploadedFile(string $identifier): ?UploadedFile
 	{
-		$identifier = mb_convert_case($identifier, MB_CASE_LOWER, "UTF-8");
+		$identifier = mb_strtolower($identifier, "UTF-8");
 
 		if (array_key_exists($identifier, $this->m_files)) {
 			return $this->m_files[$identifier];
@@ -392,43 +367,26 @@ class Request
 	/**
 	 * Set an uploaded file.
 	 *
-	 * @param $identifier `string` The identifier for the uploaded file.
+	 * @param $identifier string The identifier for the uploaded file.
 	 * @param $file `UploadedFile` The file to set.
 	 *
-	 * Uploaded file identifiers are not case sensitive. All identifiers are
+	 * Uploaded file identifiers are not case-sensitive. All identifiers are
 	 * converted to lower- case for consistency. Updating a file that already
 	 * exists using a version of the identifier that differs only in case will
 	 * discard and replace the existing file object.
 	 *
 	 * This method is of most use when the application is parsing the request
 	 * sent by the user agent.
-	 *
-	 * @return bool `true` if the uploaded file was set, `false` otherwise.
 	 */
-	public function setUploadedFile($identifier, &$file)
+	public function setUploadedFile(string $identifier, ?UploadedFile $file): void
 	{
-		if (!is_string($identifier)) {
-			AppLog::error('invalid uploaded file identifier: ' . stringify($identifier), __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
+		$identifier = mb_strtolower($identifier, "UTF-8");
 
-		$identifier = mb_convert_case($identifier, MB_CASE_LOWER, 'UTF-8');
-
-		if ($file instanceof UploadedFile) {
-			$this->m_files[$identifier] = $file;
-			return true;
+		if (!isset($file)) {
+			unset($this->m_files[$identifier]);
 		} else {
-			if (is_null($file)) {
-				if (array_key_exists($identifier, $this->m_files)) {
-					unset($this->m_files[$identifier]);
-				}
-
-				return true;
-			}
+			$this->m_files[$identifier] = $file;
 		}
-
-		AppLog::error('invalid uploaded file: ' . stringify($file), __FILE__, __LINE__, __FUNCTION__);
-		return false;
 	}
 
 	/**
@@ -449,15 +407,13 @@ class Request
 	 * The action can be set to `null` to unset the action. Doing so will, however, make the request one that will not
 	 * be passed to any plugins when submitted to LibEquit\Application::handleRequest().
 	 *
-	 * Request actions are case sensitive.
+	 * Request actions are case-sensitive.
 	 *
 	 * @param $action string|null The action to set.
-	 *
-	 * @return bool `true` if the action was set, `false` otherwise.
 	 */
-	public function setAction(?string $action): bool
+	public function setAction(?string $action): void
 	{
-		return $this->setUrlParameter("action", $action);
+		$this->setUrlParameter("action", $action);
 	}
 
 	/**
@@ -499,10 +455,9 @@ class Request
 	/**
 	 * Fetch the path for the base URL.
 	 *
-	 * This method provides the path part of the base URL - the URL without the
-	 * script name attached. This can be useful when constructing URLs for page
-	 * elements that need to reference resources other than the main
-	 * application. It contains the protocol.
+	 * This method provides the path part of the base URL - the URL without the script name attached. This can be useful
+	 * when constructing URLs for page elements that need to reference resources other than the main application. It
+	 * contains the protocol.
 	 *
 	 * @return string The base URL path.
 	 */
@@ -514,9 +469,8 @@ class Request
 	/**
 	 * Fetch the path for the base URL.
 	 *
-	 * This method provides the script part of the base URL - the URL without
-	 * the path prefix. This can be useful when you just need the name of the
-	 * base script that is running.
+	 * This method provides the script part of the base URL - the URL without the path prefix. This can be useful when
+	 * you just need the name of the base script that is running.
 	 *
 	 * @return string The base URL path.
 	 */
@@ -528,10 +482,9 @@ class Request
 	/**
 	 * Fetch the home request.
 	 *
-	 * This method provides a request object that is guaranteed to display the
-	 * home page when provided to LibEquit\Application::handleRequest(). This method
-	 * never fails, and it is safe to modify the provided request, doing so will
-	 * not cause subsequent requests retrieved using this method to be corrupt.
+	 * This method provides a request object that is guaranteed to display the home page when provided to
+	 * WebApplication::handleRequest(). This method never fails, and it is safe to modify the provided request, doing so
+	 * will not cause subsequent requests retrieved using this method to be corrupt.
 	 *
 	 * @return Request The home request.
 	 */
