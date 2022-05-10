@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Test\Constraints;
+namespace Equit\Test\Framework\Constraints;
 
 use PHPUnit\Framework\Constraint\Constraint;
 
@@ -49,11 +49,11 @@ class FlatArrayIsEquivalent extends Constraint {
 	/**
 	 * Check that an array is equivalent to our original.
 	 *
-	 * @param array $other The array to compare to the original.
+	 * @param mixed $other The array to compare to the original.
 	 *
 	 * @return bool `true` if they are equivalent, `false` if not.
 	 */
-	public function matches(array $other): bool {
+	public function matches($other): bool {
 		if($this->m_count != count($other)) {
 			return false;
 		}

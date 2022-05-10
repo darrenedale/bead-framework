@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Test\Constraints;
+namespace Equit\Test\Framework\Constraints;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Constraint\Constraint;
@@ -8,15 +8,15 @@ use ReflectionException;
 use ReflectionProperty;
 
 class AttributeIsInt extends Constraint {
-	/**
-	 * Check that an attribute of an object is an int.
-	 *
-	 * @param array $objectAndAttr A composed array - the object whose attribute needs to be tested as the first element and
-	 * the name of the attribute as the second.
-	 *
-	 * @return bool `true` if they are equivalent, `false` if not.
-	 */
-	public function matches(array $objectAndAttr): bool {
+    /**
+     * Check that an attribute of an object is an int.
+     *
+     * @param mixed $objectAndAttr A composed array - the object whose attribute needs to be tested as the first element and
+     * the name of the attribute as the second.
+     *
+     * @return bool `true` if they are equivalent, `false` if not.
+     */
+	public function matches($objectAndAttr): bool {
 		[$object, $attr] = $objectAndAttr;
 
 		if(!is_object($object)) {
