@@ -22,6 +22,9 @@ jobs:
       # Check-out repo under $GITHUB_WORKSPACE
       - uses: actions/checkout@v3
 
+      - name: Install TSC
+        run: npm install -g typescript
+
       # Build the main equit.js product from the tsconfig.json project file
       - name: Compile Typescript
         run: tsc -p $GITHUB_WORKSPACE/js/tsconfig.json
