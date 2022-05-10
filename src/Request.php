@@ -216,9 +216,9 @@ class Request
 			unset($this->m_postData[$key]);
 		} else if (is_string($value) || is_array($value)) {
 			$this->m_postData[$key] = $value;
-		}
-
-		throw new TypeError("POST data value required to be string, array or null");
+		} else {
+            throw new TypeError("POST data value required to be string, array or null");
+        }
 	}
 
 	/**
