@@ -8,8 +8,10 @@ on:
     branches: [ production ]
   pull_request:
     branches: [ production ]
+  # Make the workflow re-usable
+  workflow_call:
 
-  # Allows workflow to be triggered manually from the Actions tab
+  # Allow workflow to be triggered manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -17,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Check-out repo under $GITHUB_WORKSPACE
       - uses: actions/checkout@v3
 
       # Build the main equit.js product from the tsconfig.json project file
