@@ -43,14 +43,11 @@ class Division extends PageElement implements ContainerPageElement {
 	use HasTooltip;
 	use HasChildElements;
 
-	/** @var array[PageElement] The child elements for the division. */
-	private $m_children = [];
-
 	/** Create a new PageDivision object.
 	 *
 	 * The ID parameter is optional. By default, a division with no ID is created.
 	 *
-	 * @param $id string _optional_ The ID for the division.
+	 * @param $id string|null The ID for the division.
 	 */
 	public function __construct(?string $id = null) {
 		parent::__construct($id);

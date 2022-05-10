@@ -43,9 +43,6 @@ class Paragraph extends PageElement implements ContainerPageElement {
 	use HasTooltip;
 	use HasChildElements;
 
-	/** @var array[PageElement] The child elements for the section. */
-	private $m_children = [];
-
 	/** Initialiwse a new Paragraph object.
 	 *
 	 * The ID parameter is optional. By default, a paragraph with no ID is created.
