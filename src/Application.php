@@ -2,58 +2,81 @@
 
 namespace Equit;
 
+use Equit\Contracts\ErrorHandler;
 use DirectoryIterator;
+use Equit\ErrorHandler as EquitErrorHandler;
 use Exception;
+use RuntimeException;
+use SplFileInfo;
+use Throwable;
 
-class Application
+/**
+ * Abstract base class for all applications.
+ *
+ * This provides a bunch of core data and functionality: loading configuration, storing the singleton, the database and
+ * various metadata about the application. What you most likely want to do is use or create a subclass of
+ * ConsoleApplication or WebApplication.
+ */
+abstract class Application
 {
+    /** @var int Exit status code for exec() indicating all was well. */
+    public const ExitOk = 0;
+
     /** The singleton instance. */
     protected static ?Application $s_instance = null;
 
+    /** @var string The application's root directory. */
     private string $m_appRoot;
 
     /** @var string Optional application version string. */
-    protected $m_version = "";
+    protected string $m_version = "";
 
     /** event callback storage. */
-    protected $m_eventCallbacks = [];
+    protected array $m_eventCallbacks = [];
+
     /** @var string Optional application title. */
-    protected $m_title = "";
+    protected string $m_title = "";
 
     /** The minimum PHP version the app requires to run. */
-    private $m_minimumPhpVersion = "0.0.0";
+    private string $m_minimumPhpVersion = "0.0.0";
 
     /** @var null|\Equit\Translator The currently installed translator */
-    protected $m_translator = null;
+    private ?Translator $m_translator = null;
 
-    /** @var DataController The data controller. */
-    protected $m_dataController = null;
+    /** @var \Equit\Contracts\ErrorHandler|null The currently installed error handler. */
+    private ?ErrorHandler $m_errorHandler = null;
 
+    /** @var DataController|null The data controller. */
+    private ?DataController $m_dataController = null;
+
+    /** @var array The loaded config. */
     private array $m_config = [];
 
     /**
      * @param string $appRoot
      * @param \Equit\DataController|null $dataController
      *
-     * @throws \Exception if the singleton has already been created.
+     * @throws \Exception if the singleton has already been created or if the provided root directory does not exist.
      */
     public function __construct(string $appRoot, ?DataController $dataController = null)
     {
+        $this->setErrorHandler(new EquitErrorHandler());
+
         if (isset(self::$s_instance)) {
             throw new Exception("Application instance already created.");
         }
 
         self::$s_instance = $this;
-        $this->m_appRoot  = (new \SplFileInfo($appRoot))->getRealPath();
+        $realAppRoot = (new SplFileInfo($appRoot))->getRealPath();
 
-        if (false === $this->m_appRoot) {
+        if (false === $realAppRoot) {
             throw new Exception("Application root directory '{$appRoot}' does not exist.");
         }
 
+        $this->m_appRoot = $realAppRoot;
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->setupTranslator();
         $this->setDataController($dataController);
-//		$this->setLibraryPath(constant("app.libs.path") ?? self::DefaultLibsPath);
     }
 
     /**
@@ -73,13 +96,21 @@ class Application
         return (self::$s_instance instanceof static) ? self::$s_instance : null;
     }
 
+    /**
+     * Helper to set up the translator.
+     */
     private function setupTranslator(): void
     {
         $this->m_translator = new Translator();
         $this->m_translator->addSearchPath("i18n");
-        $this->m_translator->setLanguage("en-GB");
+        $this->m_translator->setLanguage($this->config("app.language", "en-GB"));
     }
 
+    /**
+     * Load the configuration files from the provided directory.
+     *
+     * @param string $path The directory from which to load the configuration.
+     */
     protected function loadConfig(string $path): void
     {
         $this->m_config = [];
@@ -94,6 +125,11 @@ class Application
         }
     }
 
+    /**
+     * The root directory for the application.
+     *
+     * @return string
+     */
     public function rootDir(): string
     {
         return $this->m_appRoot;
@@ -192,77 +228,6 @@ class Application
     }
 
     /**
-     * Disconnect a callback from an event.
-     *
-     * If the callback has been connected to the event multiple times, _all_ connections to the event will be
-     * disconnected for that callback.
-     *
-     * Attempting to disconnect a callback that is not connected to the event is not considered an error and is
-     * silently ignored.
-     *
-     * ## Warning
-     * Connections to events do not account for the fact that PHP method and function names are not case-sensitive.
-     * When finding the connections to disconnect, the callback search is *case-sensitive*. To work around this
-     * problem you should:
-     * - normalise all your callback method and function names for case; or
-     * - ensure that you rigorously always use identical strings for method and function names passed to
-     * _connect()_ and
-     *   _disconnect()_; or
-     * - use references to closures.
-     *
-     * ### Note
-     * Disconnecting a closure for which you have not kept a reference is not possible. Only use lambda literals
-     * with connect() if you are certain you will never need to disconnect the function. Disconnecting a reference
-     * to a closure previously passed to connect() will work. So do this if you think you might need to disconnect
-     * it:
-     *
-     *     $fn = function() { ... do something ... };
-     *     Application::instance()->connect('some.event', $fn);
-     *     ...
-     *     Application::instance()->disconnect('some.event', $fn);
-     *
-     * Otherwise you can just do this if you know you will never need to disconnect it:
-     *
-     *     Application::instance()->connect('some.event', function() { ... do something ... });
-     *
-     * @param $event string is the event to disconnect from.
-     * @param $callback callable is the callback to disconnect.
-     *
-     * @return bool _true_ if the callback was disconnected (or was not connected in the first place), _false_ if
-     * an error occurred.
-     */
-    public function disconnect(string $event, callable $callback): bool
-    {
-        if (!is_string($event)) {
-            AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
-        if (!is_callable($callback, true)) {
-            AppLog::error("invalid callback", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
-        $event = strtolower($event);
-
-        if (isset($this->m_eventCallbacks[$event])) {
-            $myCallbacks = [];
-
-            foreach ($this->m_eventCallbacks[$event] as $myCallback) {
-                if ($callback == $myCallback) {
-                    continue;
-                }
-
-                $myCallbacks[] = $myCallback;
-            }
-
-            $this->m_eventCallbacks[$event] = $myCallbacks;
-        }
-
-        return true;
-    }
-
-    /**
      * Determine whether the application is set in debug mode.
      *
      * The application is in debug mode if the appropriate setting has been
@@ -275,6 +240,39 @@ class Application
     public function isInDebugMode(): bool
     {
         return true === $this->config("app.debugmode", false);
+    }
+
+    /**
+     * Fetch the current error handler.
+     *
+     * Applications must always have an installed error handler. The constructor for this base class installs the
+     * default Equit error handler. If you find you're receiving a RuntimeException indicating you don't have an error
+     * handler, it's likely you've created an Application subclass that doesn't call the base class constructor.
+     *
+     * @return \Equit\Contracts\ErrorHandler
+     */
+    public function errorHandler(): ErrorHandler
+    {
+        assert($this->m_errorHandler instanceof ErrorHandler, new RuntimeException("Error handler has been unset."));
+        return $this->m_errorHandler;
+    }
+
+    /**
+     * Set the error handler for the application.
+     *
+     * @param \Equit\Contracts\ErrorHandler $handler
+     *
+     * @return void
+     */
+    public function setErrorHandler(ErrorHandler $handler): void
+    {
+        $this->m_errorHandler = $handler;
+        set_error_handler(function(int $type, string $message, string $file, int $line ) use ($handler): void {
+            $handler->handleError($type, $message, $file, $line);
+        });
+        set_exception_handler(function(Throwable $err) use ($handler): void {
+            $handler->handleException($err);
+        });
     }
 
     /** Fetch the application's data controller.
@@ -432,7 +430,76 @@ class Application
         return true;
     }
 
-    public function exec(): int {
-        return 0;
+    /**
+     * Disconnect a callback from an event.
+     *
+     * If the callback has been connected to the event multiple times, _all_ connections to the event will be
+     * disconnected for that callback.
+     *
+     * Attempting to disconnect a callback that is not connected to the event is not considered an error and is
+     * silently ignored.
+     *
+     * ## Warning
+     * Connections to events do not account for the fact that PHP method and function names are not case-sensitive.
+     * When finding the connections to disconnect, the callback search is *case-sensitive*. To work around this
+     * problem you should:
+     * - normalise all your callback method and function names for case; or
+     * - ensure that you rigorously always use identical strings for method and function names passed to
+     * _connect()_ and
+     *   _disconnect()_; or
+     * - use references to closures.
+     *
+     * ### Note
+     * Disconnecting a closure for which you have not kept a reference is not possible. Only use lambda literals
+     * with connect() if you are certain you will never need to disconnect the function. Disconnecting a reference
+     * to a closure previously passed to connect() will work. So do this if you think you might need to disconnect
+     * it:
+     *
+     *     $fn = function() { ... do something ... };
+     *     Application::instance()->connect('some.event', $fn);
+     *     ...
+     *     Application::instance()->disconnect('some.event', $fn);
+     *
+     * Otherwise you can just do this if you know you will never need to disconnect it:
+     *
+     *     Application::instance()->connect('some.event', function() { ... do something ... });
+     *
+     * @param $event string is the event to disconnect from.
+     * @param $callback callable is the callback to disconnect.
+     *
+     * @return bool _true_ if the callback was disconnected (or was not connected in the first place), _false_ if
+     * an error occurred.
+     */
+    public function disconnect(string $event, callable $callback): bool
+    {
+        if (!is_string($event)) {
+            AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);
+            return false;
+        }
+
+        if (!is_callable($callback, true)) {
+            AppLog::error("invalid callback", __FILE__, __LINE__, __FUNCTION__);
+            return false;
+        }
+
+        $event = strtolower($event);
+
+        if (isset($this->m_eventCallbacks[$event])) {
+            $myCallbacks = [];
+
+            foreach ($this->m_eventCallbacks[$event] as $myCallback) {
+                if ($callback == $myCallback) {
+                    continue;
+                }
+
+                $myCallbacks[] = $myCallback;
+            }
+
+            $this->m_eventCallbacks[$event] = $myCallbacks;
+        }
+
+        return true;
     }
+
+    abstract public function exec(): int;
 }

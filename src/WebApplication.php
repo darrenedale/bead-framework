@@ -839,6 +839,7 @@ class WebApplication extends Application
 	 *
 	 * Once this method returns, the application is considered to have exited.
 	 *
+     * @return int 0
 	 * @throws \RuntimeException if the PHP version does not match or exceed the minimum version
 	 */
 	public function exec(): int
@@ -870,6 +871,6 @@ class WebApplication extends Application
 		}
 
 		$this->m_isRunning = false;
-        return 0;
+        return self::ExitOk;
 	}
 }
