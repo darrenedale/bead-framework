@@ -73,7 +73,14 @@ namespace Equit;
  * @package libequit
  * @see UploadedFile, WebApplication
  */
-class Request {
+class Request
+{
+	private static ?Request $s_originalUserRequest = null;
+	private array $m_urlParams = [];
+	private array $m_postData = [];
+	private array $m_files = [];
+	private array $m_headers = [];
+
 	/**
 	 * Create a new Request.
 	 *
@@ -86,7 +93,8 @@ class Request {
 	 * `null` (or omitted from the constructor) to create a request with no
 	 * action. Such a request will not be handled by any plugins.
 	 */
-	public function __construct(?string $action = null) {
+	public function __construct(?string $action = null)
+	{
 		$this->setAction($action);
 	}
 
@@ -98,7 +106,8 @@ class Request {
 	 *
 	 * @return string The request URL.
 	 */
-	public function __toString(): string {
+	public function __toString(): string
+	{
 		return $this->url();
 	}
 
@@ -109,20 +118,20 @@ class Request {
 	 *
 	 * @return string The request URL.
 	 */
-	public function url(): string {
+	public function url(): string
+	{
 		$url   = Request::baseUrl();
 		$first = true;
 
-		foreach($this->m_urlParams as $key => $value) {
-			if(is_null($value)) {
+		foreach ($this->m_urlParams as $key => $value) {
+			if (is_null($value)) {
 				continue;
 			}
 
-			if($first) {
+			if ($first) {
 				$url   .= "?";
 				$first = false;
-			}
-			else {
+			} else {
 				$url .= "&";
 			}
 
@@ -139,20 +148,20 @@ class Request {
 	 *
 	 * @return string The request URL.
 	 */
-	public function rawUrl(): string {
+	public function rawUrl(): string
+	{
 		$url   = Request::baseUrl();
 		$first = true;
 
-		foreach($this->m_urlParams as $key => $value) {
-			if(is_null($value)) {
+		foreach ($this->m_urlParams as $key => $value) {
+			if (is_null($value)) {
 				continue;
 			}
 
-			if($first) {
+			if ($first) {
 				$url   .= "?";
 				$first = false;
-			}
-			else {
+			} else {
 				$url .= "&";
 			}
 
@@ -179,20 +188,22 @@ class Request {
 	 *
 	 * @return bool `true` if the URL parameter was set, `false` otherwise.
 	 */
-	public function setUrlParameter(string $key, ?string $value): bool {
+	public function setUrlParameter(string $key, ?string $value): bool
+	{
 		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
 
 		/* cannot unset action parameter using this method */
-		if(is_null($value)) {
-			if(array_key_exists($key, $this->m_urlParams)) {
+		if (is_null($value)) {
+			if (array_key_exists($key, $this->m_urlParams)) {
 				unset($this->m_urlParams[$key]);
 			}
 
 			return true;
-		}
-		else if(is_string($value)) {
-			$this->m_urlParams[$key] = $value;
-			return true;
+		} else {
+			if (is_string($value)) {
+				$this->m_urlParams[$key] = $value;
+				return true;
+			}
 		}
 
 		AppLog::error("invalid parameter value: " . stringify($value), __FILE__, __LINE__, __FUNCTION__);
@@ -213,19 +224,21 @@ class Request {
 	 *
 	 * @return bool `true` if the POST data was set, `false` otherwise.
 	 */
-	public function setPostData(string $key, $value): bool {
+	public function setPostData(string $key, $value): bool
+	{
 		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
 
-		if(is_null($value)) {
-			if(array_key_exists($key, $this->m_postData)) {
+		if (is_null($value)) {
+			if (array_key_exists($key, $this->m_postData)) {
 				unset($this->m_postData[$key]);
 			}
 
 			return true;
-		}
-		else if(is_string($value) || is_array($value)) {
-			$this->m_postData[$key] = $value;
-			return true;
+		} else {
+			if (is_string($value) || is_array($value)) {
+				$this->m_postData[$key] = $value;
+				return true;
+			}
 		}
 
 		AppLog::error('invalid data value: ' . stringify($value), __FILE__, __LINE__, __FUNCTION__);
@@ -241,7 +254,8 @@ class Request {
 	 *
 	 * @return bool `true` if the URL parameter was provided, `false` otherwise.
 	 */
-	public function hasUrlParameter(string $key): bool {
+	public function hasUrlParameter(string $key): bool
+	{
 		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
 		return array_key_exists($key, $this->m_urlParams);
 	}
@@ -255,7 +269,8 @@ class Request {
 	 *
 	 * @return string|null The URL parameter value, or `null` if the parameter is not set.
 	 */
-	public function urlParameter(string $key): ?string {
+	public function urlParameter(string $key): ?string
+	{
 		$key = mb_convert_case($key, MB_CASE_LOWER, "UTF-8");
 		return $this->m_urlParams[$key] ?? null;
 	}
@@ -268,7 +283,8 @@ class Request {
 	 *
 	 * @return array[string=>string] The URL parameters.
 	 */
-	public function allUrlParameters(): array {
+	public function allUrlParameters(): array
+	{
 		return $this->m_urlParams;
 	}
 
@@ -281,7 +297,8 @@ class Request {
 	 *
 	 * @return bool `true` if the POST data was provided, `false` otherwise.
 	 */
-	public function hasPostData(string $key): bool {
+	public function hasPostData(string $key): bool
+	{
 		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
 		return array_key_exists($key, $this->m_postData);
 	}
@@ -295,10 +312,11 @@ class Request {
 	 *
 	 * @return string|array|null The POST data value, or `null` if the POST data with the key provided is not set.
 	 */
-	public function postData(string $key) {
+	public function postData(string $key)
+	{
 		$key = mb_convert_case($key, MB_CASE_LOWER, 'UTF-8');
 
-		if(array_key_exists($key, $this->m_postData)) {
+		if (array_key_exists($key, $this->m_postData)) {
 			return $this->m_postData[$key];
 		}
 
@@ -313,7 +331,8 @@ class Request {
 	 *
 	 * @return array[string=>string] The URL parameters.
 	 */
-	public function allPostData(): array {
+	public function allPostData(): array
+	{
 		return $this->m_postData;
 	}
 
@@ -328,7 +347,8 @@ class Request {
 	 * @return string|array|null  The URL parameter, or the POST data value if the URL parameter is not set, or `null`
 	 * if  neither is set.
 	 */
-	public function urlParameterOrPostData(string $key) {
+	public function urlParameterOrPostData(string $key)
+	{
 		return $this->urlParameter($key) ?? $this->postData($key);
 	}
 
@@ -344,7 +364,8 @@ class Request {
 	 * @return string|array|null The POST data value, or the URL parameter if the POST data is not set, or `null` if
 	 * the neither is set.
 	 */
-	public function postDataOrUrlParameter(string $key) {
+	public function postDataOrUrlParameter(string $key)
+	{
 		return $this->postData($key) ?? $this->urlParameter($key);
 	}
 
@@ -357,10 +378,11 @@ class Request {
 	 *
 	 * @return UploadedFile|null The requested file, or _null_ if the file does not exist.
 	 */
-	public function uploadedFile(string $identifier): ?UploadedFile {
+	public function uploadedFile(string $identifier): ?UploadedFile
+	{
 		$identifier = mb_convert_case($identifier, MB_CASE_LOWER, "UTF-8");
 
-		if(array_key_exists($identifier, $this->m_files)) {
+		if (array_key_exists($identifier, $this->m_files)) {
 			return $this->m_files[$identifier];
 		}
 
@@ -383,24 +405,26 @@ class Request {
 	 *
 	 * @return bool `true` if the uploaded file was set, `false` otherwise.
 	 */
-	public function setUploadedFile($identifier, &$file) {
-		if(!is_string($identifier)) {
+	public function setUploadedFile($identifier, &$file)
+	{
+		if (!is_string($identifier)) {
 			AppLog::error('invalid uploaded file identifier: ' . stringify($identifier), __FILE__, __LINE__, __FUNCTION__);
 			return false;
 		}
 
 		$identifier = mb_convert_case($identifier, MB_CASE_LOWER, 'UTF-8');
 
-		if($file instanceof UploadedFile) {
+		if ($file instanceof UploadedFile) {
 			$this->m_files[$identifier] = $file;
 			return true;
-		}
-		else if(is_null($file)) {
-			if(array_key_exists($identifier, $this->m_files)) {
-				unset($this->m_files[$identifier]);
-			}
+		} else {
+			if (is_null($file)) {
+				if (array_key_exists($identifier, $this->m_files)) {
+					unset($this->m_files[$identifier]);
+				}
 
-			return true;
+				return true;
+			}
 		}
 
 		AppLog::error('invalid uploaded file: ' . stringify($file), __FILE__, __LINE__, __FUNCTION__);
@@ -431,7 +455,8 @@ class Request {
 	 *
 	 * @return bool `true` if the action was set, `false` otherwise.
 	 */
-	public function setAction(?string $action): bool {
+	public function setAction(?string $action): bool
+	{
 		return $this->setUrlParameter("action", $action);
 	}
 
@@ -440,20 +465,21 @@ class Request {
 	 *
 	 * @return string The action, or `null` if no action is set.
 	 */
-	public function action(): ?string {
+	public function action(): ?string
+	{
 		return $this->m_urlParams["action"] ?? null;
 	}
 
 	/**
 	 * Determine whether the request was submitted as an AJAX request.
 	 *
-     * This depends on a specific HTTP header being set to a specific value, which many frameworks provide.
-     *
+	 * This depends on a specific HTTP header being set to a specific value, which many frameworks provide.
+	 *
 	 * @return bool `true` if the request is AJAX, `false` if not.
 	 */
 	public function isAjax(): bool
 	{
-        // FE frameworks need to set this header. equit.js does so, as do many popular frameworks
+		// FE frameworks need to set this header. equit.js does so, as do many popular frameworks
 		return "XMLHttpRequest" == $this->header('x_requested_with');
 	}
 
@@ -465,7 +491,8 @@ class Request {
 	 *
 	 * @return string The base URL for the application.
 	 */
-	public static function baseUrl(): string {
+	public static function baseUrl(): string
+	{
 		return "http" . (!empty($_SERVER["HTTPS"]) ? "s" : "") . "://{$_SERVER["SERVER_NAME"]}{$_SERVER["SCRIPT_NAME"]}";
 	}
 
@@ -479,7 +506,8 @@ class Request {
 	 *
 	 * @return string The base URL path.
 	 */
-	public static function basePath(): string {
+	public static function basePath(): string
+	{
 		return dirname(Request::baseUrl());
 	}
 
@@ -492,7 +520,8 @@ class Request {
 	 *
 	 * @return string The base URL path.
 	 */
-	public static function baseName(): string {
+	public static function baseName(): string
+	{
 		return basename(Request::baseUrl());
 	}
 
@@ -506,10 +535,11 @@ class Request {
 	 *
 	 * @return Request The home request.
 	 */
-	public static function home(): Request {
+	public static function home(): Request
+	{
 		static $s_home = null;
 
-		if(is_null($s_home)) {
+		if (is_null($s_home)) {
 			$s_home = new Request();
 		}
 
@@ -520,38 +550,40 @@ class Request {
 	 * Fetch the original request submitted by the user agent.
 	 *
 	 * The request provided is parsed from the $_GET, $_POST, $_FILES and $_SERVER superglobals. The parsing happens
-     * only once, on the first call - the request is then cached so subsequent calls are fast. The provided request
-     * remains owned by the LibEquit\Request class and must not be modified by other code.
+	 * only once, on the first call - the request is then cached so subsequent calls are fast. The provided request
+	 * remains owned by the LibEquit\Request class and must not be modified by other code.
 	 *
 	 * @return Request A representation of the user's original request.
 	 */
 	public static function originalUserRequest(): Request
-    {
-		if(is_null(Request::$s_originalUserRequest)) {
+	{
+		if (is_null(Request::$s_originalUserRequest)) {
 			$req = new Request();
 
-			foreach($_GET as $key => $value) {
+			foreach ($_GET as $key => $value) {
 				$key = mb_strtolower($key, "UTF-8");
 				$req->setUrlParameter($key, $value);
 			}
 
-			foreach($_POST as $key => $value) {
+			foreach ($_POST as $key => $value) {
 				$key = mb_strtolower($key, "UTF-8");
 				$req->setPostData($key, $value);
 			}
 
-			foreach($_FILES as $key => $value) {
+			foreach ($_FILES as $key => $value) {
 				$file = UploadedFile::createFromFile($value["tmp_name"], $value["name"]);
-                $file->setMimeType($value["type"]);
+				$file->setMimeType($value["type"]);
 				$req->m_files[$key] = $file;
 			}
 
 			foreach ($_SERVER as $key => $value) {
 				if ("HTTP_" === substr($key, 0, 5)) {
-					$req->m_headers[mb_strtolower(substr($key, 5), MB_CASE_LOWER, "UTF-8")] = $value;
-				} else if(in_array($key, ["CONTENT_TYPE", "CONTENT_LENGTH", "CONTENT_MD5",])) {
-                    $req->m_headers[strtolower($key)] = $value;
-                }
+					$req->m_headers[mb_strtolower(substr($key, 5), "UTF-8")] = $value;
+				} else {
+					if (in_array($key, ["CONTENT_TYPE", "CONTENT_LENGTH", "CONTENT_MD5",])) {
+						$req->m_headers[strtolower($key)] = $value;
+					}
+				}
 			}
 
 			Request::$s_originalUserRequest = $req;
@@ -559,10 +591,4 @@ class Request {
 
 		return Request::$s_originalUserRequest;
 	}
-
-	private static ?Request $s_originalUserRequest = null;
-	private array $m_urlParams = [];
-	private array $m_postData = [];
-	private array $m_files = [];
-	private array $m_headers = [];
 }
