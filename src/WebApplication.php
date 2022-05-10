@@ -221,7 +221,7 @@ class WebApplication extends Application
 		parent::__construct($appRoot, $dataController);
 		self::initialiseSession();
 		$this->m_session = &$this->sessionData(self::SessionDataContext);
-		$this->setPage($pageTemplate);
+		$this->setPage($pageTemplate ?? new Page());
 	}
 
 	/**
@@ -369,7 +369,8 @@ class WebApplication extends Application
 		$this->m_page = $page;
 	}
 
-	/** Fetch the application's page object.
+	/**
+     * Fetch the application's page object.
 	 *
 	 * The page object is the page where all of the application's output is generated. Client code should almost
 	 * never output content directly - it should almost always be inserted into the page object.
