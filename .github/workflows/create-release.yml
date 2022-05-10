@@ -21,7 +21,7 @@ jobs:
         run: echo "::set-output name=version::$(cat $GITHUB_WORKSPACE/composer.json | jq .version | sed 's/"//g')"
         id: version
 
-      -uses: ./.github/workflow/build-typescript
+      - uses: ./.github/workflow/build-typescript
 
 #      # required to compile equit.js asset
 #      - name: Install TSC
