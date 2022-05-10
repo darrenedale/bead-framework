@@ -1,0 +1,25 @@
+# Workflow to build the main equit.js product
+
+name: Build Typescript Project
+
+on:
+  # Run the workflow on push or PR for the production branch
+  push:
+    branches: [ production ]
+  pull_request:
+    branches: [ production ]
+
+  # Allows workflow to be triggered manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Build the main equit.js product from the tsconfig.json project file
+      - name: Compile Typescript
+        run: tsc -p $GITHUB_WORKSPACE/js/tsconfig.json
