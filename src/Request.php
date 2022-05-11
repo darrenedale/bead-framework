@@ -252,6 +252,20 @@ class Request
 	}
 
 	/**
+	 * Fetch a subset of the URL parameters.
+	 *
+	 * The URL parameters are provided as an associative array. All parameter keys are guaranteed to be all lower-case.
+     * Only those URL parameters whose name matches one of the provided keys are provided. Any keys that don't
+     * identify URL parameters will be absent from the returned array.
+	 *
+	 * @return array<string, string> The URL parameters.
+	 */
+	public function onlyUrlParameters(array $keys): array
+	{
+		return array_filter($this->m_urlParams, fn(string $key): bool => in_array(strtolower($key), $keys), ARRAY_FILTER_USE_KEY);
+	}
+
+	/**
 	 * Fetch all URL parameters.
 	 *
 	 * The URL parameters are provided as an associative array. All parameter
@@ -298,6 +312,20 @@ class Request
 
 		return null;
 	}
+
+    /**
+     * Fetch a subset of the POST data.
+     *
+     * The POST data are provided as an associative array. All keys are guaranteed to be all lower-case. Only those URL
+     * parameters whose name matches one of the provided keys are provided. Any keys that don't identify URL parameters
+     * will be absent from the returned array.
+     *
+     * @return array<string, string> The requested POST data.
+     */
+    public function onlyPostData(array $keys): array
+    {
+        return array_filter($this->m_postData, fn(string $key): bool => in_array(strtolower($key), $keys), ARRAY_FILTER_USE_KEY);
+    }
 
 	/**
 	 * Fetch all the POST data.
