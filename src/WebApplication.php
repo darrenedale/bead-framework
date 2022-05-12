@@ -10,14 +10,17 @@
 namespace Equit;
 
 use DirectoryIterator;
+use Equit\Contracts\Router as RouterContract;
 use Equit\Exceptions\InvalidPluginException;
 use Equit\Exceptions\InvalidPluginsPathException;
+use Equit\Exceptions\UnroutableRequestException;
 use Equit\Html\HtmlLiteral;
 use Equit\Html\Page;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
 use RuntimeException;
+use SplFileInfo;
 use UnexpectedValueException;
 
 /**
@@ -201,6 +204,9 @@ class WebApplication extends Application
 	/** @var bool True when exec() is in progress, false otherwise. */
 	private bool $m_isRunning = false;
 
+	/** @var RouterContract The router that routes requests to handlers. */
+	private RouterContract $m_router;
+
 	/** @var Page The page template to use. */
 	private Page $m_page;
 
@@ -221,6 +227,7 @@ class WebApplication extends Application
 		parent::__construct($appRoot, $dataController);
 		self::initialiseSession();
 		$this->m_session = &$this->sessionData(self::SessionDataContext);
+		$this->setRouter(new Router());
 		$this->setPage($pageTemplate ?? new Page());
 	}
 
@@ -382,6 +389,26 @@ class WebApplication extends Application
 	{
 		assert(!is_null($this->m_page), new RuntimeException("Application has no Page object set."));
 		return $this->m_page;
+	}
+
+	/**
+	 * Set the application's Request router.
+	 *
+	 * @param \Equit\Contracts\Router $router
+	 */
+	public function setRouter(RouterContract $router): void
+	{
+		$this->m_router = $router;
+	}
+
+	/**
+	 * Fetch the application's Request router.
+	 *
+	 * @return \Equit\Contracts\Router The router.
+	 */
+	public function router(): RouterContract
+	{
+		return $this->m_router;
 	}
 
 	/**
@@ -558,7 +585,7 @@ class WebApplication extends Application
 		static $s_done = false;
 
 		if (!$s_done) {
-			$info = new \SplFileInfo($this->pluginsPath());
+			$info = new SplFileInfo($this->pluginsPath());
 
 			if (!$info->isDir()) {
 				throw new InvalidPluginsPathException($this->pluginsPath(), "Plugin path \"{$this->pluginsPath()}\" is not a directory.");
@@ -572,7 +599,7 @@ class WebApplication extends Application
 			$pluginLoadOrder = $this->config("app.plugins.generic.loadorder", []);
 
 			foreach ($pluginLoadOrder as $pluginName) {
-				$pluginFile = new \SplFileInfo("{$this->pluginsPath()}/{$pluginName}.php");
+				$pluginFile = new SplFileInfo("{$this->pluginsPath()}/{$pluginName}.php");
 				$pluginFilePath = $pluginFile->getRealPath();
 
 				if (false !== $pluginFilePath) {
@@ -801,30 +828,40 @@ class WebApplication extends Application
 	{
 		$this->pushRequest($request);
 		$this->emitEvent("application.handlerequest.requestreceived", $request);
-		$action = mb_strtolower($request->action(), "UTF-8");
 
-		if (empty($action) || "home" == $action) {
-			$this->page()->addMainElement(new HtmlLiteral("<div id=\"" . html($this->config("app.uid")) . "-homepage-container\" class=\"section container\">"));
-			$this->emitEvent("home.creatingtopsection");
-			$this->emitEvent("home.creatingmiddlesection");
-			$this->emitEvent("home.creatingbottomsection");
-			$this->page()->addMainElement(new HtmlLiteral("</div> <!-- " . html($this->config("app.uid")) . "-homepage-container -->"));
-			$this->popRequest();
-			return true;
+		try {
+			$this->emitEvent("application.handlerequest.routing", $request);
+			$this->router()->route($request);
+			$this->emitEvent("application.handlerequest.routed", $request);
+			$ret = true;
+		} catch (UnroutableRequestException $err) {
+			// fall back on deprecated use of "special" `action` URL parameter
+			$action = mb_strtolower($request->action(), "UTF-8");
+
+			if (empty($action) || "home" == $action) {
+				$this->page()->addMainElement(new HtmlLiteral("<div id=\"" . html($this->config("app.uid")) . "-homepage-container\" class=\"section container\">"));
+				$this->emitEvent("home.creatingtopsection");
+				$this->emitEvent("home.creatingmiddlesection");
+				$this->emitEvent("home.creatingbottomsection");
+				$this->page()->addMainElement(new HtmlLiteral("</div> <!-- " . html($this->config("app.uid")) . "-homepage-container -->"));
+				$this->popRequest();
+				return true;
+			}
+
+			$this->emitEvent("application.handlerequest.abouttofetchplugin");
+			$plugin = $this->pluginForAction($action);
+
+			if (!$plugin) {
+				$this->emitEvent("application.handlerequest.failedtofetchplugin");
+				$this->popRequest();
+				return false;
+			}
+
+			$this->emitEvent("application.handlerequest.pluginfetched", $plugin);
+			$this->emitEvent("application.handlerequest.abouttoexecuteplugin", $plugin);
+			$ret = $plugin->handleRequest($request);
 		}
 
-		$this->emitEvent("application.handlerequest.abouttofetchplugin");
-		$plugin = $this->pluginForAction($action);
-
-		if (!$plugin) {
-			$this->emitEvent("application.handlerequest.failedtofetchplugin");
-			$this->popRequest();
-			return false;
-		}
-
-		$this->emitEvent("application.handlerequest.pluginfetched", $plugin);
-		$this->emitEvent("application.handlerequest.abouttoexecuteplugin", $plugin);
-		$ret = $plugin->handleRequest($request);
 		$this->popRequest();
 		return $ret;
 	}
@@ -840,8 +877,9 @@ class WebApplication extends Application
 	 *
 	 * Once this method returns, the application is considered to have exited.
 	 *
-     * @return int 0
-	 * @throws \RuntimeException if the PHP version does not match or exceed the minimum version
+	 * @return int 0
+	 * @throws \Equit\Exceptions\InvalidPluginException
+	 * @throws \Equit\Exceptions\InvalidPluginsPathException
 	 */
 	public function exec(): int
 	{

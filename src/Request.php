@@ -67,6 +67,9 @@ use TypeError;
  */
 class Request
 {
+	public const HttpProtocol = "http";
+	public const HttpsProtocol = "https";
+
 	/** @var \Equit\Request|null The request parsed from the superglobals. */
 	private static ?Request $s_originalUserRequest = null;
 
@@ -82,19 +85,31 @@ class Request
 	/** @var array<string, string> The request's HTTP headers. */
 	private array $m_headers = [];
 
+	private string $m_protocol;
+	private string $m_host;
+
+	/** @var string The URL path. */
+	private string $m_path = "";
+
+	private string $m_method = "";
+
 	/**
 	 * Create a new Request.
 	 *
 	 * @param $action string|null The action the request is for.
 	 *
 	 * All requests contain one special URL parameter, the action, which is the core "thing" that the request is asking 
-	 * the application to do. It is matched by the LibEquit\Application object against the actions supported by plugins
+	 * the application to do. It is matched by the Equit\Application object against the actions supported by plugins
 	 * when choosing what to do with the request. The action can be `null` (or omitted from the constructor) to create a
 	 * request with no action. Such a request will not be handled by any plugins.
 	 */
 	public function __construct(?string $action = null)
 	{
 		$this->setAction($action);
+		$this->setProtocol(!empty($_SERVER["HTTPS"]) ? self::HttpsProtocol : self::HttpProtocol);
+		$this->setHost($_SERVER["SERVER_NAME"] ?? "");
+		$this->setPath("/");
+		$this->setMethod("GET");
 	}
 
 	/**
@@ -119,25 +134,7 @@ class Request
 	 */
 	public function url(): string
 	{
-		$url   = Request::baseUrl();
-		$first = true;
-
-		foreach ($this->m_urlParams as $key => $value) {
-			if (is_null($value)) {
-				continue;
-			}
-
-			if ($first) {
-				$url   .= "?";
-				$first = false;
-			} else {
-				$url .= "&";
-			}
-
-			$url .= urlencode($key) . '=' . urlencode($value);
-		}
-
-		return $url;
+		return "{$this->protocol()}://{$this->host()}{$this->path()}{$this->queryString()}";
 	}
 
 	/**
@@ -149,25 +146,152 @@ class Request
 	 */
 	public function rawUrl(): string
 	{
-		$url   = Request::baseUrl();
-		$first = true;
+		return "{$this->protocol()}://{$this->host()}{$this->path()}{$this->rawQueryString()}";
+	}
+
+	/**
+	 * Fetch the request protocol.
+	 *
+	 * @return string The protocol.
+	 */
+	public function protocol(): string
+	{
+		return $this->m_protocol;
+	}
+
+	/**
+	 * Set the request protocol.
+	 *
+	 * The protocol should be one of the class protocol constants - HTTP or HTTPS.
+	 *
+	 * @param string $protocol The protocol.
+	 */
+	public function setProtocol(string $protocol): void
+	{
+		$this->m_protocol = $protocol;
+	}
+
+	/**
+	 * Fetch the request host.
+	 *
+	 * @return string The host.
+	 */
+	public function host(): string
+	{
+		return $this->m_host;
+	}
+
+	/**
+	 * Set the request host.
+	 *
+	 * The host should be a valid hostname or IP.
+	 *
+	 * @param string $host The host.
+	 */
+	public function setHost(string $host): void
+	{
+		$this->m_host = $host;
+	}
+
+	/**
+	 * Fetch the request method.
+	 *
+	 * @return string The method.
+	 */
+	public function method(): string
+	{
+		return $this->m_method;
+	}
+
+	/**
+	 * Set the request method.
+	 *
+	 * The method should be one of the supported HTTP methods. It is not case sensitive, it will be converted to all
+	 * upper-case when set.
+	 *
+	 * @param string $method The method.
+	 */
+	public function setMethod(string $method): void
+	{
+		$this->m_method = strtoupper($method);
+	}
+
+	/**
+	 * Fetch the request path.
+	 *
+	 * The path is the part of the request URL between the host and the query string/fragment/end of the URL.
+	 *
+	 * @return string The path.
+	 */
+	public function path(): string
+	{
+		return $this->m_path;
+	}
+
+	/**
+	 * Set the request path.
+	 *
+	 * @param string $path The path.
+	 */
+	public function setPath(string $path): void
+	{
+		$this->m_path = $path;
+	}
+
+	/**
+	 * Fetch the query string.
+	 *
+	 * The query string returned is %-encoded.
+	 *
+	 * @return string The %-encoded query string.
+	 */
+	public function queryString(): string
+	{
+		$query = "";
 
 		foreach ($this->m_urlParams as $key => $value) {
 			if (is_null($value)) {
 				continue;
 			}
 
-			if ($first) {
-				$url   .= "?";
-				$first = false;
+			if (empty($query)) {
+				$query .= "?";
 			} else {
-				$url .= "&";
+				$query .= "&";
 			}
 
-			$url .= "$key=$value";
+			$query .= urlencode($key) . "=" . urlencode($value);
 		}
 
-		return $url;
+		return $query;
+	}
+
+	/**
+	 * Fetch the query string.
+	 *
+	 * The plain-text query string.
+	 *
+	 * @return string The %-encoded query string.
+	 */
+	public function rawQueryString(): string
+	{
+		$query = "";
+
+		foreach ($this->m_urlParams as $key => $value) {
+			if (is_null($value)) {
+				continue;
+			}
+
+			if (empty($query)) {
+				$query .= "?";
+			} else {
+				$query .= "&";
+			}
+
+			$query .= "{$key}={$value}";
+		}
+
+		return $query;
 	}
 
 	/**
@@ -438,6 +562,7 @@ class Request
 	 * Request actions are case-sensitive.
 	 *
 	 * @param $action string|null The action to set.
+	 * @deprecated Use the framework's routing mechanism instead.
 	 */
 	public function setAction(?string $action): void
 	{
@@ -448,6 +573,7 @@ class Request
 	 * Fetch the request action.
 	 *
 	 * @return string The action, or `null` if no action is set.
+	 * @deprecated Use the framework's routing mechanism instead.
 	 */
 	public function action(): ?string
 	{
@@ -474,6 +600,7 @@ class Request
 	 * URLs for page elements.
 	 *
 	 * @return string The base URL for the application.
+	 * @deprecated
 	 */
 	public static function baseUrl(): string
 	{
@@ -488,6 +615,7 @@ class Request
 	 * contains the protocol.
 	 *
 	 * @return string The base URL path.
+	 * @deprecated
 	 */
 	public static function basePath(): string
 	{
@@ -501,6 +629,7 @@ class Request
 	 * you just need the name of the base script that is running.
 	 *
 	 * @return string The base URL path.
+	 * @deprecated
 	 */
 	public static function baseName(): string
 	{
@@ -518,13 +647,7 @@ class Request
 	 */
 	public static function home(): Request
 	{
-		static $s_home = null;
-
-		if (is_null($s_home)) {
-			$s_home = new Request();
-		}
-
-		return clone $s_home;
+		return new Request();
 	}
 
 	/**
@@ -567,6 +690,15 @@ class Request
 				}
 			}
 
+			$path = $_SERVER["REQUEST_URI"];
+			$queryStringStart = strpos("?", $path);
+
+			if (false !== $queryStringStart) {
+				$path = substr($path, 0, $queryStringStart);
+			}
+
+			$req->setPath($path);
+			$req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
 			Request::$s_originalUserRequest = $req;
 		}
 
