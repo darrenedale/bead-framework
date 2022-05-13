@@ -87,9 +87,10 @@ class Request
 
 	private string $m_protocol;
 	private string $m_host;
+	private string $m_path;
 
 	/** @var string The URL path. */
-	private string $m_path = "";
+	private string $m_pathInfo = "";
 
 	private string $m_method = "";
 
@@ -109,6 +110,7 @@ class Request
 		$this->setProtocol(!empty($_SERVER["HTTPS"]) ? self::HttpsProtocol : self::HttpProtocol);
 		$this->setHost($_SERVER["SERVER_NAME"] ?? "");
 		$this->setPath("/");
+		$this->setPathInfo("");
 		$this->setMethod("GET");
 	}
 
@@ -134,7 +136,7 @@ class Request
 	 */
 	public function url(): string
 	{
-		return "{$this->protocol()}://{$this->host()}{$this->path()}{$this->queryString()}";
+		return "{$this->protocol()}://{$this->host()}" . urlencode($this->path()) . urlencode($this->pathInfo()) . "{$this->encodedQueryString()}";
 	}
 
 	/**
@@ -146,7 +148,7 @@ class Request
 	 */
 	public function rawUrl(): string
 	{
-		return "{$this->protocol()}://{$this->host()}{$this->path()}{$this->rawQueryString()}";
+		return "{$this->protocol()}://{$this->host()}{$this->path()}{$this->pathInfo()}{$this->queryString()}";
 	}
 
 	/**
@@ -239,13 +241,35 @@ class Request
 	}
 
 	/**
+	 * Fetch the request path.
+	 *
+	 * The path is the part of the request URL between the host and the query string/fragment/end of the URL.
+	 *
+	 * @return string The path.
+	 */
+	public function pathInfo(): string
+	{
+		return $this->m_pathInfo;
+	}
+
+	/**
+	 * Set the request path.
+	 *
+	 * @param string $path The path.
+	 */
+	public function setPathInfo(string $path): void
+	{
+		$this->m_pathInfo = $path;
+	}
+
+	/**
 	 * Fetch the query string.
 	 *
 	 * The query string returned is %-encoded.
 	 *
 	 * @return string The %-encoded query string.
 	 */
-	public function queryString(): string
+	public function encodedQueryString(): string
 	{
 		$query = "";
 
@@ -273,7 +297,7 @@ class Request
 	 *
 	 * @return string The %-encoded query string.
 	 */
-	public function rawQueryString(): string
+	public function queryString(): string
 	{
 		$query = "";
 
@@ -594,49 +618,6 @@ class Request
 	}
 
 	/**
-	 * Fetch the application's base URL.
-	 *
-	 * The base URL is constructed based on the content of the $_SERVER superglobal. It can be useful when constructing
-	 * URLs for page elements.
-	 *
-	 * @return string The base URL for the application.
-	 * @deprecated
-	 */
-	public static function baseUrl(): string
-	{
-		return "http" . (!empty($_SERVER["HTTPS"]) ? "s" : "") . "://{$_SERVER["SERVER_NAME"]}{$_SERVER["SCRIPT_NAME"]}";
-	}
-
-	/**
-	 * Fetch the path for the base URL.
-	 *
-	 * This method provides the path part of the base URL - the URL without the script name attached. This can be useful
-	 * when constructing URLs for page elements that need to reference resources other than the main application. It
-	 * contains the protocol.
-	 *
-	 * @return string The base URL path.
-	 * @deprecated
-	 */
-	public static function basePath(): string
-	{
-		return dirname(Request::baseUrl());
-	}
-
-	/**
-	 * Fetch the path for the base URL.
-	 *
-	 * This method provides the script part of the base URL - the URL without the path prefix. This can be useful when
-	 * you just need the name of the base script that is running.
-	 *
-	 * @return string The base URL path.
-	 * @deprecated
-	 */
-	public static function baseName(): string
-	{
-		return basename(Request::baseUrl());
-	}
-
-	/**
 	 * Fetch the home request.
 	 *
 	 * This method provides a request object that is guaranteed to display the home page when provided to
@@ -655,11 +636,11 @@ class Request
 	 *
 	 * The request provided is parsed from the $_GET, $_POST, $_FILES and $_SERVER superglobals. The parsing happens
 	 * only once, on the first call - the request is then cached so subsequent calls are fast. The provided request
-	 * remains owned by the LibEquit\Request class and must not be modified by other code.
+	 * remains owned by the `Request` class and must not be modified by external code.
 	 *
-	 * @return Request A representation of the user's original request.
+	 * @return Request The original request submitted to the server.
 	 */
-	public static function originalUserRequest(): Request
+	public static function originalRequest(): Request
 	{
 		if (is_null(Request::$s_originalUserRequest)) {
 			$req = new Request();
@@ -690,14 +671,27 @@ class Request
 				}
 			}
 
-			$path = $_SERVER["REQUEST_URI"];
-			$queryStringStart = strpos("?", $path);
+			$path = $_SERVER["SCRIPT_NAME"] ?? null;
 
-			if (false !== $queryStringStart) {
-				$path = substr($path, 0, $queryStringStart);
+			if (!isset($path)) {
+				$path = "/";
+			} else {
+				if (!str_starts_with($path, "/")) {
+					$path = "/{$path}";
+				}
+
+				$path = dirname($path);
 			}
 
 			$req->setPath($path);
+
+			$pathInfo = $_SERVER["PATH_INFO"] ?? "";
+
+			if (!str_starts_with($pathInfo, "/")) {
+				$pathInfo = "/{$pathInfo}";
+			}
+
+			$req->setPathInfo($pathInfo);
 			$req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
 			Request::$s_originalUserRequest = $req;
 		}

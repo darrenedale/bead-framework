@@ -14,7 +14,6 @@ use Equit\Contracts\Router as RouterContract;
 use Equit\Exceptions\InvalidPluginException;
 use Equit\Exceptions\InvalidPluginsPathException;
 use Equit\Exceptions\UnroutableRequestException;
-use Equit\Html\HtmlLiteral;
 use Equit\Html\Page;
 use InvalidArgumentException;
 use ReflectionClass;
@@ -109,50 +108,57 @@ use UnexpectedValueException;
  * ### Events
  * This module emits the following events.
  *
- * - **application.pluginsloaded**
+ * - `application.pluginsloaded`
  *   Emitted when the _exec()_ method has finished loading all the plugins.
  *
- * - **application.executionstarted**
+ * - `application.executionstarted`
  *   Emitted when _exec()_ starts actual execution (just before it calls _handleRequest()_).
  *
- * - **application.handlerequest.requestreceived($request)**
+ * - `application.handlerequest.requestreceived($request)`
  *   Emitted when _handleRequest()_ receives a request to process.
  *
- *   **$request** _Request_ The request that was received.
+ *   `$request` _Request_ The request that was received.
  *
- * - **home.creatingtopsection**
+ * - `home.creatingtopsection`
  *   Emitted when the home page has been requested and the top section is being generated.
  *
- * - **home.creatingmiddlesection**
+ * - `home.creatingmiddlesection`
  *   Emitted when the home page has been requested and the middle section is being generated.
  *
- * - **home.creatingbottomsection**
+ * - `home.creatingbottomsection`
  *   Emitted when the home page has been requested and the bottom section is being generated.
  *
- * - **application.handlerequest.abouttofetchplugin**
+ * - `application.handlerequest.routing(Request $request)`
+ *   Emitted when `handleRequest()` is about to match the incoming Request to a route using the application's router.
+ *
+ * - `application.handlerequest.routed(Request $request)`
+ *   Emitted when `handleRequest()` has successfully matched and routed the incoming `Request` to a route using the
+ *   application's router.
+ *
+ * - `application.handlerequest.abouttofetchplugin`
  *   Emitted when _handleRequest()_ is about to fetch the plugin to handle the request it's been
  *   given.
  *
- * - **application.handlerequest.failedtofetchplugin**
+ * - `application.handlerequest.failedtofetchplugin`
  *   Emitted when _handleRequest()_ failed to find a suitable plugin for a request.
  *
- * - **application.handlerequest.pluginfetched($plugin)**
+ * - `application.handlerequest.pluginfetched($plugin)`
  *   Emitted when _handleRequest()_ finds a suitable plugin for a request.
  *
- *   **$plugin** _GenericPlugin_ The plugin found to handle the request.
+ *   `$plugin` _GenericPlugin_ The plugin found to handle the request.
  *
- * - **application.handlerequest.abouttoexecuteplugin($plugin)**
+ * - `application.handlerequest.abouttoexecuteplugin($plugin)`
  *   Emitted immediately before _handleRequest()_ passes the request to the plugin to handle.
  *
- *   **$plugin** _GenericPlugin_ The plugin that is about to be asked to handle the request.
+ *   `$plugin` _GenericPlugin_ The plugin that is about to be asked to handle the request.
  *
- * - **application.executionfinished**
+ * - `application.executionfinished`
  *   Emitted by _exec()_ when _handleRequest()_ returns from processing the original HTTP request.
  *
- * - **application.abouttooutputpage**
+ * - `application.abouttooutputpage`
  *   Emitted by _exec()_ when it is about to render the page to the client.
  *
- * - **application.pageoutputfinished**
+ * - `application.pageoutputfinished`
  *   Emitted by _exec()_ when it has finished sending the page to the client.
  *
  * ### Connections
@@ -178,6 +184,8 @@ use UnexpectedValueException;
  * @class LibEquit\Application
  * @author Darren Edale
  * @package libequit
+ *
+ * @method static self instance()
  */
 class WebApplication extends Application
 {
@@ -801,7 +809,7 @@ class WebApplication extends Application
 	/** Fetch the original request submitted by the user.
 	 *
 	 * This method fetches the original request received from the user. It is just a convenience synonym for
-	 * LibEquit\Request::originalUserRequest().
+	 * LibEquit\Request::originalRequest().
 	 *
 	 * @see-also currentRequest()
 	 *
@@ -809,10 +817,11 @@ class WebApplication extends Application
 	 */
 	public function originalRequest(): Request
 	{
-		return Request::originalUserRequest();
+		return Request::originalRequest();
 	}
 
-	/** Handle a request.
+	/**
+	 * Handle a request.
 	 *
 	 * This method submits a request to the application for processing. Processing of the request starts
 	 * immediately and any current request is held until it finishes. Plugins can use this method to submit
@@ -835,23 +844,20 @@ class WebApplication extends Application
 			$this->emitEvent("application.handlerequest.routed", $request);
 			$ret = true;
 		} catch (UnroutableRequestException $err) {
-			// fall back on deprecated use of "special" `action` URL parameter
+			// fall back on deprecated use of special `action` URL parameter
+			AppLog::warning("Falling back on deprecated 'action' URL parameter to handle {$request->method()} request '{$request->rawUrl()}'", __FILE__, __LINE__, __FUNCTION__);
 			$action = mb_strtolower($request->action(), "UTF-8");
 
 			if (empty($action) || "home" == $action) {
-				$this->page()->addMainElement(new HtmlLiteral("<div id=\"" . html($this->config("app.uid")) . "-homepage-container\" class=\"section container\">"));
-				$this->emitEvent("home.creatingtopsection");
-				$this->emitEvent("home.creatingmiddlesection");
-				$this->emitEvent("home.creatingbottomsection");
-				$this->page()->addMainElement(new HtmlLiteral("</div> <!-- " . html($this->config("app.uid")) . "-homepage-container -->"));
-				$this->popRequest();
-				return true;
+				// TODO 404 page
+				return false;
 			}
 
 			$this->emitEvent("application.handlerequest.abouttofetchplugin");
 			$plugin = $this->pluginForAction($action);
 
 			if (!$plugin) {
+				// TODO 404 page
 				$this->emitEvent("application.handlerequest.failedtofetchplugin");
 				$this->popRequest();
 				return false;
@@ -898,7 +904,7 @@ class WebApplication extends Application
 		$page = $this->page();
 		$this->loadPlugins();
 		$this->emitEvent("application.executionstarted");
-		$this->handleRequest(Request::originalUserRequest());
+		$this->handleRequest(Request::originalRequest());
 		$this->emitEvent("application.executionfinished");
 		$this->emitEvent("application.abouttooutputpage");
 		ob_end_flush();

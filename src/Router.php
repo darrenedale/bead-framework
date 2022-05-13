@@ -5,10 +5,12 @@ namespace Equit;
 use Equit\Contracts\Router as RouterContract;
 use Equit\Exceptions\ConflictingRouteException;
 use Equit\Exceptions\UnroutableRequestException;
+use InvalidArgumentException;
 use LogicException;
 use ReflectionClass;
 use ReflectionFunction;
 use Throwable;
+use TypeError;
 
 /**
  * A simple router that routes requests based on the URI path.
@@ -18,17 +20,16 @@ use Throwable;
  * between the two, which will be extracted to a parameter named `id`. So `/entry/1/edit` would extract "1" to the `id`
  * parameter, `/entry/2/edit` would extract "2" and so on.
  *
- * In the handler for the route, if it takes a parameter with the same name as a parameter in the URI path, the handler
- * will be called with that parameter filled with the extracted value from the URI path. So for example if the handler
- * is `function(Request $request, int $id)`, the URI `/entry/1/edit` would call the handler with the value `1` for the
- * `$id` parameter.
+ * The router will inject arguments extracted from the request URI into the handler's parameters: if the handler takes a
+ * parameter with the same name as a parameter in the URI path, the handler will be called with that parameter filled
+ * with the extracted value from the URI path. So for example if the handler is `function(Request $request, int $id)`,
+ * the URI `/entry/1/edit` would call the handler with the value `1` for the `$id` parameter.
  *
- * Note that `int`s have been used in the above examples, but any type that can be coerced from the string extracted
- * from the URI can be hinted. If the matching parameter in the handler has no type hint, it will be provided as a
- * string. If the handler has any parameter that is not in the route definition and that does not have a default value
- *(i.e. is not optional), an exception will be thrown when routing the request. All handlers can receive the Request
- * instance by having a parameter type-hinted as Request. This can appear in any position, but it's recommended that
- * it's the first parameter for consistency.
+ * Any type that can be converted from the string extracted from the URI can be hinted. If the matching parameter in the
+ * handler has no type hint, it will be provided as a string. If the handler has any parameter that is not in the route
+ * definition and that does not have a default value (i.e. is not optional), an exception will be thrown when routing
+ * the request. All handlers can receive the Request instance by having a parameter type-hinted as `Request`. This can
+ * appear in any position, but it's recommended that it's the first parameter for consistency.
  */
 class Router implements RouterContract
 {
@@ -59,7 +60,7 @@ class Router implements RouterContract
 	 */
 	private function matchedRoute(Request $request): ?string
 	{
-		$requestRoute = $request->path();
+		$requestRoute = $request->pathInfo();
 
 		foreach (array_keys($this->m_routes[$request->method()]) as $route) {
 			$rxRegisteredRoute = self::regularExpressionForRoute($route);
@@ -95,7 +96,7 @@ class Router implements RouterContract
 	{
 		$trim = 0;
 
-		while ("/" === $route[$trim]) {
+		while ($trim < (strlen($route) - 1) && "/" === $route[$trim]) {
 			++$trim;
 		}
 
@@ -135,12 +136,12 @@ class Router implements RouterContract
 	 * @param string $route The matched route definition.
 	 * @param \Equit\Request $request The request that it was matched to.
 	 *
-	 * @return array The arguments for the route's parameters, in the order they appear in the route.
+	 * @return array The arguments for the route's parameters, keyed by the parameter name.
 	 */
 	protected static function extractRouteArgumentsFromRequest(string $route, Request $request): array
 	{
 		$routeParameterNames = self::parametersForRoute($route);
-		preg_match(self::regularExpressionForRoute($route), $request->path(), $requestArguments);
+		preg_match(self::regularExpressionForRoute($route), $request->pathInfo(), $requestArguments);
 		array_shift($requestArguments);
 		return array_combine($routeParameterNames, $requestArguments);
 	}
@@ -152,7 +153,7 @@ class Router implements RouterContract
 	 * definition. The handler's parameters are then examined for parameters with names matching those in the route
 	 * definition, and an array of arguments to provide to the handler is built in the order the handler expects them.
 	 *
-	 * Any parameter for the handler that is type hinted with the Request type is provided with the request.
+	 * Any parameter for the handler that is type hinted with the `Request` type is provided with the request.
 	 *
 	 * @param callable|array<class-string, string> $handler The handler that has been matched to the request.
 	 * @param string $route The route definition that matched the request.
@@ -229,11 +230,11 @@ class Router implements RouterContract
 	/**
 	 * Fetch a reflector for the handler.
 	 *
-	 * @param callable $handler The handler.
+	 * @param callable|array<class-string, string> $handler The handler.
 	 *
 	 * @return \ReflectionFunction|\ReflectionMethod
 	 */
-	protected static function reflectorForHandler(callable $handler)
+	protected static function reflectorForHandler($handler)
 	{
 		if (is_string($handler) && false !== strpos("::", $handler)) {
 			$handler = explode("::", $handler, 2);
@@ -273,7 +274,7 @@ class Router implements RouterContract
 			try {
 				$handler = [new $handler[0], $handler[1]];
 			} catch (Throwable $err) {
-				throw new LogicException("Could not instantiate class {$handler[0]} to handle request '{$request->path()}' to route {$route}.", 0, $err);
+				throw new LogicException("Class {$handler[0]} must have a default constructor to handle request '{$request->pathInfo()}' to route {$route}.", 0, $err);
 			}
 		}
 
@@ -285,10 +286,30 @@ class Router implements RouterContract
 	 */
 	public function register(string $route, $methods, $handler): void
 	{
+		static $allMethods = null;
+
+		if (!isset($allMethods)) {
+			$allMethods = array_keys($this->m_routes);
+		}
+
 		if (self::AnyMethod === $methods) {
-			$methods = [self::GetMethod, self::HeadMethod, self::PutMethod, self::DeleteMethod, self::PostMethod, self::OptionsMethod, self::PatchMethod, self::PatchMethod,];
-		} else if(is_string($methods)) {
-			$methods = [$methods,];
+			$methods = $allMethods;
+		} else {
+			if (is_string($methods)) {
+				$methods = [$methods,];
+			} else if (!is_array($methods) || !Traversable\all($methods, "is_string")) {
+				throw new TypeError("Argument for parameter \$methods must be a string or an array of strings.");
+			}
+
+			if (!Traversable\isSubsetOf($methods, $allMethods)) {
+				throw new InvalidArgumentException("Methods registered must be a subset of the valid methods.");
+			}
+
+			$methods = array_unique($methods);
+		}
+
+		if (!is_callable($handler, true)) {
+			throw new TypeError("Argument for parameter \$handler must be a callable or a tuple of class and method name.");
 		}
 
 		$routeRegex = self::regularExpressionForRoute($route);
@@ -309,72 +330,72 @@ class Router implements RouterContract
 	/**
 	 * @inheritDoc
 	 */
-	public function registerGet(string $path, $handler): void
+	public function registerGet(string $route, $handler): void
 	{
-		$this->register($path, self::GetMethod, $handler);
+		$this->register($route, self::GetMethod, $handler);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function registerPost(string $path, $handler): void
+	public function registerPost(string $route, $handler): void
 	{
-		$this->register($path, self::PostMethod, $handler);
+		$this->register($route, self::PostMethod, $handler);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function registerPut(string $path, $handler): void
+	public function registerPut(string $route, $handler): void
 	{
-		$this->register($path, self::PutMethod, $handler);
+		$this->register($route, self::PutMethod, $handler);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function registerHead(string $path, $handler): void
+	public function registerHead(string $route, $handler): void
 	{
-		$this->register($path, self::HeadMethod, $handler);
+		$this->register($route, self::HeadMethod, $handler);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function registerDelete(string $path, $handler): void
+	public function registerDelete(string $route, $handler): void
 	{
-		$this->register($path, self::DeleteMethod, $handler);
+		$this->register($route, self::DeleteMethod, $handler);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function registerAny(string $path, $handler): void
+	public function registerAny(string $route, $handler): void
 	{
-		$this->register($path, self::AnyMethod, $handler);
+		$this->register($route, self::AnyMethod, $handler);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function registerConnect(string $path, $handler): void
+	public function registerConnect(string $route, $handler): void
 	{
-		$this->register($path, self::ConnectMethod, $handler);
+		$this->register($route, self::ConnectMethod, $handler);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function registerOptions(string $path, $handler): void
+	public function registerOptions(string $route, $handler): void
 	{
-		$this->register($path, self::OptionsMethod, $handler);
+		$this->register($route, self::OptionsMethod, $handler);
 	}
 
 	/**
 	 * @inheritDoc
 	 */
-	public function registerPatch(string $path, $handler): void
+	public function registerPatch(string $route, $handler): void
 	{
-		$this->register($path, self::PatchMethod, $handler);
+		$this->register($route, self::PatchMethod, $handler);
 	}
 }
