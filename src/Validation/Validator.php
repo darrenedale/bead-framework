@@ -7,15 +7,21 @@ use DateTime;
 use Equit\Exceptions\ValidationException;
 use Equit\Html\Page;
 use Equit\Validation\Rules\After;
+use Equit\Validation\Rules\Alpha;
+use Equit\Validation\Rules\Alphanumeric;
 use Equit\Validation\Rules\Before;
 use Equit\Validation\Rules\Date;
+use Equit\Validation\Rules\DateFormat;
 use Equit\Validation\Rules\Email;
 use Equit\Validation\Rules\Filled;
 use Equit\Validation\Rules\In;
 use Equit\Validation\Rules\Integer;
 use Equit\Validation\Rules\Ip;
 use Equit\Validation\Rules\IsArray;
+use Equit\Validation\Rules\IsBoolean;
+use Equit\Validation\Rules\IsFalse;
 use Equit\Validation\Rules\IsString;
+use Equit\Validation\Rules\IsTrue;
 use Equit\Validation\Rules\Json;
 use Equit\Validation\Rules\Length;
 use Equit\Validation\Rules\Max;
@@ -23,6 +29,13 @@ use Equit\Validation\Rules\Min;
 use Equit\Validation\Rules\Number;
 use Equit\Validation\Rules\Optional;
 use Equit\Validation\Rules\RegEx;
+use Equit\Validation\Rules\RequiredIf;
+use Equit\Validation\Rules\RequiredUnless;
+use Equit\Validation\Rules\RequiredWith;
+use Equit\Validation\Rules\RequiredWithAll;
+use Equit\Validation\Rules\RequiredWithout;
+use Equit\Validation\Rules\RequiredWithoutAll;
+use Equit\Validation\Rules\Same;
 use Equit\Validation\Rules\Url;
 use Exception;
 use InvalidArgumentException;
@@ -52,7 +65,13 @@ class Validator
         "number" => Number::class,
         "string" => IsString::class,
         "array" => IsArray::class,
+        "bool" => IsBoolean::class,
+        "true" => IsTrue::class,
+        "false" => IsFalse::class,
+        "alpha" => Alpha::class,
+        "alphanumeric" => Alphanumeric::class,
         "date" => Date::class,
+        "date-format" => DateFormat::class,
         "json" => Json::class,
         "min" => Min::class,
         "max" => Max::class,
@@ -61,6 +80,13 @@ class Validator
         "length" => Length::class,
         "regex" => RegEx::class,
         "regexp" => RegEx::class,
+        "required-if" => RequiredIf::class,
+        "required-unless" => RequiredUnless::class,
+        "required-with" => RequiredWith::class,
+        "required-without" => RequiredWithout::class,
+        "required-with-all" => RequiredWithAll::class,
+        "required-without-all" => RequiredWithoutAll::class,
+        "same" => Same::class,
         "in" => In::class,
         "email" => Email::class,
         "url" => Url::class,
@@ -221,12 +247,17 @@ class Validator
         $this->clearSkips();
         $this->clearValidated();
         $passes = true;
-        $data = $this->m_originalData;
+        $validatedData = $this->m_originalData;
 
         foreach ($this->m_rules as $field => $rules) {
             if ($this->m_skipAll) {
                 break;
             }
+
+            // all rules always receive the original data so that rules that reference other fields in the data always
+            // work with the original data. $validatedData will be updated with converted values for rules that
+            // implement TypeConvertingRule that pass
+            $fieldData = $this->m_originalData[$field] ?? null;
 
             /** @var \Equit\Validation\Rule $rule */
             foreach ($rules as $rule) {
@@ -242,9 +273,9 @@ class Validator
                     $rule->setDataset($this->m_originalData);
                 }
 
-                if ($rule->passes($field, $data[$field] ?? null)) {
+                if ($rule->passes($field, $fieldData)) {
                     if ($rule instanceof TypeConvertingRule) {
-                        $data[$field] = $rule->convert($data[$field]);
+                        $validatedData[$field] = $rule->convert($fieldData);
                     }
                 } else {
                     $passes = false;
@@ -259,7 +290,7 @@ class Validator
             throw new ValidationException($this, "The data failed validation.");
         }
 
-        $this->setValidated($data);
+        $this->setValidated($validatedData);
         return true;
     }
 

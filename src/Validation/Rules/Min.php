@@ -75,7 +75,7 @@ class Min implements Rule
             return $this->floatPasses($field, $data);
         } else if (is_array($data)) {
             return $this->arrayPasses($field, $data);
-        } if (is_string($data)) {
+        } else if (is_string($data)) {
             $intData = filter_var($data, FILTER_VALIDATE_INT);
 
             if (false !== $intData) {

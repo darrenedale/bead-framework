@@ -30,6 +30,6 @@ class In implements Rule
 
     public function message(string $field): string
     {
-        return tr("The %1 field must be one of the specified options.");
+        return tr("The %1 field must be one of the specified options.", __FILE__, __LINE__, $field);
     }
 }
