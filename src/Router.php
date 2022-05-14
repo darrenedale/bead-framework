@@ -58,7 +58,7 @@ class Router implements RouterContract
 	 *
 	 * @return string|null
 	 */
-	private function matchedRoute(Request $request): ?string
+	protected function matchedRoute(Request $request): ?string
 	{
 		$requestRoute = $request->pathInfo();
 
@@ -124,7 +124,7 @@ class Router implements RouterContract
 	 *
 	 * @return array<string> The names of the parameters in the route definition.
 	 */
-	private static function parametersForRoute(string $route): array
+	protected static function parametersForRoute(string $route): array
 	{
 		preg_match_all(self::RxParameter, $route, $parameters, PREG_PATTERN_ORDER);
 		return false === $parameters ? [] : $parameters[1];
@@ -213,9 +213,9 @@ class Router implements RouterContract
 				}
 
 				if (isset ($filter)) {
-					$handlerArg = filter_var($handlerArg, FILTER_VALIDATE_INT);
+					$handlerArg = filter_var($handlerArg, $filter, ["flags" => FILTER_NULL_ON_FAILURE]);
 
-					if (false === $handlerArg) {
+					if (!isset($handlerArg)) {
 						throw new LogicException("Can't convert value \"{$routeArguments[$parameter->getName()]}\" for route parameter \${$parameter->getName()} to {$type->getName()} for argument #{$parameter->getPosition()} \${$parameter->getName()} for handler.");
 					}
 				}
@@ -301,11 +301,15 @@ class Router implements RouterContract
 				throw new TypeError("Argument for parameter \$methods must be a string or an array of strings.");
 			}
 
-			if (!Traversable\isSubsetOf($methods, $allMethods)) {
+			if (!Traversable\isSubsetOf($methods, [...$allMethods, self::AnyMethod,])) {
 				throw new InvalidArgumentException("Methods registered must be a subset of the valid methods.");
 			}
 
-			$methods = array_unique($methods);
+			if (in_array(self::AnyMethod, $methods)) {
+				$methods = $allMethods;
+			} else {
+				$methods = array_unique($methods);
+			}
 		}
 
 		if (!is_callable($handler, true)) {
