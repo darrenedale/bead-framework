@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 1.2.0
+ */
+
 namespace Equit\Contracts;
 
 use Equit\Request;
@@ -9,14 +14,31 @@ use Equit\Request;
  */
 interface Router
 {
+	/** @var string Use to register a handler for a route requested with the HTTP GET method. */
 	public const GetMethod = "GET";
+
+	/** @var string Use to register a handler for a route requested with the HTTP HEAD method. */
 	public const HeadMethod = "HEAD";
+
+	/** @var string Use to register a handler for a route requested with the HTTP POST method. */
 	public const PostMethod = "POST";
+
+	/** @var string Use to register a handler for a route requested with the HTTP PUT method. */
 	public const PutMethod = "PUT";
+
+	/** @var string Use to register a handler for a route requested with the HTTP DELETE method. */
 	public const DeleteMethod = "DELETE";
+
+	/** @var string Use to register a handler for a route requested with the HTTP CONNECT method. */
 	public const ConnectMethod = "CONNECT";
+
+	/** @var string Use to register a handler for a route requested with the HTTP OPTIONS method. */
 	public const OptionsMethod = "OPTIONS";
+
+	/** @var string Use to register a handler for a route requested with the HTTP PATCH method. */
 	public const PatchMethod  = "PATCH";
+
+	/** @var string Use to register a handler for a route requested with any HTTP method. */
 	public const AnyMethod = "";
 
 	/**
@@ -124,7 +146,7 @@ interface Router
 	public function registerPatch(string $route, $handler): void;
 
 	/**
-	 * Register a route with the router that responds only to requests using any HTTP method.
+	 * Register a route with the router that responds to requests using any HTTP method.
 	 *
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.

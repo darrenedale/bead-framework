@@ -1,17 +1,12 @@
 <?php
 
 /**
- * @file traversable.php
+ * Polyfills and other useful functions to work with Traversable objects.
+ *
+ * These functions replicate and complement the array processing functions PHP provides.
+ *
  * @author Darren Edale
  * @version 1.2.0
- * @date Jan 2018
- * @ingroup generic-includes
- *
- * @brief Polyfills and other useful functions to work with Traversable objects.
- *
- * These functions replciate and complement the array processing functions PHP provides.
- *
- * @package libequit
  */
 
 namespace Equit\Traversable;
@@ -84,7 +79,7 @@ function accumulate($collection, callable $accumulate = null, $init = 0)
 
 	static $add = null;
 
-    if (!isset($fn)) {
+    if (!isset($accumulate)) {
         if (!isset($add)) {
             $add = function ($a, $b) {
                 return $a + $b;
@@ -166,6 +161,16 @@ function none($collection, callable $predicate): bool
 	return true;
 }
 
+/**
+ * Determine whether one array/Traversable is a subset of another.
+ *
+ * A subset is composed entirely of items that also exist in the (super)set.
+ *
+ * @param array|Traversable $collection The putative subset.
+ * @param array|Traversable $set The set it must be a subset of.
+ *
+ * @return bool `true` if it's a subset, `false` if not.
+ */
 function isSubsetOf($collection, $set): bool
 {
 	assert(is_array($collection) || $collection instanceof Traversable, new TypeError("\$collection to traverse is not an array or Traversable object."));

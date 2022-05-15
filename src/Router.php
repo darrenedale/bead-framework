@@ -1,9 +1,16 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 1.2.0
+ */
+
 namespace Equit;
 
 use Equit\Contracts\Router as RouterContract;
 use Equit\Exceptions\ConflictingRouteException;
+use Equit\Exceptions\DuplicateRouteParameterNameException;
+use Equit\Exceptions\InvalidRouteParameterNameException;
 use Equit\Exceptions\UnroutableRequestException;
 use InvalidArgumentException;
 use LogicException;
@@ -11,6 +18,8 @@ use ReflectionClass;
 use ReflectionFunction;
 use Throwable;
 use TypeError;
+use function Equit\Traversable\all;
+use function Equit\Traversable\isSubsetOf;
 
 /**
  * A simple router that routes requests based on the URI path.
@@ -37,7 +46,7 @@ class Router implements RouterContract
 	protected const RxCaptureSegment = "([^/]+)";
 
 	/** @var string Regular expression to identify a route parameter in a route definition. */
-	protected const RxParameter = "@\{([^/]+)}@";
+	protected const RxParameter = "@\{([^/]*)}@";
 
 	/** @var array[] route storage */
 	private array $m_routes = [
@@ -71,6 +80,34 @@ class Router implements RouterContract
 		}
 
 		return null;
+	}
+
+	/**
+	 * A valid route parameter name is not empty, starts with a letter or underscore and contains only letters, numbers
+	 * and underscores.
+	 *
+	 * @param string $name The name to test.
+	 *
+	 * @return bool `true` if the parameter name is valid, `false` otherwise.
+	 */
+	protected static function isValidParameterName(string $name): bool
+	{
+		return !empty($name) && (ctype_alpha($name[0]) || "_" === $name[0]) && strlen($name) == strspn($name, "abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+	}
+
+	/**
+	 * Extract the parameter names from a route definition.
+	 *
+	 * The parameter names are returned in the order they appear in the provided route definition.
+	 *
+	 * @param string $route The route definition.
+	 *
+	 * @return array<string> The names of the parameters in the route definition.
+	 */
+	protected static function parametersForRoute(string $route): array
+	{
+		preg_match_all(self::RxParameter, $route, $parameters, PREG_PATTERN_ORDER);
+		return false === $parameters ? [] : $parameters[1];
 	}
 
 	/**
@@ -113,21 +150,6 @@ class Router implements RouterContract
 		}
 
 		return "@^/?" . implode("/", $route) . "/?\$@";
-	}
-
-	/**
-	 * Extract the parameter names from a route definition.
-	 *
-	 * The parameter names are returned in the order they appear in the provided route definition.
-	 *
-	 * @param string $route The route definition.
-	 *
-	 * @return array<string> The names of the parameters in the route definition.
-	 */
-	protected static function parametersForRoute(string $route): array
-	{
-		preg_match_all(self::RxParameter, $route, $parameters, PREG_PATTERN_ORDER);
-		return false === $parameters ? [] : $parameters[1];
 	}
 
 	/**
@@ -282,7 +304,54 @@ class Router implements RouterContract
 	}
 
 	/**
+	 * Helper for register() to check a route being registered for conflicts with routes already registered.
+	 *
+	 * @param string $route The route to check.
+	 * @param array<string> $methods The
+	 *
+	 * @throws \Equit\Exceptions\ConflictingRouteException
+	 */
+	protected function checkRouteConflicts(string $route, array $methods): void
+	{
+		$routeRegex = self::regularExpressionForRoute($route);
+
+		foreach ($methods as $method) {
+			foreach (array_keys($this->m_routes[$method]) as $registeredRoute) {
+				if ($routeRegex === self::regularExpressionForRoute($registeredRoute)) {
+					throw new ConflictingRouteException($route, "The route '{$route}' conflicts with the previously registered route '{$registeredRoute}' for the {$method} HTTP method.");
+				}
+			}
+		}
+	}
+
+	/**
+	 * Helper for register() to check a route being registered for sane parameter names.
+	 *
+	 * @param string $route The route to check.
+	 *
+	 * @throws \Equit\Exceptions\InvalidRouteParameterNameException if any parameter name is found to be invalid
+	 * @throws \Equit\Exceptions\DuplicateRouteParameterNameException if any parameter name used more than once in the
+	 * route
+	 */
+	protected static function checkRouteParameterNames(string $route): void
+	{
+		$parameterNames = self::parametersForRoute($route);
+
+		for ($idx = 0; $idx < count($parameterNames); ++$idx) {
+			if (!self::isValidParameterName($parameterNames[$idx])) {
+				throw new InvalidRouteParameterNameException($parameterNames[$idx], $route, "The parameter name '{$parameterNames[$idx]}' in the route '{$route}' is not valid.");
+			}
+
+			if ($idx !== array_search($parameterNames[$idx], $parameterNames)) {
+				throw new DuplicateRouteParameterNameException($parameterNames[$idx], $route, "The parameter name '{$parameterNames[$idx]}' in the route '{$route}' is used more than once.");
+			}
+		}
+	}
+
+	/**
 	 * @inheritDoc
+	 * @throws \Equit\Exceptions\InvalidRouteParameterNameException
+	 * @throws \Equit\Exceptions\DuplicateRouteParameterNameException
 	 */
 	public function register(string $route, $methods, $handler): void
 	{
@@ -297,34 +366,23 @@ class Router implements RouterContract
 		} else {
 			if (is_string($methods)) {
 				$methods = [$methods,];
-			} else if (!is_array($methods) || !Traversable\all($methods, "is_string")) {
+			} else if (!is_array($methods) || !all($methods, "is_string")) {
 				throw new TypeError("Argument for parameter \$methods must be a string or an array of strings.");
 			}
 
-			if (!Traversable\isSubsetOf($methods, [...$allMethods, self::AnyMethod,])) {
+			if (!isSubsetOf($methods, [...$allMethods, self::AnyMethod,])) {
 				throw new InvalidArgumentException("Methods registered must be a subset of the valid methods.");
 			}
 
-			if (in_array(self::AnyMethod, $methods)) {
-				$methods = $allMethods;
-			} else {
-				$methods = array_unique($methods);
-			}
+			$methods = (in_array(self::AnyMethod, $methods) ? $allMethods : array_unique($methods));
 		}
 
 		if (!is_callable($handler, true)) {
 			throw new TypeError("Argument for parameter \$handler must be a callable or a tuple of class and method name.");
 		}
 
-		$routeRegex = self::regularExpressionForRoute($route);
-
-		foreach ($methods as $method) {
-			foreach (array_keys($this->m_routes[$method]) as $registeredRoute) {
-				if ($routeRegex === self::regularExpressionForRoute($registeredRoute)) {
-					throw new ConflictingRouteException($route, "The registered route '{$registeredRoute}' conflicts with the route '{$route}' for the {$method} HTTP method.");
-				}
-			}
-		}
+		$this->checkRouteConflicts($route, $methods);
+		self::checkRouteParameterNames($route);
 
 		foreach ($methods as $method) {
 			$this->m_routes[$method][$route] = $handler;
