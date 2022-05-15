@@ -2,8 +2,7 @@
 /**
  * @file InlineTextEdit.php
  * @author darren
- * @date May 2019
- * @version
+ * @version 0.9.2
  */
 
 namespace Equit\Html;

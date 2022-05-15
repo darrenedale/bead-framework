@@ -14,8 +14,7 @@
  *
  * @file PickList.php
  * @author Darren Edale
- * @date Jan 2018
- */
+ * @version 0.9.2 */
 
 namespace Equit\Html;
 

@@ -21,9 +21,8 @@
  *
  * @file EmailPart.php
  * @author Darren Edale
- * @version 1.2.0
- * @date Jan 2018
- * @package libequit
+ * @version 0.9.2
+ * @version 0.9.2 * @package libequit
  */
 
 namespace Equit;
@@ -60,7 +59,7 @@ namespace Equit;
  *
  * @class EmailPart
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.2
  * @see Email EmailHeader
  * @package libequit
  */

@@ -2,7 +2,7 @@
 
 /**
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.2
  */
 
 namespace Equit;

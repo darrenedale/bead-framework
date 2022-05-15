@@ -13,10 +13,9 @@
  *
  * @file Section.php
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.2
  * @package Equit\Html
- * @date Apr 2019
- */
+ * @version 0.9.2 */
 
 namespace Equit\Html;
 

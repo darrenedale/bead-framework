@@ -12,10 +12,9 @@
 *
 * @file EmailHeader.php
 * @author Darren Edale
-* @version 1.2.0
+* @version 0.9.2
 * @package libequit
-* @date Jan 2018
-*/
+* @version 0.9.2*/
 
 
 namespace Equit;
@@ -67,9 +66,8 @@ namespace Equit;
  * @session _None_
  *
  * @class EmailHeader
- * @version 1.2.0
- * @date Jan 2018
- * @see Email EmailPart
+ * @version 0.9.2
+ * @version 0.9.2 * @see Email EmailPart
  * @package libequit
  */
 class EmailHeader {

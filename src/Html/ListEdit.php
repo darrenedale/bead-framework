@@ -21,10 +21,9 @@
  *
  * @file ListEdit.php
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.2
  * @package libequit
- * @date Jan 2018
- */
+ * @version 0.9.2 */
 
 namespace Equit\Html;
 
