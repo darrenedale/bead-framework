@@ -5,7 +5,6 @@ namespace Equit\Validation;
 use ArgumentCountError;
 use DateTime;
 use Equit\Exceptions\ValidationException;
-use Equit\Html\Page;
 use Equit\Validation\Rules\After;
 use Equit\Validation\Rules\Alpha;
 use Equit\Validation\Rules\Alphanumeric;
@@ -47,13 +46,23 @@ use TypeError;
 /**
  * A class that validates datasets.
  *
- * A Validator contains a collection of rules for one or more fields. When check() is called with an array of data, each
- * of the rules is applied to the appropriate value in the array. For any rule that does not pass, the error message for
- * that rule is collected. If all rules pass, check() returns true; otherwise it returns false. WHen it returns false,
- * the collected errors are available by calling errors(). The errors are keyed by field.
+ * A Validator contains a collection of rules for one or more fields in a dataset. When validate() is called, each
+ * rule is applied to the appropriate value in the array of data. For any rule that does not pass, the error message for
+ * that rule is collected. If all rules pass, validation is padded and validated() can be called to fetch the validated
+ * data; otherwise a validation exception is thrown and the collected errors are available by calling errors(). The
+ * errors are keyed by field.
  */
 class Validator
 {
+    /** @var int state when validate() has yet to be called for the current data and rules. */
+    private const StateNotValidated = 0;
+
+    /** @var int state when validate() has been called but has not finished. */
+    private const StateValidating = 1;
+
+    /** @var int state when validate() has been completed with the current data and rules. */
+    private const StateValidationDone = 2;
+
     /**
      * Aliases for rules that can be defined using strings.
      * @var array|string[]
@@ -105,11 +114,8 @@ class Validator
      */
     private array $m_rules = [];
 
-    /** @var bool Flag indicating that the data is currently undergoing validation. */
-    private bool $m_validating = false;
-
-    /** @var bool Flag indicating whether the validator has yet to be run on the provided data. */
-    private bool $m_stale = true;
+    /** @var int The validator state: validation not attempted, currently validating or validation complete. */
+    private int $m_state = self::StateNotValidated;
 
     /**
      * Fields whose (remaining) rules should be skipped.
@@ -135,6 +141,7 @@ class Validator
      * rule or an array of rules for that field. Each rule can be supplied either as a Rule instance or as a string with
      * the rule's alias and arguments (e.g. "integer:0:10" for a rule requiring an int value between 0 and 10).
      *
+     * @param array $data The data to validate.
      * @param array $rules The optional set of rules.
      */
     public function __construct(array $data, array $rules = [])
@@ -153,6 +160,45 @@ class Validator
     }
 
     /**
+     * Fetch the current state of the validator.
+     *
+     * The validator is always in one of three states:
+     * - `self::StateNotValidated` the current data has not yet undergone validation according to the current ruleset.
+     *   This can be because `validate()` hasn't been called yet or because the ruleset or data has changed since it
+     *   was last called. This is the initial state.
+     * - `self::StateValidating` validation is currently underway (i.e. `validate()` has been called but has not
+     *   returned.)
+     * - `self::StateValidationDone` the current data has undergone validation according to the current ruleset
+     *   successfully or otherwise).
+     * @return int The state.
+     */
+    protected function state(): int
+    {
+        return $this->m_state;
+    }
+
+    /**
+     * Check whether the validator is currently validating the data.
+     *
+     * @return bool `true` if it is, `false` otherwise.
+     */
+    public function isValidating(): bool
+    {
+        return self::StateValidating == $this->state();
+    }
+
+    /**
+     * Check whether the current rules have been used to validate the current data.
+     *
+     * @return bool `true` if the current data has been subjected to validation with the current rules, `false`
+     * otherwise.
+     */
+    protected function hasValidated(): bool
+    {
+        return self::StateValidationDone == $this->state();
+    }
+
+    /**
      * Set the data to validate.
      *
      * Setting fresh data clears any previous errors and validated data.
@@ -161,20 +207,45 @@ class Validator
      */
     public function setData(array $data): void
     {
-        if ($this->m_validating) {
-            throw new RuntimeException("Cannot set a validator's data while it's validating.");
-        }
+        assert(!$this->isValidating(), new LogicException("Cannot set a validator's data while it's validating the data."));
 
         $this->clearErrors();
         $this->clearSkips();
         $this->clearValidated();
         $this->m_originalData = $data;
-        $this->m_stale = true;
     }
 
-    protected function hasValidated(): bool
+    /**
+     * Fetch the data under validation.
+     *
+     * @return array The data.
+     */
+    public function data(): array
     {
-        return !$this->m_stale;
+        return $this->m_originalData;
+    }
+
+    /**
+     * Fetch the rules the Validator will use to validate the dataset.
+     *
+     * @param string|null $field The field whose rules are sought. Defaults to `null` to return all the rules, keyed by
+     * field.
+     *
+     * @return array The rules (for the requested field), or `null` if the requested field is not under validation.
+     */
+    public function rules(?string $field = null): ?array
+    {
+        return (isset($field) ? ($this->m_rules[$field] ?? null) : $this->m_rules);
+    }
+
+    /**
+     * Fetch the fields under validation.
+     *
+     * @return array<string> The fields for which the validator contains rules.
+     */
+    public function fieldsUnderValidation(): array
+    {
+        return array_keys($this->rules());
     }
 
     /**
@@ -241,15 +312,18 @@ class Validator
      */
     public function validate(): bool
     {
-        assert(!$this->m_validating, new LogicException("Recursive call to Validator::validate()"));
-        $this->m_validating = false;
+        assert(!$this->isValidating(), new LogicException("Recursive call to Validator::validate()"));
+        $this->m_state = self::StateValidating;
         $this->clearErrors();
         $this->clearSkips();
         $this->clearValidated();
         $passes = true;
-        $validatedData = $this->m_originalData;
 
-        foreach ($this->m_rules as $field => $rules) {
+        // validated data contains only the data under validation - data for which there are no rules is not validated
+        $fieldsUnderValidation = $this->fieldsUnderValidation();
+        $validatedData = array_filter($this->data(), fn(string $key):bool => in_array($key, $fieldsUnderValidation), ARRAY_FILTER_USE_KEY);
+
+        foreach ($this->rules() as $field => $rules) {
             if ($this->m_skipAll) {
                 break;
             }
@@ -257,7 +331,7 @@ class Validator
             // all rules always receive the original data so that rules that reference other fields in the data always
             // work with the original data. $validatedData will be updated with converted values for rules that
             // implement TypeConvertingRule that pass
-            $fieldData = $this->m_originalData[$field] ?? null;
+            $fieldData = $this->data()[$field] ?? null;
 
             /** @var \Equit\Validation\Rule $rule */
             foreach ($rules as $rule) {
@@ -284,7 +358,7 @@ class Validator
             }
         }
 
-        $this->m_validating = false;
+        $this->m_state = self::StateValidationDone;
 
         if (!$passes) {
             throw new ValidationException($this, "The data failed validation.");
@@ -302,12 +376,16 @@ class Validator
      */
     public function passes(): bool
     {
-        assert(!$this->m_validating, new LogicException("Can't call passes() while the validator is validating the data."));
-        try {
-            return isset($this->m_validatedData) || $this->validate();
-        } catch (ValidationException $err) {
-            return false;
+        assert(!$this->isValidating(), new LogicException("Can't call passes() while the validator is validating the data."));
+        if (!$this->hasValidated()) {
+            try {
+                $this->validate();
+            } catch (ValidationException $err) {
+                return false;
+            }
         }
+
+        return isset($this->m_validatedData);
     }
 
     /**
@@ -350,7 +428,7 @@ class Validator
      */
     public function validated(): array
     {
-        assert(!$this->m_validating, new LogicException("Can't call validated() while the validator is validating the data."));
+        assert(!$this->isValidating(), new LogicException("Can't call validated() while the validator is validating the data."));
         if (!$this->hasValidated()) {
             $this->validate();
         }
@@ -466,9 +544,16 @@ class Validator
      *
      * @param string $field The field for which the rule applies.
      * @param \Equit\Validation\Rule|string $rule The rule.
+     * @throws \LogicException if called while the data is being validated.
      */
     public function addRule(string $field, $rule): void
     {
+        assert(!$this->isValidating(), new LogicException("Can't add rules while the validator is validating the data."));
+
+        $this->clearValidated();
+        $this->clearSkips();
+        $this->clearErrors();
+
         if (is_string($rule)) {
             $args = explode(":", $rule);
             $rule = array_shift($args);

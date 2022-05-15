@@ -2,6 +2,12 @@
 
 namespace Equit\Validation;
 
+/**
+ * Interface for rules that convert the type of validated data.
+ *
+ * For example, the Date rule will accept a date as a string, and will convert it to a DateTime object if it passes
+ * validation. This only affects the data returned by `Validator::validated()`, the original data is always unmodified.
+ */
 interface TypeConvertingRule extends Rule
 {
     /**
