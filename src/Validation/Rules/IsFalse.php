@@ -24,7 +24,10 @@ class IsFalse implements TypeConvertingRule
      */
     public function passes(string $field, $data): bool
     {
-        return false === filter_var($data, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]);
+        // NOTE explicitly reject objects because filter_var() doesn't (can't) reflect strict_types setting and will
+        // call __toString() to convert to string and thereby accept objects with a __toString() that returns one of the
+        // accepted string values
+        return isset($data) && "" !== $data && !is_object($data) && false === filter_var($data, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]);
     }
 
     /**
