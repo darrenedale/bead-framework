@@ -6,16 +6,16 @@
  * @date May 2022
  */
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Equit\Validation\Rules;
 
 use Equit\Validation\Rule;
 
 /**
- * Validator rule to ensure that some data is in a given set of values.
+ * Validator rule to ensure that some data is not in a given set of values.
  */
-class In implements Rule
+class NotIn implements Rule
 {
     /** @var array The valid values for the tested data. */
     private array $m_options;
@@ -23,7 +23,7 @@ class In implements Rule
     /**
      * Initialise a new rule instance.
      *
-     * @param array $options The valid values.
+     * @param array $options The invalid values.
      */
     public function __construct(array $options)
     {
@@ -31,9 +31,9 @@ class In implements Rule
     }
 
     /**
-     * Fetch the valid options.
+     * Fetch the invalid options.
      *
-     * @return array The options.
+     * @return array The invalid options.
      */
     public function options(): array
     {
@@ -41,9 +41,9 @@ class In implements Rule
     }
 
     /**
-     * Set the valid options.
+     * Set the invalid options.
      *
-     * @param array $options The options.
+     * @param array $options The invalid options.
      */
     public function setOptions(array $options): void
     {
@@ -56,11 +56,11 @@ class In implements Rule
      * @param string $field The field name of the data being checked.
      * @param mixed $data The data to check.
      *
-     * @return bool `true` if the data is in the set of valid options, `false` otherwise.
+     * @return bool `true` if the data is not in the set of invalid options, `false` otherwise.
      */
     public function passes(string $field, $data): bool
     {
-        return in_array($data, $this->options());
+        return !in_array($data, $this->options());
     }
 
     /**
@@ -72,6 +72,6 @@ class In implements Rule
      */
     public function message(string $field): string
     {
-        return tr("The %1 field must be one of the specified options.", __FILE__, __LINE__, $field);
+        return tr("The %1 field must not be one of the specified options.", __FILE__, __LINE__, $field);
     }
 }

@@ -14,29 +14,34 @@ use Equit\Validation\Rule;
 use TypeError;
 
 /**
- * Validator rule to ensure that some data is at least a given value.
+ * Validator rule to ensure that some data is between two values.
  */
-class Min implements Rule
+class Between implements Rule
 {
     /** @var int | float The minimum value. */
     private $m_min;
 
+    /** @var int | float The maximum value. */
+    private $m_max;
+
     /**
      * @param int|float $min
      */
-    public function __construct($min)
+    public function __construct($min, $max)
     {
-        $numericMin = filter_var($min, FILTER_VALIDATE_INT);
+        foreach (["min", "max"] as $bound) {
+            $numeric = filter_var($$bound, FILTER_VALIDATE_INT);
 
-        if (false === $numericMin) {
-            $numericMin = filter_var($min, FILTER_VALIDATE_FLOAT);
+            if (false === $numeric) {
+                $numeric = filter_var($$bound, FILTER_VALIDATE_FLOAT);
 
-            if (false === $numericMin) {
-                throw new TypeError("Argument for parameter \$min must be numeric.");
+                if (false === $numeric) {
+                    throw new TypeError("Argument for parameter \${$bound} must be numeric.");
+                }
             }
-        }
 
-        $this->setMin($numericMin);
+            $this->{"set{$bound}"}($numeric);
+        }
     }
 
     /**
@@ -63,15 +68,38 @@ class Min implements Rule
     }
 
     /**
+     * @return int|float The maximum.
+     */
+    public function max()
+    {
+        return $this->m_max;
+    }
+
+    /**
+     * Set the minimum value.
+     *
+     * @param $max int|float
+     */
+    public function setMax($max)
+    {
+        assert (is_int($max) || is_float($max),  (
+            8 <= PHP_MAJOR_VERSION
+                ? new TypeError("The maximum value must be numeric.")
+                : "The maximum value must be numeric."
+        ));
+        $this->m_max = $max;
+    }
+
+    /**
      * Helper to check an int using the rule.
      *
      * @param int $data The int to check.
      *
-     * @return bool `true` if the int is no less than _min_, `false` otherwise.
+     * @return bool `true` if the int is between _min_ and _max_, `false` otherwise.
      */
     protected function intPasses(int $data): bool
     {
-        return $data >= (int) $this->min();
+        return (int) $this->min() <= $data && (int) $this->max() >= $data;
     }
 
     /**
@@ -79,11 +107,11 @@ class Min implements Rule
      *
      * @param float $data The float to check.
      *
-     * @return bool `true` if the float is no less than _min_, `false` otherwise.
+     * @return bool `true` if the float is between _min_ and _max_, `false` otherwise.
      */
     protected function floatPasses(float $data): bool
     {
-        return $data >= (float) $this->min();
+        return (float) $this->min() <= $data && (float) $this->max() >= $data;
     }
 
     /**
@@ -91,11 +119,12 @@ class Min implements Rule
      *
      * @param string $data The string to check.
      *
-     * @return bool `true` if the string is no shorter than _min_ characters, `false` otherwise.
+     * @return bool `true` if the string is between _min_ and _max_ characters in length, `false` otherwise.
      */
     protected function stringPasses(string $data): bool
     {
-        return mb_strlen($data, "UTF-8") >= ((int) $this->min());
+        $len = mb_strlen($data, "UTF-8");
+        return (int) $this->min() <= $len && (int) $this->max() >= $len;
     }
 
     /**
@@ -107,7 +136,7 @@ class Min implements Rule
      */
     protected function arrayPasses(array $data): bool
     {
-        return count($data) >= ((int) $this->min());
+        return ((int) $this->min()) <= count($data) && ((int) $this->max()) >= count($data);
     }
 
     /**
@@ -164,6 +193,6 @@ class Min implements Rule
      */
     public function message(string $field): string
     {
-        return tr("The %1 field must not be lower than %2.", __FILE__, __LINE__, $field, $this->min());
+        return tr("The %1 field must be between %2 and %3 inclusive.", __FILE__, __LINE__, $field, $this->min(), $this->max());
     }
 }

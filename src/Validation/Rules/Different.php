@@ -6,7 +6,7 @@
  * @date May 2022
  */
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Equit\Validation\Rules;
 
@@ -14,9 +14,9 @@ use Equit\Validation\DatasetAwareRule;
 use Equit\Validation\KnowsDataset;
 
 /**
- * Validator rule to ensure that some data is the same as the data for another field.
+ * Validator rule to ensure that some data is different from the data for another field.
  */
-class Same implements DatasetAwareRule
+class Different implements DatasetAwareRule
 {
     use KnowsDataset;
     use ReferencesOtherField;
@@ -34,7 +34,7 @@ class Same implements DatasetAwareRule
     /**
      * Check some data against the rule.
      *
-     * The data passes the rule if it is the same as the related field's value.
+     * The data passes the rule if it is different from the related field's value.
      *
      * @param string $field The field name of the data being checked.
      * @param mixed $data The data to check.
@@ -43,7 +43,7 @@ class Same implements DatasetAwareRule
      */
     public function passes(string $field, $data): bool
     {
-        return ($this->dataset()[$this->otherField()] ?? null) === $data;
+        return ($this->dataset()[$this->otherField()] ?? null) !== $data;
     }
 
     /**
@@ -55,6 +55,6 @@ class Same implements DatasetAwareRule
      */
     public function message(string $field): string
     {
-        return tr("The %1 field must be the same as the %2 field.", __FILE__, __LINE__, $field, $this->otherField());
+        return tr("The %1 field must be different from the %2 field.", __FILE__, __LINE__, $field, $this->otherField());
     }
 }
