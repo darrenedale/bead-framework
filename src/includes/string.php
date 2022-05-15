@@ -3,9 +3,8 @@
 /**
  * @file string.php
  * @author Darren Edale
- * @version 1.2.0
- * @date Jan 2018
- *
+ * @version 0.9.1
+ * @version 0.9.1 *
  * @brief Definitions of stand-alone string-processing functions.
  *
  * These functions complement the string processing functions PHP provides.

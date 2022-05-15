@@ -12,10 +12,9 @@
  *
  * @file Paragraph.php
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.1
  * @package libequit
- * @date Jan 2018December 2013
- */
+ * @version 0.9.1 */
 
 namespace Equit\Html;
 

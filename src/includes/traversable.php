@@ -6,7 +6,7 @@
  * These functions replicate and complement the array processing functions PHP provides.
  *
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.1
  */
 
 namespace Equit\Traversable;

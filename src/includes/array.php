@@ -3,9 +3,8 @@
 /**
  * @file array.php
  * @author Darren Edale
- * @version 1.2.0
- * @date Jan 2018May 2014
- * @ingroup generic-includes
+ * @version 0.9.1
+ * @version 0.9.1 * @ingroup generic-includes
  *
  * @brief Definitions of stand-alone array-processing functions.
  *
