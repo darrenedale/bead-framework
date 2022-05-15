@@ -11,8 +11,8 @@
  *
  * @file DAO.php
  * @author Darren Edale
- * @version 0.9.1
- * @version 0.9.1 * @package libequit
+ * @version 0.9.2
+ * @version 0.9.2 * @package libequit
  */
 
 namespace Equit;

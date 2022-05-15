@@ -12,9 +12,9 @@
  *
  * @file Template.php
  * @author Darren Edale
- * @version 0.9.1
+ * @version 0.9.2
  * @package Equit\Html
- * @version 0.9.1 */
+ * @version 0.9.2 */
 
 namespace Equit\Html;
 

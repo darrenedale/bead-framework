@@ -2,7 +2,7 @@
 
 /**
  * @author Darren Edale
- * @version 0.9.1
+ * @version 0.9.2
  */
 
 require_once __DIR__ . "/../../src/autoload.php";

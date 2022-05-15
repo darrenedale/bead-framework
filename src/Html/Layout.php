@@ -12,7 +12,7 @@
  *
  * @file Layout.php
  * @author Darren Edale
- * @version 0.9.1 * @version 0.9.1
+ * @version 0.9.2 * @version 0.9.2
  * @package libequit
  */
 
@@ -45,7 +45,7 @@ use Equit\Html\PageElement;
  *
  * @class Layout
  * @author Darren Edale
- * @version 0.9.1 * @version 0.9.1
+ * @version 0.9.2 * @version 0.9.2
  * @package libequit
  * @ingroup libequit
  *

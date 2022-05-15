@@ -19,9 +19,9 @@
 *
 * @file Email.php
 * @author Darren Edale
-* @version 0.9.1
+* @version 0.9.2
 * @package libequit
-* @version 0.9.1*/
+* @version 0.9.2*/
 
 namespace Equit;
 
@@ -71,8 +71,8 @@ namespace Equit;
  * @session _None_
  *
  * @class Email
- * @version 0.9.1
- * @version 0.9.1 * @see EmailHeader EmailPart
+ * @version 0.9.2
+ * @version 0.9.2 * @see EmailHeader EmailPart
  * @package libequit
  */
 class Email {

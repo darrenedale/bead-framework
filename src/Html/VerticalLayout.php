@@ -17,7 +17,7 @@
  *
  * @file VerticalLayout.php
  * @author Darren Edale
- * @version 0.9.1 * @version 0.9.1
+ * @version 0.9.2 * @version 0.9.2
  * @package libequit
  */
 
@@ -63,7 +63,7 @@ namespace Equit\Html;
  *
  * @class VerticalLayout
  * @author Darren Edale
- * @version 0.9.1 * @version 0.9.1
+ * @version 0.9.2 * @version 0.9.2
  * @package libequit
  */
 class VerticalLayout extends Layout {

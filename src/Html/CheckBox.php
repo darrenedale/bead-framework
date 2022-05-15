@@ -27,9 +27,9 @@ use Equit\Html\PageElement;
  *
  * @file CheckBox.php
  * @author Darren Edale
- * @version 0.9.1
+ * @version 0.9.2
  * @package libequit
- * @version 0.9.1 */
+ * @version 0.9.2 */
 
 /**
  * A check box for inclusion in forms.
