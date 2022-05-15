@@ -29,7 +29,7 @@ function & transform(&$collection, callable $fn): Traversable
 {
 	assert(is_array($collection) || $collection instanceof Traversable, new TypeError("\$collection to traverse is not an array or Traversable object."));
 
-	foreach ($collection as & $item) {
+    foreach ($collection as & $item) {
         $item = $fn($item);
     }
 
@@ -42,7 +42,7 @@ function & transform(&$collection, callable $fn): Traversable
  * The function receives each item in the traversable, along with the current reduced value. The reduced value is
  * updated to the return value of each call, and the final return value is the final reduced value.
  *
- * @param array|\Traversable $collection
+ * @param \Traversable $collection
  * @param callable $fn
  * @param $init
  *
@@ -52,7 +52,7 @@ function reduce($collection, callable $fn, $init = null)
 {
 	assert(is_array($collection) || $collection instanceof Traversable, new TypeError("\$collection to traverse is not an array or Traversable object."));
 
-	$ret = $init;
+    $ret = $init;
 
     foreach ($collection as $item) {
         $ret = $fn($item, $ret);
@@ -77,7 +77,7 @@ function accumulate($collection, callable $accumulate = null, $init = 0)
 {
 	assert(is_array($collection) || $collection instanceof Traversable, new TypeError("\$collection to traverse is not an array or Traversable object."));
 
-	static $add = null;
+    static $add = null;
 
     if (!isset($accumulate)) {
         if (!isset($add)) {
