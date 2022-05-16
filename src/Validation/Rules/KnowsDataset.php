@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Validation;
+namespace Equit\Validation\Rules;
 
 /**
  * Trait for validation rules that are aware of the full dataset the validator they belong to is validating.

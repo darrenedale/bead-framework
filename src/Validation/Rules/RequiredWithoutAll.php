@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Equit\Validation\Rules;
 
 use Equit\Validation\DatasetAwareRule;
-use Equit\Validation\KnowsDataset;
 use InvalidArgumentException;
 use function Equit\Traversable\some;
 

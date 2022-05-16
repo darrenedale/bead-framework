@@ -1,6 +1,8 @@
 <?php
 
-namespace Equit\Validation;
+namespace Equit\Validation\Rules;
+
+use Equit\Validation\Validator;
 
 /**
  * Trait for validation rules that are aware of the validator they belong to.

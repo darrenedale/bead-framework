@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Equit\Validation\Rules;
 
-use Equit\Validation\KnowsValidator;
 use Equit\Validation\ValidatorAwareRule;
 
 /**
