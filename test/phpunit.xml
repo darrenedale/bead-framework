@@ -26,5 +26,8 @@
         <testsuite name="libequit-php Full Test Suite">
             <directory>./</directory>
         </testsuite>
+        <testsuite name="libequit-php Validator Rules">
+            <directory>./Validation/Rules</directory>
+        </testsuite>
     </testsuites>
 </phpunit>
