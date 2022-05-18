@@ -9,7 +9,7 @@
       "email": "packagist@equituk.net"
     }
   ],
-  "version": "0.9.1",
+  "version": "0.9.2",
   "require": {
     "ext-mbstring": "*",
     "ext-dom": "*",
