@@ -2,7 +2,7 @@
 
 /**
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.2
  * @date May 2022
  */
 
@@ -19,13 +19,13 @@ use Throwable;
  */
 class Before implements Rule
 {
-    /** @var \DateTime The date that the data must be before. */
+    /** @var DateTime The date that the data must be before. */
     private DateTime $m_dateTime;
 
     /**
      * Initialise a new rule instance.
      *
-     * @param \DateTime $dateTime The date that the data must be before.
+     * @param DateTime $dateTime The date that the data must be before.
      */
     public function __construct(DateTime $dateTime)
     {
@@ -35,7 +35,7 @@ class Before implements Rule
     /**
      * Fetch the date that the data must be before.
      *
-     * @return \DateTime The date.
+     * @return DateTime The date.
      */
     public function dateTime(): DateTime
     {
@@ -45,7 +45,7 @@ class Before implements Rule
     /**
      * Set the date that the data must be before.
      *
-     * @param \DateTime $dateTime The date.
+     * @param DateTime $dateTime The date.
      */
     public function setDateTime(DateTime $dateTime): void
     {

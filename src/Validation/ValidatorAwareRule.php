@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 0.9.2
+ * @date May 2022
+ */
+
+declare(strict_types=1);
+
 namespace Equit\Validation;
 
 /**
@@ -12,14 +20,14 @@ interface ValidatorAwareRule extends Rule
     /**
      * Set the validator.
      *
-     * @param \Equit\Validation\Validator $validator The validator.
+     * @param Validator $validator The validator.
      */
     public function setValidator(Validator $validator): void;
 
     /**
      * Fetch the validator.
      *
-     * @return \Equit\Validation\Validator|null The validator, if set.
+     * @return Validator|null The validator, if set.
      */
     public function validator(): ?Validator;
 }

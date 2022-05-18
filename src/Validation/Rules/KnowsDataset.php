@@ -2,11 +2,11 @@
 
 /**
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.2
  * @date May 2022
  */
 
-namespace Equit\Validation;
+namespace Equit\Validation\Rules;
 
 /**
  * Trait for validation rules that are aware of the full dataset the validator they belong to is validating.

@@ -2,9 +2,11 @@
 
 /**
  * @author Darren Edale
- * @version 1.2.0
+ * @version 0.9.2
  * @date May 2022
  */
+
+declare(strict_types=1);
 
 namespace Equit\Validation;
 
@@ -20,7 +22,10 @@ use Equit\Validation\Rules\Date;
 use Equit\Validation\Rules\DateFormat;
 use Equit\Validation\Rules\Different;
 use Equit\Validation\Rules\Email;
+use Equit\Validation\Rules\EqualTo;
 use Equit\Validation\Rules\Filled;
+use Equit\Validation\Rules\GreaterThan;
+use Equit\Validation\Rules\GreaterThanOrEqual;
 use Equit\Validation\Rules\In;
 use Equit\Validation\Rules\Integer;
 use Equit\Validation\Rules\Ip;
@@ -31,8 +36,11 @@ use Equit\Validation\Rules\IsString;
 use Equit\Validation\Rules\IsTrue;
 use Equit\Validation\Rules\Json;
 use Equit\Validation\Rules\Length;
+use Equit\Validation\Rules\LessThan;
+use Equit\Validation\Rules\LessThanOrEqual;
 use Equit\Validation\Rules\Max;
 use Equit\Validation\Rules\Min;
+use Equit\Validation\Rules\NotEqualTo;
 use Equit\Validation\Rules\NotIn;
 use Equit\Validation\Rules\Number;
 use Equit\Validation\Rules\Optional;
@@ -96,6 +104,18 @@ class Validator
         "between" => Between::class,
         "before" => Before::class,
         "after" => After::class,
+        "equals" => EqualTo::class,
+        "===" => EqualTo::class,
+        "not-equal-to" => NotEqualTo::class,
+        "!==" => NotEqualTo::class,
+        "less-than" => LessThan::class,
+        "lt" => LessThan::class,
+        "less-than-or-equals" => LessThanOrEqual::class,
+        "lte" => LessThanOrEqual::class,
+        "greater-than" => GreaterThan::class,
+        "gt" => GreaterThan::class,
+        "greater-than-or-equals" => GreaterThanOrEqual::class,
+        "gte" => GreaterThanOrEqual::class,
         "length" => Length::class,
         "regex" => RegEx::class,
         "regexp" => RegEx::class,
@@ -219,7 +239,11 @@ class Validator
      */
     public function setData(array $data): void
     {
-        assert(!$this->isValidating(), new LogicException("Cannot set a validator's data while it's validating the data."));
+        assert(!$this->isValidating(), (
+            8 <= PHP_MAJOR_VERSION
+                ? new LogicException("Cannot set a validator's data while it's validating the data.")
+                : "Cannot set a validator's data while it's validating the data."
+        ));
 
         $this->clearErrors();
         $this->clearSkips();
@@ -276,7 +300,11 @@ class Validator
     }
 
     /**
-     * Internal helper to reset the list of errors.
+     * Reset the list of errors (for a given field).
+     *
+     * If not field is specified, all errors are cleared.
+     *
+     * @param string|null $field The field to reset.
      */
     public function clearErrors(?string $field = null): void
     {
@@ -324,7 +352,11 @@ class Validator
      */
     public function validate(): bool
     {
-        assert(!$this->isValidating(), new LogicException("Recursive call to Validator::validate()"));
+        assert(!$this->isValidating(), (
+        8 <= PHP_MAJOR_VERSION
+            ? new LogicException("Recursive call to Validator::validate()")
+            : "Recursive call to Validator::validate()"
+        ));
         $this->m_state = self::StateValidating;
         $this->clearErrors();
         $this->clearSkips();
@@ -388,7 +420,11 @@ class Validator
      */
     public function passes(): bool
     {
-        assert(!$this->isValidating(), new LogicException("Can't call passes() while the validator is validating the data."));
+        assert(!$this->isValidating(), (
+        8 <= PHP_MAJOR_VERSION
+            ? new LogicException("Can't call passes() while the validator is validating the data.")
+            : "Can't call passes() while the validator is validating the data."
+        ));
         if (!$this->hasValidated()) {
             try {
                 $this->validate();
@@ -440,7 +476,12 @@ class Validator
      */
     public function validated(): array
     {
-        assert(!$this->isValidating(), new LogicException("Can't call validated() while the validator is validating the data."));
+        assert(!$this->isValidating(), (
+        8 <= PHP_MAJOR_VERSION
+            ? new LogicException("Can't call validated() while the validator is validating the data.")
+            : "Can't call validated() while the validator is validating the data."
+        ));
+
         if (!$this->hasValidated()) {
             $this->validate();
         }
@@ -561,7 +602,11 @@ class Validator
      */
     public function addRule(string $field, $rule): void
     {
-        assert(!$this->isValidating(), new LogicException("Can't add rules while the validator is validating the data."));
+        assert(!$this->isValidating(), (
+        8 <= PHP_MAJOR_VERSION
+            ? new LogicException("Can't add rules while the validator is validating the data.")
+            : "Can't add rules while the validator is validating the data."
+        ));
 
         $this->clearValidated();
         $this->clearSkips();
