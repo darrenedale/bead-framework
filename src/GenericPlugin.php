@@ -19,6 +19,8 @@
 
 namespace Equit;
 
+use Equit\Contracts\Response;
+
 /**
  * Base class for application plugins.
  *
@@ -53,7 +55,8 @@ namespace Equit;
  * @author Darren Edale
  * @package libequit
  */
-abstract class GenericPlugin {
+abstract class GenericPlugin
+{
 	/**
 	 * Indicate the actions that the plugin provides.
 	 *
@@ -62,7 +65,8 @@ abstract class GenericPlugin {
 	 *
 	 * @return array[string] the list of actions the plugin provides.
 	 */
-	public static function supportedActions(): array {
+	public static function supportedActions(): array
+	{
 		return [];
 	}
 
@@ -82,7 +86,8 @@ abstract class GenericPlugin {
 	 *
 	 * @return GenericPlugin|null an instance of the plugin, or _null_ on error.
 	 */
-	public static function instance(): ?GenericPlugin {
+	public static function instance(): ?GenericPlugin
+	{
 		return null;
 	}
 
@@ -93,8 +98,8 @@ abstract class GenericPlugin {
 	 *
 	 * @param \Equit\Request $request The request to handle.
 	 *
-	 * @return bool _true_ if the request was handled, _false_ if it is not a request that the plugin is supposed to
-	 * handle.
+	 * @return Response|bool `true` or a Response to send if the request was handled, `false` if it is not a request
+	 * that the plugin is supposed to handle.
 	 */
 	public function handleRequest(/** @noinspection PhpUnusedParameterInspection */Request $request) {
 		return false;
