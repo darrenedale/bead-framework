@@ -1,0 +1,4 @@
+footer::before
+{
+    content: "style1.css loaded";
+}
