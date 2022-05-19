@@ -161,6 +161,31 @@ namespace {
 		return str_replace($placeholders->toArray(), $args, $template);
 	}
 
+    /**
+     * Convert a string in a given encoding to an array of Unicode code points.
+     *
+     * The encoding must be one supported by the mb-string extension.
+     *
+     * @param string $str The string to convert.
+     * @param string $encoding The string's encoding. Default is "UTF-8".
+     *
+     * @return array<int> The code points.
+     */
+    function toCodePoints(string $str, string $encoding): array
+    {
+        // convert the string to UTF32LE, where each character is represented by four bytes, each of which is a 32-bit
+        // LE int, the Unicode code point
+        if ("UTF-32LE" !== $encoding) {
+            $str = mb_convert_encoding($str, "UTF-32LE", $encoding);
+        }
+
+        // then split it into chunks of four chars so that we have the four bytes of the code point for each character
+        // in an array of four-byte strings; then map that array by unpacking each four-byte string to an int value
+        return array_map(function (string $codePointBytes): int {
+            return unpack("V", $codePointBytes)[1];
+        }, str_split($str, 4));
+    }
+
     if (!function_exists("str_starts_with")) {
         /**
          * Determine whether one string starts with another.

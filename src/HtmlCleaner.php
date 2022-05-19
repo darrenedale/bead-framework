@@ -16,6 +16,7 @@ use DOMNode;
 use Exception;
 use InvalidArgumentException;
 use StdClass;
+use function Equit\Traversable\all;
 
 /**
  * Sanitise HTML according to configurable rules.
@@ -195,6 +196,84 @@ class HtmlCleaner
     }
 
     /**
+     * Helper to determine whether a Unicode code point is valid for use as the first character in a HTML tag name.
+     *
+     * @param int $codePoint The code point to check.
+     *
+     * @return bool `true` if it may be used as the first character in an HTML tag name, `false` if not.
+     */
+    protected static final function isValidTagStartCodepoint(int $codePoint): bool
+    {
+        return (ord(":") == $codePoint) ||
+            (ord("A") <= $codePoint && ord("Z") >= $codePoint) ||
+            ord("_") == $codePoint ||
+            (ord("a") <= $codePoint && ord("z") >= $codePoint) ||
+            (0xC0 <= $codePoint && 0xD6 >= $codePoint) ||
+            (0xD8 <= $codePoint && 0xF6 >= $codePoint) ||
+            (0xF8 <= $codePoint && 0x2FF >= $codePoint) ||
+            (0x370 <= $codePoint && 0x37D >= $codePoint) ||
+            (0x37F <= $codePoint && 0x1FFF >= $codePoint) ||
+            (0x200C <= $codePoint && 0x200D >= $codePoint) ||
+            (0x2070 <= $codePoint && 0x218F >= $codePoint) ||
+            (0x2C00 <= $codePoint && 0x2FEF >= $codePoint) ||
+            (0x3001 <= $codePoint && 0xD7FF >= $codePoint) ||
+            (0xF900 <= $codePoint && 0xFDCF >= $codePoint) ||
+            (0xFDF0 <= $codePoint && 0xFFFD >= $codePoint) ||
+            (0x10000 <= $codePoint && 0xEFFFF);
+    }
+
+    /**
+     * Helper to determine whether a Unicode code point is valid for use in a HTML tag name in a position other than the
+     * first character.
+     *
+     * @param int $codePoint The code point to check.
+     *
+     * @return bool `true` if it may be used in an HTML tag name, `false` if not.
+     */
+    protected static final function isValidTagCodepoint(int $codePoint): bool
+    {
+        return self::isValidTagStartCodepoint($codePoint) ||
+            ord("-") == $codePoint ||
+            ord(".") == $codePoint ||
+            (ord("0") <= $codePoint && ord("9") >= $codePoint) ||
+            0xB7 == $codePoint ||
+            (0x0300 <= $codePoint && 0x036F >= $codePoint) ||
+            (0x203F <= $codePoint && 0x2040 >= $codePoint);
+    }
+
+    /**
+     * Helper to determine whether a provided tag name is valid for HTML.
+     *
+     * @param string $name The name to test.
+     *
+     * @return bool `true` if the tag name is valid, `false` if not.
+     */
+    protected final function isValidTagName(string $name): bool
+    {
+        if (empty($name)) {
+            return false;
+        }
+
+        $codePoints = toCodePoints($name, $this->m_userCharset);
+
+        return self::isValidTagStartCodepoint($codePoints[0]) && all(array_slice($codePoints, 1), function(int $codePoint): bool {
+            return self::isValidTagCodepoint($codePoint);
+        });
+    }
+
+    protected final function isValidClass(string $name): bool
+    {
+        // TODO implement completely according to spec
+        return false === mb_strpos($name, " ", 0, $this->m_userCharset);
+    }
+
+    protected final function isValidId(string $id): bool
+    {
+        // TODO implement completely according to spec
+        return false === mb_strpos($id, " ", 0, $this->m_userCharset);
+    }
+
+    /**
      * Helper to add content to deny or allow lists.
      *
      * You must provide valid items - either a single non-empty string or an array full of non-empty strings. Assertions
@@ -203,35 +282,28 @@ class HtmlCleaner
      *
      * @param array $list Reference to the list to add to.
      * @param array|string $items The items to add.
+     * @param callable $validator A function to use to validate the items before they are added to the list.
      *
-     * @throws InvalidArgumentException if $items is not a string or array, or if it contains a non-string or empty
-     * string
+     * @throws InvalidArgumentException if $items is not a string or array, or if it contains an invalid entry for the
+     * list
      */
-    protected final function addToList(array &$list, $items): void
+    protected final function addToList(array &$list, $items, $validator): void
     {
         if (is_string($items)) {
             $items = [$items];
-        }
-
-        if (!is_array($items)) {
+        } else if (!is_array($items)) {
             throw new InvalidArgumentException("items to add to allow-list/deny-list must be string or array of strings");
         }
 
-        foreach ($items as $item) {
-            if (!is_string($item)) {
-                throw new InvalidArgumentException("non-string in allow-list/deny-list");
-            }
-
-            if (empty($item)) {
-                throw new InvalidArgumentException("empty string in allow-list/deny-list");
-            }
+        if (!all($items, $validator)) {
+            throw new InvalidArgumentException("invalid tag name found in allow-list/deny-list");
         }
 
         array_walk($items, function (string &$item) {
             $item = mb_convert_case($item, MB_CASE_LOWER, $this->m_userCharset);
         });
 
-        $list = array_unique(array_merge($list, $items));
+        $list = array_unique([...$list, ...$items]);
     }
 
     /**
@@ -244,14 +316,14 @@ class HtmlCleaner
      * empty strings will result in undefined behaviour. The tags will be converted to lower-case for the allow-list,
      * and duplicates will not be added.
      *
-     * @param $tags array|string The tag(s) to add to the allow-list.
+     * @param $tags array<string>|string The tag(s) to add to the allow-list.
      *
      * @throws InvalidArgumentException if $tags is not a string or array, or if it contains a non-string or empty
      * string
      */
     public function allowTags($tags): void
     {
-        $this->addToList($this->m_tags->allowList, $tags);
+        $this->addToList($this->m_tags->allowList, $tags, fn(string $tagName): bool => $this->isValidTagName($tagName));
     }
 
     /**
@@ -271,7 +343,7 @@ class HtmlCleaner
      */
     public function denyTags($tags): void
     {
-        $this->addToList($this->m_tags->denyList, $tags);
+        $this->addToList($this->m_tags->denyList, $tags, fn(string $tagName): bool => $this->isValidTagName($tagName));
     }
 
     /**
@@ -292,7 +364,7 @@ class HtmlCleaner
      */
     public function allowClasses($classes): void
     {
-        $this->addToList($this->m_classes->allowList, $classes);
+        $this->addToList($this->m_classes->allowList, $classes, fn(string $class): bool => $this->isValidClass($class));
     }
 
     /**
@@ -312,7 +384,7 @@ class HtmlCleaner
      */
     public function denyClasses($classes): void
     {
-        $this->addToList($this->m_classes->denyList, $classes);
+        $this->addToList($this->m_classes->denyList, $classes, fn(string $class): bool => $this->isValidClass($class));
     }
 
     /**
@@ -333,7 +405,7 @@ class HtmlCleaner
      */
     public function allowIds($ids): void
     {
-        $this->addToList($this->m_ids->allowList, $ids);
+        $this->addToList($this->m_ids->allowList, $ids, fn(string $id): bool => $this->isValidId($id));
     }
 
     /**
@@ -353,7 +425,7 @@ class HtmlCleaner
      */
     public function denyIds($ids): void
     {
-        $this->addToList($this->m_ids->denyList, $ids);
+        $this->addToList($this->m_ids->denyList, $ids, fn(string $id): bool => $this->isValidId($id));
     }
 
     /**

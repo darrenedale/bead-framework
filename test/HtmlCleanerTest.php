@@ -16,6 +16,7 @@ use Exception;
 use InvalidArgumentException;
 use Equit\HtmlCleaner;
 use StdClass;
+use TypeError;
 
 class HtmlCleanerTest extends TestCase
 {
@@ -100,7 +101,7 @@ class HtmlCleanerTest extends TestCase
         $this->assertAttributeIsInt([$this->m_cleaner, "m_classMode"], "class filter mode of default cleaner is not an int");
     }
 
-    public function dataProviderConstructor(): array
+    public function dataForTestConstructor(): array
     {
         return [
             "default_constructor" => [],
@@ -128,7 +129,7 @@ class HtmlCleanerTest extends TestCase
      * @param int|null $idMode The id filter mode to provide to the constructor.
      * @param int|null $classMode The class filter mode to provide to the constructor.
      *
-     * @dataProvider dataProviderConstructor
+     * @dataProvider dataForTestConstructor
      */
     public function testConstructor(?int $tagMode = null, ?int $classMode = null, ?int $idMode = null)
     {
@@ -196,7 +197,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataProviderMode(): array
+    public function dataForTestMode(): array
     {
         return [
             "allowlist_mode" => [HtmlCleaner::AllowListMode, (object)[
@@ -223,7 +224,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderMode
+     * @dataProvider dataForTestMode
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by setIdMode(), or null if we
@@ -259,7 +260,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderMode
+     * @dataProvider dataForTestMode
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by setIdMode(), or null if we
@@ -295,7 +296,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderMode
+     * @dataProvider dataForTestMode
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by setIdMode(), or null if we
@@ -338,7 +339,7 @@ class HtmlCleanerTest extends TestCase
      * multiple calls
      *
      */
-    public function dataProviderTagList(): array
+    public function dataForTestTagList(): array
     {
         return [
             "empty_tag_list" => [
@@ -384,7 +385,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderTagList
+     * @dataProvider dataForTestTagList
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by denyTags(), or `null`
@@ -394,7 +395,7 @@ class HtmlCleanerTest extends TestCase
      * @param array|string $denyList The denylist to test.
      * @param StdClass $expectation A description of the expected outcome.
      */
-    public function testBlackListTags($denyList, StdClass $expectation)
+    public function testDenyTags($denyList, StdClass $expectation)
     {
         $oldBlacklist = $this->m_cleaner->deniedTags();
 
@@ -418,7 +419,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderTagList
+     * @dataProvider dataForTestTagList
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by allowTags(), or `null`
@@ -459,7 +460,7 @@ class HtmlCleanerTest extends TestCase
      * multiple calls
      *
      */
-    public function dataProviderIdList(): array
+    public function dataForTestIdList(): array
     {
         return [
             "empty_id_list" => [
@@ -505,7 +506,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderIdList
+     * @dataProvider dataForTestIdList
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by denyIds(), or `null`
@@ -515,7 +516,7 @@ class HtmlCleanerTest extends TestCase
      * @param array|string $denyList The denylist to test.
      * @param StdClass $expectation A description of the expected outcome.
      */
-    public function testBlackListIds($denyList, StdClass $expectation)
+    public function testDenyIds($denyList, StdClass $expectation)
     {
         $oldBlacklist = $this->m_cleaner->deniedIds();
 
@@ -539,7 +540,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderIdList
+     * @dataProvider dataForTestIdList
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by allowListIds(), or `null`
@@ -580,7 +581,7 @@ class HtmlCleanerTest extends TestCase
      * over multiple calls
      *
      */
-    public function dataProviderClassList(): array
+    public function dataForTestClassList(): array
     {
         return [
             "empty_class_list" => [
@@ -626,7 +627,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderClassList
+     * @dataProvider dataForTestClassList
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by denyClasses(), or
@@ -636,7 +637,7 @@ class HtmlCleanerTest extends TestCase
      * @param array|string $denyList The denylist to test.
      * @param StdClass $expectation A description of the expected outcome.
      */
-    public function testBlackListClasses($denyList, StdClass $expectation)
+    public function testDenyClasses($denyList, StdClass $expectation)
     {
         $oldBlacklist = $this->m_cleaner->deniedClasses();
 
@@ -660,7 +661,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderClassList
+     * @dataProvider dataForTestClassList
      *
      * The expectation contains two properties:
      * - `exception` should be the name of an exception class that we expect to be thrown by denyClasses(), or
@@ -693,8 +694,64 @@ class HtmlCleanerTest extends TestCase
         }
     }
 
-    public function testIsAllowedTag()
+    /**
+     * Data provider for testIsAllowedTag()
+     *
+     * @return array[]
+     */
+    public function dataForTestIsAllowedTag(): array
     {
+        return [
+            "typicalSpan-Allowed" => ["span", true, ["span",]],
+            "typicalSpan-NotAllowed" => ["span", false, ["div",]],
+            
+            "typicalDiv-Allowed" => ["div", true, ["div",]],
+            "typicalDiv-NotAllowed" => ["div", false, ["section",]],
+            
+            "typicalSpan-MultipleAllowed" => ["span", true, ["span", "div", "section", "article", ]],
+            "typicalSpan-MultipleNotAllowed" => ["span", false, ["div", "section", "article", "nav",]],
+
+            "typicalDiv-MultipleAllowed" => ["div", true, ["div", "section", "article",]],
+            "typicalDiv-MultipleNotAllowed" => ["div", false, ["section", "article", "nav",]],
+
+            "extremeDivSpace-DivAllowed" => ["div ", false, ["div",]],
+            "extremeSpanSpace-SpanAllowed" => ["span ", false, ["span",]],
+
+            "invalidSpan-SpanSpaceAllowed" => ["span", false, ["span ",], InvalidArgumentException::class,],
+            "invalidDiv-DivSpaceAllowed" => ["div", false, ["div ",], InvalidArgumentException::class,],
+            "invalidDivSpace-DivSpaceAllowed" => ["div ", true, ["div ",], InvalidArgumentException::class,],
+            "invalidSpanSpace-SpanSpaceAllowed" => ["span ", true, ["span ",], InvalidArgumentException::class,],
+
+            "invalidStringableTagName" => [new class {
+            public function __toString(): string
+                {
+                    return "span";
+                }
+            }, false, ["span",], TypeError::class,],
+            "invalidNullTagName" => [null, false, ["span",], TypeError::class,],
+            "invalidIntTagName" => [21, false, ["span",], TypeError::class,],
+            "invalidFloatTagName" => [21.5467, false, ["span",], TypeError::class,],
+            "invalidTrueTagName" => [true, false, ["span",], TypeError::class,],
+            "invalidFalseTagName" => [false, false, ["span",], TypeError::class,],
+            "invalidArrayTagName" => [["span"], false, ["span",], TypeError::class,],
+            "invalidObjectTagName" => [(object) ["span"], false, ["span",], TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestIsAllowedTag
+     */
+    public function testIsAllowedTag($tag, bool $allowed, ?array $allowedTags = null, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+        
+        if (isset($allowedTags)) {
+            $this->m_cleaner->allowTags($allowedTags);
+        }
+        
+        $this->assertSame($allowed, $this->m_cleaner->isAllowedTag($tag));
     }
 
     public function testIsAllowedNode()
@@ -709,7 +766,7 @@ class HtmlCleanerTest extends TestCase
     {
     }
 
-    public function dataProviderClean(): array
+    public function dataForTestClean(): array
     {
         /** @noinspection BadExpressionStatementJS */
         return [
@@ -1122,7 +1179,7 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProviderClean
+     * @dataProvider dataForTestClean
      *
      * The config looks like this:
      *     {
