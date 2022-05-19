@@ -109,7 +109,7 @@ class Request
 		$this->setProtocol(!empty($_SERVER["HTTPS"]) ? self::HttpsProtocol : self::HttpProtocol);
 		$this->setHost($_SERVER["SERVER_NAME"] ?? "");
 		$this->setPath("/");
-		$this->setPathInfo("");
+		$this->setPathInfo("/");
 		$this->setMethod("GET");
 	}
 
@@ -135,7 +135,13 @@ class Request
 	 */
 	public function url(): string
 	{
-		return "{$this->protocol()}://{$this->host()}" . urlencode($this->path()) . urlencode($this->pathInfo()) . "{$this->encodedQueryString()}";
+		$pathInfo = $this->pathInfo();
+
+		if ("/" === $pathInfo) {
+			$pathInfo = "";
+		}
+
+		return "{$this->protocol()}://{$this->host()}{$this->path()}{$pathInfo}{$this->encodedQueryString()}";
 	}
 
 	/**
@@ -147,7 +153,13 @@ class Request
 	 */
 	public function rawUrl(): string
 	{
-		return "{$this->protocol()}://{$this->host()}{$this->path()}{$this->pathInfo()}{$this->queryString()}";
+		$pathInfo = $this->pathInfo();
+
+		if ("/" === $pathInfo) {
+			$pathInfo = "";
+		}
+
+		return "{$this->protocol()}://{$this->host()}{$this->path()}{$pathInfo}{$this->queryString()}";
 	}
 
 	/**
@@ -684,7 +696,34 @@ class Request
 
 			$req->setPath($path);
 
-			$pathInfo = $_SERVER["PATH_INFO"] ?? "";
+			if (isset($_SERVER["PATH_INFO"])) {
+				$pathInfo = $_SERVER["PATH_INFO"];
+			} else if (isset($_SERVER["SCRIPT_NAME"])) {
+				// attempt to extract the path info from the URI if PATH_INFO is not provided
+				$scriptPath = $_SERVER["SCRIPT_NAME"];
+
+				// if the script name is part of the URI, remove that and the reaminder is the path info
+				if (str_starts_with($_SERVER["REQUEST_URI"], $scriptPath)) {
+					$pathInfo = "/" . substr($_SERVER["REQUEST_URI"], strlen($scriptPath));
+				} else {
+					// otherwise, if the script name is not part of the URI, remove the path to the script from the URI
+					$scriptPath = dirname($scriptPath);
+
+					if (str_starts_with($_SERVER["REQUEST_URI"], $scriptPath)) {
+						$pathInfo = "/" . substr($_SERVER["REQUEST_URI"], strlen($scriptPath));
+					} else {
+						$pathInfo = "/";
+					}
+				}
+
+				// strip out the query string if present
+				if (false !== ($pos = strpos($pathInfo, "?"))) {
+					$pathInfo = substr($pathInfo, 0, $pos);
+				}
+			} else {
+				// don't know how we can access the path info
+				$pathInfo = "/";
+			}
 
 			if (!str_starts_with($pathInfo, "/")) {
 				$pathInfo = "/{$pathInfo}";
