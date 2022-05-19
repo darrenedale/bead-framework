@@ -57,15 +57,20 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-abstract class PageElement {
+abstract class PageElement
+{
+	/** @var array The element attributes. */
+	private array $m_attributes = [];
+
 	/**
 	 * Create a new page element.
 	 *
 	 * By default an element with no ID attribute is created.
 	 *
-	 * @param $id string _optional_ The ID for the page element.
+	 * @param $id string|null The ID for the page element.
 	 */
-	public function __construct(?string $id = null) {
+	public function __construct(?string $id = null)
+	{
 		$this->m_attributes["class"] = [];
 		$this->setId($id);
 	}
@@ -377,15 +382,23 @@ abstract class PageElement {
 	public abstract function html(): string;
 
 	/**
+	 * Coerce the PageElement object to a string.
+	 *
+	 * @return string The HTML for the element.
+	 */
+	public function __toString(): string
+	{
+		return $this->html();
+	}
+
+	/**
 	 * Output the element.
 	 *
 	 * The element is output to the current output stream. This is usually
 	 * standard output, which is usually what is sent to the user agent.
 	 */
-	final public function output(): void {
+	final public function output(): void
+	{
 		echo $this->html();
 	}
-
-	/** @var array The element attributes. */
-	private $m_attributes = [];
 }
