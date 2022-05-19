@@ -7,6 +7,7 @@
 
 namespace Equit\Contracts;
 
+use Equit\Exceptions\UnroutableRequestException;
 use Equit\Request;
 
 /**
@@ -44,11 +45,12 @@ interface Router
 	/**
 	 * Route a given request.
 	 *
-	 * @param \Equit\Request $request The request to route.
+	 * @param Request $request The request to route.
 	 *
-	 * @throws \Equit\Exceptions\UnroutableRequestException if no registered route can be found for the request.
+	 * @return Response|null The response to the request. `null` if the handler sends its own response.
+	 * @throws UnroutableRequestException if no registered route can be found for the request.
 	 */
-	public function route(Request $request): void;
+	public function route(Request $request): ?Response;
 
 	/**
 	 * Register a route with the router.

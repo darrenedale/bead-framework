@@ -8,6 +8,7 @@
 namespace Equit;
 
 use Equit\Contracts\Router as RouterContract;
+use Equit\Contracts\Response;
 use Equit\Exceptions\ConflictingRouteException;
 use Equit\Exceptions\DuplicateRouteParameterNameException;
 use Equit\Exceptions\InvalidRouteParameterNameException;
@@ -278,7 +279,7 @@ class Router implements RouterContract
 	/**
 	 * @inheritDoc
 	 */
-	public function route(Request $request): void
+	public function route(Request $request): ?Response
 	{
 		$route = $this->matchedRoute($request);
 
@@ -300,7 +301,7 @@ class Router implements RouterContract
 			}
 		}
 
-		$handler(...$handlerArgs);
+		return $handler(...$handlerArgs);
 	}
 
 	/**
