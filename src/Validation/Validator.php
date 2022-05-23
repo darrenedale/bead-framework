@@ -71,8 +71,6 @@ use TypeError;
  */
 class Validator
 {
-	private const Foo = 1;
-
     /** @var int state when validate() has yet to be called for the current data and rules. */
     private const StateNotValidated = 0;
 
