@@ -10,11 +10,17 @@
 namespace Equit;
 
 use DirectoryIterator;
+use Equit\Contracts\Response;
 use Equit\Contracts\Router as RouterContract;
+use Equit\Exceptions\CsrfTokenVerificationException;
 use Equit\Exceptions\InvalidPluginException;
-use Equit\Exceptions\InvalidPluginsPathException;
+use Equit\Exceptions\InvalidPluginsDirectoryException;
+use Equit\Exceptions\InvalidRoutesDirectoryException;
+use Equit\Exceptions\InvalidRoutesFileException;
 use Equit\Exceptions\UnroutableRequestException;
 use Equit\Html\Page;
+use Equit\Responses\DownloadResponse;
+use Exception;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
@@ -189,12 +195,12 @@ use UnexpectedValueException;
  */
 class WebApplication extends Application
 {
-	const SessionDataContext = "application";
+	public const SessionDataContext = "application";
 	protected const DefaultPluginsPath = "../plugins/generic";
 	protected const DefaultPluginsNamespace = "";
 
 	/** @var string Where plugins are loaded from. */
-	private string $m_pluginsPath = self::DefaultPluginsPath;
+	private string $m_pluginsDirectory = self::DefaultPluginsPath;
 
 	/** @var string The namespace where plugins are located. */
 	private string $m_pluginsNamespace = self::DefaultPluginsNamespace;
@@ -233,7 +239,7 @@ class WebApplication extends Application
 	public function __construct(string $appRoot, ?DataController $dataController = null, ?Page $pageTemplate = null)
 	{
 		parent::__construct($appRoot, $dataController);
-		self::initialiseSession();
+		$this->initialiseSession();
 		$this->m_session = &$this->sessionData(self::SessionDataContext);
 		$this->setRouter(new Router());
 		$this->setPage($pageTemplate ?? new Page());
@@ -242,11 +248,13 @@ class WebApplication extends Application
 	/**
 	 * Initialise the application session data.
 	 */
-	private static function initialiseSession(): void {
+	private function initialiseSession(): void
+	{
 		static $s_basePath = null;
+		$appUid = $this->config("app.uid");
 
 		if (is_null($s_basePath)) {
-			$s_basePath = ["app", static::instance()->config("app.uid"),];
+			$s_basePath = ["app", $appUid,];
 		}
 
 		session_start();
@@ -259,6 +267,11 @@ class WebApplication extends Application
 
 			$session =& $session[$p];
 		}
+
+		// forces the CSRF token to be generated if there isn't one
+		$this->csrf();
+		$this->sessionData(self::SessionDataContext)["_transient"] = [];
+		$this->sessionData(self::SessionDataContext)["_transient.flush"] = [];
 	}
 
 	/** Determine whether the application is currently running or not.
@@ -273,28 +286,28 @@ class WebApplication extends Application
 	}
 
 	/**
-	 * Set the plugins path.
+	 * Set the plugins directory.
 	 *
-	 * The plugins path can only be set before exec() is called. If exec() has been called, calling setPluginPath()
-	 * will fail.
+	 * The plugins directory can only be set before exec() is called. If exec() has been called, calling
+	 * setPluginsDirectory() will fail.
 	 *
-	 * @param string $path The path to load plugins from.
+	 * @param string $dir The directory to load plugins from.
 	 *
-	 * @return bool `true` If the provided path was valid and was set, `false` otherwise.
+	 * @return bool `true` If the provided directory was valid and was set, `false` otherwise.
 	 */
-	public function setPluginsPath(string $path): bool
+	public function setPluginsDirectory(string $dir): bool
 	{
 		if ($this->isRunning()) {
 			AppLog::error("can't set plugins path while application is running", __FILE__, __LINE__, __FUNCTION__);
 			return false;
 		}
 
-		if (!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $path)) {
-			AppLog::error("invalid plugins path: \"$path\"", __FILE__, __LINE__, __FUNCTION__);
+		if (!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $dir)) {
+			AppLog::error("invalid plugins path: \"$dir\"", __FILE__, __LINE__, __FUNCTION__);
 			return false;
 		}
 
-		$this->m_pluginsPath = $path;
+		$this->m_pluginsDirectory = $dir;
 		return true;
 	}
 
@@ -305,9 +318,21 @@ class WebApplication extends Application
 	 *
 	 * @return string The plugins path.
 	 */
-	public function pluginsPath(): string
+	public function pluginsDirectory(): string
 	{
-		return $this->m_pluginsPath;
+		return $this->m_pluginsDirectory;
+	}
+
+	/**
+	 * Fetch the routes directory.
+	 *
+	 * The directory is relative to the application's root directory. The default is "routes".
+	 *
+	 * @return string The directory.
+	 */
+	public function routesDirectory(): string
+	{
+		return $this->config("app.routes.directory", "routes");
 	}
 
 	/**
@@ -363,7 +388,7 @@ class WebApplication extends Application
 		}
 
 		// ensure context is not numeric (avoids issues when un-serialising session data)
-		$context = "c$context";
+		$context = "ctx-$context";
 		$session = &$_SESSION["app"][$this->config("app.uid")];
 
 		if (!isset($session[$context])) {
@@ -372,6 +397,41 @@ class WebApplication extends Application
 
 		$session = &$session[$context];
 		return $session;
+	}
+
+	/**
+	 * Store some session data for just the next request.
+	 *
+	 * The data persists for a given number of extra requests. If the age is 0 or less, the data only persists for the
+	 * current request (i.e. it's not all that different from a normal variable). The default is 1 to persist the data
+	 * for the next request only.
+	 *
+	 * @param string $context The session context.
+	 * @param string $key The session data key.
+	 * @param mixed $value The data.
+	 * @param int $age How many requests the data should persist for. Default is 1.
+	 */
+	public function storeTransientSessionData(string $context, string $key, $value, int $age = 1)
+	{
+		$this->sessionData($context)[$key] = $value;
+		$this->sessionData(self::SessionDataContext)["_transient"]["{$context}::{$key}"] = $age;
+	}
+
+	/**
+	 * Empty the expired transient session data.
+	 */
+	protected function flushTransientSessionData(): void
+	{
+		// destroy the transient data that's been around for more than one request
+		foreach ($this->sessionData(self::SessionDataContext)["_transient"] as $key => $age) {
+			--$age;
+
+			if (0 >= $age) {
+				[$context, $key] = explode("::", $key, 2);
+				unset($this->sessionData($context)[$key]);
+				unset($this->sessionData(self::SessionDataContext)["_transient"][$key]);
+			}
+		}
 	}
 
 	/**
@@ -402,7 +462,7 @@ class WebApplication extends Application
 	/**
 	 * Set the application's Request router.
 	 *
-	 * @param \Equit\Contracts\Router $router
+	 * @param RouterContract $router
 	 */
 	public function setRouter(RouterContract $router): void
 	{
@@ -412,7 +472,7 @@ class WebApplication extends Application
 	/**
 	 * Fetch the application's Request router.
 	 *
-	 * @return \Equit\Contracts\Router The router.
+	 * @return RouterContract The router.
 	 */
 	public function router(): RouterContract
 	{
@@ -458,7 +518,7 @@ class WebApplication extends Application
 	 *
 	 * @param $path string The path to the plugin to load.
 	 *
-	 * @throws \Equit\Exceptions\InvalidPluginException
+	 * @throws InvalidPluginException
 	 */
 	private function loadPlugin(string $path): void
 	{
@@ -585,7 +645,7 @@ class WebApplication extends Application
 	 * error log will contain details of any plugins that failed to load.
 	 *
 	 * @return bool true if the plugins path was successfully scanned for plugins, false otherwise.
-	 * @throws InvalidPluginsPathException if the plugins path can't be read for some reason.
+	 * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
 	 * @throws InvalidPluginException if the plugins path can't be read for some reason.
 	 */
 	protected function loadPlugins(): bool
@@ -593,21 +653,21 @@ class WebApplication extends Application
 		static $s_done = false;
 
 		if (!$s_done) {
-			$info = new SplFileInfo($this->pluginsPath());
+			$info = new SplFileInfo("{$this->rootDir()}/{$this->pluginsDirectory()}");
 
 			if (!$info->isDir()) {
-				throw new InvalidPluginsPathException($this->pluginsPath(), "Plugin path \"{$this->pluginsPath()}\" is not a directory.");
+				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" is not a directory.");
 			}
 
 			if (!$info->isReadable() || !$info->isExecutable()) {
-				throw new InvalidPluginsPathException($this->pluginsPath(), "Plugin path \"{$this->pluginsPath()}\" cannot be scanned for plugins to load.");
+				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.");
 			}
 
 			/* load the ordered plugins, then the rest after */
 			$pluginLoadOrder = $this->config("app.plugins.generic.loadorder", []);
 
 			foreach ($pluginLoadOrder as $pluginName) {
-				$pluginFile = new SplFileInfo("{$this->pluginsPath()}/{$pluginName}.php");
+				$pluginFile = new SplFileInfo("{$info->getRealPath()}/{$pluginName}.php");
 				$pluginFilePath = $pluginFile->getRealPath();
 
 				if (false !== $pluginFilePath) {
@@ -616,9 +676,9 @@ class WebApplication extends Application
 			}
 
 			try {
-				$directory = new DirectoryIterator($this->pluginsPath());
+				$directory = new DirectoryIterator("{$info->getRealPath()}");
 			} catch (UnexpectedValueException $err) {
-				throw new InvalidPluginsPathException($this->pluginsPath(), "Plugin path \"{$this->pluginsPath()}\" cannot be scanned for plugins to load.", 0, $err);
+				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.", 0, $err);
 			}
 
 			foreach ($directory as $pluginFile) {
@@ -634,6 +694,53 @@ class WebApplication extends Application
 		}
 
 		return true;
+	}
+
+	/**
+	 * Load all the routes files in the routes directory.
+	 *
+	 * @throws InvalidRoutesDirectoryException
+	 * @throws InvalidRoutesFileException
+	 */
+	protected function loadRoutes(): void
+	{
+		static $s_done = false;
+
+		if (!$s_done) {
+			$dir = new SplFileInfo("{$this->rootDir()}/{$this->routesDirectory()}");
+
+			if (!$dir->isDir()) {
+				throw new InvalidRoutesDirectoryException($this->pluginsDirectory(), "Routes directory \"{$this->pluginsDirectory()}\" is not a directory.");
+			}
+
+			if (!$dir->isReadable() || !$dir->isExecutable()) {
+				throw new InvalidRoutesDirectoryException($this->routesDirectory(), "Routes directory \"{$this->routesDirectory()}\" cannot be scanned for route files to load.");
+			}
+
+			$app = $this;
+			$router = $this->router();
+
+			foreach (new DirectoryIterator($dir) as $routeFile) {
+				if ($routeFile->isDot() || !$routeFile->isFile()) {
+					continue;
+				}
+
+				if ($routeFile->isLink()) {
+					throw new InvalidRoutesFileException($routeFile->getRealPath(), "Routes file {$routeFile->getRealPath()} cannot be loaded because linked routes files are not supported for security reasons.");
+				}
+
+				$routeFile = $routeFile->getRealPath();
+
+				try {
+					// isolate the context of the included routes file
+					(function () use ($app, $router, $routeFile) {
+						include $routeFile;
+					})();
+				} catch (Exception $err) {
+					throw new InvalidRoutesFileException($routeFile, "The routes file {$routeFile} could not be loaded.", 0, $err);
+				}
+			}
+		}
 	}
 
 	/**
@@ -688,29 +795,13 @@ class WebApplication extends Application
 	 *
 	 * @param $data string the file to send.
 	 * @param $fileName string the file name to specify for the user's download.
-	 * @param $mimeType string _optional_ the MIME type for the download.
+	 * @param $contentType string _optional_ the MIME type for the download.
 	 * @param $headers array[string=>string] _optional_ Additional headers to send with the download.
+	 * @deprecated Build a DownloadResponse or a FileDownloadResponse instead.
 	 */
-	public function sendDownload(string $data, string $fileName, string $mimeType = "application/octet-stream", array $headers = []): void
+	public function sendDownload(string $data, string $fileName, string $contentType = "application/octet-stream", array $headers = []): void
 	{
-		if (0 != ob_get_level() && !ob_end_clean()) {
-			AppLog::error("failed to clear output buffer before sending file download (requested action = \"" . $this->currentRequest()->action() . "\")", __FILE__, __LINE__, __FUNCTION__);
-		}
-
-		if (empty($mimeType)) {
-			header("content-type: application/octet-stream", true);
-		} else {
-			header("content-type: $mimeType", true);
-		}
-
-		header("content-disposition: attachment; filename=\"" . ($fileName ?? "downloaded_file") . "\"", true);
-
-		foreach ($headers as $name => $value) {
-			header("$name: $value", false);
-		}
-
-		echo $data;
-		exit(0);
+		$this->sendResponse((new DownloadResponse($data))->ofType($contentType)->withHeaders($headers)->named($fileName));
 	}
 
 	/**
@@ -769,6 +860,20 @@ class WebApplication extends Application
 		exit(0);
 	}
 
+	/**
+	 * Send a response to the client.
+	 *
+	 * @param Response $response The response to send.
+	 */
+	public function sendResponse(Response $response): void
+	{
+		if (0 != ob_get_level() && !ob_end_clean()) {
+			throw new RuntimeException("Failed to clear output buffer before sending response.");
+		}
+
+		$response->send();
+	}
+
 	/** Push a request onto the request stack.
 	 *
 	 * This is a private internal method that maintains the request stack that is used to provide plugins with
@@ -821,36 +926,131 @@ class WebApplication extends Application
 	}
 
 	/**
+	 * Fetch the current CSRF token.
+	 *
+	 * @return string The token.
+	 */
+	public function csrf(): string
+	{
+		if (!isset($this->m_session["csrf-token"])) {
+			$this->regenerateCsrf();
+		}
+
+		return $this->m_session["csrf-token"];
+	}
+
+	/**
+	 * Force the CSRF token to be regenerated.
+	 *
+	 * By default a 64-character random string is generated.
+	 */
+	public function regenerateCsrf(): void
+	{
+		$this->m_session["csrf-token"] = randomString(64);
+	}
+
+	/**
+	 * Determine whether the incoming request must pass CSRF verification.
+	 *
+	 * The default behaviour is to require verification for all requests that don't use the GET, HEAD or OPTIONS HTTP
+	 * methods. Use this method as a customisation point in your WebApplication subclass to implement more detailed
+	 * logic.
+	 *
+	 * @param Request $request The incoming request.
+	 *
+	 * @return bool `true` if the request requires CSRF validation, `false` if not.
+	 */
+	protected function requestRequiresCsrf(Request $request): bool
+	{
+		switch ($request->method()) {
+			case "GET":
+			case "HEAD":
+			case "OPTIONS":
+				return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Extract the CSRF token submitted with a request.
+	 *
+	 * Use this as a customisation point in your WebApplication subclass if you need custom logic to obtain the token
+	 * from Requests. The default behaviour is to look for a `_token` POST field, or an X-CSRF-TOKEN header if the
+	 * field is not present (the latter case is primarily for AJAX requests).
+	 *
+	 * @param Request $request The request from which to extract the CSRF token.
+	 *
+	 * @return string|null The token, or `null` if no CSRF token is found in the request.
+	 */
+	protected function csrfTokenFromRequest(Request $request): ?string
+	{
+		return $request->postData("_token") ?? $request->header("X-CSRF-TOKEN");
+	}
+
+	/**
+	 * Helper to verify the CSRF token in an incoming request is correct, if necessary.
+	 *
+	 * Not all requests require CSRF verification. requestRequiresCsrf() is used to determine whether the request
+	 * requires it. The CSRF token is extracted from the request by csrfTokenFromRequest().
+	 *
+	 * @param Request $request The incoming request.
+	 *
+	 * @throws CsrfTokenVerificationException if the CSRF token in the request is not verified.
+	 */
+	protected function verifyCsrf(Request $request): void
+	{
+		if (!$this->requestRequiresCsrf($request)) {
+			return;
+		}
+
+		if (!hash_equals($this->csrf(), $this->csrfTokenFromRequest($request))) {
+			throw new CsrfTokenVerificationException($request, "The CSRF token is missing from the request or is invalid.");
+		}
+	}
+
+	/**
 	 * Handle a request.
 	 *
-	 * This method submits a request to the application for processing. Processing of the request starts
-	 * immediately and any current request is held until it finishes. Plugins can use this method to submit
-	 * requests to perform actions without having to know about what other plugins are available to the
-	 * application.
+	 * This method submits a request to the application for processing. Processing of the request starts immediately and
+	 * any current request is held until it finishes.
 	 *
 	 * @param $request Request The request to handle.
 	 *
-	 * @return bool _true_ if the request was accepted, _false_ otherwise. A request for an action for which there
-	 *     is no registered plugin will result in a redirect to the home page, and will return _false_.
+	 * @return Response|null An optional Response to send to the client. For legacy support, if no response is returned
+	 * exec() assumes that content has been added to the Page instance and that is output instead.
+	 * @throws CsrfTokenVerificationException if the request requires CSRF verification and fails
 	 */
-	public function handleRequest(Request $request): bool
+	public function handleRequest(Request $request): ?Response
 	{
 		$this->pushRequest($request);
 		$this->emitEvent("application.handlerequest.requestreceived", $request);
+		$this->verifyCsrf($request);
 
-		try {
-			$this->emitEvent("application.handlerequest.routing", $request);
-			$this->router()->route($request);
-			$this->emitEvent("application.handlerequest.routed", $request);
-			$ret = true;
-		} catch (UnroutableRequestException $err) {
-			// fall back on deprecated use of special `action` URL parameter
-			AppLog::warning("Falling back on deprecated 'action' URL parameter to handle {$request->method()} request '{$request->rawUrl()}'", __FILE__, __LINE__, __FUNCTION__);
+		// if legacy `action` URL parameter is supported and the request path info is '/', any registered route handler
+		// for / - which is likely - will override the 'action' URL parameter, so in this scenario we skip the router
+		$useAction = $this->config("app.legacy.support-action-url-parameter", true);
+		$skipRouter = $useAction && "/" === $request->pathInfo() && $request->hasUrlParameter("action");
+
+		if (!$skipRouter) {
+			try {
+				$this->emitEvent("application.handlerequest.routing", $request);
+				$response = $this->router()->route($request);
+				$this->emitEvent("application.handlerequest.routed", $request);
+				$useAction = false;
+			}
+			catch (UnroutableRequestException $err) {
+				// fall back on deprecated use of special `action` URL parameter
+				AppLog::warning("Falling back on deprecated 'action' URL parameter to handle {$request->method()} request '{$request->rawUrl()}'", __FILE__, __LINE__, __FUNCTION__);
+			}
+		}
+
+		if ($useAction) {
 			$action = mb_strtolower($request->action(), "UTF-8");
 
 			if (empty($action) || "home" == $action) {
 				// TODO 404 page
-				return false;
+				return null;
 			}
 
 			$this->emitEvent("application.handlerequest.abouttofetchplugin");
@@ -860,19 +1060,20 @@ class WebApplication extends Application
 				// TODO 404 page
 				$this->emitEvent("application.handlerequest.failedtofetchplugin");
 				$this->popRequest();
-				return false;
+				return null;
 			}
 
 			$this->emitEvent("application.handlerequest.pluginfetched", $plugin);
 			$this->emitEvent("application.handlerequest.abouttoexecuteplugin", $plugin);
-			$ret = $plugin->handleRequest($request);
+			$response = $plugin->handleRequest($request);
 		}
 
 		$this->popRequest();
-		return $ret;
+		return (isset($response) && ($response instanceof Response) ? $response : null);
 	}
 
-	/** Execute the application.
+	/**
+	 * Execute the application.
 	 *
 	 * Start execution of the application. This method will pass the original request from the user to
 	 * _handleRequest()_ and return when processing of that request completes. This method should never be called,
@@ -884,8 +1085,10 @@ class WebApplication extends Application
 	 * Once this method returns, the application is considered to have exited.
 	 *
 	 * @return int 0
-	 * @throws \Equit\Exceptions\InvalidPluginException
-	 * @throws \Equit\Exceptions\InvalidPluginsPathException
+	 * @throws InvalidPluginException
+	 * @throws InvalidPluginsDirectoryException
+	 * @throws InvalidRoutesDirectoryException
+	 * @throws InvalidRoutesFileException
 	 */
 	public function exec(): int
 	{
@@ -900,21 +1103,27 @@ class WebApplication extends Application
 		}
 
 		$this->m_isRunning = true;
-		ob_start();
-		$page = $this->page();
 		$this->loadPlugins();
+		$this->loadRoutes();
 		$this->emitEvent("application.executionstarted");
-		$this->handleRequest(Request::originalRequest());
+		$response = $this->handleRequest(Request::originalRequest());
 		$this->emitEvent("application.executionfinished");
-		$this->emitEvent("application.abouttooutputpage");
-		ob_end_flush();
-		$page->output();
-		$this->emitEvent("application.pageoutputfinished");
+
+		if (isset($response)) {
+			$this->emitEvent("application.sendingresponse");
+			$this->sendResponse($response);
+			$this->emitEvent("application.responsesent");
+		} else {
+			$this->emitEvent("application.abouttooutputpage");
+			$this->page()->output();
+			$this->emitEvent("application.pageoutputfinished");
+		}
 
 		if (!empty($this->m_session["current_user"])) {
 			$this->m_session["current_user"]["last_activity_time"] = time();
 		}
 
+		$this->flushTransientSessionData();
 		$this->m_isRunning = false;
         return self::ExitOk;
 	}

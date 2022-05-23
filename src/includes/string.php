@@ -12,7 +12,8 @@
  * @package libequit
  */
 
-namespace {
+namespace
+{
 
 	/**
 	 * @param mixed $var Value/object to stringify
@@ -185,6 +186,32 @@ namespace {
             return unpack("V", $codePointBytes)[1];
         }, str_split($str, 4));
     }
+
+	/**
+	 * Generate a cryptographically-secure random string of a given length.
+	 *
+	 * The string generated will consist entirely of alphanumeric characters, dashes and underscores. The source of
+	 * randomness for the characters is cryptographically-secure. This does not mean you can't create poor random
+	 * strings with this function - if you pass a length of 1 you won't get a very strong random string.
+	 *
+	 * @param int $length The number of characters in the string.
+	 *
+	 * @return string
+	 * @throws Exception if a cryptographically-secure source of randomness is not available.
+	 */
+	function randomString(int $length): string
+	{
+		$str = "";
+
+		while (0 < $length) {
+			// NOTE base64 of 30 bytes gives 40 chars, none of which is '=' padding
+			$chars  = min($length, 40);
+			$str    .= str_replace(["/", "+",], ["-", "_",], substr(base64_encode(random_bytes(30)), 0, $chars));
+			$length -= $chars;
+		}
+
+		return $str;
+	}
 
     if (!function_exists("str_starts_with")) {
         /**
