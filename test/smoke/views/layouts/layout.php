@@ -29,6 +29,10 @@ use Equit\View;
             </nav>
 
             <section class="main-content">
+                <?php foreach ($messages ?? [] as $message): ?>
+                    <div class="message"><?= html($message) ?></div>
+                <?php endforeach; ?>
+
                 <?php View::yieldSection("main"); ?>
             </section>
         </main>
