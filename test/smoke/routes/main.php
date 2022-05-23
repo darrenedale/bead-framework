@@ -16,15 +16,3 @@ $router->registerGet("/foo", function(): View {
 $router->registerGet("/bar", function(): View {
 	return new View("view", ["foo" => "Bar page",]);
 });
-
-$router->registerGet("/fizz", function(): View {
-	return new View("view", ["foo" => "Fizz page",]);
-});
-
-$router->registerGet("/buzz", function(): View {
-	return new View("view", ["foo" => "Buzz page",]);
-});
-
-$router->registerGet("/quux", function(): View {
-	return new View("view", ["foo" => "Quux page",]);
-});
