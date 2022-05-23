@@ -7,6 +7,7 @@ use Equit\Contracts\Response;
 use Equit\Contracts\Router as RouterContract;
 use Equit\Database\Connection;
 use Equit\Exceptions\CsrfTokenVerificationException;
+use Equit\Exceptions\ExpiredSessionIdUsedException;
 use Equit\Exceptions\InvalidPluginException;
 use Equit\Exceptions\InvalidPluginsDirectoryException;
 use Equit\Exceptions\InvalidRoutesDirectoryException;
@@ -14,6 +15,7 @@ use Equit\Exceptions\InvalidRoutesFileException;
 use Equit\Exceptions\NotFoundException;
 use Equit\Exceptions\UnroutableRequestException;
 use Exception;
+use Equit\Facades\Session as SessionFacade;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
@@ -186,24 +188,8 @@ class WebApplication extends Application
 	}
 
 	/**
-	 * Initialise the bead-framework application's session data.
-	 */
-	private function initialiseSession(): void
-	{
-		session_start();
-
-		if (!array_key_exists("bead-app", $_SESSION) || !is_array($_SESSION["bead-app"])) {
-			$_SESSION["bead-app"] = [];
-		}
-
-		// forces the CSRF token to be generated if there isn't one
-		$this->csrf();
-		$this->sessionData(self::SessionDataContext)["_transient"] = [];
-		$this->sessionData(self::SessionDataContext)["_transient.flush"] = [];
-	}
-
-	/**
 	 * Determine whether the application is currently running or not.
+	/** Determine whether the application is currently running or not.
 	 *
 	 * The application is running if its `exec()` method has been called and has not yet returned.
 	 *
@@ -284,6 +270,15 @@ class WebApplication extends Application
 		return $this->m_pluginsNamespace;
 	}
 
+    /**
+     * Initialise the application session data.
+     */
+    private function initialiseSession(): void
+    {
+        SessionFacade::start();
+        $this->csrf();
+    }
+
 	/**
 	 * Fetch the application's session data.
 	 *
@@ -305,8 +300,9 @@ class WebApplication extends Application
 	 *
 	 * @param $context string A unique context identifier for the session data.
 	 *
-	 * @return array<mixed,mixed> A reference to the session data for the given context.
+	 * @return array<string, mixed> A reference to the session data for the given context.
 	 * @throws InvalidArgumentException If an empty context is given.
+     * @deprecated Use the session facade instead.
 	 */
 	public function & sessionData(string $context): array
 	{
@@ -317,47 +313,11 @@ class WebApplication extends Application
 		// ensure context is not numeric (avoids issues when un-serialising session data)
 		$context = "ctx-$context";
 
-		if (!isset($_SESSION["bead-app"][$context])) {
-			$_SESSION["bead-app"][$context] = [];
+		if (!SessionFacade::has($context)) {
+            SessionFacade::set($context, []);
 		}
 
-		$session = &$_SESSION["bead-app"][$context];
-		return $session;
-	}
-
-	/**
-	 * Store some session data for just the next request.
-	 *
-	 * The data persists for a given number of extra requests. If the age is 0 or less, the data only persists for the
-	 * current request (i.e. it's not all that different from a normal variable). The default is 1 to persist the data
-	 * for the next request only.
-	 *
-	 * @param string $context The session context.
-	 * @param string $key The session data key.
-	 * @param mixed $value The data.
-	 * @param int $age How many requests the data should persist for. Default is 1.
-	 */
-	public function storeTransientSessionData(string $context, string $key, $value, int $age = 1)
-	{
-		$this->sessionData($context)[$key] = $value;
-		$this->sessionData(self::SessionDataContext)["_transient"]["{$context}::{$key}"] = $age;
-	}
-
-	/**
-	 * Empty the expired transient session data.
-	 */
-	protected function flushTransientSessionData(): void
-	{
-		// destroy the transient data that's been around for more than one request
-		foreach ($this->sessionData(self::SessionDataContext)["_transient"] as $key => $age) {
-			--$age;
-
-			if (0 >= $age) {
-				[$context, $transientKey] = explode("::", $key, 2);
-				unset($this->sessionData($context)[$transientKey]);
-				unset($this->sessionData(self::SessionDataContext)["_transient"][$key]);
-			}
-		}
+		return SessionFacade::getRef($context);
 	}
 
 	/**
@@ -593,16 +553,16 @@ class WebApplication extends Application
 		return array_keys($this->m_pluginsByName);
 	}
 
-	/**
-	 * Fetch a plugin by its name.
-	 *
+    /**
+     * Fetch a plugin by its name.
+     *
 	 * If the plugin has been loaded, the created instance of that plugin will be returned. The provided class name must
 	 * be fully-qualified with its namespace.
-	 *
-	 * @param $name string The class name of the plugin.
-	 *
+     *
+     * @param $name string The class name of the plugin.
+     *
 	 * @return Plugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
-	 */
+     */
 	public function pluginByName(string $name): ?Plugin
 	{
 		$this->loadPlugins();
@@ -644,11 +604,11 @@ class WebApplication extends Application
 	 */
 	public function csrf(): string
 	{
-		if (!isset($this->m_session["csrf-token"])) {
+		if (!SessionFacade::has("csrf-token")) {
 			$this->regenerateCsrf();
 		}
 
-		return $this->m_session["csrf-token"];
+		return SessionFacade::get("csrf-token");
 	}
 
 	/**
@@ -658,7 +618,7 @@ class WebApplication extends Application
 	 */
 	public function regenerateCsrf(): void
 	{
-		$this->m_session["csrf-token"] = randomString(64);
+		SessionFacade::set("csrf-token", randomString(64));
 	}
 
 	/**
@@ -796,7 +756,6 @@ class WebApplication extends Application
 			$this->m_session["current_user"]["last_activity_time"] = time();
 		}
 
-		$this->flushTransientSessionData();
 		$this->m_isRunning = false;
         return self::ExitOk;
 	}
