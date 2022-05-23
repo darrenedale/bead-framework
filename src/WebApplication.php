@@ -14,6 +14,8 @@ use Equit\Exceptions\InvalidRoutesDirectoryException;
 use Equit\Exceptions\InvalidRoutesFileException;
 use Equit\Exceptions\NotFoundException;
 use Equit\Exceptions\UnroutableRequestException;
+use Equit\Responses\DownloadResponse;
+use Equit\Session\DataAccessor as SessionDataAccessor;
 use Exception;
 use Equit\Facades\Session as SessionFacade;
 use InvalidArgumentException;
@@ -149,8 +151,8 @@ class WebApplication extends Application
 	/** @var string The namespace where plugins are located. */
 	private string $m_pluginsNamespace = self::DefaultPluginsNamespace;
 
-	/** WebApplication class's session data array. */
-	protected ?array $m_session = null;
+	/** Application class's session data array. */
+	protected ?SessionDataAccessor $m_session = null;
 
 	/** Loaded plugin storage.*/
 	private array $m_pluginsByName = [];
@@ -175,7 +177,7 @@ class WebApplication extends Application
 	{
 		parent::__construct($appRoot, $db);
 		$this->initialiseSession();
-		$this->m_session = &$this->sessionData(self::SessionDataContext);
+		$this->m_session = $this->sessionData(self::SessionDataContext);
 		$this->setRouter(new Router());
 
 		if (!empty($this->config("app.plugins.path"))) {
@@ -189,7 +191,6 @@ class WebApplication extends Application
 
 	/**
 	 * Determine whether the application is currently running or not.
-	/** Determine whether the application is currently running or not.
 	 *
 	 * The application is running if its `exec()` method has been called and has not yet returned.
 	 *
@@ -276,49 +277,33 @@ class WebApplication extends Application
     private function initialiseSession(): void
     {
         SessionFacade::start();
+        // ensure the CSRF token is generated as soon as the session is started
         $this->csrf();
     }
 
-	/**
-	 * Fetch the application's session data.
-	 *
-	 * This method should be used to access the session data rather than using `$_SESSION` directly as it ensures
-	 * that the bead framework application's session data is kept separate from any other session code's session data.
-	 * Use of the context parameter ensures that different parts of the application can keep their session data separate
-	 * from other parts and therefore avoid namespace clashes and so on.
-	 *
-	 * The session data for the context is returned as an array reference, which calling code will need to assign by
-	 * reference in order to use successfully. If it is not assigned by reference, any changes made to the provided
-	 * session array will not persist between requests. To do this, do something like the following in your code:
-	 *
-	 *     $session = & Equit\WebApplication::instance()->sessionData("context");
-	 *
-	 * Once you have done this, you can use `$session` just like you would use `$_SESSION` to store your session data.
-	 *
-	 * There is nothing special that needs to be done to create a new session context. If a request is made for a
-	 * context that does not already exist, a new one is automatically initialised and returned.
-	 *
-	 * @param $context string A unique context identifier for the session data.
-	 *
-	 * @return array<string, mixed> A reference to the session data for the given context.
-	 * @throws InvalidArgumentException If an empty context is given.
-     * @deprecated Use the session facade instead.
-	 */
-	public function & sessionData(string $context): array
-	{
-		if (empty($context)) {
-			throw new InvalidArgumentException("Session context must not be empty.");
-		}
+    /**
+     * Fetch the application's session data.
+     *
+     * The context parameter ensures that different parts of the application can keep their session data separate from
+     * other parts and therefore avoid namespace clashes and so on.
+     *
+     * The session data for the context is returned as a PrefixedAccessor, a view on a subset of the session data whose
+     * keys all share a prefix. Changes made to the returned object will show up in the session data, all prefixed with
+     * the given context (i.e. you don't need to keep using the context when setting session data).
+     *
+     * @param $context string A unique context identifier for the session data.
+     *
+     * @return SessionDataAccessor The session data for the given context.
+     * @throws InvalidArgumentException If an empty context is given.
+     */
+    public function sessionData(string $context): SessionDataAccessor
+    {
+        if (empty($context)) {
+            throw new InvalidArgumentException("Session context must not be empty.");
+        }
 
-		// ensure context is not numeric (avoids issues when un-serialising session data)
-		$context = "ctx-$context";
-
-		if (!SessionFacade::has($context)) {
-            SessionFacade::set($context, []);
-		}
-
-		return SessionFacade::getRef($context);
-	}
+        return SessionFacade::prefixed("{$context}.");
+    }
 
 	/**
 	 * Set the application's Request router.
