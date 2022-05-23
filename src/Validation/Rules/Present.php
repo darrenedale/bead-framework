@@ -2,12 +2,14 @@
 
 namespace Equit\Validation\Rules;
 
+use Equit\Validation\DatasetAwareRule;
+
 /**
  * Validator rule to ensure that a key is present in the data.
  *
  * The key may have any value, including null, as long as it exists in the dataset.
  */
-class Present implements \Equit\Validation\DatasetAwareRule
+class Present implements DatasetAwareRule
 {
 	use KnowsDataset;
 
