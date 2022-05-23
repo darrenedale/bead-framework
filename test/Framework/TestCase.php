@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 0.9.2
+ * @date May 2022
+ */
+
 declare(strict_types = 1);
 
 namespace Equit\Test\Framework;
@@ -7,11 +13,13 @@ namespace Equit\Test\Framework;
 use Closure;
 use Equit\Test\Framework\Constraints\AttributeIsInt;
 use Equit\Test\Framework\Constraints\FlatArrayIsEquivalent;
-use PHPUnit\Framework\Constraint\GreaterThan;
-use PHPUnit\Framework\Constraint\LessThan;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+use ReflectionException;
 use ReflectionMethod;
 
+/**
+ * Base class for test cases for the framework.
+ */
 abstract class TestCase extends PhpUnitTestCase
 {
 	/**
@@ -22,8 +30,8 @@ abstract class TestCase extends PhpUnitTestCase
 	 * @param object|string $objOrClass The object or class.
 	 * @param string $method The name of the protected or private method.
 	 *
-	 * @return \Closure A closure that can be called to invoke the method on the object.
-	 * @throws \ReflectionException if the method does not exist.
+	 * @return Closure A closure that can be called to invoke the method on the object.
+	 * @throws ReflectionException if the method does not exist.
 	 */
 	protected static function accessibleMethod($objOrClass, string $method): Closure
 	{
@@ -68,19 +76,31 @@ abstract class TestCase extends PhpUnitTestCase
         return $min + (lcg_value() * ($max - $min));
     }
 
+    /**
+     * Assert that two flat arrays are equivalent.
+     *
+     * A flat array is one where all elements are scalar. Two of them are equivalent if neither contains an element that
+     * is not present in the other and they are the same length. The items need not be in the same order.
+     *
+     * @param array $expected The expected array.
+     * @param array $actual The actual array.
+     * @param string $msg The message if the constraint fails.
+     *
+     * @deprecated Use assertEqualsCanonicalizing() instead.
+     */
     public static function assertFlatArraysAreEquivalent(array $expected, array $actual, string $msg = ""): void
     {
         self::assertThat($actual, new FlatArrayIsEquivalent($expected), $msg);
     }
 
-    public static function assertAttributeIsInt(array $objectAndAttr, $msg = ""): void
+    /**
+     * Assert that an attribute of an object is an int type.
+     *
+     * @param array $objectAndAttr The object and attribute name.
+     * @param string $msg The message if the constraint is not satisfied.
+     */
+    public static function assertAttributeIsInt(array $objectAndAttr, string $msg = ""): void
     {
         self::assertThat($objectAndAttr, new AttributeIsInt(), $msg);
-    }
-
-    public static function assertBetween($min, $max, $value, $msg = "")
-    {
-        self::assertThat($value, new GreaterThan($min), $msg);
-        self::assertThat($value, new LessThan($max), $msg);
     }
 }

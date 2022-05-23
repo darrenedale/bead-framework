@@ -1,9 +1,9 @@
 <?php
 
-require_once __DIR__ . "/includes/array.php";
-require_once __DIR__ . "/includes/i18n.php";
-require_once __DIR__ . "/includes/string.php";
-require_once __DIR__ . "/includes/traversable.php";
+include_once __DIR__ . "/includes/string.php";
+include_once __DIR__ . "/includes/i18n.php";
+include_once __DIR__ . "/includes/array.php";
+include_once __DIR__ . "/includes/traversable.php";
 
 spl_autoload_register(function (string $className) {
     static $baseDir = null;

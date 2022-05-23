@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 0.9.2
+ * @date May 2022
+ */
+
 namespace Equit\Validation\Rules;
 
 use Equit\Validation\Validator;
@@ -9,13 +15,13 @@ use Equit\Validation\Validator;
  */
 trait KnowsValidator
 {
-    /** @var \Equit\Validation\Validator|null The validator, `null` if not set. */
+    /** @var Validator|null The validator, `null` if not set. */
     private ?Validator $m_validator = null;
 
     /**
      * Set the validator.
      *
-     * @param \Equit\Validation\Validator $validator The validator.
+     * @param Validator $validator The validator.
      */
     public function setValidator(Validator $validator): void
     {
@@ -25,7 +31,7 @@ trait KnowsValidator
     /**
      * Fetch the validator.
      *
-     * @return \Equit\Validation\Validator|null The validator, if set.
+     * @return Validator|null The validator, if set.
      */
     public function validator(): ?Validator
     {

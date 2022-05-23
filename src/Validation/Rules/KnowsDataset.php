@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 0.9.2
+ * @date May 2022
+ */
+
 namespace Equit\Validation\Rules;
 
 /**

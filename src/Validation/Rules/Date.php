@@ -1,11 +1,18 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 0.9.2
+ * @date May 2022
+ */
+
 declare(strict_types=1);
 
 namespace Equit\Validation\Rules;
 
 use DateTime;
 use Equit\Validation\TypeConvertingRule;
+use Exception;
 
 /**
  * Validator rule to ensure that some data is a date.
@@ -47,8 +54,8 @@ class Date implements TypeConvertingRule
      *
      * @param mixed $data The data that has passed validation.
      *
-     * @return \DateTime The DateTime.
-     * @throws \Exception if the provided data is not a valid DateTime string.
+     * @return DateTime The DateTime.
+     * @throws Exception if the provided data is not a valid DateTime string.
      */
     public function convert($data): DateTime
     {

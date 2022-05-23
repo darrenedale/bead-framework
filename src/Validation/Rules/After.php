@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 0.9.2
+ * @date May 2022
+ */
+
 declare(strict_types=1);
 
 namespace Equit\Validation\Rules;
@@ -13,13 +19,13 @@ use Throwable;
  */
 class After implements Rule
 {
-    /** @var \DateTime The date that the data must be after. */
+    /** @var DateTime The date that the data must be after. */
     private DateTime $m_dateTime;
 
     /**
      * Initialise a new rule instance.
      *
-     * @param \DateTime $dateTime The date that the data must be after.
+     * @param DateTime $dateTime The date that the data must be after.
      */
     public function __construct(DateTime $dateTime)
     {
@@ -29,7 +35,7 @@ class After implements Rule
     /**
      * Fetch the date that the data must be after.
      *
-     * @return \DateTime The date.
+     * @return DateTime The date.
      */
     public function dateTime(): DateTime
     {
@@ -39,7 +45,7 @@ class After implements Rule
     /**
      * Set the date that the data must be after.
      *
-     * @param \DateTime $dateTime The date.
+     * @param DateTime $dateTime The date.
      */
     public function setDateTime(DateTime $dateTime): void
     {

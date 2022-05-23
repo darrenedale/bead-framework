@@ -1,10 +1,17 @@
 <?php
 
+/**
+ * @author Darren Edale
+ * @version 0.9.2
+ * @date May 2022
+ */
+
 declare(strict_types=1);
 
 namespace Equit\Validation\Rules;
 
 use Equit\Validation\DatasetAwareRule;
+use Equit\Validation\Rules\KnowsDataset;
 use InvalidArgumentException;
 use function Equit\Traversable\some;
 
