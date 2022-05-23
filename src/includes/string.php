@@ -235,9 +235,9 @@ namespace
 		$str = "";
 
 		while (0 < $length) {
-			// NOTE base64 of 30 bytes gives 40 chars, none of which is '=' padding
-			$chars  = min($length, 40);
-			$str    .= str_replace(["/", "+",], ["-", "_",], substr(base64_encode(random_bytes(30)), 0, $chars));
+			$chars = min($length, 40);
+            // 30 random bytes encodes as 40 base64 characters with no '=' padding
+			$str .= str_replace(["/", "+",], ["-", "_",], substr(base64_encode(random_bytes(30)), 0, $chars));
 			$length -= $chars;
 		}
 
