@@ -12,6 +12,7 @@ namespace Equit;
 use DirectoryIterator;
 use Equit\Contracts\Response;
 use Equit\Contracts\Router as RouterContract;
+use Equit\Exceptions\CsrfTokenVerificationException;
 use Equit\Exceptions\InvalidPluginException;
 use Equit\Exceptions\InvalidPluginsDirectoryException;
 use Equit\Exceptions\InvalidRoutesDirectoryException;
@@ -247,7 +248,8 @@ class WebApplication extends Application
 	/**
 	 * Initialise the application session data.
 	 */
-	private function initialiseSession(): void {
+	private function initialiseSession(): void
+	{
 		static $s_basePath = null;
 		$appUid = $this->config("app.uid");
 
@@ -266,6 +268,8 @@ class WebApplication extends Application
 			$session =& $session[$p];
 		}
 
+		// forces the CSRF token to be generated if there isn't one
+		$this->csrf();
 		$this->sessionData(self::SessionDataContext)["_transient"] = [];
 		$this->sessionData(self::SessionDataContext)["_transient.flush"] = [];
 	}
@@ -649,21 +653,21 @@ class WebApplication extends Application
 		static $s_done = false;
 
 		if (!$s_done) {
-			$info = new SplFileInfo($this->pluginsDirectory());
+			$info = new SplFileInfo("{$this->rootDir()}/{$this->pluginsDirectory()}");
 
 			if (!$info->isDir()) {
-				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin path \"{$this->pluginsDirectory()}\" is not a directory.");
+				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" is not a directory.");
 			}
 
 			if (!$info->isReadable() || !$info->isExecutable()) {
-				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin path \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.");
+				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.");
 			}
 
 			/* load the ordered plugins, then the rest after */
 			$pluginLoadOrder = $this->config("app.plugins.generic.loadorder", []);
 
 			foreach ($pluginLoadOrder as $pluginName) {
-				$pluginFile = new SplFileInfo("{$this->pluginsDirectory()}/{$pluginName}.php");
+				$pluginFile = new SplFileInfo("{$info->getRealPath()}/{$pluginName}.php");
 				$pluginFilePath = $pluginFile->getRealPath();
 
 				if (false !== $pluginFilePath) {
@@ -672,9 +676,9 @@ class WebApplication extends Application
 			}
 
 			try {
-				$directory = new DirectoryIterator($this->pluginsDirectory());
+				$directory = new DirectoryIterator("{$info->getRealPath()}");
 			} catch (UnexpectedValueException $err) {
-				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin path \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.", 0, $err);
+				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.", 0, $err);
 			}
 
 			foreach ($directory as $pluginFile) {
@@ -922,22 +926,106 @@ class WebApplication extends Application
 	}
 
 	/**
+	 * Fetch the current CSRF token.
+	 *
+	 * @return string The token.
+	 */
+	public function csrf(): string
+	{
+		if (!isset($this->m_session["csrf-token"])) {
+			$this->regenerateCsrf();
+		}
+
+		return $this->m_session["csrf-token"];
+	}
+
+	/**
+	 * Force the CSRF token to be regenerated.
+	 *
+	 * By default a 64-character random string is generated.
+	 */
+	public function regenerateCsrf(): void
+	{
+		$this->m_session["csrf-token"] = randomString(64);
+	}
+
+	/**
+	 * Determine whether the incoming request must pass CSRF verification.
+	 *
+	 * The default behaviour is to require verification for all requests that don't use the GET, HEAD or OPTIONS HTTP
+	 * methods. Use this method as a customisation point in your WebApplication subclass to implement more detailed
+	 * logic.
+	 *
+	 * @param Request $request The incoming request.
+	 *
+	 * @return bool `true` if the request requires CSRF validation, `false` if not.
+	 */
+	protected function requestRequiresCsrf(Request $request): bool
+	{
+		switch ($request->method()) {
+			case "GET":
+			case "HEAD":
+			case "OPTIONS":
+				return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Extract the CSRF token submitted with a request.
+	 *
+	 * Use this as a customisation point in your WebApplication subclass if you need custom logic to obtain the token
+	 * from Requests. The default behaviour is to look for a `_token` POST field, or an X-CSRF-TOKEN header if the
+	 * field is not present (the latter case is primarily for AJAX requests).
+	 *
+	 * @param Request $request The request from which to extract the CSRF token.
+	 *
+	 * @return string|null The token, or `null` if no CSRF token is found in the request.
+	 */
+	protected function csrfTokenFromRequest(Request $request): ?string
+	{
+		return $request->postData("_token") ?? $request->header("X-CSRF-TOKEN");
+	}
+
+	/**
+	 * Helper to verify the CSRF token in an incoming request is correct, if necessary.
+	 *
+	 * Not all requests require CSRF verification. requestRequiresCsrf() is used to determine whether the request
+	 * requires it. The CSRF token is extracted from the request by csrfTokenFromRequest().
+	 *
+	 * @param Request $request The incoming request.
+	 *
+	 * @throws CsrfTokenVerificationException if the CSRF token in the request is not verified.
+	 */
+	protected function verifyCsrf(Request $request): void
+	{
+		if (!$this->requestRequiresCsrf($request)) {
+			return;
+		}
+
+		if (!hash_equals($this->csrf(), $this->csrfTokenFromRequest($request))) {
+			throw new CsrfTokenVerificationException($request, "The CSRF token is missing from the request or is invalid.");
+		}
+	}
+
+	/**
 	 * Handle a request.
 	 *
-	 * This method submits a request to the application for processing. Processing of the request starts
-	 * immediately and any current request is held until it finishes. Plugins can use this method to submit
-	 * requests to perform actions without having to know about what other plugins are available to the
-	 * application.
+	 * This method submits a request to the application for processing. Processing of the request starts immediately and
+	 * any current request is held until it finishes.
 	 *
 	 * @param $request Request The request to handle.
 	 *
 	 * @return Response|null An optional Response to send to the client. For legacy support, if no response is returned
 	 * exec() assumes that content has been added to the Page instance and that is output instead.
+	 * @throws CsrfTokenVerificationException if the request requires CSRF verification and fails
 	 */
 	public function handleRequest(Request $request): ?Response
 	{
 		$this->pushRequest($request);
 		$this->emitEvent("application.handlerequest.requestreceived", $request);
+		$this->verifyCsrf($request);
 
 		// if legacy `action` URL parameter is supported and the request path info is '/', any registered route handler
 		// for / - which is likely - will override the 'action' URL parameter, so in this scenario we skip the router
@@ -984,7 +1072,8 @@ class WebApplication extends Application
 		return (isset($response) && ($response instanceof Response) ? $response : null);
 	}
 
-	/** Execute the application.
+	/**
+	 * Execute the application.
 	 *
 	 * Start execution of the application. This method will pass the original request from the user to
 	 * _handleRequest()_ and return when processing of that request completes. This method should never be called,

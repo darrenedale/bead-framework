@@ -610,6 +610,14 @@ class View implements Response
 	}
 
 	/**
+	 * Add a hidden form element with the current CSRF token to the view.
+	 */
+	public static function csrf(): void
+	{
+		echo "<input type=\"hidden\" name=\"_token\" value=\"" . html(WebApplication::instance()->csrf()) . "\" />";
+	}
+
+	/**
 	 * Fetch the name of the view.
 	 * @return string
 	 */
