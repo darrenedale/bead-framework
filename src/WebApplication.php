@@ -13,6 +13,7 @@ use DirectoryIterator;
 use Equit\Contracts\Response;
 use Equit\Contracts\Router as RouterContract;
 use Equit\Exceptions\CsrfTokenVerificationException;
+use Equit\Exceptions\ExpiredSessionIdUsedException;
 use Equit\Exceptions\InvalidPluginException;
 use Equit\Exceptions\InvalidPluginsDirectoryException;
 use Equit\Exceptions\InvalidRoutesDirectoryException;
@@ -21,6 +22,7 @@ use Equit\Exceptions\UnroutableRequestException;
 use Equit\Html\Page;
 use Equit\Responses\DownloadResponse;
 use Exception;
+use Equit\Facades\Session as SessionFacade;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
@@ -245,35 +247,6 @@ class WebApplication extends Application
 		$this->setPage($pageTemplate ?? new Page());
 	}
 
-	/**
-	 * Initialise the application session data.
-	 */
-	private function initialiseSession(): void
-	{
-		static $s_basePath = null;
-		$appUid = $this->config("app.uid");
-
-		if (is_null($s_basePath)) {
-			$s_basePath = ["app", $appUid,];
-		}
-
-		session_start();
-		$session =& $_SESSION;
-
-		foreach ($s_basePath as $p) {
-			if (!array_key_exists($p, $session) || !is_array($session[$p])) {
-				$session[$p] = [];
-			}
-
-			$session =& $session[$p];
-		}
-
-		// forces the CSRF token to be generated if there isn't one
-		$this->csrf();
-		$this->sessionData(self::SessionDataContext)["_transient"] = [];
-		$this->sessionData(self::SessionDataContext)["_transient.flush"] = [];
-	}
-
 	/** Determine whether the application is currently running or not.
 	 *
 	 * The application is running if its _exec()_ method has been called and has not yet returned.
@@ -355,6 +328,15 @@ class WebApplication extends Application
 		return $this->m_pluginsNamespace;
 	}
 
+    /**
+     * Initialise the application session data.
+     */
+    private function initialiseSession(): void
+    {
+        SessionFacade::start();
+        $this->csrf();
+    }
+
 	/**
 	 * Fetch the application's session data.
 	 *
@@ -368,7 +350,7 @@ class WebApplication extends Application
 	 * reference in order to use successfully. If it is not assigned by reference, any changes made to the provided
 	 * session array will not persist between requests. To do this, do something like the following in your code:
 	 *
-	 *     $mySession = & LibEquit\Application::instance()->sessionData("mycontext");
+	 *     $mySession = & Equit\WebApplication::instance()->sessionData("mycontext");
 	 *
 	 * Once you have done this, you can use _$mySession_ just like you would use _$_SESSION_ to store your session
 	 * data.
@@ -378,8 +360,9 @@ class WebApplication extends Application
 	 *
 	 * @param $context string A unique context identifier for the session data.
 	 *
-	 * @return array[mixed => mixed] A reference to the session data for the given context.
-	 * @throws \InvalidArgumentException If an empty context is given.
+	 * @return array<string, mixed> A reference to the session data for the given context.
+	 * @throws InvalidArgumentException If an empty context is given.
+     * @deprecated Use the session facade instead.
 	 */
 	public function & sessionData(string $context): array
 	{
@@ -389,55 +372,18 @@ class WebApplication extends Application
 
 		// ensure context is not numeric (avoids issues when un-serialising session data)
 		$context = "ctx-$context";
-		$session = &$_SESSION["app"][$this->config("app.uid")];
 
-		if (!isset($session[$context])) {
-			$session[$context] = [];
+		if (!SessionFacade::has($context)) {
+            SessionFacade::set($context, []);
 		}
 
-		$session = &$session[$context];
-		return $session;
-	}
-
-	/**
-	 * Store some session data for just the next request.
-	 *
-	 * The data persists for a given number of extra requests. If the age is 0 or less, the data only persists for the
-	 * current request (i.e. it's not all that different from a normal variable). The default is 1 to persist the data
-	 * for the next request only.
-	 *
-	 * @param string $context The session context.
-	 * @param string $key The session data key.
-	 * @param mixed $value The data.
-	 * @param int $age How many requests the data should persist for. Default is 1.
-	 */
-	public function storeTransientSessionData(string $context, string $key, $value, int $age = 1)
-	{
-		$this->sessionData($context)[$key] = $value;
-		$this->sessionData(self::SessionDataContext)["_transient"]["{$context}::{$key}"] = $age;
-	}
-
-	/**
-	 * Empty the expired transient session data.
-	 */
-	protected function flushTransientSessionData(): void
-	{
-		// destroy the transient data that's been around for more than one request
-		foreach ($this->sessionData(self::SessionDataContext)["_transient"] as $key => $age) {
-			--$age;
-
-			if (0 >= $age) {
-				[$context, $key] = explode("::", $key, 2);
-				unset($this->sessionData($context)[$key]);
-				unset($this->sessionData(self::SessionDataContext)["_transient"][$key]);
-			}
-		}
+		return SessionFacade::getRef($context);
 	}
 
 	/**
 	 * Don't set the page after content has been generated or added to it, unless you want to discard that content.
 	 *
-	 * @param \Equit\Html\Page|null $page The page to use or `null` to unset the existing page.
+	 * @param Page|null $page The page to use or `null` to unset the existing page.
 	 */
 	public function setPage(?Page $page): void
 	{
@@ -451,7 +397,7 @@ class WebApplication extends Application
 	 * never output content directly - it should almost always be inserted into the page object.
 	 *
 	 * @return Page The application's page.
-	 * @throws \RuntimeException if there is no Page set.
+	 * @throws RuntimeException if there is no Page set.
 	 */
 	public function page(): Page
 	{
@@ -753,19 +699,21 @@ class WebApplication extends Application
 		return array_keys($this->m_pluginsByName);
 	}
 
-	/**
-	 * Fetch a plugin by its name.
-	 *
-	 * If the plugin has been loaded, the created instance of that plugin will be returned.
-	 *
-	 * Plugins can use this method to fetch instances of any other plugins on which they depend. If this method
-	 * returns _null_ then plugins should assume that the plugin on which they depend is not available and act
-	 * accordingly.
-	 *
-	 * @param $name string The class name of the plugin.
-	 *
-	 * @return GenericPlugin|null The loaded plugin instance if the named plugin was loaded, _null_ otherwise.
-	 */
+    /**
+     * Fetch a plugin by its name.
+     *
+     * If the plugin has been loaded, the created instance of that plugin will be returned.
+     *
+     * Plugins can use this method to fetch instances of any other plugins on which they depend. If this method
+     * returns _null_ then plugins should assume that the plugin on which they depend is not available and act
+     * accordingly.
+     *
+     * @param $name string The class name of the plugin.
+     *
+     * @return GenericPlugin|null The loaded plugin instance if the named plugin was loaded, _null_ otherwise.
+     * @throws InvalidPluginException if a plugin is loaded that is not valid.
+     * @throws InvalidPluginsPathException if the configured directory for plugins is not valid.
+     */
 	public function pluginByName(string $name): ?GenericPlugin
 	{
 		$this->loadPlugins();
@@ -932,11 +880,11 @@ class WebApplication extends Application
 	 */
 	public function csrf(): string
 	{
-		if (!isset($this->m_session["csrf-token"])) {
+		if (!SessionFacade::has("csrf-token")) {
 			$this->regenerateCsrf();
 		}
 
-		return $this->m_session["csrf-token"];
+		return SessionFacade::get("csrf-token");
 	}
 
 	/**
@@ -946,7 +894,7 @@ class WebApplication extends Application
 	 */
 	public function regenerateCsrf(): void
 	{
-		$this->m_session["csrf-token"] = randomString(64);
+		SessionFacade::set("csrf-token", randomString(64));
 	}
 
 	/**
@@ -1123,7 +1071,6 @@ class WebApplication extends Application
 			$this->m_session["current_user"]["last_activity_time"] = time();
 		}
 
-		$this->flushTransientSessionData();
 		$this->m_isRunning = false;
         return self::ExitOk;
 	}
