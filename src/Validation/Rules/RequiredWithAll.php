@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace Equit\Validation\Rules;
 
 use Equit\Validation\DatasetAwareRule;
-use Equit\Validation\Rules\KnowsDataset;
+use InvalidArgumentException;
 use function Equit\Traversable\all;
 
 /**
@@ -32,7 +32,7 @@ class RequiredWithAll implements DatasetAwareRule
     {
         assert(!empty($otherFields), (
             8 <= PHP_MAJOR_VERSION
-            ? new \InvalidArgumentException("Argument for parameter \$otherFields cannot be an empty array.")
+            ? new InvalidArgumentException("Argument for parameter \$otherFields cannot be an empty array.")
             : "Argument for parameter \$otherFields cannot be an empty array."
         ));
         $this->setOtherFields($otherFields);
