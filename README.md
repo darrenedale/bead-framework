@@ -1,4 +1,4 @@
-# libequit-php
+# Bead
 
 A basic, and incomplete, PHP application framework.
 
