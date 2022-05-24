@@ -585,6 +585,7 @@ class Request
 	 */
 	public function header(string $name): ?string
 	{
+		$name = mb_strtolower($name, "UTF-8");
 		return $this->m_headers[$name] ?? $this->m_headers[str_replace("-", "_", $name)] ?? null;
 	}
 
