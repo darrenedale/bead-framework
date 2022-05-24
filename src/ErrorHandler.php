@@ -3,13 +3,16 @@
 namespace Equit;
 
 use Equit\Contracts\ErrorHandler as ErrorHandlerContract;
+use Equit\Contracts\Response;
 use Equit\Html\Details;
 use Equit\Html\Division;
 use Equit\Html\HtmlLiteral;
 use Equit\Html\Page;
 use Equit\Html\PageElement;
 use Equit\Html\Section;
+use Equit\Responses\AbstractResponse;
 use Error;
+use Exception as ExceptionAlias;
 use Throwable;
 
 /**
@@ -32,6 +35,16 @@ class ErrorHandler implements ErrorHandlerContract
         return $app && $app->isInDebugMode();
     }
 
+	/**
+	 * Fetch the name of the view to use to render exceptions.
+	 *
+	 * @return string The view name.
+	 */
+	protected function viewName(): string
+	{
+		return "errors.exception";
+	}
+
     /**
      * Display a given exception.
      *
@@ -45,104 +58,47 @@ class ErrorHandler implements ErrorHandlerContract
         $app = Application::instance();
 
         if ($app instanceof WebApplication) {
-            $page = $app->page() ?? new Page();
-            $this->displayInPage($err, $page);
-            $page->output();
+            $this->displayInView($err);
         } else {
             $this->outputToStream($err, STDERR);
         }
     }
 
     /**
-     * Create a DOM element to display an exception on the page.
-     *
-     * @param \Throwable $err The exception being displayed.
-     *
-     * @return \Equit\Html\PageElement The element displaying the exception details.
-     */
-    protected function createExceptionElement(Throwable $err): PageElement
-    {
-        $section = new Section();
-        $section->addClassName("equit-exception");
-
-        $div = new Division();
-        $div->addClassName("equit-exception-type");
-        $div->addChildElement(new HtmlLiteral(get_class($err)));
-        $section->addChildElement($div);
-
-        $div = new Division();
-        $div->addClassName("equit-exception-message");
-        $div->addChildElement(new HtmlLiteral($err->getMessage()));
-        $section->addChildElement($div);
-
-        $div = new Division();
-        $div->addClassName("equit-exception-file");
-        $div->addChildElement(new HtmlLiteral($err->getFile()));
-        $section->addChildElement($div);
-
-        $div = new Division();
-        $div->addClassName("equit-exception-line");
-        $div->addChildElement(new HtmlLiteral("{$err->getLine()}"));
-        $section->addChildElement($div);
-
-        return $section;
-    }
-
-    /**
-     * Create a DOM element to display a backtrace stack frame.
-     *
-     * @param array $frame The stack frame details.
-     *
-     * @return \Equit\Html\PageElement The element displaying the frame details.
-     */
-    protected function createStackFrameElement(array $frame): PageElement
-    {
-        $details = new Details();
-        $details->addClassName("equit-stack-frame");
-        $details->setSummary("{$frame["file"]} @ {$frame["line"]}");
-        $div = new Division();
-
-        if (isset($frame["function"])) {
-            if (isset($frame["type"])) {
-                $fn = "{$frame["class"]}{$frame["type"]}{$frame["function"]}()";
-            } else {
-                $fn = "{$frame["function"]}()";
-            }
-
-            $div->setClassNames(["equit-stack-frame-function", "equit-stack-frame-context",]);
-            $div->addChildElement(new HtmlLiteral(html("from {$fn}")));
-        } else {
-            $div->setClassName("equit-stack-frame-context");
-            $div->addChildElement(new HtmlLiteral(html("from global scope")));
-        }
-
-        $details->addChildElement($div);
-        return $details;
-    }
-
-    /**
      * Display an exception in a web page.
      *
-     * @param \Throwable $err The exception to display.
-     * @param \Equit\Html\Page $page The page to display it on.
+     * @param \Throwable $error The exception to display.
      */
-    protected function displayInPage(Throwable $err, Page $page): void
+    protected function displayInView(Throwable $error): void
     {
-        $currentErr = $err;
+		try {
+			WebApplication::instance()->sendResponse(new View($this->viewName(), compact("error")));
+		} catch (Throwable) {
+			// extremely basic fallback display
+			WebApplication::instance()->sendResponse(new class($error) extends AbstractResponse {
+				private Throwable $m_error;
 
-        while ($currentErr) {
-            $page->addMainElement($this->createExceptionElement($err));
-            $currentErr = $err->getPrevious();
-        }
+				public function __construct(Throwable $error)
+				{
+					$this->m_error = $error;
+				}
 
-        $backtraceContainer = new Section();
-        $backtraceContainer->addClassName("equit-backtrace");
+				public function statusCode(): int
+				{
+					return 500;
+				}
 
-        foreach ($err->getTrace() as $frame) {
-            $backtraceContainer->addChildElement($this->createStackFrameElement($frame));
-        }
+				public function contentType(): string
+				{
+					return "text/plain";
+				}
 
-        $page->addMainElement($backtraceContainer);
+				public function content(): string
+				{
+					return $this->m_error->getMessage();
+				}
+			});
+		}
     }
 
     /**
