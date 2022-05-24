@@ -196,7 +196,7 @@ use UnexpectedValueException;
 class WebApplication extends Application
 {
 	public const SessionDataContext = "application";
-	protected const DefaultPluginsPath = "../plugins/generic";
+	protected const DefaultPluginsPath = "plugins/generic";
 	protected const DefaultPluginsNamespace = "";
 
 	/** @var string Where plugins are loaded from. */

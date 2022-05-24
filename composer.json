@@ -1,5 +1,5 @@
 {
-  "name": "equit/libequit-php",
+  "name": "bead/framework",
   "description": "An (incomplete) PHP application framework",
   "minimum-stability": "stable",
   "license": "Apache-2.0",
