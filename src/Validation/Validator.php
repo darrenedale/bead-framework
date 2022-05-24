@@ -44,6 +44,7 @@ use Equit\Validation\Rules\NotEqualTo;
 use Equit\Validation\Rules\NotIn;
 use Equit\Validation\Rules\Number;
 use Equit\Validation\Rules\Optional;
+use Equit\Validation\Rules\Present;
 use Equit\Validation\Rules\RegEx;
 use Equit\Validation\Rules\RequiredIf;
 use Equit\Validation\Rules\RequiredUnless;
@@ -86,6 +87,7 @@ class Validator
      */
     private static array $s_ruleAliases = [
         "filled" => Filled::class,
+        "present" => Present::class,
         "int" => Integer::class,
         "integer" => Integer::class,
         "number" => Number::class,
