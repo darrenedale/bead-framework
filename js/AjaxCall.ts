@@ -19,6 +19,12 @@ interface AjaxCallOptions
     onAbort?: AbortedAjaxCallCallback;
 }
 
+interface AjaxCallHeader
+{
+    name: string;
+    value: string;
+}
+
 /**
  * Encapsulates an asynchronous call to an endpoint.
  */
@@ -35,6 +41,12 @@ class AjaxCall
     private m_xhr: XMLHttpRequest;
 
     /**
+     * Common headers sent with all Ajax requests.
+     * @private
+     */
+    private static m_commonHeaders: AjaxCallHeader[] = [];
+
+    /**
      * Initialise a new Ajax call.
      *
      * @param endpoint The remote endpoint to call.
@@ -49,6 +61,25 @@ class AjaxCall
         this.m_parameters = parameters;
         this.m_data = data;
         this.m_options = options;
+    }
+
+    /**
+     * Add a header to be included with every Ajax request.
+     *
+     * @param header The header name.
+     * @param value The header value.
+     */
+    public static addCommonHeader(header: string, value: string)
+    {
+        AjaxCall.m_commonHeaders.push({name: header, value: value});
+    }
+
+    /**
+     * The common headers that will be sent with all Ajax requests.
+     */
+    public static get commonHeaders(): AjaxCallHeader[]
+    {
+        return AjaxCall.m_commonHeaders;
     }
 
     /**
@@ -254,6 +285,21 @@ class AjaxCall
     }
 
     /**
+     * Add the common headers for all requests to a given request.
+     *
+     * @param request The request to add the headers to.
+     * @protected
+     */
+    protected static setRequestCommonHeaders(request: XMLHttpRequest): void
+    {
+        for (const header of AjaxCall.commonHeaders) {
+            request.setRequestHeader(header.name, header.value);
+        }
+
+        request.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    }
+
+    /**
      * Send the Ajax call.
      *
      * Builds and sends the XMLHttpRequest object.
@@ -283,12 +329,12 @@ class AjaxCall
             let boundary = "-o-o-o-bndy" + Date.now().toString(16) + "-o-o-o-";
             this.m_xhr.open("POST", url, true);
             this.m_xhr.setRequestHeader("Content-Type", "multipart\/form-data; boundary=" + boundary);
-            this.m_xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            AjaxCall.setRequestCommonHeaders(this.m_xhr);
             this.m_xhr.send(this.buildRequestBody(boundary));
         } else {
             // ... otherwise just GET the response
             this.m_xhr.open("GET", url, true);
-            this.m_xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            AjaxCall.setRequestCommonHeaders(this.m_xhr);
             this.m_xhr.send();
         }
     }
