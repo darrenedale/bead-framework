@@ -1004,7 +1004,9 @@ class WebApplication extends Application
 			return;
 		}
 
-		if (!hash_equals($this->csrf(), $this->csrfTokenFromRequest($request))) {
+		$requestCsrf = $this->csrfTokenFromRequest($request);
+
+		if (!isset($requestCsrf) || !hash_equals($this->csrf(),  $requestCsrf)) {
 			throw new CsrfTokenVerificationException($request, "The CSRF token is missing from the request or is invalid.");
 		}
 	}
