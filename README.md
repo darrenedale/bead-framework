@@ -2,6 +2,8 @@
 
 A basic, and incomplete, PHP application framework.
 
+Note that the framework is currently undergoing a heavy rewrite - much of the legacy code from 8+ years ago remains. And this readme is currently out of date.
+
 ## Introduction
 
 This library implements an application framework using the _Front Controller_ pattern. Given a basic application-specific bootstrap script, a single call to the `Application::exec()` method is sufficient to handle all incoming requests.
