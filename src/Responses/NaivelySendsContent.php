@@ -13,10 +13,10 @@ trait NaivelySendsContent
 	public function send(): void
 	{
 		http_response_code($this->statusCode());
-		header("content-type", $this->contentType());
+		header("content-type: {$this->contentType()}");
 
 		foreach ($this->headers() as $header => $value) {
-			header($header, $value, true);
+			header("{$header}: {$value}", true);
 		}
 
 		echo $this->content();
