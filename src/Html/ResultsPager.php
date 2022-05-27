@@ -2188,8 +2188,12 @@ class ResultsPager extends PageElement
 				}
 
 				$charEncode = function($str) use ($charset, $charsetTranslit) {
-					$encoded = @iconv("UTF-8", $charset, $str);
-					$encoded = (false === $encoded ? @iconv("UTF-8", $charsetTranslit, $str) : $encoded);
+					// temporarily suppress reporting of E_NOTICE that iconv() will trigger if it doesn't recognise the
+					// encoding (we're at the mercy of the underlying iconv install for this)
+					set_error_handler(function(){});
+					$encoded = iconv("UTF-8", $charsetTranslit, $str);
+					$encoded = (false === $encoded ? iconv("UTF-8", $charset, $str) : $encoded);
+					restore_error_handler();
 					return (is_string($encoded) ? $encoded : $str);
 				};
 			}
