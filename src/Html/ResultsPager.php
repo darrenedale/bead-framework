@@ -326,6 +326,15 @@ class ResultsPager extends PageElement
 	/** @var int The default page to show when no specific page number is given. */
 	public const DefaultPageNumber = 1;
 
+	/** @var string The default URL parameter name for the page number. */
+	public const DefaultPageNumberParameterName = "page";
+
+	/** @var string The default URL parameter name for the page size. */
+	public const DefaultPageSizeParameterName = "page-size";
+
+	/** @var string The default URL parameter name for the results ID. */
+	public const DefaultResultsIdParameterName = "results-id";
+
 	/**
 	 * @var int The age that constitutes an expired cache file.
 	 *
@@ -437,6 +446,18 @@ class ResultsPager extends PageElement
 
 	/** @var Request|null The request to submit when a new page is requested. */
 	private $m_pagingRequest = null;
+
+	/** @var string|null The URL to use when a new page is requested. */
+	private ?string $m_pagingUrl = null;
+
+	/** @var string The name of the URL parameter that contains the page number. */
+	private string $m_pageNumberParameterName = self::DefaultPageNumberParameterName;
+
+	/** @var string The name of the URL parameter that contains the page size. */
+	private string $m_pageSizeParameterName = self::DefaultPageSizeParameterName;
+
+	/** @var string The name of the URL parameter that contains the ID of the results. */
+	private string $m_resultsIdParameterName = self::DefaultResultsIdParameterName;
 
 	/** @var bool Whether or not check boxes are shown. */
 	private $m_checkboxesVisible = true;
@@ -566,10 +587,70 @@ class ResultsPager extends PageElement
 	 * ignored.
 	 *
 	 * @param $req ?Request The request to use.
+	 * @deprecated use setPagingUrl() instead.
 	 */
 	public function setPagingRequest(?Request $req): void
 	{
+		$this->m_pagingUrl = null;
 		$this->m_pagingRequest = $req;
+	}
+
+	/**
+	 * Fetch the URL that will be used to navigate through the pages.
+	 *
+	 * @return string|null The paging URL, or `null` if no paging URL has been set.
+	 */
+	public function pagingUrl(): ?string
+	{
+		return $this->m_pagingUrl;
+	}
+
+	/**
+	 * Set the URL that will be used to navigate through the pages.
+	 *
+	 * The URL can be set to _null_ to remove the existing paging URL.
+	 *
+	 * The paging URL is used in the navigation panel that enables users to switch between pages in the results. The
+	 * pager object will add some URL parameters to the request that indicate the ID of the results (so that
+	 * the pager can be retrieved from the cache), the page size and the page index. The URL must not have a fragment,
+	 * but it may have a pre-existing query string.
+	 *
+	 * @param $url string|null The URL to use.
+	 */
+	public function setPagingUrl(string $url): void
+	{
+		$this->m_pagingRequest = null;
+		$this->m_pagingUrl = $url;
+	}
+
+	public function pageNumberUrlParameterName(): string
+	{
+		return $this->m_pageNumberParameterName;
+	}
+	
+	public function setPageNumberUrlParameterName(string $name): void
+	{
+		$this->m_pageNumberParameterName = $name;
+	}
+
+	public function pageSizeUrlParameterName(): string
+	{
+		return $this->m_pageSizeParameterName;
+	}
+	
+	public function setPageSizeUrlParameterName(string $name): void
+	{
+		$this->m_pageSizeParameterName = $name;
+	}
+
+	public function resultsIdUrlParameterName(): string
+	{
+		return $this->m_resultsIdParameterName;
+	}
+
+	public function setResultsIdUrlParameterName(string $name): void
+	{
+		$this->m_resultsIdParameterName = $name;
 	}
 
 	/**
@@ -1661,40 +1742,42 @@ class ResultsPager extends PageElement
 	protected function emitPageIndex(int $start, int $end, int $distance = 5): string
 	{
 		$html = "";
-		$req  = $this->pagingRequest();
+		$url = $this->pagingUrl();
+		
+		if (!isset($url)) {
+			$req = $this->pagingRequest();
+			
+			if (isset($req)) {
+				$url = $req->rawUrl();
+			}
+		}
 
-		if($req instanceof Request) {
-			$pageSize   = $this->pageSize();
+		if (isset($url)) {
+			if (empty(parse_url($url, PHP_URL_QUERY))) {
+				$url .= "?" . urlencode($this->resultsIdUrlParameterName()) . "=" . urlencode($this->resultsId());
+			} else {
+				$url .= "&" . urlencode($this->resultsIdUrlParameterName()) . "=" . urlencode($this->resultsId());
+			}
+
+			$url = html($url);
 			$pageNumber = $this->pageNumber();
-
-			if(!$pageSize) {
-				$pageSize = self::DefaultPageSize;
-			}
-
-			if(!$pageNumber) {
-				$pageNumber = self::DefaultPageNumber;
-			}
-
+			$url .= "&amp;" . urlencode($this->pageSizeUrlParameterName()) . "={$this->pageSize()}";
 			$html = "<div class=\"resultspager-controls\"><ul>";
-			$req->setUrlParameter("pager_resid", "" . $this->resultsId());
-			$req->setUrlParameter("pager_pagesize", "$pageSize");
 			$doneEllipsis = false;
-
-			$req->setUrlParameter("pager_pagenumber", "" . ($pageNumber - 1));
 			$html .= "<li class=\"previous\">";
 
 			if(1 < $pageNumber) {
-				$html .= "<a href=\"" . $req->url() . "\" title=\"" . html(tr("Show the previous page of results.")) . "\"><img class=\"icon\" src=\"images/icons/previous.png\" alt=\"&lt;\" /></a>";
+				$html .= "<a href=\"{$url}&amp;" . urlencode($this->pageNumberUrlParameterName()) . "=" . ($pageNumber - 1) . "\" title=\"" . html(tr("Show the previous page of results.")) . "\"><img class=\"icon\" src=\"/images/icons/previous.png\" alt=\"&lt;\" /></a>";
 			} else {
 				/** @noinspection HtmlUnknownTarget */
-				$html .= "<img class=\"disabled-icon\" src=\"images/icons/previous.png\" alt=\"&lt;\" />";
+				$html .= "<img class=\"disabled-icon\" src=\"/images/icons/previous.png\" alt=\"&lt;\" />";
 			}
 
 			$html .= "</li>\n";
 
 			for($i = $start; $i <= $end; ++$i) {
 				if($i == $pageNumber) {
-					$html .= "<li class=\"current\">$i</li>\n";
+					$html .= "<li class=\"current\">{$i}</li>\n";
 
 					// ensure we do ellipsis for distant pages after current page even if we've also done one before
 					// current page
@@ -1706,19 +1789,17 @@ class ResultsPager extends PageElement
 						$doneEllipsis = true;
 					}
 				} else {
-					$req->setUrlParameter("pager_pagenumber", "$i");
-					$html .= "<li><a href=\"{$req->url()}\">$i</a></li>\n";
+					$html .= "<li><a href=\"{$url}&amp;" . urlencode($this->pageNumberUrlParameterName()) . "={$i}\">$i</a></li>\n";
 				}
 			}
 
-			$req->setUrlParameter("pager_pagenumber", "" . ($pageNumber + 1));
 			$html .= "<li class=\"next\">";
 
 			if($end > $pageNumber) {
-				$html .= "<a href=\"" . $req->url() . "\" title=\"" . html(tr("Show the next page of results.")) . "\"><img class=\"icon\" src=\"images/icons/next.png\" alt=\"&gt;\" /></a>";
+				$html .= "<a href=\"{$url}&amp;" . urlencode($this->pageNumberUrlParameterName()) . "=" . ($pageNumber + 1) . "\" title=\"" . html(tr("Show the next page of results.")) . "\"><img class=\"icon\" src=\"/images/icons/next.png\" alt=\"&gt;\" /></a>";
 			} else {
 				/** @noinspection HtmlUnknownTarget */
-				$html .= "<img class=\"disabled-icon\" src=\"images/icons/next.png\" alt=\"&gt;\" />";
+				$html .= "<img class=\"disabled-icon\" src=\"/images/icons/next.png\" alt=\"&gt;\" />";
 			}
 
 			$html .= "</li>\n</ul></div>";
@@ -2089,9 +2170,10 @@ class ResultsPager extends PageElement
 			if(array_key_exists("charset", $options)) {
 				// if charset is not recognised by iconv, a PHP Notice is emitted and false is returned; so in such
 				// cases, the encode function will return the original string umodified
-				$charset = "{$options["charset"]}//TRANSLIT";
+				$charset = "{$options["charset"]}";
+				$charsetTranslit = "{$charset}//TRANSLIT";
 
-				if("ASCII//TRANSLIT" == strtoupper($charset)) {
+				if("ASCII//TRANSLIT" == strtoupper($charsetTranslit)) {
 					// if we don't ensure that the LC_CTYPE is not C or POSIX then transliteration will not work as
 					// expected. LC_CTYPE tells the locale system how to interpret character classes. since ASCII is
 					// based on US English letters, en_US.utf8 is the appropriate value because it will ensure that
@@ -2105,9 +2187,10 @@ class ResultsPager extends PageElement
 					setlocale(LC_CTYPE, "en_US.utf8");
 				}
 
-				$charEncode = function($s) use ($charset) {
-					$c = iconv("UTF-8", $charset, $s);
-					return (is_string($c) ? $c : $s);
+				$charEncode = function($str) use ($charset, $charsetTranslit) {
+					$encoded = @iconv("UTF-8", $charset, $str);
+					$encoded = (false === $encoded ? @iconv("UTF-8", $charsetTranslit, $str) : $encoded);
+					return (is_string($encoded) ? $encoded : $str);
 				};
 			}
 		}
