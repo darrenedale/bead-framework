@@ -8,7 +8,7 @@ class DownloadResponse extends AbstractResponse
 
 	private string $m_fileName = "";
 	private string $m_data = "";
-	private array $m_headers;
+	private array $m_headers = [];
 
 	public function __construct($data, string $contentType = self::DefaultContentType)
 	{
