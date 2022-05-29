@@ -33,13 +33,18 @@
 
 namespace Equit\Html;
 
+use ArrayAccess;
 use DirectoryIterator;
 use Equit\Application;
 use Equit\AppLog;
 use Equit\Request;
 use Exception;
+use Iterator;
+use LogicException;
+use OutOfBoundsException;
 use PDO;
 use PDOStatement;
+use RuntimeException;
 
 /**
  * Display or output a set of results as a table.
@@ -318,7 +323,7 @@ use PDOStatement;
  * @author Darren Edale
  * @package libequit
  */
-class ResultsPager extends PageElement
+class ResultsPager extends PageElement implements Iterator, ArrayAccess
 {
 	/** @var int The default number of rows per page. */
 	public const DefaultPageSize = 50;
@@ -468,7 +473,22 @@ class ResultsPager extends PageElement
 	/** @var array MIME-type-specific output options. */
 	private $m_mimeTypeOptions = [];
 
-	/**
+    /** @var int|null The index of the current chunk in memory when performing array access. */
+    private ?int $m_arrayAccessChunkIndex = null;
+
+    /** @var array|null The current chunk in memory for array access. */
+    private ?array $m_arrayAccessChunk = [];
+
+    /** @var int The current row when iterating the results. */
+    private int $m_iteratorCurrentRow = 0;
+
+    /** @var int|null The index of the current chunk in memory when iterating the results. */
+    private ?int $m_iteratorChunkIndex = null;
+
+    /** @var array|null The current chunk in memory when iterating.  */
+    private ?array $m_iteratorChunk = [];
+
+    /**
 	 * Create a new results pager.
 	 *
 	 * If _$id_ is not provided or is empty, a unique id will be generated internally.
@@ -623,31 +643,60 @@ class ResultsPager extends PageElement
 		$this->m_pagingUrl = $url;
 	}
 
+    /**
+     * Fetch the name of the parameter to use when requesting a different page of results.
+     * @return string
+     */
 	public function pageNumberUrlParameterName(): string
 	{
 		return $this->m_pageNumberParameterName;
 	}
-	
+
+    /**
+     * Set the name of the parameter to use when requesting a different page of results.
+     *
+     * @param string $name The parameter name.
+     */
 	public function setPageNumberUrlParameterName(string $name): void
 	{
 		$this->m_pageNumberParameterName = $name;
 	}
 
+    /**
+     * Fetch the name of the parameter to use for the page size when requesting a different page of results.
+     *
+     * @return string The parameter name.
+     */
 	public function pageSizeUrlParameterName(): string
 	{
 		return $this->m_pageSizeParameterName;
 	}
-	
+
+    /**
+     * Set the name of the parameter to use for the page size when requesting a different page of results.
+     *
+     * @param string $name The parameter name.
+     */
 	public function setPageSizeUrlParameterName(string $name): void
 	{
 		$this->m_pageSizeParameterName = $name;
 	}
 
+    /**
+     * Fetch the name of the parameter to use for the results ID when requesting a different page of results.
+     *
+     * @return string The parameter name.
+     */
 	public function resultsIdUrlParameterName(): string
 	{
 		return $this->m_resultsIdParameterName;
 	}
 
+    /**
+     * Set the name of the parameter to use for the results ID when requesting a different page of results.
+     *
+     * @param string $name The parameter name.
+     */
 	public function setResultsIdUrlParameterName(string $name): void
 	{
 		$this->m_resultsIdParameterName = $name;
@@ -1743,10 +1792,10 @@ class ResultsPager extends PageElement
 	{
 		$html = "";
 		$url = $this->pagingUrl();
-		
+
 		if (!isset($url)) {
 			$req = $this->pagingRequest();
-			
+
 			if (isset($req)) {
 				$url = $req->rawUrl();
 			}
@@ -2378,4 +2427,128 @@ class ResultsPager extends PageElement
 
 		return "";
 	}
+
+    /*
+     * Iterator interface implementation.
+     */
+
+    /**
+     * Iterator interface method to fetch the current item.
+     *
+     * @return array|null
+     */
+    public function current(): ?array
+    {
+        $chunkIndex = intval(floor($this->m_iteratorCurrentRow / self::ResultsCacheFileChunkSize));
+
+        if ($chunkIndex !== $this->m_iteratorChunkIndex) {
+            $this->m_iteratorChunk = self::readCachedResults($this->resultsId(), $chunkIndex);
+            $this->m_iteratorChunkIndex = $chunkIndex;
+        }
+
+        if(!is_array($this->m_iteratorChunk)) {
+            AppLog::error("invalid content in results cache", __FILE__, __LINE__, __FUNCTION__);
+            return null;
+        }
+
+        return $this->m_iteratorChunk[$this->m_iteratorCurrentRow - (self::ResultsCacheFileChunkSize * $this->m_iteratorChunkIndex)];
+    }
+
+    /**
+     * Iterator interface method to fetch the key for the current item.
+     *
+     * @return int
+     */
+    public function key(): int
+    {
+        return $this->m_iteratorCurrentRow;
+    }
+
+    /**
+     * Iterator interface method to advance to the next item.
+     */
+    public function next(): void
+    {
+        ++$this->m_iteratorCurrentRow;
+    }
+
+    /**
+     * Iterator interface method to check the current item is valid.
+     *
+     * @return bool `true` if the iterator hasn't exhausted the result set, `false` otherwise.
+     */
+    public function valid(): bool
+    {
+        return $this->m_iteratorCurrentRow < $this->rowCount();
+    }
+
+    /**
+     * Iterator interface method to restart iteration.
+     */
+    public function rewind(): void
+    {
+        $this->m_iteratorCurrentRow = 0;
+    }
+
+    /*
+     * ArrayAccess interface implementation.
+     */
+    /**
+     * Check an array index is valid.
+     *
+     * Only integer access is valid, 0 <= index < rowCount()
+     *
+     * @param int $offset The offset.
+     *
+     * @return bool `true` if the index is in bounds, `false` otherwise.
+     */
+    public function offsetExists($offset)
+    {
+        return is_int($offset) && 0 <= $offset && $this->rowCount() > $offset;
+    }
+
+    /**
+     * @throws LogicException - ResultSet instances are readon-only.
+     */
+    public function offsetSet($offset, $value)
+    {
+        throw new LogicException("ResultsPager instances are not writable.");
+    }
+
+    /**
+     * @throws LogicException - ResultSet instances are readon-only.
+     */
+    public function offsetUnset($offset)
+    {
+        throw new LogicException("ResultsPager instances are not writable.");
+    }
+
+    /**
+     * Fetch the row of data at a given index.
+     *
+     * @param int $offset The index.
+     *
+     * @return array
+     * @throws OutOfBoundsException if the offset is not valid
+     * @throws RuntimeException if the data could not be loaded from the cache
+     */
+    public function offsetGet($offset): ?array
+    {
+        if (!$this->offsetExists($offset)) {
+            throw new OutOfBoundsException("The offset {$offset} is out of bounds.");
+        }
+
+        $chunkIndex = intval(floor($offset / self::ResultsCacheFileChunkSize));
+
+        if ($chunkIndex !== $this->m_arrayAccessChunkIndex) {
+            $this->m_arrayAccessChunk = self::readCachedResults($this->resultsId(), $chunkIndex);
+            $this->m_arrayAccessChunkIndex = $chunkIndex;
+        }
+
+        if(!is_array($this->m_iteratorChunk)) {
+            throw new RuntimeException("The row at index {$offset} could not be fetched - potential cache corruption.");
+        }
+
+        return $this->m_arrayAccessChunk[$offset - (self::ResultsCacheFileChunkSize * $this->m_arrayAccessChunkIndex)];
+    }
 }
