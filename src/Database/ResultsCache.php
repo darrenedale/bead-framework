@@ -17,7 +17,9 @@ use Countable;
 use DirectoryIterator;
 use Equit\Application;
 use Equit\AppLog;
+use Exception;
 use Iterator;
+use JsonException;
 use LogicException;
 use OutOfBoundsException;
 use PDO;
@@ -67,14 +69,17 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	/** @var array|null The current chunk in memory when iterating.  */
 	private ?array $m_iteratorChunk = [];
 
-	/**
-	 * Create a new results pager.
-	 *
-	 * The constructor is internal only, use either create() or fetch() to create your cache objects.
-	 *
-	 * @param PDOStatement|null $results `optional` The results to page.
-	 * @param string $id `optional` The ID for the results cache. If empty a unique ID will be generated.
-	 */
+    /**
+     * Create a new results cache.
+     *
+     * The constructor is internal only, use either `create()` or `fetch()` to initialise your cache objects.
+     *
+     * @param PDOStatement|null $results `optional` The results to page.
+     * @param string $id `optional` The ID for the results cache. If empty a unique ID will be generated.
+     *
+     * @throws Exception If no ID is specified and one can't be generated internally. This should only happen on
+     * relatively obscure platforms that don't provide good random data.
+     */
 	protected function __construct(?PDOStatement $results = null, string $id = "")
 	{
 		if (empty($id)) {
@@ -88,35 +93,42 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 		}
 	}
 
-	/**
-	 * Create a new cached result set from a PDO statement.
-	 *
-	 * @param PDOStatement $results The statement with the results.
-	 * @param string $id The optional ID for the results. If not specifed, or empty, a unique ID will be chosen.
-	 *
-	 * @return ResultsCache
-	 */
+    /**
+     * Create a new cached result set from a PDO statement.
+     *
+     * @param PDOStatement $results The statement with the results.
+     * @param string $id The optional ID for the results. If not specified, or empty, a unique ID will be chosen.
+     *
+     * @return ResultsCache
+     * @throws Exception If no ID is specified and one can't be generated internally. This should only happen on
+     * relatively obscure platforms that don't provide good random data.
+     */
 	public static function create(PDOStatement $results, string $id = ""): ResultsCache
 	{
 		return new static($results, $id);
 	}
 
-	/**
-	 * Retrieve a cached set of results.
-	 *
-	 * This method rebuilds and returns a ResultsCache object from the cache.
-	 *
-	 * @param $resultsId string The ID of the pager to fetch.
-	 *
-	 * @return ResultsCache|null The reconstituted cached pager, or `null` if the cache object could not be rebuilt
-	 * (e.g. if the ID provided is not valid).
-	 */
+    /**
+     * Retrieve a cached set of results.
+     *
+     * This method rebuilds and returns a ResultsCache object from the cache.
+     *
+     * @param $id string The ID of the pager to fetch.
+     *
+     * @return ResultsCache|null The reconstituted cached pager, or `null` if the cache object could not be rebuilt
+     * (e.g. if the ID provided is not valid).
+     * @noinspection PhpDocMissingThrowsInspection
+     */
 	public static function fetch(string $id): ResultsCache
 	{
+        if (empty($id)) {
+            throw new RuntimeException("Can't reload cached results an empty ID.");
+        }
+
 		$path = self::cacheFilePath($id);
 
-		if(!is_readable("{$path}.0000.results")) {
-			throw new RuntimeException("Cached results with ID \"{$id}\" (file \"{$path}.0000.results\") not found", __FILE__, __LINE__, __FUNCTION__);
+		if (!is_readable("{$path}.0000.results")) {
+			throw new RuntimeException("Cached results with ID \"{$id}\" (file \"{$path}.0000.results\") not found");
 		}
 
 		$metaData = self::readCachedMetaData($id);
@@ -125,8 +137,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 			throw new RuntimeException("Cached results meta-data file for results with ID \"{$id}\" does not contain the correct ID.");
 		}
 
-		$ret = new static(null, $id);
-		$ret->m_id = $id;
+        /** @noinspection PhpUnhandledExceptionInspection Constructor won't throw: it won't need to generate an ID. */
+        $ret = new static(null, $id);
 		$ret->m_rowCount = $metaData["row-count"];
 		return $ret;
 	}
@@ -147,12 +159,12 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 		if (is_null($s_dir)) {
 			$s_dir = Application::instance()->rootDir() . "/" . Application::instance()->config("app.cache.dir", "cache") . "/bead-resultscache";
 
-			if(!file_exists($s_dir)) {
+			if (!file_exists($s_dir)) {
 				@mkdir($s_dir, 0770, true);
 			}
 
-			if(!file_exists($s_dir) || !is_dir($s_dir) || !is_writable($s_dir)) {
-				throw new RuntimeException("Can't find, create or write to results cache directory \"{$s_dir}\"");
+			if (!file_exists($s_dir) || !is_dir($s_dir) || !is_writable($s_dir)) {
+				throw new RuntimeException("Can't find, create or write to results cache directory \"{$s_dir}\".");
 			}
 		}
 
@@ -185,7 +197,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 			}
 
 			if (!$file->isFile()) {
-				AppLog::error("Unexpected entry in ResultsCache cache directory: '{$file->getPathname()}'", __FILE__, __LINE__, __FUNCTION__);
+				AppLog::error("Unexpected entry in ResultsCache cache directory: \"{$file->getPathname()}\".", __FILE__, __LINE__, __FUNCTION__);
 				continue;
 			}
 
@@ -193,14 +205,14 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 
 			// only expire entries when the metadata file has expired - other files might not be touched even while the
 			// user is still using the results. the meta data cache file is touched every time they're used
-			if (!preg_match("/resultscache-([0-9a-f]{32})\\.meta$/", $filePath, $captures)) {
+			if (!preg_match("/resultscache-([\da-f]{32})\\.meta$/", $filePath, $captures)) {
 				continue;
 			}
 
 			$fileTime = $file->getATime();
 
 			if (false === $fileTime) {
-				AppLog::error("Could not determine last access time for ResultsCache file: '{$file->getPathname()}'", __FILE__, __LINE__, __FUNCTION__);
+				AppLog::error("Could not determine last access time for ResultsCache file: \"{$file->getPathname()}\".", __FILE__, __LINE__, __FUNCTION__);
 				continue;
 			}
 
@@ -213,13 +225,13 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	/**
 	 * Helper to remove the cache files for a cached result set with a given id.
 	 *
-	 * @param string $resultsId The ID of the results to remove from the cache.
+	 * @param string $id The ID of the results to remove from the cache.
 	 */
 	protected static function removeCachedResults(string $id): void
 	{
 		foreach (glob(static::cacheDirectory() . "/resultscache-{$id}.*", GLOB_NOSORT) as $cacheFilePath) {
 			if (!@unlink($cacheFilePath)) {
-				AppLog::error("Could not delete ResultsCache cache file: '$cacheFilePath'", __FILE__, __LINE__, __FUNCTION__);
+				AppLog::error("Could not delete ResultsCache cache file: \"{$cacheFilePath}\"", __FILE__, __LINE__, __FUNCTION__);
 			}
 		}
 	}
@@ -228,7 +240,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 * Helper to generate a unique ID for a cache object.
 	 *
 	 * @return string The unique ID.
-	 * @throws \Exception If PHP's random byte generation is not functioning on the current platform.
+	 * @throws Exception If PHP's random byte generation is not functioning on the current platform.
 	 */
 	protected static function generateUid(): string
 	{
@@ -238,12 +250,24 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	/**
 	 * Fetch the ID of the results.
 	 *
+     * The ID is guaranteed to be non-empty.
+     *
 	 * @return string The ID.
 	 */
 	public final function id(): string
 	{
 		return $this->m_id;
 	}
+
+    /**
+     * Fetch the number of rows in the cached results.
+     *
+     * @return int The row count. This will be 0 if no results have been set.
+     */
+    public function rowCount(): int
+    {
+        return $this->m_rowCount;
+    }
 
 	/**
 	 * Fetch the cache's results.
@@ -259,84 +283,75 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 		return $this->m_results;
 	}
 
-	/**
-	 * Set the results to cache.
-	 *
-	 * This is only valid when the first creating a cache object from the results of a database query. It is only
-	 * provided as a customisation point for subclasses, if required.
-	 *
-	 * @param $results PDOStatement|null The results to display.
-	 */
-	protected function setResults(PDOStatement $results): void
-	{
-		$this->m_results = $results;
-		$this->m_rowCount = 0;
-		$this->cacheResults();
-	}
+    /**
+     * Set the results to cache.
+     *
+     * This is only valid when the first creating a cache object from the results of a database query. It is only
+     * provided as a customisation point for subclasses, if required.
+     *
+     * @param $results PDOStatement|null The results to display.
+     */
+    protected function setResults(PDOStatement $results): void
+    {
+        $this->m_results = $results;
+        $this->m_rowCount = 0;
+        $this->cacheResults();
+    }
 
-	/**
-	 * Fetch the number of rows in the cached results.
-	 *
-	 * @return int The row count. This will be 0 if no results have been set.
-	 */
-	public function rowCount(): int
-	{
-		return $this->m_rowCount;
-	}
-
-	/**
-	 * Cache the results, if they are not cached already.
+    /**
+	 * Helper to cache the results.
+     * 
+     * This should be called whenever a new instance is created from a set of database results. It should not usually be
+     * called at other times.
 	 */
 	protected function cacheResults(): void
 	{
-		if (empty($this->id())) {
-			throw new \Exception("Can't cache results without an ID.");
-		}
-
 		$path = self::cacheFilePath($this->id());
 
-		if(file_exists("{$path}.0000.results")) {
-			throw new \Exception("Can't cache results ID {$this->id} - ID is already in use.");
+		if (file_exists("{$path}.0000.results")) {
+			throw new RuntimeException("Can't cache results with ID \"{$this->id()}\" - ID is already in use.");
 		}
 
 		// ensure cache file exists even if there are no results to write
 		@touch("{$path}.0000.results");
 		$results = $this->results();
+
+        if (!isset($results)) {
+            throw new LogicException("ResultsCache::cacheResults() called without a result set to cache.");
+        }
+
 		$results->setFetchMode(PDO::FETCH_ASSOC);
+        $rowIndex = 0;
+        $chunkIndex = 0;
+        $chunkData = [];
 
-		if ($results instanceof PDOStatement) {
-			$rowIndex = 0;
-			$chunkIndex = 0;
-			$chunkData = [];
+        foreach ($results as $row) {
+            $chunkData[] = $row;
+            ++$rowIndex;
 
-			foreach ($results as $row) {
-				$chunkData[] = $row;
-				++$rowIndex;
+            if (0 == $rowIndex % self::ResultsCacheFileChunkSize) {
+                $this->writeCachedResultsData($chunkData, $chunkIndex);
+                ++$chunkIndex;
+                $chunkData = [];
+            }
+        }
 
-				if (0 == $rowIndex % self::ResultsCacheFileChunkSize) {
-					$this->writeCachedResultsData($chunkData, $chunkIndex);
-					++$chunkIndex;
-					$chunkData = [];
-				}
-			}
+        // write any partial chunk left over after the end of the last chunk that was written to disk
+        if (0 != $rowIndex % self::ResultsCacheFileChunkSize) {
+            $this->writeCachedResultsData($chunkData, $chunkIndex);
+        }
 
-			// write any partial chunk left over after the end of the last chunk that was written to disk
-			if(0 != $rowIndex % self::ResultsCacheFileChunkSize) {
-				$this->writeCachedResultsData($chunkData, $chunkIndex);
-			}
-
-			$this->m_rowCount = $rowIndex;
-			$this->cacheMetaData();
-		}
+        $this->m_rowCount = $rowIndex;
+        $this->cacheMetaData();
 	}
 
 	/**
 	 * Write the results to the cache files.
 	 *
-	 * @param $data array[string] the data to cache.
-	 * @param $chunkIndex int The index number of the cache file chunk to write.
+	 * @param array<string> $data the data to cache.
+	 * @param int $chunkIndex The index number of the cache file chunk to write.
 	 *
-	 * Because the caches data could be huge, it is broken into chunks of 5000 (by default - see const
+	 * Because the cached data could be huge, it is broken into chunks of 5000 (by default - see const
 	 * `ResultsCacheFileChunkSize`) rows. This means that the pager can read sections of data from the cache as required
 	 * rather than having to load all the data from the cache. In turn, this means that extremely large result sets are
 	 * less likely to cause the PHP process to exhaust its `memory_limit` ini setting trying to store all the data for
@@ -344,32 +359,30 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 */
 	private function writeCachedResultsData(array $data, int $chunkIndex): void
 	{
-		if(empty($this->id())) {
+		if (empty($this->id())) {
 			return;
 		}
 
 		$path = self::cacheFilePath($this->id(), sprintf("%04d", $chunkIndex) . ".results");
 
-		if(false === file_put_contents($path, serialize($data))) {
-			AppLog::error("failed to write file to cache search results (data file, id = {$this->id()}, chunk = {$chunkIndex})", __FILE__, __LINE__, __FUNCTION__);
-			return;
+		if (false === file_put_contents($path, serialize($data))) {
+            throw new RuntimeException("Failed to write results cache data to file \"{$path}\".");
 		}
 	}
 
 	/**
-	 * Write the result set meta data to its cache file.
+	 * Write the result set meta-data to its cache file.
 	 *
-	 * The meta data written is:
-	 * - the name of the result set
+	 * The meta-data written is:
+	 * - the ID of the result set
 	 * - the number of rows in the result set
 	 */
 	protected function cacheMetaData(): void
 	{
 		$path = self::cacheFilePath($this->id(), "meta");
 
-		if(false === file_put_contents($path, json_encode(["id" => $this->id(), "row-count" => $this->rowCount()]))) {
-			AppLog::error("failed to write file to cache pager meta data (id = $resultsId)", __FILE__, __LINE__, __FUNCTION__);
-			return;
+		if (false === file_put_contents($path, json_encode(["id" => $this->id(), "row-count" => $this->rowCount()]))) {
+            throw new RuntimeException("Failed to write results cache meta-data to file \"{$path}\".");
 		}
 	}
 
@@ -381,14 +394,13 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 * @param $fileName string The name of the cache file to read.
 	 *
 	 * @return string The contents of the cache file, or _null_ if the file could not be found or read.
-	 * @throws RuntimeException if the cache file cannot be read.
 	 */
 	private static function readCacheFile(string $fileName): string
 	{
 		$cachePath = self::cacheFilePath($fileName);
 
-		if(!is_readable($cachePath) || !is_file($cachePath)) {
-			throw new RuntimeException("Invalid or unreadable cache file \"$cachePath\"", __FILE__, __LINE__, __FUNCTION__);
+		if (!is_readable($cachePath) || !is_file($cachePath)) {
+			throw new RuntimeException("Invalid or unreadable cache file \"{$cachePath}\".");
 		}
 
 		// ensure that the file atime is updated even if the fs is mounted noatime
@@ -408,7 +420,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 *
 	 * @return array<string, mixed> The contents of the cache file.
 	 */
-	protected static function readCachedResults(string $id, int $chunkIndex): ?array
+	protected static function readCachedResults(string $id, int $chunkIndex): array
 	{
 		$content = self::readCacheFile("{$id}." . sprintf("%04d", $chunkIndex) . ".results");
 
@@ -431,18 +443,14 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 * @param $id string The ID of the results to read from the cache.
 	 *
 	 * @return array The metadata read from the cache file.
-	 * @throws RuntimeException if the metadata cache file cannot be read.
-	 * @throws \JsonException if the file's content is not valid JSON.
 	 */
 	protected static function readCachedMetaData(string $id): array
 	{
-		$content = self::readCacheFile("{$id}.meta");
-
-		if(!isset($content)) {
-			throw new RuntimeException("Cache meta-data file {$id}.meta could not be read.");
-		}
-
-		return json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        try {
+            return json_decode(self::readCacheFile("{$id}.meta"), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $err) {
+            throw new RuntimeException("Results cache meta-data file for results with ID \"{$id}\" is not valid.", 0, $err);
+        }
 	}
 
 	/**
@@ -460,8 +468,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 *
 	 * If no suffix is given, an empty suffix is used.
 	 *
-	 * @param $resultsId string The ID of the results whose cache file is sought.
-	 * @param $suffix string _optional_ The suffix for the cache file.
+	 * @param string $id The ID of the results whose cache file is sought.
+	 * @param string $suffix The optional suffix for the cache file.
 	 *
 	 * @return string The path to the cache file.
 	 */
@@ -486,11 +494,6 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 		if ($chunkIndex !== $this->m_iteratorChunkIndex) {
 			$this->m_iteratorChunk = self::readCachedResults($this->id(), $chunkIndex);
 			$this->m_iteratorChunkIndex = $chunkIndex;
-		}
-
-		if(!is_array($this->m_iteratorChunk)) {
-			AppLog::error("invalid content in results cache", __FILE__, __LINE__, __FUNCTION__);
-			return null;
 		}
 
 		return $this->m_iteratorChunk[$this->m_iteratorCurrentRow - (self::ResultsCacheFileChunkSize * $this->m_iteratorChunkIndex)];
@@ -544,13 +547,13 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 *
 	 * @return bool `true` if the index is in bounds, `false` otherwise.
 	 */
-	public function offsetExists($offset)
+	public function offsetExists($offset): bool
 	{
 		return is_int($offset) && 0 <= $offset && $this->rowCount() > $offset;
 	}
 
 	/**
-	 * @throws LogicException - ResultsCache instances are readon-only.
+	 * @throws LogicException - ResultsCache instances are read-only.
 	 */
 	public function offsetSet($offset, $value)
 	{
@@ -558,7 +561,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	}
 
 	/**
-	 * @throws LogicException - ResultsCache instances are readon-only.
+	 * @throws LogicException - ResultsCache instances are read-only.
 	 */
 	public function offsetUnset($offset)
 	{
@@ -572,7 +575,6 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 *
 	 * @return array
 	 * @throws OutOfBoundsException if the offset is not valid
-	 * @throws RuntimeException if the data could not be loaded from the cache
 	 */
 	public function offsetGet($offset): ?array
 	{
@@ -585,10 +587,6 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 		if ($chunkIndex !== $this->m_arrayAccessChunkIndex) {
 			$this->m_arrayAccessChunk = self::readCachedResults($this->id(), $chunkIndex);
 			$this->m_arrayAccessChunkIndex = $chunkIndex;
-		}
-
-		if(!is_array($this->m_iteratorChunk)) {
-			throw new RuntimeException("The row at index {$offset} could not be fetched - potential cache corruption.");
 		}
 
 		return $this->m_arrayAccessChunk[$offset - (self::ResultsCacheFileChunkSize * $this->m_arrayAccessChunkIndex)];
