@@ -399,9 +399,28 @@ class ListEdit extends PageElement {
 	 * @see \Equit\Html\AutocompleteTextEdit::setAutocompleteApiCall().
 	 *
 	 * @return bool _true_ if the autocomplete API call was set, _false_ otherwise.
+	 * @deprecated Use set AutocompleteEndpoint() instead.
 	 */
 	public function setAutocompleteApiCall(string $fn, ?string $parameterName = null, array $otherArgs = []): bool {
 		return $this->m_item->setAutocompleteApiCall($fn, $parameterName, $otherArgs);
+	}
+
+	/**
+	 * Set the endpoint that the item text edit will use for suggestions.
+	 *
+	 * @param $endpoint string The endpoint.
+	 * @param $contentParameterName string _optional_ The name of the URL parameter to use to provide the user's
+	 * current input to the API function.
+	 * @param $otherArgs array _optional_ An associative array (_string_ => _string_) of other parameters for the
+	 * API function call. Keys must start with an alpha char and be composed entirely of alphanumeric chars and
+	 * underscores.
+	 *
+	 * @see \Equit\Html\AutocompleteTextEdit::setAutocompleteApiCall().
+	 *
+	 * @return bool _true_ if the autocomplete API call was set, _false_ otherwise.
+	 */
+	public function setAutocompleteEndpoint(string $endpoint, ?string $parameterName = null, array $otherArgs = []): bool {
+		return $this->m_item->setAutocompleteEndpoint($endpoint, $parameterName, $otherArgs);
 	}
 
 	/**
