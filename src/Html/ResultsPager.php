@@ -34,6 +34,7 @@
 namespace Equit\Html;
 
 use ArrayAccess;
+use Countable;
 use DirectoryIterator;
 use Equit\Application;
 use Equit\AppLog;
@@ -322,8 +323,9 @@ use RuntimeException;
  * @class ResultsPager
  * @author Darren Edale
  * @package libequit
+ * @deprecated Use ResultsCache instead.
  */
-class ResultsPager extends PageElement implements Iterator, ArrayAccess
+class ResultsPager extends PageElement implements Iterator, ArrayAccess, Countable
 {
 	/** @var int The default number of rows per page. */
 	public const DefaultPageSize = 50;
@@ -2555,4 +2557,18 @@ class ResultsPager extends PageElement implements Iterator, ArrayAccess
 
         return $this->m_arrayAccessChunk[$offset - (self::ResultsCacheFileChunkSize * $this->m_arrayAccessChunkIndex)];
     }
+
+	/*
+	 * Implementation of the Countable interface
+	 */
+
+	/**
+	 * Count the number of items in the cache.
+	 *
+	 * @return int The row count.
+	 */
+	public function count(): int
+	{
+		return $this->rowCount();
+	}
 }
