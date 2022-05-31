@@ -11,17 +11,16 @@ use Exception;
 use JsonException;
 use LogicException;
 use PDO;
+use PDOException;
 use PDOStatement;
+use ReflectionException;
+use ReflectionMethod;
 use TypeError;
 
 /**
  * Base class for database model classes.
  *
  * Subclasses **must** have a default constructor.
- *
- * TODO modification tracking
- * TODO set relations
- * TODO save() should save modified relations?
  */
 abstract class Model
 {
@@ -32,86 +31,28 @@ abstract class Model
     protected static string $primaryKey = "id";
 
     /**
-     * The model's properties.
+     * @var array The model's properties.
      *
      * Property names (columns) are keys; values are the column type. The type indicates how the value in the field will
      * be converted when accessed. The value will be converted in both directions. Types are:
-     * -
-     * @var array
+     * - timestamp
+     * - date
+     * - datetime
+     * - time
+     * - int
+     * - float
+     * - string
+     * - json
      */
     protected static array $properties = [];
-
-    /**
-     * The model's relations with other models.
-     *
-     * This array contains three elements, each of which is an array defining the relations of different types:
-     * - The `has` element defines relations where this model is the parent and the related models are the children;
-     * - The `belongs` element defines relations where this model is the child and the related model is the parent;
-     * - The `many` element defines many-to-many relations between this model and another model
-     *
-     * Each model class can have any number of defined relations of each type. Each defined relation must have the
-     * model class to which this model is related specified in the `model`. Each defined relation can also contain the
-     * `key` and `related_key` elements, which define the names of the properties on the two models that are linked -
-     * `key` is the property on this model, `related_key` is the property on the related model. For `has` and `many`
-     * relations, `key` can be omitted, in which case the primary key field for this model is used; for `belongs` and
-     * `many` relations, the `related_key` can be omitted, in which case the primary key field for the related model is
-     * used.
-     *
-     * `many` relations must define the `pivot` model, which is the model for the link table between the two related
-     * models, and the fields in the pivot model that link to this model and the related model, respectively the
-     * `pivot_key` and `pivot_related_key` elements.
-     *
-     * Each relation must have a unique name. This name is used as the name of a property that can be fetched or set
-     * on the model to retrieve or set the related models. For clarity, names must be unique amongst all the different
-     * relation types defined for a model - you can't have a relation named "authors" in both the "has" and "many"
-     * relation arrays.
-     *
-     * A quick example for a putative Article model:
-     *
-     * ```php
-     * protected static $relations = [
-     *    "has" => [
-     *       // Articles have many related Authors, joined by the article_id property of the Author matching the primary
-     *       // key of the Article. The Authors for an Article are fetched using $article->authors.
-     *       "authors" => [
-     *          "model" => Author::class,
-     *          "related_key" => "article_id",
-     *       ],
-     *    "belongs" => [
-     *       // Articles belong to a Journal, joined by the journal_id property of the Article matching the primary
-     *       // key of the Journal. The Journal for an Article is fetched using $article->journal.
-     *       "journal" => [
-     *          "model" => Journal::class,
-     *          "key" => "journal_id",
-     *       ],
-     *    ],
-     * ];
-     *
-     * ...
-     *
-     * $article->journal;    // the Journal model related to the Article
-     * $article->authors;    // the Author models related to the Article
-     * ```
-     *
-     * @var array|array[]
-     */
-    protected static array $relations = [
-        "has" => [],
-        "belongs" => [],
-        "many" => [],
-    ];
 
     /** @var PDO The database connection the model uses. */
     private PDO $connection;
 
-    /**
-     * @var array The model instance's data. Always stored as it comes out of the database.
-     */
+    /** @var array The model instance's data. Always stored as it comes out of the database. */
     private array $data = [];
 
-    /**
-     * @var array The loaded related models.
-     */
+    /** @var array The loaded related models. */
     private array $related = [];
 
     /**
@@ -123,6 +64,14 @@ abstract class Model
     }
 
     /**
+     * @return string The database table containing the data for the model.
+     */
+    public static function table(): string
+    {
+        return static::$table;
+    }
+
+    /**
      * Locate a single model instance in the database.
      *
      * @param string $primaryKey The primary key for the instance to fetch.
@@ -131,19 +80,10 @@ abstract class Model
      */
     public static function fetch(string $primaryKey): ?Model
     {
-        $connection = static::defaultConnection();
-        $stmt = $connection->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE `" . static::$primaryKey . "` = :primary_key LIMIT 1");
-        $stmt->execute([":primary_key" => $primaryKey]);
-        $data = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (false === $data) {
-            return null;
-        }
-
         $model = new static();
-        $model->connection = $connection;
-        $model->data = $data;
-        return $model;
+        $model->connection = static::defaultConnection();
+        $model->data[static::$primaryKey] = $primaryKey;
+        return $model->reload() ? $model : null;
     }
 
     /**
@@ -157,7 +97,7 @@ abstract class Model
 
     /**
      * The default connection for models of this type.
-     * @return PDO
+     * @return PDO The default connection.
      */
     protected static function defaultConnection(): PDO
     {
@@ -165,80 +105,166 @@ abstract class Model
     }
 
     /**
-     * Create a valid parameter name for a property name.
-     *
-     * Property names (i.e. column names) may have spaces; query parameter names may not.
-     *
-     * @param string $property The property.
-     *
-     * @return string The query parameter name.
-     */
-    protected static function queryParameterName(string $property): string
-    {
-        return str_replace(" ", "_", $property);
-    }
-
-    /**
-     * Build the SET clause for an insert/update query.
-     *
-     * The SET clause should be a comma-separated list of fields to be updated, with parameters to have data bound to
-     * them when the prepared statement is executed (e.g. "`foo` = :foo, `bar` = :bar").
+     * Build the list of columns for an UPDATE/INSERT/REPLACE query.
      *
      * @param array $except Properties to exclude.
      *
      * @return string The SET clause.
      */
-    protected function buildSetClause(array $except = []): string
+    protected function buildColumnList(array $except = []): string
     {
-        $set = [];
+        $columns = [];
 
         foreach (array_filter(static::propertyNames(), function(string $property) use ($except): bool {
             return !in_array($property, $except);
         }) as $property) {
-            $set[] = "`{$property}` = :" . static::queryParameterName($property);
+            $columns[] = "`{$property}`";
         }
 
-        return implode(", ", $set);
+        return implode(",", $columns);
     }
 
     /**
-     * Build the parameter array to bind values to query parameters in an insert/update query.
+     * Build a list of query placeholders for the model properties.
      *
-     * For example:
+     * A comma-separated list of "?" placeholders will be generated, with as many placeholders as there are properties
+     * in the model.
      *
-     *     [
-     *         ":foo" => "foo's value",
-     *         ":bar" => "bar's value",
-     *     ]
+     * @param array $except Don't include these named properties when determining how many placeholders to generate.
      *
-     *
-     * @return array The parameters.
+     * @return string The list of placeholders.
      */
-    protected function buildParameters(): array
+    protected function buildPropertyPlaceholderList(array $except = []): string
     {
-        $params = [];
+        return self::buildPlaceholderList(count(array_filter(static::propertyNames(), function(string $property) use ($except): bool {
+            return !in_array($property, $except);
+        })));
+    }
 
-        foreach ($this->data as $property => $value) {
-            $params[":" . static::queryParameterName($property)] = $value;
+    /**
+     * Build a string containing a given number of comma-separated placeholders.
+     *
+     * @param int $n The number of placeholders.
+     *
+     * @return string The string with the placeholders.
+     */
+    protected static function buildPlaceholderList(int $n): string
+    {
+        return implode(",", array_fill(0, $n, "?"));
+    }
+
+    /**
+     * Helper to create a OneToMany relation between this model and several others of a given type.
+     *
+     * This is most commonly a "has-many" relation between a model and several others of a different type that consider
+     * this model to be their "parent".
+     *
+     * @param string $related The related model class.
+     * @param string $relatedKey The property on the related model that links to this.
+     * @param string|null $localKey The property on this model that links to the others. Defaults to the primary key.
+     *
+     * @return OneToMany The relation.
+     */
+    protected function oneToMany(string $related, string $relatedKey, ?string $localKey = null): OneToMany
+    {
+        return new OneToMany($this, $related, $relatedKey, $localKey ?? static::$primaryKey);
+    }
+
+    /**
+     * Helper to create a ManyToOne relation between this model and another of a given type.
+     *
+     * This is most commonly a "belongs-to" relation between a model and another of a different type that is considered
+     * its "parent".
+     *
+     * @param string $related The related model class.
+     * @param string $localKey The property on this model that links to the other.
+     * @param string|null $relatedKey The property on the related model that links to this. Defaults to the primary key
+     * of the related model.
+     *
+     * @return ManyToOne The relation.
+     */
+    protected function manyToOne(string $related, string $localKey, ?string $relatedKey = null): ManyToOne
+    {
+        return new ManyToOne($this, $related, $relatedKey ?? $related::$primaryKey, $localKey);
+    }
+
+    /**
+     * Helper to create a ManyToMany relation between this model and several others of a given type.
+     *
+     * This type of relation is mediated by a pivot table which enables multiple instances of the models on either side
+     * of the relation to be arbitrarily liked together.
+     *
+     * @param string $related
+     * @param string $pivot
+     * @param string $pivotLocalKey
+     * @param string $pivotRelatedKey
+     * @param string|null $localKey
+     * @param string|null $relatedKey
+     *
+     * @return ManyToMany The relation.
+     */
+    protected function manyToMany(string $related, string $pivot, string $pivotLocalKey, string $pivotRelatedKey, ?string $localKey = null, ?string $relatedKey = null): ManyToMany
+    {
+        return new ManyToMany($this, $related, $pivot, $pivotLocalKey, $pivotRelatedKey, $localKey ?? static::$primaryKey, $relatedKey ?? $related::$primaryKey);
+    }
+
+    /**
+     * Fetch the model's database connection.
+     *
+     * @return PDO The connection.
+     */
+    public function connection(): PDO
+    {
+        return $this->connection;
+    }
+
+    /**
+     * Determine whether the model exists in the database.
+     *
+     * This is only as up-to-date as the last time the model was loaded from or saved to the database.
+     *
+     * @return bool `true` if the model exists in the database, `false` otherwise.
+     */
+    public function exists(): bool
+    {
+        return isset($this->{static::$primaryKey});
+    }
+
+    /**
+     * Reload the model data from the database.
+     *
+     * The properties will be reset to the values for the record in the database and the in-memory cache of related
+     * models will be cleared, ensuring that they are fetched from the database the next time they are accessed.
+     *
+     * If the record can't be located in the database, the existing state of the model instance is untouched.
+     *
+     * @return bool `true` if the model was reloaded, `false` if it could not be found in the database.
+     */
+    public function reload(): bool
+    {
+        $stmt = $this->connection->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE `" . static::$primaryKey . "` = :primary_key LIMIT 1");
+        $stmt->execute([":primary_key" => $this->data[static::$primaryKey]]);
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (false === $data) {
+            return false;
         }
 
-        return $params;
+        $this->data = $data;
+        $this->related = [];
+        return true;
     }
 
     /**
      * Store the model.
      *
-     * If it's already in the database it's updated; otherwise it's inserted.
+     * If it's already in the database it's updated; otherwise it's inserted. All related models are also
      *
      * @return bool `true` if the model was saved, `false` otherwise.
      */
     public function save(): bool
     {
-        if (isset($this->{static::$primaryKey})) {
-            return $this->update();
-        } else {
-            return $this->insert();
-        }
+        return $this->update();
     }
 
     /**
@@ -251,9 +277,8 @@ abstract class Model
     public function insert(): bool
     {
         if ($this->connection
-            ->prepare("INSERT INTO `" . static::$table . "` SET {$this->buildSetClause()}")
-            ->execute($this->buildParameters())) {
-            // TODO does it need to be cast?
+            ->prepare("INSERT INTO `" . static::$table . "` ({$this->buildColumnList([static::$primaryKey])}) VALUES ({$this->buildPropertyPlaceholderList([static::$primaryKey])})")
+            ->execute(array_filter($this->data, fn(string $key): bool => ($key !== static::$primaryKey)))) {
             $this->data[static::$primaryKey] = $this->connection->lastInsertId();
             return true;
         }
@@ -262,9 +287,10 @@ abstract class Model
     }
 
     /**
-     * Insert the model into the database.
+     * Update the model in the database, optionally with updated properties.
      *
-     * A new record will be inserted into the table, and the model will have its primary key updated to the new one.
+     * If the model exists in the database, it will be updated; otherwise it will be inserted and its primary key will
+     * be set.
      *
      * @return bool `true` if the record was inserted successfully, `false` otherwise.
      */
@@ -276,16 +302,15 @@ abstract class Model
             }
         }
 
-        if (!isset($this->{static::$primaryKey})) {
-            // can't update a model that's not in the database
-            return false;
-        }
-
         if ($this->connection
-            ->prepare("UPDATE `" . static::$table . "` SET {$this->buildSetClause([static::$primaryKey])} WHERE `" . static::$primaryKey . "` = :" . static::queryParameterName(static::$primaryKey) . " LIMIT 1")
-            ->execute($this->buildParameters())) {
-            // TODO does it need to be cast?
-            $this->data[static::$primaryKey] = $this->connection->lastInsertId();
+            ->prepare("REPLACE INTO `" . static::$table . "` ({$this->buildColumnList()}) VALUES ({$this->buildPropertyPlaceholderList()}) LIMIT 1")
+            ->execute($this->data)) {
+            $id = $this->connection->lastInsertId();
+
+            if (isset($id)) {
+                $this->data[static::$primaryKey] = $id;
+            }
+
             return true;
         }
 
@@ -293,13 +318,15 @@ abstract class Model
     }
 
     /**
-     * @param string|int $value
-     * @param string $property
+     * Helper to cast a value from a Timestamp column to a PHP int.
      *
-     * @return DateTime
+     * @param string|int $value The database value.
+     * @param string $property The name of the property.
+     *
+     * @return int The timestamp.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromTimestampColumn($value, string $property): DateTime
+    protected static function castFromTimestampColumn($value, string $property): int
     {
         $intValue = filter_var($value, FILTER_VALIDATE_INT);
 
@@ -311,10 +338,12 @@ abstract class Model
     }
 
     /**
-     * @param string $value
-     * @param string $property
+     * Helper to cast a value from a Date column to a PHP DateTime.
      *
-     * @return DateTime
+     * @param string $value The database value.
+     * @param string $property The name of the property.
+     *
+     * @return DateTime The DateTime.
      * @throws ModelPropertyCastException
      */
     protected static function castFromDateColumn(string $value, string $property): DateTime
@@ -327,10 +356,12 @@ abstract class Model
     }
 
     /**
-     * @param string $value
-     * @param string $property
+     * Helper to cast a value from a DateTime column to a PHP DateTime.
      *
-     * @return DateTime
+     * @param string $value The database value.
+     * @param string $property The name of the property.
+     *
+     * @return DateTime The DateTime.
      * @throws ModelPropertyCastException
      */
     protected static function castFromDateTimeColumn(string $value, string $property): DateTime
@@ -343,10 +374,12 @@ abstract class Model
     }
 
     /**
-     * @param string $value
-     * @param string $property
+     * Helper to cast a value from a Time column to a PHP DateTime.
      *
-     * @return DateTime
+     * @param string $value The database value.
+     * @param string $property The name of the property.
+     *
+     * @return DateTime The DateTime.
      * @throws ModelPropertyCastException
      */
     protected static function castFromTimeColumn(string $value, string $property): DateTime
@@ -359,10 +392,12 @@ abstract class Model
     }
 
     /**
-     * @param $value
-     * @param string $property
+     * Helper to cast a value from an int-type column to a PHP int.
      *
-     * @return int
+     * @param mixed $value The database value.
+     * @param string $property The name of the property.
+     *
+     * @return int The int value.
      * @throws ModelPropertyCastException
      */
     protected static function castFromIntColumn($value, string $property): int
@@ -380,7 +415,7 @@ abstract class Model
      * Take the data from a float, double, decimal or numeric column and produce a PHP float.
      *
      * @param mixed $value The database value.
-     * @param string $property The column name.
+     * @param string $property The property name.
      *
      * @return float The float value.
      * @throws ModelPropertyCastException
@@ -427,10 +462,12 @@ abstract class Model
     }
 
     /**
-     * @param string $value
-     * @param string $property
+     * Helper to cast a value from a JSON column to a PHP object.
      *
-     * @return object
+     * @param string $value The database value.
+     * @param string $property The name of the property.
+     *
+     * @return object The PHP object representation of the JSON.
      * @throws ModelPropertyCastException
      */
     protected static function castFromJsonColumn(string $value, string $property): object
@@ -443,10 +480,12 @@ abstract class Model
     }
 
     /**
-     * @param $value
-     * @param string $property
+     * Cast a PHP value to a database char/varchar/text column value.
      *
-     * @return string
+     * @param mixed $value The PHP value.
+     * @param string $property The property name.
+     *
+     * @return string The database value.
      * @throws ModelPropertyCastException
      */
     protected static function castToStringColumn($value, string $property): string
@@ -471,10 +510,12 @@ abstract class Model
     }
 
     /**
-     * @param DateTime|int $value
-     * @param string $property
+     * Cast a PHP value to a database timestamp column value.
      *
-     * @return int
+     * @param DateTime|int $value The PHP value.
+     * @param string $property The property name.
+     *
+     * @return int The database timestamp value.
      * @throws ModelPropertyCastException
      */
     protected static function castToTimestampColumn($value, string $property): int
@@ -493,10 +534,10 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for date columns.
      *
-     * @param string|DateTime $value
-     * @param string $property
+     * @param string|DateTime $value The PHP value.
+     * @param string $property The column name.
      *
-     * @return string
+     * @return string The database representation of the date.
      * @throws ModelPropertyCastException
      */
     protected static function castToDateColumn($value, string $property): string
@@ -515,10 +556,10 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for datetime columns.
      *
-     * @param DateTime|string $value
-     * @param string $property
+     * @param DateTime|string $value The PHP value.
+     * @param string $property The column name.
      *
-     * @return string
+     * @return string The database representation of the date-time value.
      * @throws ModelPropertyCastException
      */
     protected static function castToDateTimeColumn($value, string $property): string
@@ -537,10 +578,10 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for time columns.
      *
-     * @param DateTime|string $value
-     * @param string $property
+     * @param DateTime|string $value The PHP value.
+     * @param string $property The column name.
      *
-     * @return string
+     * @return string The database representation for the time column.
      * @throws ModelPropertyCastException
      */
     protected static function castToTimeColumn($value, string $property): string
@@ -559,10 +600,10 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for all types of int column.
      *
-     * @param mixed $value
-     * @param string $property
+     * @param mixed $value The PHP value.
+     * @param string $property The column name.
      *
-     * @return int
+     * @return int The database value.
      * @throws ModelPropertyCastException
      */
     protected static function castToIntColumn($value, string $property): int
@@ -577,28 +618,28 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for float, decimal and numeric columns.
      *
-     * @param $value
-     * @param string $property
+     * @param mixed $value The PHP value.
+     * @param string $property The colum name.
      *
-     * @return float
+     * @return float The database value.
      * @throws ModelPropertyCastException
      */
     protected static function castToFloatColumn($value, string $property): float
     {
-        if (!is_float($value)) {
-            throw new ModelPropertyCastException(static::class, $property, $value, "Values for float columns must be float values.");
+        if (!is_int($value) && !is_float($value)) {
+            throw new ModelPropertyCastException(static::class, $property, $value, "Values for float columns must be int or float values.");
         }
 
-        return $value;
+        return (float) $value;
     }
 
     /**
      * Helper to cast a set property value to the database representation for JSON columns.
      *
-     * @param mixed $value
-     * @param string $property
+     * @param mixed $value The PHP value.
+     * @param string $property The column name.
      *
-     * @return string
+     * @return string The database representation of the JSON.
      * @throws ModelPropertyCastException
      */
     protected static function castToJsonColumn($value, string $property): string
@@ -636,8 +677,6 @@ abstract class Model
      * @throws ModelPropertyCastException if the data retrieved from the database is not compatible with the declared
      * type of the column.
      * @throws LogicException if the property does not exist.
-     * @noinspection PhpDocMissingThrowsInspection can't throw UnknownRelationException because we know the relation
-     * exists by the time we try to load it
      */
     public function __get(string $property)
     {
@@ -671,37 +710,39 @@ abstract class Model
                 case "json":
                     return static::castFromJsonColumn($this->data[$property], $property);
             }
-        } else if (in_array($property, static::relationPropertyNames())) {
-            if (isset($this->related[$property])) {
-                return $this->related[$property];
-            }
+        } else {
+            try {
+                if (!isset($this->related[$property])) {
+                    $method = new ReflectionMethod($this, $property);
 
-            /** @noinspection PhpUnhandledExceptionInspection can't throw, we know the relation exists by here */
-            $related = $this->relatedModels($property);
-            $this->related[$property] = $related;
-            return $related;
+                    if ($method->hasReturnType() && is_a($method->getReturnType()->getName(), Relation::class, true)) {
+                        $this->related[$property] = $method->invoke($this);
+                    }
+                }
+
+                $this->related[$property]->relatedModels();
+            } catch (ReflectionException $err) {
+                // requested property is not a relation method
+            }
         }
         
         throw new LogicException("The property {$property} does not exist on class " . static::class . ".");
     }
 
     /**
-     * Set a property or the models for a relation for the model.
-     *
-     * TODO set related model(s).
+     * Set a property for the model.
      *
      * @param string $property The property to assign.
      * @param mixed $value The value to assign to the property.
      *
-     * @return mixed The property value.
      * @throws TypeError if the provided value is not a valid type for the property.
      */
-    public function __set(string $property, $value)
+    public function __set(string $property, $value): void
     {
         if (in_array($property, static::propertyNames())) {
             if (!isset($value)) {
                 $this->data[$property] = null;
-                return null;
+                return;
             }
 
             try {
@@ -745,7 +786,7 @@ abstract class Model
                 throw new TypeError("The {$property} property cannot be set to the provided value.", 0, $err);
             }
 
-            return  $this->data[$property];
+            return;
         }
 
         throw new LogicException("The property {$property} does not exist on class " . static::class . ".");
@@ -767,15 +808,20 @@ abstract class Model
     {
         if (in_array($property, static::propertyNames())) {
             return isset($this->data[$property]);
-        } else if (in_array($property, static::relationPropertyNames())) {
-            if (isset($this->related[$property])) {
-                return true;
-            }
+        } else {
+            try {
+                if (!array_key_exists($property, $this->related)) {
+                    $method = new ReflectionMethod($this, $property);
 
-            /** @noinspection PhpUnhandledExceptionInspection can't throw, we know the relation exists by here */
-            $related = $this->relatedModels($property);
-            $this->related[$property] = $related;
-            return isset($related);
+                    if ($method->hasReturnType() && is_a($method->getReturnType()->getName(), Relation::class, true)) {
+                        $this->related[$property] = $method->invoke($this);
+                    }
+                }
+
+                return !is_null($this->related[$property]->relatedModels());
+            } catch (ReflectionException $err) {
+                // requested property is not a relation method
+            }
         }
 
         return false;
@@ -787,7 +833,7 @@ abstract class Model
      * @param array $data The data to use to populate the model instance.
      *
      * @throws LogicException if any of the properties in the array does not exist.
-     * @throws |TypeError if any of the property values provided is not of the correct type for the property.
+     * @throws TypeError if any of the property values provided is not of the correct type for the property.
      */
     public function populate(array $data): void
     {
@@ -806,7 +852,7 @@ abstract class Model
     protected static function buildSelectList(?array $only = null): string
     {
         if (isset($only)) {
-            $only = array_filter(static::propertyNames(), fn(string $property): bool => in_array($property, $only));
+            $only = array_intersect($only, static::propertyNames());
         } else {
             $only = static::propertyNames();
         }
@@ -826,11 +872,21 @@ abstract class Model
      */
     protected static function buildInOperand(array $values): string
     {
-        return "(" . implode(",", array_fill(0, count($values), "?")) . ")";
+        return "(" . self::buildPlaceholderList(count($values)) . ")";
     }
 
+    /**
+     * Helper to do a type-aware binding of values to a prepared statement.
+     *
+     * @param PDOStatement $stmt The statement to bind to.
+     * @param array $values The values to bind.
+     *
+     * @throws PDOException if the number of values in the array is greater than the number of placeholders in the
+     * statement.
+     */
     public static function bindValues(PDOStatement $stmt, array $values): void
     {
+        $stmt->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $idx = 1;
 
         foreach ($values as $value) {
@@ -894,6 +950,36 @@ abstract class Model
             static::buildSelectList() . " FROM `" . static::$table . "` WHERE " .
             implode(
                 " AND ",
+                array_map(
+                    function(string $property): string {
+                        return "`{$property}` = ?";
+                    },
+                    array_keys($terms)
+                )
+            )
+        );
+
+        $stmt->execute(array_values($terms));
+        return static::makeModelsFromQuery($stmt);
+    }
+
+    /**
+     * Helper to query for rows that match any of a given set of terms.
+     *
+     * The search terms parameter expects an associative array of column => value pairs. A row must match one or more of
+     * the terms in order to be included in the result. The operator for each of the terms is equals.
+     *
+     * @param array $terms The search terms.
+     *
+     * @return array An array of matching models.
+     */
+    protected static function queryAny(array $terms): array
+    {
+        $stmt = static::defaultConnection()->prepare(
+            "SELECT " .
+            static::buildSelectList() . " FROM `" . static::$table . "` WHERE " .
+            implode(
+                " OR ",
                 array_map(
                     function(string $property): string {
                         return "`{$property}` = ?";
@@ -1059,128 +1145,5 @@ abstract class Model
         }
 
         throw new UnrecognisedQueryOperatorException($operator, "The operator {$operator} is not supported.");
-    }
-
-    /**
-     * Helper to obtain a list of all the relation names.
-     *
-     * @return array The property names for the defined relations.
-     */
-    protected static function relationPropertyNames(): array
-    {
-        static $names = null;
-
-        if (!isset($names)) {
-            $names = array_unique([...array_keys(static::$relations["has"]), ...array_keys(static::$relations["belongs"]), ...array_keys(static::$relations["many"])]);
-        }
-
-        return $names;
-    }
-
-    /**
-     * Fetch the definition of a named relation.
-     *
-     * @param string $name The relation name.
-     *
-     * @return array|null The relation definition, or `null` if the relation does not exist.
-     */
-    protected static function relation(string $name): ?array
-    {
-        static $cache = [];
-
-        if (isset($cache[$name])) {
-            return $cache[$name];
-        }
-
-        foreach (static::$relations as $type => $relations) {
-            if (isset($relations[$name])) {
-                $relation = $relations[$name];
-                $relation["type"] = $type;
-                $cache[$name] = $relation;
-                return $relation;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Helper to fetch the related model(s) for a given relation.
-     *
-     * @param string|array<string, string> $relation The name or relation definition.
-     *
-     * @return null|Model|array<Model> The related model(s), or null if there is no related model to which this belongs.
-     * @throws UnknownRelationException if the named relation does not exist.
-     */
-    protected function relatedModels($relation)
-    {
-        if (is_string($relation)) {
-            $relationDefinition = static::relation($relation);
-
-            if (!isset($relationDefinition)) {
-                throw new UnknownRelationException(static::class, $relation, "The relation {$relation} is not defined for the " . static::class . " model.");
-            }
-
-            $relation = $relationDefinition;
-        }
-
-        switch ($relation["type"]) {
-            case "has":
-                return $this->relatedHasModels($relation);
-
-            case "belongs":
-                return $this->relatedBelongsModel($relation);
-
-            case "many":
-                return $this->relatedManyModels($relation);
-        }
-
-        throw new LogicException("Model class " . static::class . " accessed a relation of type {$relation["type"]} which is not valid.");
-    }
-
-    /**
-     * Helper to fetch the related models for a "has" relation.
-     *
-     * @param array $relation The relation definition.
-     *
-     * @return array The related models. Will be an empty array if there are no related models.
-     */
-    protected function relatedHasModels(array $relation): array
-    {
-        // TODO special case where $this->$key is `null`?
-        $key = $relation["key"] ?? static::$primaryKey;
-        return [$relation["model"], "queryEquals"]($relation["related_key"], $this->{$key});
-    }
-
-    /**
-     * Helper to fetch the related model for a "belongs to" relation.
-     *
-     * @param array $relation The relation definition.
-     *
-     * @return Model|null The related model, or `null` if it's not found.
-     */
-    protected function relatedBelongsModel(array $relation): ?Model
-    {
-        $relatedKey = $relation["related_key"] ?? ($relation["model"])::$primaryKey;
-        return [$relation["model"], "queryEquals"]($relatedKey, $this->{$relation["key"]})[0] ?? null;
-    }
-
-    /**
-     * Helper to fetch the related models for a many-to-many relation.
-     *
-     * @param array $relation The definition of the relation.
-     *
-     * @return array The models.
-     */
-    protected function relatedManyModels(array $relation): array
-    {
-        // TODO special case where $this->$key is `null`?
-        $key = $relation["key"] ?? static::$primaryKey;
-        $relatedTable = ($relation["model"])::$table;
-        $pivotTable = ($relation["pivot"])::$table;
-        $relatedKey = $relation["related_key"] ?? $relatedTable::$primaryKey;
-        $stmt = static::defaultConnection()->prepare("SELECT " . $relatedTable::buildSelectList() . " FROM `{$relatedTable}`, `{$pivotTable}` AS `p` WHERE `p`.`{$relation["pivot_related_key"]}` = `{$relatedTable}`.`{$relatedKey}` AND `p`.`{$relation["pivot_key"]}` = ?");
-        $stmt->execute([$this->$key]);
-        return ($relation["model"])::makeModelsFromQuery($stmt);
     }
 }
