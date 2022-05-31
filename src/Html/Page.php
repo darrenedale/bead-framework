@@ -584,8 +584,6 @@ class Page {
 		$title = html(WebApplication::instance()->title());
 		$headTemplateContent = $this->templateHeadContent();
 		$bodyHeadTemplateContent = $this->templateBodyHeadContent();
-		$main = $this->m_sections["main"]->html();
-		$navBar = $this->m_sections["navbar"]->html();
 		$bodyTailTemplateContent = $this->templateBodyTailContent();
 
 		// now all the main content has been generated, we can add the stylesheets and scripts
@@ -601,8 +599,8 @@ $headTemplateContent
 </head>
 <body>
 $bodyHeadTemplateContent
-$main
-$navBar
+{$this->mainSection()->html()}
+{$this->navBar()->html()}
 $bodyTailTemplateContent
 </body>
 </html>
