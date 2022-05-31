@@ -238,6 +238,18 @@ class View implements Response
 	}
 
 	/**
+	 * Check whether a named view exists.
+	 *
+	 * @param string $name The view to check.
+	 *
+	 * @return bool `true` if the view exists, `false` if not.
+	 */
+	public static function exists(string $name): bool
+	{
+		return file_exists(static::viewDirectory() . "/" . str_replace(".", DIRECTORY_SEPARATOR, $name) . ".php");
+	}
+
+	/**
 	 * Inject some data into all views.
 	 *
 	 * Use this somewhere in your app's initialisation code (e.g. App::exec(), a plugin's constructor, your bootstrap
