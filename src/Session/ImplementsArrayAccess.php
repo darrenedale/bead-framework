@@ -23,7 +23,7 @@ if (PHP_MAJOR_VERSION >= 8) {
         /**
          * Constrain trait users to provide a set() method.
          */
-        public abstract function set(string $key, $value): void;
+        public abstract function set(string $key, mixed $value): void;
 
         /**
          * Constrain trait users to provide a remove() method.
@@ -128,7 +128,7 @@ if (PHP_MAJOR_VERSION >= 8) {
          */
         public function offsetExists($offset): bool
         {
-            return (is_string($offset) ? $this->has($offset) : false);
+            return is_string($offset) && $this->has($offset);
         }
 
         /**
