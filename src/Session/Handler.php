@@ -147,5 +147,5 @@ interface Handler
     /**
      * Purge destroyed sessions, recovering any space they occupy in permanent storage.
      */
-    public static function purge(): void;
+    public static function prune(): void;
 }
