@@ -169,7 +169,9 @@ class Router implements RouterContract
 		$routeParameterNames = self::parametersForRoute($route);
 		preg_match(self::regularExpressionForRoute($route), $request->pathInfo(), $requestArguments);
 		array_shift($requestArguments);
-		array_walk($requestArguments, "urldecode");
+		array_walk($requestArguments, function(string & $arg): void {
+			$arg = urldecode($arg);
+		});
 		return array_combine($routeParameterNames, $requestArguments);
 	}
 
