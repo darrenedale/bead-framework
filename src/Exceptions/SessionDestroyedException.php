@@ -8,7 +8,7 @@ use Throwable;
 /**
  * Exception thrown when an attempt is made to use a session after it has been destroyed.
  */
-class SessionDestroyedException extends Exception
+class SessionDestroyedException extends SessionException
 {
     /** @var string The ID of the session that has been destroyed. */
     private string $m_id;

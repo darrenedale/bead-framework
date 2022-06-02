@@ -8,7 +8,7 @@ use Throwable;
 /**
  * Exception thrown when an attempt is made to initialise a session with an ID that does not exist.
  */
-class SessionNotFoundException extends Exception
+class SessionNotFoundException extends SessionException
 {
     /** @var string The ID of the session that was not found. */
     private string $m_id;

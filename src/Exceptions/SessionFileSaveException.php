@@ -8,7 +8,7 @@ use Throwable;
 /**
  * Exception thrown by the FileSessionHandler when a session file cannot be written successfully.
  */
-class SessionFileSaveException extends Exception
+class SessionFileSaveException extends SessionException
 {
     /** @var string The name of the invalid file. */
     private string $m_fileName;

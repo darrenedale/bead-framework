@@ -12,7 +12,7 @@ use Throwable;
  * a stolen session ID. The application's exception handler should respond by logging out the owner of the session from
  * all their sessions for security.
  */
-class ExpiredSessionIdUsedException extends \Exception
+class ExpiredSessionIdUsedException extends SessionException
 {
     private string $m_sessionId;
 
