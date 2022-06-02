@@ -7,7 +7,7 @@ use Throwable;
 /**
  * Exception thrown by the FileSessionHandler when a session file cannot be read successfully.
  */
-class InvalidSessionFileException extends \Exception
+class InvalidSessionFileException extends SessionException
 {
     /** @var string The name of the invalid file. */
     private string $m_fileName;

@@ -8,7 +8,7 @@ use Throwable;
 /**
  * Exception thrown by the FileSessionHandler when the session storage directory in the config is not valid.
  */
-class InvalidSessionDirectoryException extends Exception
+class InvalidSessionDirectoryException extends SessionException
 {
     /** @var string The invalid directory. */
     private string $m_directory;

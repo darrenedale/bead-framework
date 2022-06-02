@@ -7,7 +7,7 @@ use Throwable;
 /**
  * Exception thrown when a Session is instantiated that has been unused for too long.
  */
-class SessionExpiredException extends \Exception
+class SessionExpiredException extends SessionException
 {
     private string $m_sessionId;
 
