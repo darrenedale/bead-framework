@@ -10,9 +10,11 @@ use Equit\Session\PrefixedAccessor;
 use Equit\Session\Handler;
 use Exception;
 use LogicException;
-use Equit\Session\Session as EquitSession;
+use Equit\Session\Session as BeadSession;
 
 /**
+ * Facade for easy access to the current session.
+ *
  * @method static int sessionIdleTimeoutPeriod()
  * @method static int sessionIdRegenerationPeriod()
  * @method static int expiredSessionGracePeriod()
@@ -27,7 +29,7 @@ use Equit\Session\Session as EquitSession;
  * @method static void remove($keys)
  * @method static void transientSet($keyOrData, $data = null)
  * @method static PrefixedAccessor prefixed(string $prefix)
- * @method static void purgeTransientData()
+ * @method static void pruneTransientData()
  * @method static void refreshTransientData()
  * @method static void clear()
  * @method static void commit()
@@ -36,8 +38,8 @@ use Equit\Session\Session as EquitSession;
  */
 final class Session
 {
-    /** @var EquitSession|null The active session. */
-    private static ?EquitSession $session = null;
+    /** @var BeadSession|null The active session. */
+    private static ?BeadSession $session = null;
 
     /**
      * Start the session.
@@ -45,21 +47,21 @@ final class Session
      * The session ID is retrieved from the session cookie. The WebApplication constructor manages the session for you,
      * including calling start(), so you should never need to call this.
      *
-     * @return EquitSession The session.
+     * @return BeadSession The session.
      * @throws ExpiredSessionIdUsedException if the session identified by the session cookie has expired
      */
-    public static function start(): EquitSession
+    public static function start(): BeadSession
     {
         if (isset(self::$session)) {
             throw new LogicException("Session already started.");
         }
 
         try {
-            self::$session = new EquitSession($_COOKIE[EquitSession::CookieName] ?? null);
+            self::$session = new BeadSession($_COOKIE[BeadSession::CookieName] ?? null);
         } catch (SessionNotFoundException $err) {
-            self::$session = new EquitSession();
+            self::$session = new BeadSession();
         } catch (SessionExpiredException $err) {
-            self::$session = new EquitSession();
+            self::$session = new BeadSession();
         }
 
         return self::$session;
@@ -69,7 +71,7 @@ final class Session
      * Fetch the session if it has been started, null if it hasn't.
      * @return Session|null The session.
      */
-    public static function session(): ?EquitSession
+    public static function session(): ?BeadSession
     {
         return self::$session;
     }
