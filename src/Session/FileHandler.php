@@ -408,7 +408,7 @@ class FileHandler implements Handler
      * @inheritDoc
      * @throws InvalidSessionDirectoryException if the configured storage directory for session files is not valid.
      */
-    public static function purge(): void
+    public static function prune(): void
     {
         foreach (new DirectoryIterator(self::sessionDirectory()) as $file) {
             if ($file->isDot()) {
