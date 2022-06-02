@@ -3,6 +3,7 @@
 namespace Equit\Session;
 
 use Equit\Exceptions\ExpiredSessionIdUsedException;
+use Equit\Exceptions\InvalidSessionHandlerException;
 use Equit\Exceptions\SessionExpiredException;
 use Equit\Exceptions\SessionNotFoundException;
 use Equit\WebApplication;
@@ -51,9 +52,16 @@ class Session implements DataAccessor
     ];
 
     /**
-     * @throws SessionNotFoundException
-     * @throws ExpiredSessionIdUsedException
-     * @throws SessionExpiredException
+     * Initialise a new session.
+     *
+     * Start a new session, or load an existing session based on its ID. The session will be backed with the session
+     * handler defined in the application's session config file.
+     *
+     * @param string|null $id The optional session ID. If not provided, a new ID will be generated.
+     *
+     * @throws SessionNotFoundException If the ID provided does not identify an existing session.
+     * @throws ExpiredSessionIdUsedException If the ID provided is for a session that has had its ID cycled.
+     * @throws SessionExpiredException If the session identified hasn't been used for more than the threshold duration.
      */
     public function __construct(?string $id = null)
     {
@@ -87,7 +95,7 @@ class Session implements DataAccessor
      */
     public function __destruct()
     {
-        $this->purgeTransientData();
+        $this->pruneTransientData();
         $this->handler()->commit();
     }
 
@@ -161,6 +169,7 @@ class Session implements DataAccessor
 
     /**
      * The time at which the session was last used.
+     *
      * @return int The timestamp.
      */
     public function lastUsedAt(): int
@@ -249,7 +258,7 @@ class Session implements DataAccessor
         }
 
         if (!is_array($keyOrData)) {
-            throw new InvalidArgumentException("set() expects a key and value or an array of keys and values.");
+            throw new TypeError("set() expects a key and value or an array of keys and values.");
         }
 
         if (!all(array_keys($keyOrData), "is_string")) {
@@ -297,7 +306,7 @@ class Session implements DataAccessor
      * You probably never want to call this yourself. It is called automatically in the destructor so you can safely
      * leave the WebApplication manage the session's lifecycle for you.
      */
-    public function purgeTransientData(): void
+    public function pruneTransientData(): void
     {
         $remove = array_filter($this->m_transientKeys, function(int $count): bool {
             return 0 >= $count;
@@ -336,7 +345,7 @@ class Session implements DataAccessor
         if (is_string($keys)) {
             $keys = [$keys];
         } else if (!is_array($keys)) {
-            throw new InvalidArgumentException("remove() expects a key or an array of keys.");
+            throw new TypeError("remove() expects a key or an array of keys.");
         } else if (!all($keys, "is_string")) {
             throw new InvalidArgumentException("Keys for session data to remove must be strings.");
         }
@@ -403,7 +412,7 @@ class Session implements DataAccessor
         $class = self::$m_handlerClasses[$type] ?? null;
 
         if (!isset($class)) {
-            throw new Exception("Session handler '{$type}' configured in session config file is not recognised.");
+            throw new InvalidSessionHandlerException("Session handler '{$type}' configured in session config file is not recognised.");
         }
 
         try {
@@ -413,11 +422,23 @@ class Session implements DataAccessor
         }
     }
 
+    /**
+     * Push a value onto the end of an array stored in the session.
+     *
+     * @param string $key The session array to add to.
+     * @param mixed $data The data to add.
+     */
     public function push(string $key, $data): void
     {
         $this->pushAll($key, [$data]);
     }
 
+    /**
+     * Push a number of items onto the end of an array stored in the session.
+     *
+     * @param string $key The session array to add to.
+     * @param array $data The items to add.
+     */
     public function pushAll(string $key, array $data): void
     {
         $arr = $this->get($key, []);
@@ -430,6 +451,14 @@ class Session implements DataAccessor
         $this->set($key, $arr);
     }
 
+    /**
+     * Pop a number of items from the end of an array stored in the session.
+     *
+     * @param string $key The session array to pop from.
+     * @param int $n The number of items to pop.
+     *
+     * @return array|mixed|null
+     */
     public function pop(string $key, int $n = 1)
     {
         $arr = $this->get($key);
@@ -438,7 +467,12 @@ class Session implements DataAccessor
             throw new RuntimeException("The session key '{$key}' does not contain an array.");
         }
 
-        $value = array_pop($arr);
+        if (1 === $n) {
+            $value = array_pop($arr);
+        } else {
+            $value = array_splice($arr, -$n);
+        }
+
         $this->set($key, $arr);
         return $value;
     }
