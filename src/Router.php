@@ -33,7 +33,10 @@ use function Equit\Traversable\isSubsetOf;
  * The router will inject arguments extracted from the request URI into the handler's parameters: if the handler takes a
  * parameter with the same name as a parameter in the URI path, the handler will be called with that parameter filled
  * with the extracted value from the URI path. So for example if the handler is `function(Request $request, int $id)`,
- * the URI `/entry/1/edit` would call the handler with the value `1` for the `$id` parameter.
+ * the URI `/entry/1/edit` would call the handler with the value `1` for the `$id` parameter. Segments extracted from
+ * the path will be url-decoded before being passed to the route handler - so for example if the route is
+ * `/download/{type}` and the URI is `/download/text%2Fplain`, the handler will receive "text/plain" in its `$type`
+ * parameter.
  *
  * Any type that can be converted from the string extracted from the URI can be hinted. If the matching parameter in the
  * handler has no type hint, it will be provided as a string. If the handler has any parameter that is not in the route
@@ -166,6 +169,7 @@ class Router implements RouterContract
 		$routeParameterNames = self::parametersForRoute($route);
 		preg_match(self::regularExpressionForRoute($route), $request->pathInfo(), $requestArguments);
 		array_shift($requestArguments);
+		array_walk($requestArguments, "urldecode");
 		return array_combine($routeParameterNames, $requestArguments);
 	}
 
