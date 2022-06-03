@@ -303,7 +303,7 @@ abstract class Model
         }
 
         if ($this->connection
-            ->prepare("REPLACE INTO `" . static::$table . "` ({$this->buildColumnList()}) VALUES ({$this->buildPropertyPlaceholderList()}) LIMIT 1")
+            ->prepare("REPLACE INTO `" . static::$table . "` ({$this->buildColumnList()}) VALUES ({$this->buildPropertyPlaceholderList()})")
             ->execute(array_values($this->data))) {
             $id = $this->connection->lastInsertId();
 
