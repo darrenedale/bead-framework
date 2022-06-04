@@ -4,6 +4,7 @@ namespace Equit\Database;
 
 use DateTime;
 use Equit\Application;
+use Equit\Contracts\SoftDeletableModel;
 use Equit\Exceptions\ModelPropertyCastException;
 use Equit\Exceptions\UnknownRelationException;
 use Equit\Exceptions\UnrecognisedQueryOperatorException;
@@ -33,7 +34,7 @@ abstract class Model
     /**
      * @var array The model's properties.
      *
-     * Property names (columns) are keys; values are the column type. The type indicates how the value in the field will
+     * Property names (columns) are keys; values are the column type. The type indicates how the value in the column will
      * be converted when accessed. The value will be converted in both directions. Types are:
      * - timestamp
      * - date
@@ -50,8 +51,9 @@ abstract class Model
     /** @var PDO The database connection the model uses. */
     private PDO $connection;
 
-    /** @var array The model instance's data. Always stored as it comes out of the database. */
-    private array $data = [];
+    /** @var array The model instance's data. Always stored as the type comes out of the database, always contains keys
+     * for every property of the model and always in the order in which the properties are defined in `$properties` */
+    private array $data;
 
     /** @var array The loaded related models. */
     private array $related = [];
@@ -62,6 +64,7 @@ abstract class Model
     public function __construct()
     {
         $this->connection = static::defaultConnection();
+        $this->data = array_combine(array_keys(static::$properties), array_fill(0, count(static::$properties), null));
     }
 
     /**
@@ -84,7 +87,7 @@ abstract class Model
         $model = new static();
         $model->connection = static::defaultConnection();
         $model->data[static::$primaryKey] = $primaryKey;
-        return $model->reload() ? $model : null;
+        return $model->reload() && (!($model instanceof SoftDeletableModel) || !$model->isDeleted()) ? $model : null;
     }
 
     /**
@@ -228,7 +231,7 @@ abstract class Model
      */
     public function exists(): bool
     {
-        return isset($this->{static::$primaryKey});
+        return isset($this->{static::$primaryKey}) && (!($this instanceof SoftDeletableModel) || !$this->isDeleted());
     }
 
     /**
@@ -279,7 +282,7 @@ abstract class Model
     {
         if ($this->connection
             ->prepare("INSERT INTO `" . static::$table . "` ({$this->buildColumnList([static::$primaryKey])}) VALUES ({$this->buildPropertyPlaceholderList([static::$primaryKey])})")
-            ->execute(array_filter($this->data, fn(string $key): bool => ($key !== static::$primaryKey)))) {
+            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== static::$primaryKey), ARRAY_FILTER_USE_KEY)))) {
             $this->data[static::$primaryKey] = $this->connection->lastInsertId();
             return true;
         }
@@ -316,6 +319,18 @@ abstract class Model
         }
 
         return false;
+    }
+
+    /**
+     * Delete the model from the database.
+     *
+     * @return bool `true` if the model was deleted, `false` if not.
+     */
+    public function delete(): bool
+    {
+        return $this->connection
+            ->prepare("DELETE FROM `" . static::$table . "` AS `t` WHERE `t`.`" . static::$primaryKey . "` = ? LIMIT 1")
+            ->execute($this->{static::$primaryKey});
     }
 
     /**
@@ -801,7 +816,7 @@ abstract class Model
                     }
                 }
 
-                $this->related[$property]->relatedModels();
+                return $this->related[$property]->relatedModels();
             } catch (ReflectionException $err) {
                 // requested property is not a relation method
             }
@@ -928,11 +943,11 @@ abstract class Model
     }
 
     /**
-     * Helper to build a list of fields to select for a SELECT clause.
+     * Helper to build a list of columns to select for a SELECT clause.
      *
-     * @param array|null $only Only these fields. `null` means all fields.
+     * @param array|null $only Only these columns. `null` means all columns.
      *
-     * @return string The list of fields.
+     * @return string The list of columns.
      */
     protected static function buildSelectList(?array $only = null): string
     {
@@ -1019,6 +1034,40 @@ abstract class Model
     }
 
     /**
+     * Helper to provide WHERE expressions that should be applied to all queries.
+     *
+     * This is useful as a customisation point to inject fixed conditions into queries, for example to exclude soft-
+     * deleted records.
+     *
+     * @return array<string> The expressions.
+     */
+    protected static function fixedWhereExpressions(string $tableAlias = null): array
+    {
+        return [];
+    }
+
+    /**
+     * Helper to provide a single string of WHERE expressions built from the fixed expressions.
+     *
+     * This can be used internally to append the expressions to SQL for prepared statements. The expressions are
+     * concatenated using the AND operator, and each expression is wrapped in its own parentheses. It is recommended
+     * that any client-supplied expression is wrapped in a pair of parentheses also so that the fixed expressions are
+     * appended in the expected manner.
+     *
+     * @return string The concatenated expressions, or an empty string if there are none.
+     */
+    protected static final function fixedWhereExpressionsSql(string $tableAlias = null): string
+    {
+        $fixedExpressions = static::fixedWhereExpressions($tableAlias);
+
+        if (empty($fixedExpressions)) {
+            return "";
+        }
+
+        return " AND (" . implode(") AND (", $fixedExpressions) . ")";
+    }
+
+    /**
      * Helper to query for rows that match all of a given set of terms.
      *
      * The search terms parameter expects an associative array of column => value pairs. A row must match all of the
@@ -1041,7 +1090,8 @@ abstract class Model
                     },
                     array_keys($terms)
                 )
-            )
+            ) .
+            static::fixedWhereExpressionsSql()
         );
 
         $stmt->execute(array_values($terms));
@@ -1062,7 +1112,7 @@ abstract class Model
     {
         $stmt = static::defaultConnection()->prepare(
             "SELECT " .
-            static::buildSelectList() . " FROM `" . static::$table . "` WHERE " .
+            static::buildSelectList() . " FROM `" . static::$table . "` WHERE (" .
             implode(
                 " OR ",
                 array_map(
@@ -1071,7 +1121,8 @@ abstract class Model
                     },
                     array_keys($terms)
                 )
-            )
+            ) .
+            ")" . static::fixedWhereExpressionsSql()
         );
 
         $stmt->execute(array_values($terms));
@@ -1087,9 +1138,9 @@ abstract class Model
      *
      * @return array The models that match the query.
      */
-    protected static function querySimpleComparison(string $property, string $operator, $value): array
+    protected static final function querySimpleComparison(string $property, string $operator, $value): array
     {
-        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE `{$property}` {$operator} ?");
+        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE (`{$property}` {$operator} ?)" . static::fixedWhereExpressionsSql());
         $stmt->execute([$value]);
         return static::makeModelsFromQuery($stmt);
     }
@@ -1160,7 +1211,7 @@ abstract class Model
      */
     public static function queryIn(string $property, array $values): array
     {
-        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE `{$property}` IN " . static::buildInOperand($values));
+        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")" . static::fixedWhereExpressionsSql());
         static::bindValues($stmt, $values);
         $stmt->execute();
         return static::makeModelsFromQuery($stmt);
@@ -1176,7 +1227,7 @@ abstract class Model
      */
     public static function queryNotIn(string $property, array $values): array
     {
-        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE `{$property}` NOT IN " . static::buildInOperand($values));
+        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")" . static::fixedWhereExpressionsSql());
         static::bindValues($stmt, $values);
         $stmt->execute();
         return static::makeModelsFromQuery($stmt);

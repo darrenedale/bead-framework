@@ -19,11 +19,7 @@ class OneToMany extends Relation
      */
     public function reload(): void
     {
-        $relatedClass = $this->relatedModel();
-        $stmt = $this->localModel()->connection()->prepare("SELECT * FROM `" . $relatedClass::table() . "` WHERE `{$this->relatedKey()}` = ?");
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $stmt->execute([$this->localModel()->{$this->localKey()}]);
-        $this->relatedModels = $this->makeModelsFromQuery($stmt);
+        $this->relatedModels = $this->relatedModel()::query($this->relatedKey(), $this->localModel()->{$this->localKey()});
     }
 
     /**
