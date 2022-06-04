@@ -3,6 +3,7 @@
 namespace Equit\Database;
 
 use PDO;
+use ReflectionMethod;
 
 /**
  * A model relation that links many models of two related types in arbitrary configurations through a pivot table.
@@ -77,7 +78,16 @@ class ManyToMany extends Relation
     {
         $relatedClass = $this->relatedModel();
         $pivotClass = $this->pivotModel();
-        $stmt = $this->localModel()->connection()->prepare(" SELECT `r`.* FROM `" . $relatedClass::table() . "` AS `r`, `" . $pivotClass::table() . "` AS `p` WHERE `p`.`{$this->pivotRelatedKey()}` = `r`.`{$this->relatedKey()}` AND `p`.`{$this->pivotLocalKey()}` = ? ");
+
+        // since PHP has no concept of friend classes that work in concert, we have to "emulate" it through reflection
+        // we don't want the fixedWhereExpressionsSql() to be publicly accessible, but models and relations need to work
+        // together
+        $relatedFixedWheresMethod = new ReflectionMethod($relatedClass, "fixedWhereExpressionsSql");
+        $relatedFixedWheresMethod->setAccessible(true);
+        $pivotFixedWheresMethod = new ReflectionMethod($pivotClass, "fixedWhereExpressionsSql");
+        $pivotFixedWheresMethod->setAccessible(true);
+
+        $stmt = $this->localModel()->connection()->prepare(" SELECT `r`.* FROM `" . $relatedClass::table() . "` AS `r`, `" . $pivotClass::table() . "` AS `p` WHERE `p`.`{$this->pivotRelatedKey()}` = `r`.`{$this->relatedKey()}` AND `p`.`{$this->pivotLocalKey()}` = ? " . $relatedFixedWheresMethod->invoke(null, "r") . $pivotFixedWheresMethod->invoke(null, "p"));
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $stmt->execute([$this->localModel()->{$this->localKey()}]);
         $this->relatedModels = $this->makeModelsFromQuery($stmt);
