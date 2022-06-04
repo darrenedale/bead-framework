@@ -17,6 +17,7 @@ use PDOStatement;
 use ReflectionException;
 use ReflectionMethod;
 use TypeError;
+use function Equit\Traversable\all;
 
 /**
  * Base class for database model classes.
@@ -331,6 +332,79 @@ abstract class Model
             ->prepare("DELETE FROM `" . static::$table . "` AS `t` WHERE `t`.`" . static::$primaryKey . "` = ? LIMIT 1")
             ->execute($this->{static::$primaryKey});
     }
+
+	/**
+	 * Create one or more instances of the model from provided data.
+	 *
+	 * Provide either the properties for a single model or an array containing the properties for several models. If
+	 * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
+	 * provided, an array of models is returned (even if the array of sets of properties contains only one set of
+	 * properties).
+	 *
+	 * For example, `User::create(["username" => "darren",])` will return a single model, whereas
+	 * `User::create([["username" => "darren",], ["username" => "susan",]])` and
+	 * `User::create([["username" => "darren",],])` will both return an array of models. (The first call will return an
+	 * array of 2 models, the second an array with just one model in it.)
+	 *
+	 * The models returned will have been inserted into the database.
+	 *
+	 * @param array $instances The data for the instance(s) to create.
+	 *
+	 * @return Model|array<Model> The created model(s).
+	 */
+	public static function create(array $data)
+	{
+		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
+			$model = new static();
+			$model->populate($modelData);
+			return $model;
+		}
+
+		$modelClass = static::class;
+
+		return array_map(function(array $data) use ($modelClass) {
+			$model = new $modelClass();
+			$model->populate($data);
+			$model->insert();
+			return $model;
+		}, $data);
+	}
+
+	/**
+	 * Make one or more instances of the model from provided data.
+	 *
+	 * Provide either the properties for a single model or an array containing the properties for several models. If
+	 * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
+	 * provided, an array of models is returned (even if the array of sets of properties contains only one set of
+	 * properties).
+	 *
+	 * For example, `User::make(["username" => "darren",])` will return a single model, whereas
+	 * `User::make([["username" => "darren",], ["username" => "susan",]])` and
+	 * `User::make([["username" => "darren",],])` will both return an array of models. (The first call will return an
+	 * array of 2 models, the second an array with just one model in it.)
+	 *
+	 * The models returned will NOT have been inserted into the database.
+	 *
+	 * @param array $instances The data for the instance(s) to create.
+	 *
+	 * @return Model|array<Model> The created model(s).
+	 */
+	public static function make(array $data)
+	{
+		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
+			$model = new static();
+			$model->populate($modelData);
+			return $model;
+		}
+
+		$modelClass = static::class;
+
+		return array_map(function(array $data) use ($modelClass) {
+			$model = new $modelClass();
+			$model->populate($data);
+			return $model;
+		}, $data);
+	}
 
     /**
      * Helper to cast a value from a Timestamp column to a PHP int.
@@ -1197,4 +1271,201 @@ abstract class Model
 
         throw new UnrecognisedQueryOperatorException($operator, "The operator {$operator} is not supported.");
     }
+
+	/**
+	 * Helper to remove rows that match all of a given set of terms.
+	 *
+	 * The search terms parameter expects an associative array of column => value pairs. A row must match all of the
+	 * terms in order to be removed. The operator for each of the terms is equals.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 * 
+	 * @param array $terms The search terms.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	protected static function removeWhereAll(array $terms): bool
+	{
+		$stmt = static::defaultConnection()->prepare(
+			"DELETE FROM `" . static::$table . "` WHERE " .
+			implode(
+				" AND ",
+				array_map(
+					function(string $property): string {
+						return "`{$property}` = ?";
+					},
+					array_keys($terms)
+				)
+			)
+		);
+
+		return $stmt->execute(array_values($terms));
+	}
+
+	/**
+	 * Helper to remove rows based on a simple comparison operator for a single property.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param string $operator The operator. Must be a valid SQL operator.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	protected static final function removeSimpleComparison(string $property, string $operator, $value): bool
+	{
+		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` {$operator} ?)");
+		return $stmt->execute([$value]);
+	}
+
+	/**
+	 * Remove models where a property is equal to a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeEquals(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, "=", $value);
+	}
+
+	/**
+	 * Remove models where a property is not equal to a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeNotEquals(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, "<>", $value);
+	}
+
+	/**
+	 * Remove models where a property is like a given value.
+	 *
+	 * The value supports the SQL wildcards '%' and '_'.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeLike(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, "LIKE", $value);
+	}
+
+	/**
+	 * Remove models where a property is not like a given value.
+	 *
+	 * The value supports the SQL wildcards '%' and '_'.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return array The matching models.
+	 */
+	public static function removeNotLike(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, "NOT LIKE", $value);
+	}
+
+	/**
+	 * Remove models where a property is in a set of values.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $values The set of values to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeIn(string $property, array $values): bool
+	{
+		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")");
+		static::bindValues($stmt, $values);
+		return $stmt->execute();
+	}
+
+	/**
+	 * Remove models where a property is not in a set of values.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $values The set of values to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeNotIn(string $property, array $values): bool
+	{
+		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")");
+		static::bindValues($stmt, $values);
+		return $stmt->execute();
+	}
+
+	/**
+	 * Remove a set of model instances based on a query.
+	 *
+	 * Queries can use either an array of properties and values to match (in which case the matching models must meet
+	 * all of the terms) or a single property and value to match. In the latter case, you can optionally provide an
+	 * operator, or use the default operator of equality matching.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string|array<string,mixed> $properties The property name or array of properties and values to match.
+	 * @param string|mixed|null $operator The operator to use to compare the value to the property.
+	 * @param mixed|null $value The value to match.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 * @throws UnrecognisedQueryOperatorException
+	 */
+	public static function remove($properties, $operator = null, $value = null): bool
+	{
+		if (is_array($properties)) {
+			return static::removeWhereAll($properties);
+		}
+
+		if (!isset($value)) {
+			$value = $operator;
+			$operator = "=";
+		}
+
+		switch (strtolower($operator)) {
+			case "=":
+			case "==":
+				return static::removeEquals($properties, $value);
+
+			case "!=":
+			case "<>":
+				return static::removeNotEquals($properties, $value);
+
+			case "like":
+				return static::removeLike($properties, $value);
+
+			case "not like":
+				return static::removeNotLike($properties, $value);
+
+			case "in":
+				return static::removeIn($properties, $value);
+
+			case "not in":
+				return static::removeNotIn($properties, $value);
+		}
+
+		throw new UnrecognisedQueryOperatorException($operator, "The operator {$operator} is not supported.");
+	}
 }
