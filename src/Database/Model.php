@@ -344,8 +344,8 @@ abstract class Model
     public function delete(): bool
     {
         return $this->connection()
-            ->prepare("DELETE FROM `" . static::table() . "` AS `t` WHERE `t`.`" . static::primaryKey() . "` = ? LIMIT 1")
-            ->execute($this->{static::primaryKey()});
+            ->prepare("DELETE FROM `" . static::table() . "` WHERE `" . static::primaryKey() . "` = ? LIMIT 1")
+            ->execute([$this->{static::primaryKey()}]);
     }
 
 	/**
