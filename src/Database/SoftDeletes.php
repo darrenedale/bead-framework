@@ -10,13 +10,6 @@ use PDO;
  *
  * This provides a standard implementation of the SoftDeletableModel contract that you can include in your model classes
  * so that they support soft-deletes. In many cases importing the trait will be sufficient.
- *
- * These properties are type-hinted for the benefit of the IDE. They are all provided by the Model class, which should
- * always be in the inheritance chain for classes that import this trait.
- *
- * @property PDO $connection
- * @property string $table
- * @property string $primaryKey
  */
 trait SoftDeletes
 {
@@ -25,6 +18,33 @@ trait SoftDeletes
 
     /** @var bool Whether or not deleted models are currently set to be included in queries. */
     private static bool $includeSoftDeletedModels = false;
+
+    /**
+     * Fetch the connection to use when soft-deleting/restoring the model.
+     *
+     * This is a constraint to ensure the trait can only successfully be applied to Model (or Model-like) classes.
+     *
+     * @return PDO The connection to use when soft-deleting/restoring the model.
+     */
+    public abstract function connection(): PDO;
+
+    /**
+     * Fetch the table to use when soft-deleting/restoring the model.
+     *
+     * This is a constraint to ensure the trait can only successfully be applied to Model (or Model-like) classes.
+     *
+     * @return string The database table.
+     */
+    public abstract static function table(): string;
+
+    /**
+     * Fetch the primary key column to use when soft-deleting/restoring the model.
+     *
+     * This is a constraint to ensure the trait can only successfully be applied to Model (or Model-like) classes.
+     *
+     * @return string The primary key column.
+     */
+    public abstract static function primaryKey(): string;
 
     /**
      * The name of the column that contains the deleted timestamp for soft-deleted records.
@@ -74,7 +94,7 @@ trait SoftDeletes
             return [];
         }
 
-        return ["`" . ($tableAlias ?? static::$table) . "`.`" . static::deletedTimestampPropertyName() . "` IS NULL",];
+        return ["`" . ($tableAlias ?? static::table()) . "`.`" . static::deletedTimestampPropertyName() . "` IS NULL",];
     }
 
     /**
@@ -86,9 +106,25 @@ trait SoftDeletes
     {
         $this->{static::deletedTimestampPropertyName()} = new DateTime();
 
-        return $this->connection
-            ->prepare("UPDATE `" . static::$table . " AS `t` SET `t`.`" . static::deletedTimestampPropertyName() . "` = ? WHERE `t`.`" . static::$primaryKey . "` = ?")
-            ->execute([$this->{static::deletedTimestampPropertyName()}->format("Y-m-d H:i:s"),  $this->{static::$primaryKey},]);
+        return $this->connection()
+            ->prepare("UPDATE `" . static::table() . "` AS `t` SET `t`.`" . static::deletedTimestampPropertyName() . "` = ? WHERE `t`.`" . static::primaryKey() . "` = ?")
+            ->execute([$this->{static::deletedTimestampPropertyName()}->format("Y-m-d H:i:s"),  $this->{static::primaryKey()},]);
+    }
+
+    /**
+     * Restore the soft-deleted model.
+     *
+     * If the model was not soft-deleted before the call, the method returns `true`.
+     *
+     * @return bool `true` if the model was restored, `false` otherwise.
+     */
+    public function restore(): bool
+    {
+        $this->{static::deletedTimestampPropertyName()} = null;
+
+        return $this->connection()
+            ->prepare("UPDATE `" . static::table() . "` AS `t` SET `t`.`" . static::deletedTimestampPropertyName() . "` = NULL WHERE `t`.`" . static::primaryKey() . "` = ?")
+            ->execute([$this->{static::primaryKey()},]);
     }
 
     /**

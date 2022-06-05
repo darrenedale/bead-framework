@@ -15,6 +15,16 @@ interface SoftDeletableModel
     public function isDeleted(): bool;
 
     /**
+     * Restore the model if it's been soft-deleted.
+     *
+     * Calling `restore()` on a model that has not been soft-deleted must return `true` - the return value indicates the
+     * status of the model, not whether the operation was performed.
+     *
+     * @return bool `true` if the model is no longer soft-deleted, `false` otherwise.
+     */
+    public function restore(): bool;
+
+    /**
      * The name of the model property that contains the soft-deletion timestamp.
      *
      * @return string The property name.
