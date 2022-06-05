@@ -61,6 +61,8 @@ abstract class Model
 
     /**
      * Initialise a new instance of the model.
+     *
+     * The model instance will be initialised with null for each of its defined properties.
      */
     public function __construct()
     {
@@ -69,11 +71,33 @@ abstract class Model
     }
 
     /**
-     * @return string The database table containing the data for the model.
+     * Fetch the model's database connection.
+     *
+     * @return PDO The connection.
+     */
+    public function connection(): PDO
+    {
+        return $this->connection;
+    }
+
+    /**
+     * Fetch the database table containing the data for the model.
+     *
+     * @return string The database table.
      */
     public static function table(): string
     {
         return static::$table;
+    }
+
+    /**
+     * Fetch the name of the primary key property.
+     *
+     * @return string The primary key.
+     */
+    public static function primaryKey(): string
+    {
+        return static::$primaryKey;
     }
 
     /**
@@ -87,13 +111,14 @@ abstract class Model
     {
         $model = new static();
         $model->connection = static::defaultConnection();
-        $model->data[static::$primaryKey] = $primaryKey;
+        $model->data[static::primaryKey()] = $primaryKey;
         return $model->reload() && (!($model instanceof SoftDeletableModel) || !$model->isDeleted()) ? $model : null;
     }
 
     /**
      * The properties for this type of model.
-     * @return array
+     *
+     * @return array<string> The properties.
      */
     protected static function propertyNames(): array
     {
@@ -102,6 +127,7 @@ abstract class Model
 
     /**
      * The default connection for models of this type.
+     *
      * @return PDO The default connection.
      */
     protected static function defaultConnection(): PDO
@@ -114,7 +140,7 @@ abstract class Model
      *
      * @param array $except Properties to exclude.
      *
-     * @return string The SET clause.
+     * @return string The list of columns.
      */
     protected function buildColumnList(array $except = []): string
     {
@@ -172,7 +198,7 @@ abstract class Model
      */
     protected function oneToMany(string $related, string $relatedKey, ?string $localKey = null): OneToMany
     {
-        return new OneToMany($this, $related, $relatedKey, $localKey ?? static::$primaryKey);
+        return new OneToMany($this, $related, $relatedKey, $localKey ?? static::primaryKey());
     }
 
     /**
@@ -190,7 +216,7 @@ abstract class Model
      */
     protected function manyToOne(string $related, string $localKey, ?string $relatedKey = null): ManyToOne
     {
-        return new ManyToOne($this, $related, $relatedKey ?? $related::$primaryKey, $localKey);
+        return new ManyToOne($this, $related, $relatedKey ?? $related::primaryKey(), $localKey);
     }
 
     /**
@@ -210,17 +236,7 @@ abstract class Model
      */
     protected function manyToMany(string $related, string $pivot, string $pivotLocalKey, string $pivotRelatedKey, ?string $localKey = null, ?string $relatedKey = null): ManyToMany
     {
-        return new ManyToMany($this, $related, $pivot, $pivotLocalKey, $pivotRelatedKey, $localKey ?? static::$primaryKey, $relatedKey ?? $related::$primaryKey);
-    }
-
-    /**
-     * Fetch the model's database connection.
-     *
-     * @return PDO The connection.
-     */
-    public function connection(): PDO
-    {
-        return $this->connection;
+        return new ManyToMany($this, $related, $pivot, $pivotLocalKey, $pivotRelatedKey, $localKey ?? static::primaryKey(), $relatedKey ?? $related::primaryKey());
     }
 
     /**
@@ -232,7 +248,7 @@ abstract class Model
      */
     public function exists(): bool
     {
-        return isset($this->{static::$primaryKey}) && (!($this instanceof SoftDeletableModel) || !$this->isDeleted());
+        return isset($this->{static::primaryKey()}) && (!($this instanceof SoftDeletableModel) || !$this->isDeleted());
     }
 
     /**
@@ -247,8 +263,8 @@ abstract class Model
      */
     public function reload(): bool
     {
-        $stmt = $this->connection->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE `" . static::$primaryKey . "` = :primary_key LIMIT 1");
-        $stmt->execute([":primary_key" => $this->data[static::$primaryKey]]);
+        $stmt = $this->connection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `" . static::primaryKey() . "` = :primary_key LIMIT 1");
+        $stmt->execute([":primary_key" => $this->data[static::primaryKey()]]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (false === $data) {
@@ -269,7 +285,11 @@ abstract class Model
      */
     public function save(): bool
     {
-        return $this->update();
+        if (isset($this->{static::primaryKey()})) {
+            return $this->update();
+        } else {
+            return $this->insert();
+        }
     }
 
     /**
@@ -281,10 +301,10 @@ abstract class Model
      */
     public function insert(): bool
     {
-        if ($this->connection
-            ->prepare("INSERT INTO `" . static::$table . "` ({$this->buildColumnList([static::$primaryKey])}) VALUES ({$this->buildPropertyPlaceholderList([static::$primaryKey])})")
-            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== static::$primaryKey), ARRAY_FILTER_USE_KEY)))) {
-            $this->data[static::$primaryKey] = $this->connection->lastInsertId();
+        if ($this->connection()
+            ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([static::primaryKey()])}) VALUES ({$this->buildPropertyPlaceholderList([static::primaryKey()])})")
+            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== static::primaryKey()), ARRAY_FILTER_USE_KEY)))) {
+            $this->data[static::primaryKey()] = $this->connection()->lastInsertId();
             return true;
         }
 
@@ -294,10 +314,7 @@ abstract class Model
     /**
      * Update the model in the database, optionally with updated properties.
      *
-     * If the model exists in the database, it will be updated; otherwise it will be inserted and its primary key will
-     * be set.
-     *
-     * @return bool `true` if the record was inserted successfully, `false` otherwise.
+     * @return bool `true` if the record was updated successfully, `false` otherwise.
      */
     public function update(?array $data = null): bool
     {
@@ -307,19 +324,16 @@ abstract class Model
             }
         }
 
-        if ($this->connection
-            ->prepare("REPLACE INTO `" . static::$table . "` ({$this->buildColumnList()}) VALUES ({$this->buildPropertyPlaceholderList()})")
-            ->execute(array_values($this->data))) {
-            $id = $this->connection->lastInsertId();
+        // don't update the primary key
+        $properties = array_diff(array_keys(static::$properties), [static::primaryKey()]);
 
-            if (isset($id)) {
-                $this->data[static::$primaryKey] = $id;
-            }
+        // arrange the data in the order required for the prepared statemtn
+        $data = array_values(array_diff_key($this->data, [static::primaryKey() => ""]));
+        $data[] = $this->data[static::primaryKey()];
 
-            return true;
-        }
-
-        return false;
+        return $this->connection()
+            ->prepare("UPDATE `" . static::table() . "` SET `" . implode("` = ?, `", $properties) . "` = ? WHERE `" . static::primaryKey() . "` = ? LIMIT 1")
+            ->execute($data);
     }
 
     /**
@@ -329,9 +343,9 @@ abstract class Model
      */
     public function delete(): bool
     {
-        return $this->connection
-            ->prepare("DELETE FROM `" . static::$table . "` AS `t` WHERE `t`.`" . static::$primaryKey . "` = ? LIMIT 1")
-            ->execute($this->{static::$primaryKey});
+        return $this->connection()
+            ->prepare("DELETE FROM `" . static::table() . "` AS `t` WHERE `t`.`" . static::primaryKey() . "` = ? LIMIT 1")
+            ->execute($this->{static::primaryKey()});
     }
 
 	/**
@@ -357,7 +371,7 @@ abstract class Model
 	{
 		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
 			$model = new static();
-			$model->populate($modelData);
+			$model->populate($data);
 			return $model;
 		}
 
@@ -394,7 +408,7 @@ abstract class Model
 	{
 		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
 			$model = new static();
-			$model->populate($modelData);
+			$model->populate($data);
 			return $model;
 		}
 
@@ -552,6 +566,42 @@ abstract class Model
     }
 
     /**
+     * Helper to cast a value from a boolean column to a PHP bool value.
+     *
+     * Booleans and numeric values will be converted to true/false based on an equality comparison with 0. Anything that
+     * won't pass that is an error. Values that come out of the database as strings are accepted as long as they are
+     * numeric strings (i.e. the column is numeric but the db driver provides the data as a string). Strings like "true"
+     * and "false" are not accepted. Databases generally don't store boolean values as strings like this, more often
+     * they are stored as ints.
+     *
+     * @param string $value The database value.
+     * @param string $property The name of the property.
+     *
+     * @return bool The PHP boolean value.
+     * @throws ModelPropertyCastException
+     */
+    protected static function castFromBoolColumn($value, string $property): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        } else if (is_int($value)) {
+            return 0 !== $value;
+        } else if (is_float($value)) {
+            return 0.0 != $value;
+        } else if (is_string($value)) {
+            if ($validatedValue = filter_var($value, FILTER_VALIDATE_INT)) {
+                return 0 !== $validatedValue;
+            } else if ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT)) {
+                return 0.0 != $validatedValue;
+            } else if ($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+                return $validatedValue;
+            }
+        }
+
+        throw new ModelPropertyCastException(static::class, $property, $value, "Could not cast the value {$value} to a boolean.", 0, $err);
+    }
+
+    /**
      * Helper to cast a value from a JSON column to a PHP object.
      *
      * @param string $value The database value.
@@ -568,42 +618,6 @@ abstract class Model
             throw new ModelPropertyCastException(static::class, $property, $value, "Could not parse JSON from the value {$value}.", 0, $err);
         }
     }
-
-	/**
-	 * Helper to cast a value from a boolean column to a PHP bool value.
-	 *
-	 * Booleans and numeric values will be converted to true/false based on an equality comparison with 0. Anything that
-	 * won't pass that is an error. Values that come out of the database as strings are accepted as long as they are
-	 * numeric strings (i.e. the column is numeric but the db driver provides the data as a string). Strings like "true"
-	 * and "false" are not accepted. Databases generally don't store boolean values as strings like this, more often
-	 * they are stored as ints.
-	 *
-	 * @param string $value The database value.
-	 * @param string $property The name of the property.
-	 *
-	 * @return object The PHP object representation of the JSON.
-	 * @throws ModelPropertyCastException
-	 */
-	protected static function castFromBoolColumn($value, string $property): bool
-	{
-		if (is_bool($value)) {
-			return $value;
-		} else if (is_int($value)) {
-			return 0 !== $value;
-		} else if (is_float($value)) {
-			return 0.0 != $value;
-		} else if (is_string($value)) {
-			if ($validatedValue = filter_var($value, FILTER_VALIDATE_INT)) {
-				return 0 !== $validatedValue;
-			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT)) {
-				return 0.0 != $validatedValue;
-			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
-				return $validatedValue;
-			}
-		}
-
-		throw new ModelPropertyCastException(static::class, $property, $value, "Could not cast the value {$value} to a boolean.", 0, $err);
-	}
 
     /**
      * Cast a PHP value to a database char/varchar/text column value.
@@ -830,7 +844,7 @@ abstract class Model
 		throw new ModelPropertyCastException(static::class, $property, $value, "The provided value cannot be represented as a database boolean.", 0, $err);
 	}
 
-	/**
+    /**
      * Fetch the value of a property or a relation for the model.
      *
      * If the provided property identifies a property of the model from the database, the value of that property is
@@ -1031,7 +1045,7 @@ abstract class Model
             $only = static::propertyNames();
         }
 
-        return "`" . static::$table . "`.`" . implode("`, `" . static::$table . "`.`", $only) . "`";
+        return "`" . static::table() . "`.`" . implode("`, `" . static::table() . "`.`", $only) . "`";
     }
 
     /**
@@ -1155,7 +1169,7 @@ abstract class Model
     {
         $stmt = static::defaultConnection()->prepare(
             "SELECT " .
-            static::buildSelectList() . " FROM `" . static::$table . "` WHERE " .
+            static::buildSelectList() . " FROM `" . static::table() . "` WHERE " .
             implode(
                 " AND ",
                 array_map(
@@ -1186,7 +1200,7 @@ abstract class Model
     {
         $stmt = static::defaultConnection()->prepare(
             "SELECT " .
-            static::buildSelectList() . " FROM `" . static::$table . "` WHERE (" .
+            static::buildSelectList() . " FROM `" . static::table() . "` WHERE (" .
             implode(
                 " OR ",
                 array_map(
@@ -1214,7 +1228,7 @@ abstract class Model
      */
     protected static final function querySimpleComparison(string $property, string $operator, $value): array
     {
-        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE (`{$property}` {$operator} ?)" . static::fixedWhereExpressionsSql());
+        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)" . static::fixedWhereExpressionsSql());
         $stmt->execute([$value]);
         return static::makeModelsFromQuery($stmt);
     }
@@ -1285,7 +1299,7 @@ abstract class Model
      */
     public static function queryIn(string $property, array $values): array
     {
-        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")" . static::fixedWhereExpressionsSql());
+        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")" . static::fixedWhereExpressionsSql());
         static::bindValues($stmt, $values);
         $stmt->execute();
         return static::makeModelsFromQuery($stmt);
@@ -1301,7 +1315,7 @@ abstract class Model
      */
     public static function queryNotIn(string $property, array $values): array
     {
-        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::$table . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")" . static::fixedWhereExpressionsSql());
+        $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")" . static::fixedWhereExpressionsSql());
         static::bindValues($stmt, $values);
         $stmt->execute();
         return static::makeModelsFromQuery($stmt);
