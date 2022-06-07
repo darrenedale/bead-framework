@@ -42,6 +42,7 @@ abstract class Model
      * - int
      * - float
      * - string
+     * - bool
      * - json
      */
     protected static array $properties = [];
@@ -479,6 +480,42 @@ abstract class Model
         }
     }
 
+	/**
+	 * Helper to cast a value from a boolean column to a PHP bool value.
+	 *
+	 * Booleans and numeric values will be converted to true/false based on an equality comparison with 0. Anything that
+	 * won't pass that is an error. Values that come out of the database as strings are accepted as long as they are
+	 * numeric strings (i.e. the column is numeric but the db driver provides the data as a string). Strings like "true"
+	 * and "false" are not accepted. Databases generally don't store boolean values as strings like this, more often
+	 * they are stored as ints.
+	 *
+	 * @param string $value The database value.
+	 * @param string $property The name of the property.
+	 *
+	 * @return object The PHP object representation of the JSON.
+	 * @throws ModelPropertyCastException
+	 */
+	protected static function castFromBoolColumn($value, string $property): bool
+	{
+		if (is_bool($value)) {
+			return $value;
+		} else if (is_int($value)) {
+			return 0 !== $value;
+		} else if (is_float($value)) {
+			return 0.0 != $value;
+		} else if (is_string($value)) {
+			if ($validatedValue = filter_var($value, FILTER_VALIDATE_INT)) {
+				return 0 !== $validatedValue;
+			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT)) {
+				return 0.0 != $validatedValue;
+			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+				return $validatedValue;
+			}
+		}
+
+		throw new ModelPropertyCastException(static::class, $property, $value, "Could not cast the value {$value} to a boolean.", 0, $err);
+	}
+
     /**
      * Cast a PHP value to a database char/varchar/text column value.
      *
@@ -662,8 +699,49 @@ abstract class Model
 
         return $json;
     }
-    
-    /**
+
+	/**
+	 * Helper to cast a set property value to the database representation for bool columns.
+	 *
+	 * For convenience, the string values of "true", "yes" and "on" will be accepted as `true` and "false", "no" and
+	 * "off" will be accepted as `false`. The value will be cast to an int since database engines often represent bools
+	 * as ints, or can cast from them. This also helps avoid the issue with PDO where it treats bound values as strings
+	 * by default, which coerces `false` to an empty string, which in turn is not recognised (e.g. by Postgres) as a
+	 * boolean `false`. Using 1 and 0, PDO will never convert a bool property value to an empty string.
+	 *
+	 * @param mixed $value The value set for the property.
+	 * @param string $property The property name.
+	 *
+	 * @return int 0 if the property represents `false`, 1 if it represents `true`.
+	 *
+	 * @throws ModelPropertyCastException
+	 */
+	protected static function castToBoolColumn($value, string $property): int
+	{
+		if (is_bool($value)) {
+			return $value ? 1 : 0;
+		} else if (is_int($value)) {
+			return (0 == $value ? 0 : 1);
+		} else if (is_float($value)) {
+			return (0.0 == $value ? 0 : 1);
+		} else if (is_string($value)) {
+			if ($validatedValue = filter_var($value, FILTER_VALIDATE_INT)) {
+				return (0 === $validatedValue ? 0 : 1);
+			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT)) {
+				return (0.0 == $validatedValue ? 0 : 1);
+			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+				return ($validatedValue ? 1 : 0);
+			} else if (in_array(strtolower($value), ["true", "on", "yes"])) {
+				return 1;
+			} else if (in_array(strtolower($value), ["false", "off", "no"])) {
+				return 0;
+			}
+		}
+
+		throw new ModelPropertyCastException(static::class, $property, $value, "The provided value cannot be represented as a database boolean.", 0, $err);
+	}
+
+	/**
      * Fetch the value of a property or a relation for the model.
      *
      * If the provided property identifies a property of the model from the database, the value of that property is
@@ -706,6 +784,9 @@ abstract class Model
 
                 case "string":
                     return static::castFromStringColumn($this->data[$property], $property);
+
+                case "bool":
+                    return static::castFromBoolColumn($this->data[$property], $property);
 
                 case "json":
                     return static::castFromJsonColumn($this->data[$property], $property);
@@ -773,6 +854,10 @@ abstract class Model
 
                     case "string":
                         $this->data[$property] = static::castToStringColumn($value, $property);
+                        break;
+
+                    case "bool":
+                        $this->data[$property] = static::castToBoolColumn($value, $property);
                         break;
 
                     case "json":
