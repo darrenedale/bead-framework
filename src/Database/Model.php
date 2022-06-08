@@ -589,16 +589,16 @@ abstract class Model
         } else if (is_float($value)) {
             return 0.0 != $value;
         } else if (is_string($value)) {
-            if ($validatedValue = filter_var($value, FILTER_VALIDATE_INT)) {
+            if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_INT, ["flags" => FILTER_NULL_ON_FAILURE]))) {
                 return 0 !== $validatedValue;
-            } else if ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT)) {
+            } else if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT, ["flags" => FILTER_NULL_ON_FAILURE]))) {
                 return 0.0 != $validatedValue;
-            } else if ($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+            } else if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE]))){
                 return $validatedValue;
             }
         }
 
-        throw new ModelPropertyCastException(static::class, $property, $value, "Could not cast the value {$value} to a boolean.", 0, $err);
+        throw new ModelPropertyCastException(static::class, $property, $value, "Could not cast the value {$value} to a boolean.");
     }
 
     /**
@@ -841,7 +841,7 @@ abstract class Model
 			}
 		}
 
-		throw new ModelPropertyCastException(static::class, $property, $value, "The provided value cannot be represented as a database boolean.", 0, $err);
+		throw new ModelPropertyCastException(static::class, $property, $value, "The provided value cannot be represented as a database boolean.");
 	}
 
     /**
