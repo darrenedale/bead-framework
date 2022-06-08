@@ -504,11 +504,11 @@ abstract class Model
 		} else if (is_float($value)) {
 			return 0.0 != $value;
 		} else if (is_string($value)) {
-			if ($validatedValue = filter_var($value, FILTER_VALIDATE_INT)) {
+			if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_INT))) {
 				return 0 !== $validatedValue;
-			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT)) {
+			} else if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT))) {
 				return 0.0 != $validatedValue;
-			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+			} else if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]))) {
 				return $validatedValue;
 			}
 		}
@@ -725,11 +725,11 @@ abstract class Model
 		} else if (is_float($value)) {
 			return (0.0 == $value ? 0 : 1);
 		} else if (is_string($value)) {
-			if ($validatedValue = filter_var($value, FILTER_VALIDATE_INT)) {
+			if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_INT))) {
 				return (0 === $validatedValue ? 0 : 1);
-			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT)) {
+			} else if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT))) {
 				return (0.0 == $validatedValue ? 0 : 1);
-			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+			} else if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]))) {
 				return ($validatedValue ? 1 : 0);
 			} else if (in_array(strtolower($value), ["true", "on", "yes"])) {
 				return 1;
