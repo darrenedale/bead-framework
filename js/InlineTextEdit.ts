@@ -16,7 +16,10 @@ class InlineTextEdit {
     public static readonly InternalDisplayElementHtmlClassName: string = InlineTextEdit.HtmlClassName + "-display";
 
     private container: HTMLInlineTextEditRootElement;
+
+    /** @deprecated use submitEndpoint instead. */
     public readonly submitApiFunction: string;
+    public readonly submitEndpoint: string;
     public readonly submitApiParameterName: string;
     public readonly submitApiOtherArguments: object;
     public readonly internalEditor: HTMLInlineInternalTextEdit;
@@ -75,10 +78,11 @@ class InlineTextEdit {
             throw new TypeError("display element for inline text edit is not of correct type");
         }
 
-        let apiFnName = edit.dataset.apiFunctionName;
+        const apiFnName = edit.dataset.apiFunctionName;
+        const apiEndpoint = edit.dataset.endpoint;
 
-        if (undefined == apiFnName) {
-            throw new Error("failed to find API function name for inlne text edit");
+        if (undefined == apiFnName && undefined == apiEndpoint) {
+            throw new Error("failed to find API function name or endpoint for inline text edit");
         }
 
         let apiParamName = edit.dataset.apiFunctionContentParameterName;
@@ -103,6 +107,7 @@ class InlineTextEdit {
         this.internalEditor = <HTMLInlineInternalTextEdit> internalEditor[0];
         this.internalDisplay = <HTMLInlineInternalDisplayElement> displayElement[0];
         this.submitApiFunction = apiFnName;
+        this.submitEndpoint = apiEndpoint;
         this.submitApiParameterName = apiParamName;
         this.submitApiOtherArguments = otherArgs;
         this.m_oldValue = this.value;
@@ -222,12 +227,12 @@ class InlineTextEdit {
         this.m_submitting = true;
         let params = this.submitApiOtherArguments;
         params[this.submitApiParameterName] = this.value;
-        let apiCall = new ApiCall(this.submitApiFunction, params, null, {
-            "onSuccess": (response: ApiCallResponse) => {
+        const apiCall = new AjaxCall((this.submitEndpoint ?? this.submitApiFunction), params, null, {
+            "onSuccess": (response: AjaxCallResponse) => {
                 this.onSubmitSucceeded(response);
                 this.m_submitting = false;
             },
-            "onFailure": (response: ApiCallResponse) => {
+            "onFailure": (response: AjaxCallResponse) => {
                 this.onSubmitFailed(response);
                 this.m_submitting = false;
             },
