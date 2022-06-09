@@ -112,7 +112,7 @@ abstract class Model
         $model = new static();
         $model->connection = static::defaultConnection();
         $model->data[static::primaryKey()] = $primaryKey;
-        return $model->reload() && (!($model instanceof SoftDeletableModel) || !$model->isDeleted()) ? $model : null;
+        return $model->reload() && (!($model instanceof SoftDeletableModel) || static::deletedModelsIncluded() || !$model->isDeleted()) ? $model : null;
     }
 
     /**
