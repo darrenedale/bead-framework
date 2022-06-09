@@ -248,7 +248,7 @@ abstract class Model
      */
     public function exists(): bool
     {
-        return isset($this->{static::primaryKey()}) && (!($this instanceof SoftDeletableModel) || !$this->isDeleted()) && (!($this instanceof SoftDeletableModel) || !$this->isDeleted());
+        return isset($this->{static::primaryKey()}) && (!($this instanceof SoftDeletableModel) || static::deletedModelsIncluded() || !$this->isDeleted());
     }
 
     /**
