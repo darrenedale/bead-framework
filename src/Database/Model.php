@@ -248,7 +248,7 @@ abstract class Model
      */
     public function exists(): bool
     {
-        return isset($this->{static::primaryKey()}) && (!($this instanceof SoftDeletableModel) || !$this->isDeleted());
+        return isset($this->{static::primaryKey()}) && (!($this instanceof SoftDeletableModel) || !$this->isDeleted()) && (!($this instanceof SoftDeletableModel) || !$this->isDeleted());
     }
 
     /**
@@ -303,7 +303,7 @@ abstract class Model
     {
         if ($this->connection()
             ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([static::primaryKey()])}) VALUES ({$this->buildPropertyPlaceholderList([static::primaryKey()])})")
-            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== static::primaryKey()), ARRAY_FILTER_USE_KEY)))) {
+            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== static::primaryKey()), ARRAY_FILTER_USE_KEY), ARRAY_FILTER_USE_KEY)))) {
             $this->data[static::primaryKey()] = $this->connection()->lastInsertId();
             return true;
         }
@@ -409,6 +409,91 @@ abstract class Model
 		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
 			$model = new static();
 			$model->populate($data);
+			return $model;
+		}
+
+		$modelClass = static::class;
+
+		return array_map(function(array $data) use ($modelClass) {
+			$model = new $modelClass();
+			$model->populate($data);
+			return $model;
+		}, $data);
+	}
+
+    /**
+     * Delete the model from the database.
+     *
+     * @return bool `true` if the model was deleted, `false` if not.
+     */
+    public function delete(): bool
+    {
+        return $this->connection
+            ->prepare("DELETE FROM `" . static::$table . "` AS `t` WHERE `t`.`" . static::$primaryKey . "` = ? LIMIT 1")
+            ->execute($this->{static::$primaryKey});
+    }
+
+	/**
+	 * Create one or more instances of the model from provided data.
+	 *
+	 * Provide either the properties for a single model or an array containing the properties for several models. If
+	 * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
+	 * provided, an array of models is returned (even if the array of sets of properties contains only one set of
+	 * properties).
+	 *
+	 * For example, `User::create(["username" => "darren",])` will return a single model, whereas
+	 * `User::create([["username" => "darren",], ["username" => "susan",]])` and
+	 * `User::create([["username" => "darren",],])` will both return an array of models. (The first call will return an
+	 * array of 2 models, the second an array with just one model in it.)
+	 *
+	 * The models returned will have been inserted into the database.
+	 *
+	 * @param array $instances The data for the instance(s) to create.
+	 *
+	 * @return Model|array<Model> The created model(s).
+	 */
+	public static function create(array $data)
+	{
+		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
+			$model = new static();
+			$model->populate($modelData);
+			return $model;
+		}
+
+		$modelClass = static::class;
+
+		return array_map(function(array $data) use ($modelClass) {
+			$model = new $modelClass();
+			$model->populate($data);
+			$model->insert();
+			return $model;
+		}, $data);
+	}
+
+	/**
+	 * Make one or more instances of the model from provided data.
+	 *
+	 * Provide either the properties for a single model or an array containing the properties for several models. If
+	 * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
+	 * provided, an array of models is returned (even if the array of sets of properties contains only one set of
+	 * properties).
+	 *
+	 * For example, `User::make(["username" => "darren",])` will return a single model, whereas
+	 * `User::make([["username" => "darren",], ["username" => "susan",]])` and
+	 * `User::make([["username" => "darren",],])` will both return an array of models. (The first call will return an
+	 * array of 2 models, the second an array with just one model in it.)
+	 *
+	 * The models returned will NOT have been inserted into the database.
+	 *
+	 * @param array $instances The data for the instance(s) to create.
+	 *
+	 * @return Model|array<Model> The created model(s).
+	 */
+	public static function make(array $data)
+	{
+		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
+			$model = new static();
+			$model->populate($modelData);
 			return $model;
 		}
 
@@ -1378,7 +1463,7 @@ abstract class Model
 	 * terms in order to be removed. The operator for each of the terms is equals.
 	 *
 	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 * 
+	 *
 	 * @param array $terms The search terms.
 	 *
 	 * @return bool `true` if the removal was successful, `false` otherwise.
