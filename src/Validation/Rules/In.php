@@ -11,9 +11,13 @@ declare(strict_types=1);
 namespace Equit\Validation\Rules;
 
 use Equit\Validation\Rule;
+use function Equit\Traversable\all;
 
 /**
  * Validator rule to ensure that some data is in a given set of values.
+ *
+ * If the value under validation is an array, all of the values in the array must be in the option set; otherwise, the
+ * value under validation must be in the option set.
  */
 class In implements Rule
 {
@@ -60,7 +64,7 @@ class In implements Rule
      */
     public function passes(string $field, $data): bool
     {
-        return in_array($data, $this->options());
+		return (is_array($data) && all($data, fn($value) => in_array($value, $this->options()))) || in_array($data, $this->options());
     }
 
     /**
