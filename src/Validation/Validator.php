@@ -100,6 +100,7 @@ class Validator
         "alphanumeric" => Alphanumeric::class,
         "date" => Date::class,
         "date-format" => DateFormat::class,
+        "time-format" => DateFormat::class,
         "json" => Json::class,
         "min" => Min::class,
         "max" => Max::class,
@@ -615,8 +616,14 @@ class Validator
         $this->clearErrors();
 
         if (is_string($rule)) {
-            $args = explode(":", $rule);
+            // extract args, delimited by unescaped : chars
+            $args = preg_split("/(?<!\\\):/", $rule);
             $rule = array_shift($args);
+
+            // unescape any escaped : chars in each arg
+            array_walk($args, function(string & $arg): void {
+                $arg = str_replace("\\:", ":", $arg);
+            });
 
             if (!isset(self::$s_ruleAliases[$rule])) {
                 throw new InvalidArgumentException("Validation rule {$rule} is not recognised.");
