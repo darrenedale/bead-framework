@@ -190,7 +190,7 @@ abstract class Model
      * This is most commonly a "has-many" relation between a model and several others of a different type that consider
      * this model to be their "parent".
      *
-     * @param string $related The related model class.
+     * @param class-string $related The related model class.
      * @param string $relatedKey The property on the related model that links to this.
      * @param string|null $localKey The property on this model that links to the others. Defaults to the primary key.
      *
@@ -207,7 +207,7 @@ abstract class Model
      * This is most commonly a "belongs-to" relation between a model and another of a different type that is considered
      * its "parent".
      *
-     * @param string $related The related model class.
+     * @param class-string $related The related model class.
      * @param string $localKey The property on this model that links to the other.
      * @param string|null $relatedKey The property on the related model that links to this. Defaults to the primary key
      * of the related model.
@@ -225,8 +225,8 @@ abstract class Model
      * This type of relation is mediated by a pivot table which enables multiple instances of the models on either side
      * of the relation to be arbitrarily liked together.
      *
-     * @param string $related
-     * @param string $pivot
+     * @param class-string $related
+     * @param class-string $pivot
      * @param string $pivotLocalKey
      * @param string $pivotRelatedKey
      * @param string|null $localKey
@@ -303,7 +303,7 @@ abstract class Model
     {
         if ($this->connection()
             ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([static::primaryKey()])}) VALUES ({$this->buildPropertyPlaceholderList([static::primaryKey()])})")
-            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== static::primaryKey()), ARRAY_FILTER_USE_KEY), ARRAY_FILTER_USE_KEY)))) {
+            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== static::primaryKey()), ARRAY_FILTER_USE_KEY)))) {
             $this->data[static::primaryKey()] = $this->connection()->lastInsertId();
             return true;
         }
@@ -327,7 +327,7 @@ abstract class Model
         // don't update the primary key
         $properties = array_diff(array_keys(static::$properties), [static::primaryKey()]);
 
-        // arrange the data in the order required for the prepared statemtn
+        // arrange the data in the order required for the prepared statement
         $data = array_values(array_diff_key($this->data, [static::primaryKey() => ""]));
         $data[] = $this->data[static::primaryKey()];
 
@@ -363,7 +363,7 @@ abstract class Model
 	 *
 	 * The models returned will have been inserted into the database.
 	 *
-	 * @param array $instances The data for the instance(s) to create.
+	 * @param array $data The data for the instance(s) to create.
 	 *
 	 * @return Model|array<Model> The created model(s).
 	 */
@@ -400,7 +400,7 @@ abstract class Model
 	 *
 	 * The models returned will NOT have been inserted into the database.
 	 *
-	 * @param array $instances The data for the instance(s) to create.
+	 * @param array $data The data for the instance(s) to create.
 	 *
 	 * @return Model|array<Model> The created model(s).
 	 */
@@ -409,91 +409,6 @@ abstract class Model
 		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
 			$model = new static();
 			$model->populate($data);
-			return $model;
-		}
-
-		$modelClass = static::class;
-
-		return array_map(function(array $data) use ($modelClass) {
-			$model = new $modelClass();
-			$model->populate($data);
-			return $model;
-		}, $data);
-	}
-
-    /**
-     * Delete the model from the database.
-     *
-     * @return bool `true` if the model was deleted, `false` if not.
-     */
-    public function delete(): bool
-    {
-        return $this->connection
-            ->prepare("DELETE FROM `" . static::$table . "` AS `t` WHERE `t`.`" . static::$primaryKey . "` = ? LIMIT 1")
-            ->execute($this->{static::$primaryKey});
-    }
-
-	/**
-	 * Create one or more instances of the model from provided data.
-	 *
-	 * Provide either the properties for a single model or an array containing the properties for several models. If
-	 * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
-	 * provided, an array of models is returned (even if the array of sets of properties contains only one set of
-	 * properties).
-	 *
-	 * For example, `User::create(["username" => "darren",])` will return a single model, whereas
-	 * `User::create([["username" => "darren",], ["username" => "susan",]])` and
-	 * `User::create([["username" => "darren",],])` will both return an array of models. (The first call will return an
-	 * array of 2 models, the second an array with just one model in it.)
-	 *
-	 * The models returned will have been inserted into the database.
-	 *
-	 * @param array $instances The data for the instance(s) to create.
-	 *
-	 * @return Model|array<Model> The created model(s).
-	 */
-	public static function create(array $data)
-	{
-		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
-			$model = new static();
-			$model->populate($modelData);
-			return $model;
-		}
-
-		$modelClass = static::class;
-
-		return array_map(function(array $data) use ($modelClass) {
-			$model = new $modelClass();
-			$model->populate($data);
-			$model->insert();
-			return $model;
-		}, $data);
-	}
-
-	/**
-	 * Make one or more instances of the model from provided data.
-	 *
-	 * Provide either the properties for a single model or an array containing the properties for several models. If
-	 * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
-	 * provided, an array of models is returned (even if the array of sets of properties contains only one set of
-	 * properties).
-	 *
-	 * For example, `User::make(["username" => "darren",])` will return a single model, whereas
-	 * `User::make([["username" => "darren",], ["username" => "susan",]])` and
-	 * `User::make([["username" => "darren",],])` will both return an array of models. (The first call will return an
-	 * array of 2 models, the second an array with just one model in it.)
-	 *
-	 * The models returned will NOT have been inserted into the database.
-	 *
-	 * @param array $instances The data for the instance(s) to create.
-	 *
-	 * @return Model|array<Model> The created model(s).
-	 */
-	public static function make(array $data)
-	{
-		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
-			$model = new static();
-			$model->populate($modelData);
 			return $model;
 		}
 
@@ -659,7 +574,7 @@ abstract class Model
      * and "false" are not accepted. Databases generally don't store boolean values as strings like this, more often
      * they are stored as ints.
      *
-     * @param string $value The database value.
+     * @param mixed $value The database value.
      * @param string $property The name of the property.
      *
      * @return bool The PHP boolean value.
@@ -913,11 +828,11 @@ abstract class Model
 		} else if (is_float($value)) {
 			return (0.0 == $value ? 0 : 1);
 		} else if (is_string($value)) {
-			if ($validatedValue = filter_var($value, FILTER_VALIDATE_INT)) {
+			if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_INT))) {
 				return (0 === $validatedValue ? 0 : 1);
-			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT)) {
+			} else if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT))) {
 				return (0.0 == $validatedValue ? 0 : 1);
-			} else if ($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN)) {
+			} else if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]))) {
 				return ($validatedValue ? 1 : 0);
 			} else if (in_array(strtolower($value), ["true", "on", "yes"])) {
 				return 1;
@@ -934,7 +849,7 @@ abstract class Model
      *
      * If the provided property identifies a property of the model from the database, the value of that property is
      * returned. If it's one of the model's defined relations, that relation is loaded and the related models are
-     * returned. Otherwise an exception is thrown.
+     * returned. Otherwise, an exception is thrown.
      *
      * @param string $property The property being accessed.
      *
@@ -1070,7 +985,7 @@ abstract class Model
      *
      * If the provided property identifies a property of the model from the database, `true` is returned if it is set,
      * `false` if not. If it's one of the model's defined relations, that relation is loaded and if it's not null `true`
-     * is returned. Otherwise `false` is returned.
+     * is returned. Otherwise, `false` is returned.
      *
      * @param string $property
      *
@@ -1243,8 +1158,8 @@ abstract class Model
     /**
      * Helper to query for rows that match all of a given set of terms.
      *
-     * The search terms parameter expects an associative array of column => value pairs. A row must match all of the
-     * terms in order to be included in the result. The operator for each of the terms is equals.
+     * The search terms parameter expects an associative array of column => value pairs. A row must match all the terms
+     * in order to be included in the result. The operator for each of the terms is equals.
      *
      * @param array $terms The search terms.
      *
@@ -1410,7 +1325,7 @@ abstract class Model
      * Retrieve a set of model instances based on a query.
      *
      * Queries can use either an array of properties and values to match (in which case the matching models must meet
-     * all of the terms) or a single property and value to match. In the latter case, you can optionally provide an
+     * all the terms) or a single property and value to match. In the latter case, you can optionally provide an
      * operator, or use the default operator of equality matching.
      *
      * @param string|array<string,mixed> $properties The property name or array of properties and values to match.
@@ -1459,8 +1374,8 @@ abstract class Model
 	/**
 	 * Helper to remove rows that match all of a given set of terms.
 	 *
-	 * The search terms parameter expects an associative array of column => value pairs. A row must match all of the
-	 * terms in order to be removed. The operator for each of the terms is equals.
+	 * The search terms parameter expects an associative array of column => value pairs. A row must match all the terms
+     * in order to be removed. The operator for each of the terms is equals.
 	 *
 	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
 	 *
@@ -1560,7 +1475,7 @@ abstract class Model
 	 * @param string $property The property to query on.
 	 * @param mixed $value The value to query for.
 	 *
-	 * @return array The matching models.
+	 * @return bool Whether the removal succeeded.
 	 */
 	public static function removeNotLike(string $property, $value): bool
 	{
@@ -1605,7 +1520,7 @@ abstract class Model
 	 * Remove a set of model instances based on a query.
 	 *
 	 * Queries can use either an array of properties and values to match (in which case the matching models must meet
-	 * all of the terms) or a single property and value to match. In the latter case, you can optionally provide an
+	 * all the terms) or a single property and value to match. In the latter case, you can optionally provide an
 	 * operator, or use the default operator of equality matching.
 	 *
 	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
