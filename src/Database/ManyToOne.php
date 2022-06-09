@@ -27,11 +27,7 @@ class ManyToOne extends Relation
      */
     public function reload(): void
     {
-        $relatedClass = $this->relatedModel();
-        $stmt = $this->localModel()->connection()->prepare("SELECT * FROM `" . $relatedClass::table() . "` WHERE `{$this->relatedKey()}` = ? LIMIT 1");
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $stmt->execute([$this->localModel()->{$this->localKey()}]);
-        $this->relatedModel = $this->makeModelsFromQuery($stmt)[0] ?? null;
+        $this->relatedModel = $this->relatedModel()::fetch($this->localModel()->{$this->localKey()});
         $this->fetched = true;
     }
 
