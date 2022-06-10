@@ -372,6 +372,7 @@ abstract class Model
 		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
 			$model = new static();
 			$model->populate($data);
+			$model->insert();
 			return $model;
 		}
 
