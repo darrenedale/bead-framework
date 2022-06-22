@@ -15,7 +15,7 @@
  * @file PushButton.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -38,12 +38,6 @@ use Equit\Html\Element;
  * As yet there are no facilities to enable push buttons to have runtime code
  * attached. This is likely to follow in the near future.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin provides the following API functions:
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -61,7 +55,7 @@ use Equit\Html\Element;
  *
  * @class PushButton
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class PushButton extends Element {
 	use HasTooltip;

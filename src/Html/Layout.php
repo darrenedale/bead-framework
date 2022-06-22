@@ -12,8 +12,8 @@
  *
  * @file Layout.php
  * @author Darren Edale
- * @version 0.9.2 * @version 0.9.2
- * @package libequit
+ * @version 0.9.2
+ * @package bead-framework
  */
 
 namespace Equit\Html;
@@ -24,12 +24,6 @@ use Equit\Html\Element;
 /** An interface for page element layouts.
  *
  * This class defines the interface that must be implemented to provide a layout for a web page.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -45,12 +39,9 @@ use Equit\Html\Element;
  *
  * @class Layout
  * @author Darren Edale
- * @version 0.9.2 * @version 0.9.2
- * @package libequit
- * @ingroup libequit
+ * @version 0.9.2
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

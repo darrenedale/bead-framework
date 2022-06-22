@@ -28,7 +28,7 @@
  * @file ResultsPager.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -295,12 +295,6 @@ use RuntimeException;
  * to ignore the options provided by the built-in implementations if they want to. Subclasses that implement their own
  * custom output MIME types are also free to invent their own sets of supported options.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin provides the following API functions:
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -313,8 +307,6 @@ use RuntimeException;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -322,7 +314,7 @@ use RuntimeException;
  *
  * @class ResultsPager
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  * @deprecated Use ResultsCache instead.
  */
 class ResultsPager extends Element implements Iterator, ArrayAccess, Countable

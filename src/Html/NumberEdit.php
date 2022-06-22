@@ -15,7 +15,7 @@
  * @file NumberEdit.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -38,12 +38,6 @@ use Equit\Html\Element;
  * entered. It's good practice to do such validation anyway (and you're asking for trouble if you don't), but in this
  * case it is a necessity.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -56,8 +50,6 @@ use Equit\Html\Element;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -65,7 +57,7 @@ use Equit\Html\Element;
  *
  * @class NumberEdit
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class NumberEdit extends Element {
 	use HasNameAttribute;

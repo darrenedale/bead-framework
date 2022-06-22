@@ -17,7 +17,7 @@ use Equit\Html\Element;
 *
 * @class GridLayoutItem
 * @author Darren Edale
-* @package libequit
+* @package bead-framework
 */
 class GridLayoutItem
 {

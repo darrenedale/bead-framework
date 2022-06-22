@@ -12,19 +12,13 @@
  * @file HtmlHorizontalRule.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
 
 /**
  * A `HR` element for use in HTML pages.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -40,11 +34,8 @@ namespace Equit\Html;
  *
  * @class LibEquit\HtmlLiteral
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

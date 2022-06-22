@@ -16,7 +16,7 @@
  * @file Popup.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -31,12 +31,6 @@ use Equit\AppLog;
  * _popup-anchor_, and the child elements of the popup section are all contained inside a _div_ with the class
  * _popup-content_.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide any API functions.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -49,8 +43,6 @@ use Equit\AppLog;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -58,7 +50,7 @@ use Equit\AppLog;
  *
  * @class PopupSection
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class Popup extends Division {
 	/** @var int Trigger the popup on click. */

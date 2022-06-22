@@ -13,7 +13,7 @@
  * @file Dialogue.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -38,12 +38,6 @@ namespace Equit\Html;
  * default is for the dialogue to assume its message is plain text, which means that it will escape the message for HTML
  * when generating its output.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -58,10 +52,8 @@ namespace Equit\Html;
  *
  * @class Dialogue
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

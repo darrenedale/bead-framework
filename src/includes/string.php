@@ -9,7 +9,7 @@
  *
  * These functions complement the string processing functions PHP provides.
  *
- * @package libequit
+ * @package bead-framework
  */
 
 namespace

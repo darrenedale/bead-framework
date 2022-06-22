@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @author Darren Edale
- * @version 0.9.2
- */
-
 namespace Equit;
 
 use Equit\Contracts\ErrorHandler;
@@ -51,19 +46,19 @@ abstract class Application
     /** @var \Equit\Contracts\ErrorHandler|null The currently installed error handler. */
     private ?ErrorHandler $m_errorHandler = null;
 
-    /** @var DataController|null The data controller. */
-    private ?DataController $m_dataController = null;
+    /** @var DatabaseConnection|null The data controller. */
+    private ?DatabaseConnection $m_dbConnection = null;
 
     /** @var array The loaded config. */
     private array $m_config = [];
 
     /**
      * @param string $appRoot
-     * @param \Equit\DataController|null $dataController
+     * @param \Equit\DatabaseConnection|null $db
      *
      * @throws \Exception if the singleton has already been created or if the provided root directory does not exist.
      */
-    public function __construct(string $appRoot, ?DataController $dataController = null)
+    public function __construct(string $appRoot, ?DatabaseConnection $db = null)
     {
         $this->setErrorHandler(new EquitErrorHandler());
 
@@ -81,7 +76,7 @@ abstract class Application
         $this->m_appRoot = $realAppRoot;
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->setupTranslator();
-        $this->setDataController($dataController);
+        $this->setDatabase($db);
     }
 
     /**
@@ -220,6 +215,18 @@ abstract class Application
         return $this->m_minimumPhpVersion;
     }
 
+	/** Fetch the application's translator.
+	 *
+	 * The application's translator handles translation of strings into the user's chosen language. Client code
+	 * should never need to use this method: it is far simpler to use the tr() function.
+	 *
+	 * @return Translator|null The translator.
+	 */
+	public function translator(): ?Translator
+	{
+		return $this->m_translator;
+	}
+
     /**
      * Fetch the current language.
      *
@@ -285,23 +292,11 @@ abstract class Application
      * The returned data controller should be used by all classes and plugins whenever access to the database is
      * required.
      *
-     * @return DataController|null The data controller.
+     * @return DatabaseConnection|null The data controller.
      */
-    public function dataController(): ?DataController
+    public function database(): ?DatabaseConnection
     {
-        return $this->m_dataController;
-    }
-
-    /** Fetch the application's translator.
-     *
-     * The application's translator handles translation of strings into the user's chosen language. Client code
-     * should never need to use this method: it is far simpler to use the tr() function.
-     *
-     * @return Translator|null The translator.
-     */
-    public function translator(): ?Translator
-    {
-        return $this->m_translator;
+        return $this->m_dbConnection;
     }
 
     /** Set the application's data controller.
@@ -309,11 +304,11 @@ abstract class Application
      * The data controller mediates all interaction between the application (including classes and plugins) and the
      * database.
      *
-     * @param $controller DataController|null The data controller to use.
+     * @param $controller DatabaseConnection|null The data controller to use.
      */
-    public function setDataController(?DataController $controller): void
+    public function setDatabase(?DatabaseConnection $controller): void
     {
-        $this->m_dataController = $controller;
+        $this->m_dbConnection = $controller;
     }
 
     /** Emit an event.

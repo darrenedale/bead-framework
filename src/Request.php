@@ -1,20 +1,5 @@
 <?php
 
-/**
- * Defines the LibEquit\Request class.
- *
- * ### Changes
- * - (2022-05) Type hinting as far as PHP7.4 permits.
- *             Throws TypeError instead of using return values to indicate violation of parameter type constraints.
- * - (2017-05) Updated documentation. Migrated from array() to `[]` syntax.
- * - (2013-12-10) First version of this file.
- *
- * @file LibEquit\Request.php
- * @author Darren Edale
- * @version 0.9.2
- * @package libequit
- * @version 0.9.2 */
-
 namespace Equit;
 
 use TypeError;
@@ -23,27 +8,13 @@ use TypeError;
  * Abstract representation of a request made to the application.
  *
  * This class is the basis for everything done by the application. When the application runs, its main loop fetches the
- * user's original request from this class and passes it to LibEquit\Application::handleRequest(). The plugin selected
- * to handle the request is based on the LibEquit\Request object's action. The action is retrieved using the action()
- * method and can be set using the setAction() method. Actions will usually only be set by plugins that need to create
- * URLs for elements they place on the page that are intended to enable the user to ask the application to do
- * something, and the action they set will be based on the actions they support. Otherwise, the action property is
- * generally only read not written.
+ * user's original request from this class and passes it to WebApplication::handleRequest(), which passes it to the
+ * installed Router for routing to a handler.
  *
- * The class provides some static methods that give information about the application, such as the base URL for the
- * application and its path. The original request submitted by the user agent is always available using
- * originalUserRequest() so that plugins handling requests can always check what the user originally asked the
- * application to do when handling any other requests that may be submitted to the application. Similarly, a request to
- * display the home page is always available from the home() method.
- *
- * The data submitted with the request can be retrieved using urlParameter(), postData() and uploadedFile() for,
- * respectively, URL parameters, POST data and uploaded files. Plugins that are creating requests to be handled can use
- * the related setters setUrlParameter(), setPostData() and setUploadedFile() to create the requests they need.
- *
- * It is recommended that an object of this class is used whenever you need to construct a URL for an element being
- * placed on the page. The url() and rawUrl() methods will provide you with the URL you need once you have set all the
- * parameters on the LibEquit\Request object. The url() and rawUrl() methods do not take account of any POST data or
- * uploaded files in the request.
+ * The original request submitted by the user agent is always available using the static method `originalRequest()`. The
+ * data submitted with the request can be retrieved using `urlParameter()`, `postData()` and `uploadedFile()` for,
+ * respectively, URL parameters, POST data and uploaded files. For a subset of URL parameters or POST data use
+ * `onlyUrlParameters()` and `onlyPostData()`, giving an array of keys to retrieve.
  *
  * ### Events
  * This module does not emit any events.
@@ -61,16 +32,19 @@ use TypeError;
  * This module does not create a session context.
  *
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  * @see UploadedFile, WebApplication
  */
 class Request
 {
+	/** @var string The HTTP protocol. */
 	public const HttpProtocol = "http";
+
+	/** @var string The HTTPS protocol. */
 	public const HttpsProtocol = "https";
 
 	/** @var \Equit\Request|null The request parsed from the superglobals. */
-	private static ?Request $s_originalUserRequest = null;
+	private static ?Request $s_originalRequest = null;
 
 	/** @var array<string, string> The request's URL parameters. */
 	private array $m_urlParams = [];
@@ -84,13 +58,19 @@ class Request
 	/** @var array<string, string> The request's HTTP headers. */
 	private array $m_headers = [];
 
+	/** @var string The request's protocol. */
 	private string $m_protocol;
+
+	/** @var string The host part of the request URL. */
 	private string $m_host;
+
+	/** @var string The path part of the request URL. */
 	private string $m_path;
 
-	/** @var string The URL path. */
+	/** @var string The PathInfo part of the request URL. */
 	private string $m_pathInfo = "";
 
+	/** @var string The HTTP request method for the request. */
 	private string $m_method = "";
 
 	/**
@@ -103,9 +83,8 @@ class Request
 	 * when choosing what to do with the request. The action can be `null` (or omitted from the constructor) to create a
 	 * request with no action. Such a request will not be handled by any plugins.
 	 */
-	public function __construct(?string $action = null)
+	public function __construct()
 	{
-		$this->setAction($action);
 		$this->setProtocol(!empty($_SERVER["HTTPS"]) ? self::HttpsProtocol : self::HttpProtocol);
 		$this->setHost($_SERVER["SERVER_NAME"] ?? "");
 		$this->setPath("/");
@@ -354,33 +333,6 @@ class Request
 	}
 
 	/**
-	 * Set the value for some POST data.
-	 *
-	 * The value parameter may be `null` to unset a piece of POST data. After this is done, the parameter will no
-	 * longer appear in the POST data.
-	 *
-	 * POST data keys are not case-sensitive. All keys are converted to lower-case for consistency. Updating some data
-	 * that already exists using a version of the key that differs only in case will overwrite the existing value.
-	 *
-	 * @param $key string The key for the POST data.
-	 * @param $value string|array|null The value for the POST data.
-	 *
-	 * @throws TypeError if `$value` is not string, array or null.
-	 */
-	public function setPostData(string $key, $value): void
-	{
-		$key = mb_strtolower($key, "UTF-8");
-
-		if (is_null($value)) {
-			unset($this->m_postData[$key]);
-		} else if (is_string($value) || is_array($value)) {
-			$this->m_postData[$key] = $value;
-		} else {
-            throw new TypeError("POST data value required to be string, array or null");
-        }
-	}
-
-	/**
 	 * Check whether a URL parameter was provided with the request.
 	 *
 	 * Keys are not case-sensitive.
@@ -438,6 +390,22 @@ class Request
 	}
 
 	/**
+	 * Fetch the value of a URL parameter, or if it is absent the POST data.
+	 *
+	 * The URL parameter takes precedence.
+	 *
+	 * Keys are not case-sensitive.
+	 *
+	 * @param $key string They key of the value to fetch.
+	 *
+	 * @return string|array|null The value or `null` if neither the URL parameter nor POST data is set.
+	 */
+	public function urlParameterOrPostData(string $key)
+	{
+		return $this->urlParameter($key) ?? $this->postData($key);
+	}
+
+	/**
 	 * Check whether some POST data was provided with the request.
 	 *
 	 * Keys are not case-sensitive.
@@ -450,6 +418,33 @@ class Request
 	{
 		$key = mb_strtolower($key, 'UTF-8');
 		return array_key_exists($key, $this->m_postData);
+	}
+
+	/**
+	 * Set the value for some POST data.
+	 *
+	 * The value parameter may be `null` to unset a piece of POST data. After this is done, the parameter will no
+	 * longer appear in the POST data.
+	 *
+	 * POST data keys are not case-sensitive. All keys are converted to lower-case for consistency. Updating some data
+	 * that already exists using a version of the key that differs only in case will overwrite the existing value.
+	 *
+	 * @param $key string The key for the POST data.
+	 * @param $value string|array|null The value for the POST data.
+	 *
+	 * @throws TypeError if `$value` is not string, array or null.
+	 */
+	public function setPostData(string $key, $value): void
+	{
+		$key = mb_strtolower($key, "UTF-8");
+
+		if (is_null($value)) {
+			unset($this->m_postData[$key]);
+		} else if (is_string($value) || is_array($value)) {
+			$this->m_postData[$key] = $value;
+		} else {
+			throw new TypeError("POST data value required to be string, array or null");
+		}
 	}
 
 	/**
@@ -497,23 +492,6 @@ class Request
 	{
 		return $this->m_postData;
 	}
-
-	/**
-	 * Fetch the value of a URL parameter, or if it is absent the POST data.
-	 *
-	 * The URL parameter takes precedence.
-	 * 
-	 * Keys are not case-sensitive.
-	 *
-	 * @param $key string They key of the value to fetch.
-	 *
-	 * @return string|array|null The value or `null` if neither the URL parameter nor POST data is set.
-	 */
-	public function urlParameterOrPostData(string $key)
-	{
-		return $this->urlParameter($key) ?? $this->postData($key);
-	}
-
 
 	/**
 	 * Fetch the value of some POST data, or if it is absent the URL parameter.
@@ -590,33 +568,6 @@ class Request
 	}
 
 	/**
-	 * Set the request action.
-	 *
-	 * The action can be set to `null` to unset the action. Doing so will, however, make the request one that will not
-	 * be passed to any plugins when submitted to LibEquit\Application::handleRequest().
-	 *
-	 * Request actions are case-sensitive.
-	 *
-	 * @param $action string|null The action to set.
-	 * @deprecated Use the framework's routing mechanism instead.
-	 */
-	public function setAction(?string $action): void
-	{
-		$this->setUrlParameter("action", $action);
-	}
-
-	/**
-	 * Fetch the request action.
-	 *
-	 * @return string The action, or `null` if no action is set.
-	 * @deprecated Use the framework's routing mechanism instead.
-	 */
-	public function action(): ?string
-	{
-		return $this->m_urlParams["action"] ?? null;
-	}
-
-	/**
 	 * Determine whether the request was submitted as an AJAX request.
 	 *
 	 * This depends on a specific HTTP header being set to a specific value, which many frameworks provide.
@@ -630,31 +581,23 @@ class Request
 	}
 
 	/**
-	 * Fetch the home request.
-	 *
-	 * This method provides a request object that is guaranteed to display the home page when provided to
-	 * WebApplication::handleRequest(). This method never fails, and it is safe to modify the provided request, doing so
-	 * will not cause subsequent requests retrieved using this method to be corrupt.
-	 *
-	 * @return Request The home request.
-	 */
-	public static function home(): Request
-	{
-		return new Request();
-	}
-
-	/**
 	 * Fetch the original request submitted by the user agent.
 	 *
 	 * The request provided is parsed from the $_GET, $_POST, $_FILES and $_SERVER superglobals. The parsing happens
 	 * only once, on the first call - the request is then cached so subsequent calls are fast. The provided request
 	 * remains owned by the `Request` class and must not be modified by external code.
 	 *
+	 * The PathInfo is taken from the PATH_INFO member of tehe $_SERVER superglobal, if it's present. If it isn't, it
+	 * is computed as the portion of the path that is between the location of the running script and the query string or
+	 * fragment or the end of the URL, whichever occurs soonest. For example, if the request is for
+	 * "https://example.com/foo/bar/baz" and the script "index.php" from inside "/foo/" is running, the PathInfo will
+	 * be "/baz".
+	 *
 	 * @return Request The original request submitted to the server.
 	 */
 	public static function originalRequest(): Request
 	{
-		if (is_null(Request::$s_originalUserRequest)) {
+		if (is_null(Request::$s_originalRequest)) {
 			$req = new Request();
 
 			foreach ($_GET as $key => $value) {
@@ -732,9 +675,9 @@ class Request
 
 			$req->setPathInfo($pathInfo);
 			$req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
-			Request::$s_originalUserRequest = $req;
+			Request::$s_originalRequest = $req;
 		}
 
-		return Request::$s_originalUserRequest;
+		return Request::$s_originalRequest;
 	}
 }

@@ -28,7 +28,7 @@ use Equit\Html\Element;
  * @file CheckBox.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 /**
@@ -44,12 +44,6 @@ use Equit\Html\Element;
  * the label. To turn off the label, whether it's set or not, set the label position to _NoLabel_ (this is the default
  * setting).
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin provides the following API functions:
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -64,10 +58,8 @@ use Equit\Html\Element;
  *
  * @class CheckBox
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

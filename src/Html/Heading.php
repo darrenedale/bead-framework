@@ -12,7 +12,7 @@
  * @file HtmlHeading.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -22,12 +22,6 @@ namespace Equit\Html;
  *
  * This generates <h1> to <h6> heading elements. The content of the heading is fully configurable by providing
  * PageElement objects, or can simply be used with plain text, which will be HTML-escaped before output.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -43,11 +37,8 @@ namespace Equit\Html;
  *
  * @class LibEquit\HtmlLiteral
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

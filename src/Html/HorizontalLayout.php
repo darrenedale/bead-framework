@@ -19,7 +19,7 @@
 * @file HorizontalLayout.php
 * @author Darren Edale
 * @version 0.9.2
-* @version 0.9.2* @package libequit
+* @version 0.9.2* @package bead-framework
 */
 
 namespace Equit\Html;
@@ -33,12 +33,6 @@ namespace Equit\Html;
  * If an element or layout is inserted to any position that is occupied by an existing child  element or layout the
  * existing child is moved to the right and the new element or layout occupies its original position.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -51,8 +45,6 @@ namespace Equit\Html;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -60,7 +52,7 @@ namespace Equit\Html;
  *
  * @class HorizontalLayout
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class HorizontalLayout extends Layout {
 	/**

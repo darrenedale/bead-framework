@@ -1,20 +1,5 @@
 <?php
 
-/**
- * Defines the Validatable interface.
- *
- * ### Dependencies
- * - classes/equit/DataValidationReport.php
- *
- * ### Changes
- * - (2018-10) from the ashes of DAO comes the Validatable interface.
- *
- * @file DAO.php
- * @author Darren Edale
- * @version 0.9.2
- * @version 0.9.2 * @package libequit
- */
-
 namespace Equit;
 
 /**
@@ -22,12 +7,6 @@ namespace Equit;
  *
  * For performance reasons, it is recommended that validate() caches its validation report and only re-generates it when
  * required (i.e. a data member has changed).
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -41,8 +20,6 @@ namespace Equit;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -50,7 +27,7 @@ namespace Equit;
  *
  * @class Validatable
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 interface Validatable {
 	/**

@@ -16,7 +16,7 @@
  * @file GridLayout.php
  * @author Darren Edale
  * @version 0.9.2
- * @version 0.9.2 * @package libequit
+ * @version 0.9.2 * @package bead-framework
  */
 
 namespace Equit\Html;
@@ -35,12 +35,6 @@ use Equit\Html\Detail\GridLayoutItem;
  * element or layout is added to any cell that is occupied by an existing child element or layout, whether that cell is
  * its anchor cell or simply one it spans, the existing child is removed and replaced with the new element or layout.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -53,8 +47,6 @@ use Equit\Html\Detail\GridLayoutItem;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -62,7 +54,7 @@ use Equit\Html\Detail\GridLayoutItem;
  *
  * @class GridLayout
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class GridLayout extends Layout {
 	/** @var int Alignment flag to align content with the left edge of its cell. */

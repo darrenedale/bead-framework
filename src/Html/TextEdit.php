@@ -24,7 +24,7 @@
  * @file TextEdit.php
  * @author Darren Edale
  * @version 0.9.2
- * @version 0.9.2 * @package libequit
+ * @version 0.9.2 * @package bead-framework
  */
 
 namespace Equit\Html;
@@ -42,12 +42,6 @@ use Equit\Html\Element;
  * be set up to be single-line, multi- line, or for password entry. They can also have an optional placeholder that is
  * put into the widget when it is empty (but is not submitted with the form data if the widget is empty).
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin does not provide any AIO API functions.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -62,10 +56,8 @@ use Equit\Html\Element;
  *
  * @class TextEdit
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

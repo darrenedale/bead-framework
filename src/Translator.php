@@ -1,24 +1,5 @@
 <?php
 
-/**
- * Defines the LibEquit\Translator class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- *
- * ### Requires
- * - PHP v7.2.0 or later (uses array unpacking in foreach() with [] syntax)
- *
- * ### Changes
- * - (2017-05) Updated documentation. Some minor changes to make code smaller and infinitesimally quicker. Migrated to
- *   [] syntax for array literals.
- *
- * @file LibEquit\Translator.php
- * @author Darren Edale
- * @version 0.9.2
- * @package libequit
- * @version 0.9.2 */
-
 namespace Equit;
 
 /**
@@ -151,12 +132,6 @@ namespace Equit;
  *        return str_replace($ph, $args, $s);
  *     }
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### Events
- * This module does not emit any events.
- *
  * ### Connections
  * This module does not connect to any events.
  *
@@ -168,11 +143,8 @@ namespace Equit;
  *
  * @class LibEquit\Translator
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @events _None_
  * @connections _None_
  * @settings _None_
  * @session _None_

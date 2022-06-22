@@ -285,7 +285,7 @@ class Router implements RouterContract
 	/**
 	 * @inheritDoc
 	 */
-	public function route(Request $request): ?Response
+	public function route(Request $request): Response
 	{
 		$route = $this->matchedRoute($request);
 

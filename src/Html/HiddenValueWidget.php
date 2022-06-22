@@ -18,7 +18,7 @@
  * @file HiddenValueWidget.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -34,12 +34,6 @@ use Equit\Html\Element;
  * submitted with the rest of the form data. This is useful when a form needs
  * to submit a fixed value that the user cannot change.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -54,11 +48,8 @@ use Equit\Html\Element;
  *
  * @class HiddenValueWidget
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

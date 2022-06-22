@@ -26,7 +26,7 @@ use Equit\Html\Element;
  * @file DateEdit.php
  * @author Darren Edale
  * @version 0.9.2
- * @version 0.9.2 * @package libequit
+ * @version 0.9.2 * @package bead-framework
  */
 
 /**
@@ -40,12 +40,6 @@ use Equit\Html\Element;
  * _YYYY-MM-DD_. The reliance on the HTML _date_ input type means that in user agents that do not support it, any
  * content can be entered. It's good practice to do such validation anyway (and you're asking for trouble if you don't),
  * but in this case it is a necessity.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -61,10 +55,8 @@ use Equit\Html\Element;
  *
  * @class DateEdit
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

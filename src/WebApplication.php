@@ -1,11 +1,4 @@
 <?php
-/**
- * Defines the core Application class.
- *
- * @file Application.php
- * @author Darren Edale
- * @package libequit
- */
 
 namespace Equit;
 
@@ -19,7 +12,6 @@ use Equit\Exceptions\InvalidRoutesDirectoryException;
 use Equit\Exceptions\InvalidRoutesFileException;
 use Equit\Exceptions\NotFoundException;
 use Equit\Exceptions\UnroutableRequestException;
-use Equit\Responses\DownloadResponse;
 use Exception;
 use InvalidArgumentException;
 use ReflectionClass;
@@ -33,54 +25,44 @@ use UnexpectedValueException;
  *
  * ## Introduction
  * Despite its name, this class doesn't actually implement an application. What it does is provide application-level
- * services to all plugins and other classes, and acts as a request dispatcher. An instance of the _Application_
- * class is the core of any application that uses the framework. Only a single _Application_ instance may be created
- * by any application. Applications using the framework create an instance of (a subclass of) the _Application_
- * class, call its _exec()_ method and wait for it to return.
+ * services and acts as a request dispatcher. An instance of the `WebApplication` class is the core of any application
+ * that uses the framework to run a website. Only a single `WebApplication` instance may be created by any application.
+ * Applications using the framework create an instance of (a subclass of) the `WebApplication` class, call its `exec()`
+ * method and wait for it to return.
  *
- * When the _exec()_ method is called it reads the received HTTP request, passes it to _handleRequest()_ for
- * dispatch, and returns. _handleRequest()_ works out which application plugin should be asked to handle the
- * received request and passes the request along to that plugin. The plugin then responds to the request and
- * returns, at which point application execution is complete.
+ * When the `exec()` method is called it reads the received HTTP request, passes it to `handleRequest()` for dispatch,
+ * and returns. `handleRequest()` asks the installed Router to route the request to a handler, which responds to the
+ * request and returns the response. The response is then sent to the client and `exec()` returns. The WebApplication
+ * instance emits some useful events along the way.
  *
- * Some useful administrative information about the running application can be set using the _setTitle()_,
- * _setVersion()_ and _setMinimumPhpVersion()_ methods. The title and version are made available to any plugin
+ * Some useful administrative information about the running application can be set using the `setTitle()`,
+ * `setVersion()` and `setMinimumPhpVersion()` methods. The title and version are made available to any other code
  * that fetches the running instance so that, for example, user messages can show the application title without
- * the individual plugins having to have it hard-coded.
+ * having to have it hard-coded.
  *
- * Applications that require a particular minimum version of PHP can set it using the _setMinimumPhpVersion()_
- * method. If this is done before _exec()_ is called, the application will exit with an appropriate error message
- * when _exec()_ is called if the PHP version on which the application is running is below the minimum set.
+ * Applications that require a particular minimum version of PHP can set it using the `setMinimumPhpVersion()`
+ * method. If this is done before `exec()` is called, the application will exit with an appropriate error message
+ * when `exec()` is called if the PHP version on which the application is running is below the minimum set.
  *
- * For applications that make use of a data store, the _dataController()_ method provides access to the
- * DataController responsible for the interface between the application and the data store.
+ * For applications that make use of a data store, the `database()` method provides access to the DatabaseConnection
+ * responsible for the interface between the application and the data store.
  *
- * The running _Application_ instance can be retrieved using the _instance()_ static method. This instance provides
- * access to all the services that the application provides. The _Application_ instance provides access to the
- * _Page_ object that represents the page being created in response to the request. It also provides methods for
- * sending data directly back to the client (_sendApiResponse()_, _sendDownload()_, _sendRawData()_) to support
- * asynchronous requests and non-HTML responses.
+ * The running `WebApplication` instance can be retrieved using the `instance()` static method. This instance provides
+ * access to all the services that the application provides.
  *
  * ## Plugins
- * Plugins are loaded automatically by the _exec()_ method and are sourced from the _plugins/generic/_
- * subdirectory. Any plugin found in this directory is loaded. Subdirectories within the plugins directory are not
- * scanned. It is therefore sufficient to install a plugin's PHP file in the _plugins/generic/_ subdirectory for it
- * to be loaded and enabled by the application.
+ * Plugins are loaded automatically by the `exec()` method and are sourced from the `plugins/generic/`
+ * subdirectory by default. This can be customised in the app config file, by providing a path (relative to the
+ * application's root directory). Any plugin found in this directory is loaded. Subdirectories within the plugins
+ * directory are not scanned. It is therefore sufficient to install a plugin's PHP file in the `plugins/generic/`
+ * subdirectory for it to be loaded and enabled by the application.
  *
- * While the _handleRequest()_ method automatically works out which plugin to use for any given request, it is
- * possible for plugins themselves to query the set of loaded plugins. This enables dependencies between plugins to
- * be handled, such that any plugin that relies on another being loaded can determine whether the plugin on which
- * it is dependent is present and adjust its behaviour accordingly. Plugins can be queried by name -
- * _pluginByName()_ - and by supported action - _pluginForAction()_.
+ * The primary use-case for plugins is to monitor for events and augment the functionality of the application while not
+ * actually handling requests themselves.
  *
  * ## Requests
- * An internal request stack is maintained which enables plugins to submit additional custom-crafted Request
- * objects to _handleRequest()_. This is one way for plugins to ask other plugins to do something for them without
- * having to actually know about the details of the other plugin doing the work. The current request being handled
- * can always be retrieved using the _currentRequest()_ method. This returns the most recent request submitted to
- * _handleRequest()_ (in other words, the request on the top of the stack). In addition, the _originalRequest()_
- * method can be used to retrieve the original HTTP request that was submitted by the user agent (in other words
- * the request _exec()_ provided to _handleRequest()_, which is on the bottom of the stack).
+ * The request being handled can always be retrieved using the `request()` method. This retrieves the original HTTP
+ * request that was submitted by the user agent (in other words the request `exec()` provided to `handleRequest()`).
  *
  * ## Inter-module communication
  * A simple inter-object communication mechanism is implemented by the Application class. This mechanism is based
@@ -89,50 +71,34 @@ use UnexpectedValueException;
  * particular type of search has been executed might provide the search terms and result set as additional
  * arguments).
  *
- * Events are emitted by calling the _emitEvent()_ method. Subscriptions to events are achieved by calling the
- * _connect()_ method. Subscriptions can be unsubscribed by calling  _disconnect()_. Events do not need to be
- * registered or defined before they are emitted - it is sufficient just to call _emitEvent()_ in order to emit an
- * event. Any code -- plugin, class or even the main application script or _Application_ object -- can emit events
- * (indeed, the base _Application_ class emits a few).
+ * Events are emitted by calling the `emitEvent()` method. Subscriptions to events are achieved by calling the
+ * `connect()` method. Subscriptions can be unsubscribed by calling  `disconnect()`. Events do not need to be
+ * registered or defined before they are emitted - it is sufficient just to call `emitEvent()` in order to emit an
+ * event. Any code -- plugin, class or even the main application script or `WebApplication` object -- can emit events.
  *
  * Emitters of events should take care to document the events they emit and the arguments that are provided with
  * them, and should strive to keep the signatures of their events stable (API stability) and the names of their
  * events distinct to avoid event naming clashes between different emitters.
  *
  * ## Session management
- * The _Application_ class can be used to manage session data in a way that guarantees clashes between plugins and
+ * The `WebApplication` class can be used to manage session data in a way that guarantees clashes between plugins and
  * other applications running on the same domain are avoided. It implements a mechanism that is very simple to use
  * by hiding the complexities of keeping session data distinct behind simple, unique "context" strings. See the
- * _sessionData()_ method for details of how this works.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
+ * `sessionData()` method for details of how this works.
  *
  * ### Events
  * This module emits the following events.
  *
  * - `application.pluginsloaded`
- *   Emitted when the _exec()_ method has finished loading all the plugins.
+ *   Emitted when the `exec()` method has finished loading all the plugins.
  *
  * - `application.executionstarted`
- *   Emitted when _exec()_ starts actual execution (just before it calls _handleRequest()_).
+ *   Emitted when `exec()` starts actual execution (just before it calls `handleRequest()`).
  *
  * - `application.handlerequest.requestreceived($request)`
- *   Emitted when _handleRequest()_ receives a request to process.
+ *   Emitted when `handleRequest()` receives a request to process.
  *
- *   `$request` _Request_ The request that was received.
- *
- * - `home.creatingtopsection`
- *   Emitted when the home page has been requested and the top section is being generated.
- *
- * - `home.creatingmiddlesection`
- *   Emitted when the home page has been requested and the middle section is being generated.
- *
- * - `home.creatingbottomsection`
- *   Emitted when the home page has been requested and the bottom section is being generated.
+ *   `$request` `Request` The request that was received.
  *
  * - `application.handlerequest.routing(Request $request)`
  *   Emitted when `handleRequest()` is about to match the incoming Request to a route using the application's router.
@@ -141,31 +107,14 @@ use UnexpectedValueException;
  *   Emitted when `handleRequest()` has successfully matched and routed the incoming `Request` to a route using the
  *   application's router.
  *
- * - `application.handlerequest.abouttofetchplugin`
- *   Emitted when _handleRequest()_ is about to fetch the plugin to handle the request it's been
- *   given.
- *
- * - `application.handlerequest.failedtofetchplugin`
- *   Emitted when _handleRequest()_ failed to find a suitable plugin for a request.
- *
- * - `application.handlerequest.pluginfetched($plugin)`
- *   Emitted when _handleRequest()_ finds a suitable plugin for a request.
- *
- *   `$plugin` _GenericPlugin_ The plugin found to handle the request.
- *
- * - `application.handlerequest.abouttoexecuteplugin($plugin)`
- *   Emitted immediately before _handleRequest()_ passes the request to the plugin to handle.
- *
- *   `$plugin` _GenericPlugin_ The plugin that is about to be asked to handle the request.
- *
  * - `application.executionfinished`
- *   Emitted by _exec()_ when _handleRequest()_ returns from processing the original HTTP request.
+ *   Emitted by `exec()` when `handleRequest()` returns from processing the original HTTP request.
  *
- * - `application.abouttooutputpage`
- *   Emitted by _exec()_ when it is about to render the page to the client.
+ * - `application.sendingresponse`
+ *   Emitted by `exec()` when the response returned by handleRequest() is about to be sent to the client.
  *
- * - `application.pageoutputfinished`
- *   Emitted by _exec()_ when it has finished sending the page to the client.
+ * - `application.responsesent`
+ *   Emitted by `exec()` immediately after the response returned by handleRequest() has been sent to the client.
  *
  * ### Connections
  * This module does not connect to any events.
@@ -176,27 +125,28 @@ use UnexpectedValueException;
  * ### Session Data
  * The Application class creates a session context with the identifier **application**.
  *
- * @actions _None_
  * @events application.pluginsloaded application.executionstarted application.handlerequest.requestreceived
- * home.creatingtopsection home.creatingmiddlesection home.creatingbottomsection
- * application.handlerequest.abouttofetchplugin application.handlerequest.failedtofetchplugin
- * application.handlerequest.pluginfetched application.handlerequest.abouttoexecuteplugin
- *     application.executionfinished application.abouttooutputpage application.pageoutputfinished
- * @connections _None_
- * @settings _None_
+ *     application.handlerequest.routing application.handlerequest.routed
+ *     application.executionfinished application.sendingresponse application.responsesent
+ * @connections `None`
+ * @settings `None`
  * @session application
- * @aio-api _None_
  *
- * @class LibEquit\Application
+ * @class WebApplication
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
  * @method static self instance()
  */
 class WebApplication extends Application
 {
+	/** @var string The context name for this class's session data. */
 	public const SessionDataContext = "application";
+
+	/** @var string Where plugins are loaded from by default. Relative to the app root directory. */
 	protected const DefaultPluginsPath = "plugins/generic";
+
+	/** @var string The default namespace for plugin classes. */
 	protected const DefaultPluginsNamespace = "";
 
 	/** @var string Where plugins are loaded from. */
@@ -227,13 +177,13 @@ class WebApplication extends Application
 	 * a fatal error.
 	 *
 	 * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
-	 * @param $dataController DataController|null The data controller for the application.
+	 * @param $db DatabaseConnection|null The data controller for the application.
 	 *
 	 * @throws \Exception if an Application instance has already been created.
 	 */
-	public function __construct(string $appRoot, ?DataController $dataController = null)
+	public function __construct(string $appRoot, ?DatabaseConnection $db = null)
 	{
-		parent::__construct($appRoot, $dataController);
+		parent::__construct($appRoot, $db);
 		$this->initialiseSession();
 		$this->m_session = &$this->sessionData(self::SessionDataContext);
 		$this->setRouter(new Router());
@@ -270,9 +220,9 @@ class WebApplication extends Application
 
 	/** Determine whether the application is currently running or not.
 	 *
-	 * The application is running if its _exec()_ method has been called and has not yet returned.
+	 * The application is running if its `exec()` method has been called and has not yet returned.
 	 *
-	 * @return bool _true_ if the application is running, _false_ otherwise.
+	 * @return bool `true` if the application is running, `false` otherwise.
 	 */
 	public function isRunning(): bool
 	{
@@ -352,7 +302,7 @@ class WebApplication extends Application
 	/**
 	 * Fetch the application's session data.
 	 *
-	 * This method should be used to access the session data rather than using _$_SESSION_ directly as it ensures
+	 * This method should be used to access the session data rather than using `$_SESSION` directly as it ensures
 	 * that the application's session data is kept separate from any other session data that is using the same
 	 * domain name. Use of the context parameter ensures that different parts of the application can keep their
 	 * session data separate from other parts and therefore avoid namespace clashes and so on.
@@ -364,7 +314,7 @@ class WebApplication extends Application
 	 *
 	 *     $mySession = & LibEquit\Application::instance()->sessionData("mycontext");
 	 *
-	 * Once you have done this, you can use _$mySession_ just like you would use _$_SESSION_ to store your session
+	 * Once you have done this, you can use `$mySession` just like you would use `$_SESSION` to store your session
 	 * data.
 	 *
 	 * There is nothing special that needs to be done to create a new session context. If a request is made for a
@@ -473,7 +423,7 @@ class WebApplication extends Application
 	 * Plugins are required to meet the following conditions:
 	 * - defined in a file named exactly as the plugin class is named, with the extension ".php"
 	 * - define a class that inherits the *\Equit\GenericPlugin* base class
-	 * - provide a valid instance of the appropriate class from the _instance()_ method of the main plugin class
+	 * - provide a valid instance of the appropriate class from the `instance()` method of the main plugin class
 	 *   defined in the file
 	 *
 	 * ### Todo
@@ -670,12 +620,12 @@ class WebApplication extends Application
 	 * If the plugin has been loaded, the created instance of that plugin will be returned.
 	 *
 	 * Plugins can use this method to fetch instances of any other plugins on which they depend. If this method
-	 * returns _null_ then plugins should assume that the plugin on which they depend is not available and act
+	 * returns `null` then plugins should assume that the plugin on which they depend is not available and act
 	 * accordingly.
 	 *
 	 * @param $name string The class name of the plugin.
 	 *
-	 * @return GenericPlugin|null The loaded plugin instance if the named plugin was loaded, _null_ otherwise.
+	 * @return GenericPlugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
 	 */
 	public function pluginByName(string $name): ?GenericPlugin
 	{
@@ -684,84 +634,11 @@ class WebApplication extends Application
 	}
 
 	/**
-	 * Send a download to the user.
-	 *
-	 * If you want to set the MIME type but not the file name, provide an empty string for the file name. If either
-	 * contains any invalid characters for use in a HTTP header line, a corrupt download is very likely to result.
-	 *
-	 * @param $data string the file to send.
-	 * @param $fileName string the file name to specify for the user's download.
-	 * @param $contentType string _optional_ the MIME type for the download.
-	 * @param $headers array[string=>string] _optional_ Additional headers to send with the download.
-	 * @deprecated Build a DownloadResponse or a FileDownloadResponse instead.
-	 */
-	public function sendDownload(string $data, string $fileName, string $contentType = "application/octet-stream", array $headers = []): void
-	{
-		$this->sendResponse((new DownloadResponse($data))->ofType($contentType)->withHeaders($headers)->named($fileName));
-	}
-
-	/**
-	 * Send raw data to the user.
-	 *
-	 * @param $data string the data to send.
-	 * @param $mimeType string|null _optional_ the MIME type for the download.
-	 * @param $headers array[string=>string] _optional_ Additional headers to send with the download.
-	 */
-	public function sendRawData(string $data, ?string $mimeType = null, array $headers = []): bool
-	{
-		ob_end_clean();
-
-		if (!empty($mimeType)) {
-			header("content-type: $mimeType", true);
-		} else {
-			header("content-type: application/octet-stream", true);
-		}
-
-		foreach ($headers as $name => $value) {
-			header("$name: $value", false);
-		}
-
-		echo $data;
-		exit(0);
-	}
-
-	/**
-	 * Send the response for an API call.
-	 *
-	 * API responses always take the following form:
-	 *      {code}[ {message}]
-	 *      {data}
-	 *
-	 * - _{code}_ is always an integer. It is 0 on success, non-0 on failure.
-	 *
-	 * - _{message}_ is an optional string containing a message that can be presented to the end user. Its primary
-	 *   use is as an explanatory message in case of failure (_{code}_ != 0).
-	 *
-	 * _{data}_ is the data returned by the API call. The format of the data is defined by the API call itself.
-	 *
-	 * ### Warning
-	 * This method is guaranteed not return.
-	 *
-	 * @param $code int The response code.
-	 * @param $message string _optional_ A message to go with the code.
-	 * @param $data string _optional_ The data to send as the response.
-	 */
-	public function sendApiResponse(int $code, string $message = "", string $data = ""): void
-	{
-		if (0 != ob_get_level() && !ob_end_clean()) {
-			AppLog::error("failed to clear output buffer before sending API response (requested action = \"" . $this->currentRequest()->action() . "\"; response = \"$code $message\")", __FILE__, __LINE__, __FUNCTION__);
-		}
-
-		echo "{$code}" . (empty($message) ? "" : " $message") . "\n{$data}";
-		exit(0);
-	}
-
-	/**
 	 * Send a response to the client.
 	 *
 	 * @param Response $response The response to send.
 	 */
-	public function sendResponse(Response $response): void
+	protected function sendResponse(Response $response): void
 	{
 		if (0 != ob_get_level() && !ob_end_clean()) {
 			throw new RuntimeException("Failed to clear output buffer before sending response.");
@@ -770,44 +647,7 @@ class WebApplication extends Application
 		$response->send();
 	}
 
-	/** Push a request onto the request stack.
-	 *
-	 * This is a private internal method that maintains the request stack that is used to provide plugins with
-	 * access to the current request. It should only be used by LibEquit\Application::handleRequest()
-	 *
-	 * @param $request Request The request to push onto the stack.
-	 */
-	protected function pushRequest(Request $request): void
-	{
-		$this->m_requestStack[] = $request;
-	}
-
-	/** Pop a request from the request stack.
-	 *
-	 * This is a private internal method that maintains the request stack that is used to provide plugins with
-	 * access to the current request. It should only be used by LibEquit\Application::handleRequest()
-	 */
-	protected function popRequest(): void
-	{
-		array_pop($this->m_requestStack);
-	}
-
-	/**
-	 * Fetch the current request.
-	 *
-	 * The current request is peeked from the top of the request stack.
-	 *
-	 * @see-also @link originalRequest()
-	 *
-	 * @return Request|null The current request being handled, or _null_ if the request stack is empty.
-	 */
-	public function currentRequest(): ?Request
-	{
-		$n = count($this->m_requestStack);
-		return (0 < $n ? $this->m_requestStack[$n - 1] : null);
-	}
-
-	/** Fetch the original request submitted by the user.
+	/** Fetch the request submitted by the user.
 	 *
 	 * This method fetches the original request received from the user. It is just a convenience synonym for
 	 * LibEquit\Request::originalRequest().
@@ -816,7 +656,7 @@ class WebApplication extends Application
 	 *
 	 * @return Request The user's original request.
 	 */
-	public function originalRequest(): Request
+	public function request(): Request
 	{
 		return Request::originalRequest();
 	}
@@ -915,13 +755,12 @@ class WebApplication extends Application
 	 *
 	 * @param $request Request The request to handle.
 	 *
-	 * @return Response|null An optional Response to send to the client. For legacy support, if no response is returned
+	 * @return Response An optional Response to send to the client. For legacy support, if no response is returned
 	 * exec() assumes that content has been added to the Page instance and that is output instead.
 	 * @throws CsrfTokenVerificationException if the request requires CSRF verification and fails
 	 */
-	public function handleRequest(Request $request): ?Response
+	public function handleRequest(Request $request): Response
 	{
-		$this->pushRequest($request);
 		$this->emitEvent("application.handlerequest.requestreceived", $request);
 		$this->verifyCsrf($request);
 
@@ -933,15 +772,14 @@ class WebApplication extends Application
 			throw new NotFoundException($request, "", 0, $err);
 		}
 
-		$this->popRequest();
-		return (isset($response) && ($response instanceof Response) ? $response : null);
+		return $response;
 	}
 
 	/**
 	 * Execute the application.
 	 *
 	 * Start execution of the application. This method will pass the original request from the user to
-	 * _handleRequest()_ and return when processing of that request completes. This method should never be called,
+	 * `handleRequest()` and return when processing of that request completes. This method should never be called,
 	 * except from the script that is in use as the application bootstrap.
 	 *
 	 * This method is responsible for setting up the execution context for the request, including initialising the
@@ -949,7 +787,7 @@ class WebApplication extends Application
 	 *
 	 * Once this method returns, the application is considered to have exited.
 	 *
-	 * @return int 0
+	 * @return int `self::ErrOk` on success, some other value on failure.
 	 * @throws InvalidPluginException
 	 * @throws InvalidPluginsDirectoryException
 	 * @throws InvalidRoutesDirectoryException
