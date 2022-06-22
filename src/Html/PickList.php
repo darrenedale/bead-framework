@@ -64,7 +64,7 @@ use Equit\AppLog;
  * @author Darren Edale
  * @package libequit
  */
-class PickList extends PageElement {
+class PickList extends Element {
 	// import traits
 	use HasNameAttribute;
 	use HasTooltip;

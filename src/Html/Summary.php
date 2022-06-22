@@ -2,7 +2,7 @@
 
 namespace Equit\Html;
 
-class Summary extends PageElement
+class Summary extends Element
 {
     use HasChildElements;
 

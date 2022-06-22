@@ -132,7 +132,7 @@ use Equit\AppLog;
  * @author Darren Edale
  * @package libequit
  */
-class ListEdit extends PageElement {
+class ListEdit extends Element {
 	use HasNameAttribute;
 	use HasTooltip;
 

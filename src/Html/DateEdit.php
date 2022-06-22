@@ -7,7 +7,7 @@ use Equit\AppLog;
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasPlaceholderAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * Defines the DateEdit class.
@@ -70,7 +70,7 @@ use Equit\Html\PageElement;
  * @settings _None_
  * @session _None_
  */
-class DateEdit extends PageElement {
+class DateEdit extends Element {
 	use HasNameAttribute;
 	use HasPlaceholderAttribute;
 	use HasTooltip;

@@ -59,7 +59,7 @@ use Equit\AppLog;
  * @settings _None_
  * @session _None_
  */
-class Label extends PageElement {
+class Label extends Element {
 	use HasTooltip;
 
 	/** @var int Content type constant for plain text content. */

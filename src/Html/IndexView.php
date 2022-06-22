@@ -29,7 +29,7 @@ use Equit\Request;
  *
  * @package Equit\Html
  */
-abstract class IndexView extends PageElement {
+abstract class IndexView extends Element {
 	/**
 	 * Initialise a new alphabetical index.
 	 *

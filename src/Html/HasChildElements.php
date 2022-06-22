@@ -22,11 +22,11 @@ trait HasChildElements
 	 * The base method always succeeds; the return value is for subclasses that reimplement this method to place
 	 * restrictions on the types of children that may be added.
 	 *
-	 * @param $child PageElement The element to add.
+	 * @param $child Element The element to add.
 	 *
 	 * @return bool `true` if the child element was added, `false` if not.
 	 */
-	public function addChildElement(PageElement $child): bool {
+	public function addChildElement(Element $child): bool {
 		$this->m_children[] = $child;
 		return true;
 	}
@@ -67,6 +67,6 @@ trait HasChildElements
 		return $ret;
 	}
 
-	/** @var array<PageElement> The child elements for the parent element. */
+	/** @var array<Element> The child elements for the parent element. */
 	private array $m_children = [];
 }

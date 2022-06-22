@@ -24,7 +24,7 @@ use Equit\AppLog;
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasPlaceholderAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A number editor for inclusion in forms.
@@ -67,7 +67,7 @@ use Equit\Html\PageElement;
  * @author Darren Edale
  * @package libequit
  */
-class NumberEdit extends PageElement {
+class NumberEdit extends Element {
 	use HasNameAttribute;
 	use HasPlaceholderAttribute;
 	use HasTooltip;

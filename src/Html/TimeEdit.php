@@ -68,7 +68,7 @@ use Exception;
  * @settings _None_
  * @session _None_
  */
-class TimeEdit extends PageElement {
+class TimeEdit extends Element {
 	use HasNameAttribute;
 	use HasPlaceholderAttribute;
 	use HasTooltip;

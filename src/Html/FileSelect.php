@@ -25,7 +25,7 @@ namespace Equit\Html;
 use Equit\AppLog;
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A file selector for inclusion in forms.
@@ -63,7 +63,7 @@ use Equit\Html\PageElement;
  * @author Darren Edale
  * @package libequit
  */
-class FileSelect extends PageElement {
+class FileSelect extends Element {
 	use HasTooltip;
 	use HasNameAttribute;
 

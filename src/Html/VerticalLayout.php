@@ -24,7 +24,7 @@
 namespace Equit\Html;
 
 	use Equit\Html\Layout;
-	use Equit\Html\PageElement;
+	use Equit\Html\Element;
 
 /**
  * A layout based on a single vertical column.
@@ -83,11 +83,11 @@ class VerticalLayout extends Layout {
 	 *
 	 * The element is added after the last current child.
 	 *
-	 * @param $element PageElement is the element to add.
+	 * @param $element Element is the element to add.
 	 *
 	 * @return bool _true_ if the element was added, _false_ otherwise.
 	 */
-	public function addElement(PageElement $element): bool {
+	public function addElement(Element $element): bool {
 		return $this->insertElement($element, $this->elementCount());
 	}
 
@@ -99,12 +99,12 @@ class VerticalLayout extends Layout {
 	 * in the layout. If the index is already occupied, the existing child and all children below it are shifted one
 	 * position down and the new form element occupies the vacated index.
 	 *
-	 * @param $element PageElement is the form element to add.
+	 * @param $element Element is the form element to add.
 	 * @param $insertIndex int _optional_ is the index at which to insert the form element.
 	 *
 	 * @return bool _true_ if the form element was inserted, _false_ otherwise.
 	 */
-	public function insertElement(PageElement $element, int $insertIndex = 0): bool {
+	public function insertElement(Element $element, int $insertIndex = 0): bool {
 		if($insertIndex >= $this->elementCount()) {
 			$this->m_elements[] = $element;
 		}

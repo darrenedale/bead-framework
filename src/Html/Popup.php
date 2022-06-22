@@ -76,7 +76,7 @@ class Popup extends Division {
 	/** @var string The CSS class name for popup sections. */
 	private const HtmlClassName = "equit-popup";
 
-	/** @var string|PageElement|null The anchor for the popup section. */
+	/** @var string|Element|null The anchor for the popup section. */
 	private $m_anchor = null;
 
 	/** @var int The set of triggers for the popup action. */
@@ -100,12 +100,12 @@ class Popup extends Division {
 	/**
 	 * Set the anchor for the PopupSection.
 	 *
-	 * @param $anchor string|PageElement The anchor.
+	 * @param $anchor string|Element The anchor.
 	 *
 	 * @return bool _true_ if the anchor was set, _false_ otherwise.
 	 */
 	public function setAnchor($anchor): bool {
-		if(is_null($anchor) || is_string($anchor) || ($anchor instanceof PageElement)) {
+		if(is_null($anchor) || is_string($anchor) || ($anchor instanceof Element)) {
 			$this->m_anchor = $anchor;
 			return true;
 		}
@@ -117,7 +117,7 @@ class Popup extends Division {
 	/**
 	 * Fetch the anchor for the PopupSection.
 	 *
-	 * @return string|PageElement|null The anchor, or _null_ if no anchor is set.
+	 * @return string|Element|null The anchor, or _null_ if no anchor is set.
 	 */
 	public function anchor() {
 		return $this->m_anchor;
@@ -224,7 +224,7 @@ class Popup extends Division {
 		if(is_string($anchor)) {
 			$anchor = html($anchor);
 		}
-		else if($anchor instanceof PageElement) {
+		else if($anchor instanceof Element) {
 			$anchor = $anchor->html();
 		}
 
@@ -254,7 +254,7 @@ class Popup extends Division {
 
 		$ret = $this->emitDivisionStart() . "<div class=\"popup-anchor\">$anchor</div><div class=\"popup-content\">";
 
-		/** @var \Equit\Html\PageElement $child */
+		/** @var \Equit\Html\Element $child */
 		foreach($this->childElements() as $child) {
 			$ret .= $child->html();
 		}

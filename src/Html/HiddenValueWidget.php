@@ -24,7 +24,7 @@
 namespace Equit\Html;
 
 use Equit\Html\HasNameAttribute;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A widget for inclusion in forms that contains a fixed, hidden
@@ -64,7 +64,7 @@ use Equit\Html\PageElement;
  * @settings _None_
  * @session _None_
  */
-class HiddenValueWidget extends PageElement {
+class HiddenValueWidget extends Element {
 	use HasNameAttribute;
 
 	private static $s_hiddenValueWidgetAttributeNames = ["value", "name"];

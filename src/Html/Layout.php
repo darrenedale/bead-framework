@@ -19,7 +19,7 @@
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /** An interface for page element layouts.
  *
@@ -56,7 +56,7 @@ use Equit\Html\PageElement;
  * @settings _None_
  * @session _None_
  */
-abstract class Layout extends PageElement{
+abstract class Layout extends Element{
 	/**
 	 * Create a new layout.
 	 *
@@ -71,14 +71,14 @@ abstract class Layout extends PageElement{
 	/**
 	 * Add an element to the layout.
 	 *
-	 * @param $element PageElement is the element to add.
+	 * @param $element Element is the element to add.
 	 *
 	 * The element is added to the layout. Further parameters can be defined that allow for customisation of exactly how
 	 * the element is added (for example, an order number or coordinate).
 	 *
 	 * @return bool `true` if the element was added, `false` otherwise.
 	 */
-	public abstract function addElement(PageElement $element): bool;
+	public abstract function addElement(Element $element): bool;
 
 	/**
 	 * Fetch the child elements in the layout.

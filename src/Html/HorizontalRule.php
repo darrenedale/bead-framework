@@ -50,7 +50,7 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class HorizontalRule extends PageElement {
+class HorizontalRule extends Element {
 	/**
 	 * Generate the HTML for the element.
 	 *

@@ -7,7 +7,7 @@ use TypeError;
 /**
  * A &lt;details&gt; page element.
  */
-class Details extends PageElement
+class Details extends Element
 {
     use HasChildElements;
 

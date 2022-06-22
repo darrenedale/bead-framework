@@ -38,7 +38,7 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class Division extends PageElement implements ContainerPageElement {
+class Division extends Element implements ContainerElement {
 	use HasTooltip;
 	use HasChildElements;
 

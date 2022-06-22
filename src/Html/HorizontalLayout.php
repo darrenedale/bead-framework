@@ -79,11 +79,11 @@ class HorizontalLayout extends Layout {
 	 *
 	 * The element is added after the last current child.
 	 *
-	 * @param $element PageElement is the element to add.
+	 * @param $element Element is the element to add.
 	 *
 	 * @return bool true
 	 */
-	public function addElement(PageElement $element): bool {
+	public function addElement(Element $element): bool {
 		$this->insertElement($element, $this->elementCount());
 		return true;
 	}
@@ -96,13 +96,13 @@ class HorizontalLayout extends Layout {
 	 * child in the layout. If the index is already occupied, the existing child and all children to its right are
 	 * shifted one position to the right and the new form element occupies the vacated index.
 	 *
-	 * @param $element PageElement is the page element to add.
+	 * @param $element Element is the page element to add.
 	 * @param $insertIndex int _optional_ is the index at which to insert the form element. The default is to insert
 	 * the element at the beginning.
 	 *
 	 * @return bool true
 	 */
-	public function insertElement(PageElement $element, int $insertIndex = 0): bool {
+	public function insertElement(Element $element, int $insertIndex = 0): bool {
 		$elementCount = $this->elementCount();
 
 		if($insertIndex < 0) {

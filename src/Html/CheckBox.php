@@ -6,7 +6,7 @@ namespace Equit\Html;
 use Equit\Html\HasDisabledAttribute;
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * Defines the CheckBox class.
@@ -73,7 +73,7 @@ use Equit\Html\PageElement;
  * @settings _None_
  * @session _None_
  */
-class CheckBox extends PageElement {
+class CheckBox extends Element {
 	use HasNameAttribute;
 	use HasTooltip;
 	use HasDisabledAttribute;

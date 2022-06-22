@@ -28,7 +28,7 @@ namespace Equit\Html;
 
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A push button using an image for inclusion in forms.
@@ -62,7 +62,7 @@ use Equit\Html\PageElement;
  * @settings _None_
  * @session _None_
  */
-class ImageButton extends PageElement {
+class ImageButton extends Element {
 	use HasNameAttribute;
 	use HasTooltip;
 

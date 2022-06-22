@@ -22,7 +22,7 @@ namespace Equit\Html;
 
 use Equit\AppLog;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A push button for inclusion in forms.
@@ -63,7 +63,7 @@ use Equit\Html\PageElement;
  * @author Darren Edale
  * @package libequit
  */
-class PushButton extends PageElement {
+class PushButton extends Element {
 	use HasTooltip;
 
 	/** Flag to mark a push button as a form submission button. */

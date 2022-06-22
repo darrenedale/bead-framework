@@ -55,7 +55,7 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class HtmlLiteral extends PageElement {
+class HtmlLiteral extends Element {
 	/** @var string The HTML. */
 	private $m_html = "";
 

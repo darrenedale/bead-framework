@@ -17,8 +17,8 @@ use Equit\Exceptions\InvalidPluginException;
 use Equit\Exceptions\InvalidPluginsDirectoryException;
 use Equit\Exceptions\InvalidRoutesDirectoryException;
 use Equit\Exceptions\InvalidRoutesFileException;
+use Equit\Exceptions\NotFoundException;
 use Equit\Exceptions\UnroutableRequestException;
-use Equit\Html\Page;
 use Equit\Responses\DownloadResponse;
 use Exception;
 use InvalidArgumentException;
@@ -210,7 +210,6 @@ class WebApplication extends Application
 
 	/** Loaded plugin storage.*/
 	private array $m_pluginsByName = [];
-	private array $m_pluginsByAction = [];
 
 	/** Stack of requests passed to handleRequest(). */
 	private array $m_requestStack = [];
@@ -221,9 +220,6 @@ class WebApplication extends Application
 	/** @var RouterContract The router that routes requests to handlers. */
 	private RouterContract $m_router;
 
-	/** @var Page The page template to use. */
-	private Page $m_page;
-
 	/**
 	 * Construct a new Application object.
 	 *
@@ -232,17 +228,15 @@ class WebApplication extends Application
 	 *
 	 * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
 	 * @param $dataController DataController|null The data controller for the application.
-	 * @param Page|null $pageTemplate
 	 *
 	 * @throws \Exception if an Application instance has already been created.
 	 */
-	public function __construct(string $appRoot, ?DataController $dataController = null, ?Page $pageTemplate = null)
+	public function __construct(string $appRoot, ?DataController $dataController = null)
 	{
 		parent::__construct($appRoot, $dataController);
 		$this->initialiseSession();
 		$this->m_session = &$this->sessionData(self::SessionDataContext);
 		$this->setRouter(new Router());
-		$this->setPage($pageTemplate ?? new Page());
 	}
 
 	/**
@@ -435,31 +429,6 @@ class WebApplication extends Application
 	}
 
 	/**
-	 * Don't set the page after content has been generated or added to it, unless you want to discard that content.
-	 *
-	 * @param \Equit\Html\Page|null $page The page to use or `null` to unset the existing page.
-	 */
-	public function setPage(?Page $page): void
-	{
-		$this->m_page = $page;
-	}
-
-	/**
-     * Fetch the application's page object.
-	 *
-	 * The page object is the page where all of the application's output is generated. Client code should almost
-	 * never output content directly - it should almost always be inserted into the page object.
-	 *
-	 * @return Page The application's page.
-	 * @throws \RuntimeException if there is no Page set.
-	 */
-	public function page(): Page
-	{
-		assert(!is_null($this->m_page), new RuntimeException("Application has no Page object set."));
-		return $this->m_page;
-	}
-
-	/**
 	 * Set the application's Request router.
 	 *
 	 * @param RouterContract $router
@@ -503,15 +472,9 @@ class WebApplication extends Application
 	 *
 	 * Plugins are required to meet the following conditions:
 	 * - defined in a file named exactly as the plugin class is named, with the extension ".php"
-	 * - define a class that inherits the *\LibEquit\GenericPlugin* base class
+	 * - define a class that inherits the *\Equit\GenericPlugin* base class
 	 * - provide a valid instance of the appropriate class from the _instance()_ method of the main plugin class
 	 *   defined in the file
-	 * - provide a valid set of supported actions from the _supportedActions()_ method of the main plugin class
-	 *   defined in the file.
-	 *
-	 * ### Note
-	 * An empty set of supported actions is valid - it is perfectly acceptable for a plugin to exist solely to
-	 * respond to emitted events.
 	 *
 	 * ### Todo
 	 * - How to allow plugin classes to exist in a namespace other than the global namespace?
@@ -552,8 +515,7 @@ class WebApplication extends Application
 
 		try {
 			$instanceFn = $pluginClassInfo->getMethod("instance");
-		}
-		catch (ReflectionException $err) {
+		} catch (ReflectionException $err) {
 			throw new InvalidPluginException($path, null, "Exception introspecting {$className}::instance() method: [{$err->getCode()}] {$err->getMessage()}", 0, $err);
 		}
 
@@ -583,57 +545,6 @@ class WebApplication extends Application
 
 		if (!$plugin instanceof $className) {
 			throw new InvalidPluginException($path, null, "{$className}::instance() did not provide an object of the {$className}.");
-		}
-
-		try {
-			$actionsFn = $pluginClassInfo->getMethod("supportedActions");
-		}
-		catch (ReflectionException $err) {
-			throw new InvalidPluginException($path, $plugin, "Exception introspecting {$className}::supportedActions() method: [{$err->getCode()}] {$err->getMessage()}", 0, $err);
-		}
-
-		if (!$actionsFn->isPublic() || !$actionsFn->isStatic()) {
-			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() method must be public static");
-		}
-
-		if (0 != $actionsFn->getNumberOfRequiredParameters()) {
-			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() method must be callable with no arguments");
-		}
-
-		$actionsFnReturnType = $actionsFn->getReturnType();
-
-		if (!$actionsFnReturnType) {
-			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() has no return type.");
-		}
-
-		if (!$actionsFnReturnType->isBuiltin() || "array" != $actionsFnReturnType->getName()) {
-			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() must return an array of strings");
-		}
-
-        try {
-            $actions = $actionsFn->invoke(null);
-        }
-        catch (ReflectionException $err) {
-			throw new InvalidPluginException($path, $plugin, "Exception invoking {$className}::supportedActions(): [{$err->getCode()}] {$err->getMessage()}", 0, $err);
-        }
-
-		if (!is_array($actions)) {
-			throw new InvalidPluginException($path, $plugin, "{$className}::supportedActions() did not provide a list of supported actions");
-		}
-
-		foreach ($actions as $action) {
-			if (!is_string($action)) {
-				throw new InvalidPluginException($path, $plugin, "{$className} plugin listed an invalid supported action: " . stringify($action));
-			}
-
-			$action = strtolower($action);
-
-			if (isset($this->m_pluginsByAction[$action])) {
-				AppLog::warning("{$className} plugin listed a supported action that is already taken by the " . get_class($this->m_pluginsByAction[$action]) . " plugin.", __FILE__, __LINE__, __FUNCTION__);
-				continue;
-			}
-
-			$this->m_pluginsByAction[$action] = $plugin;
 		}
 
 		$this->m_pluginsByName[$classNameKey] = $plugin;
@@ -770,21 +681,6 @@ class WebApplication extends Application
 	{
 		$this->loadPlugins();
 		return $this->m_pluginsByName[mb_strtolower($name, "UTF-8")] ?? null;
-	}
-
-	/**
-	 * Fetch the plugin that is registered to handle a named action.
-	 *
-	 * @param $action string The action whose registered plugin is sought.
-	 *
-	 * @return GenericPlugin|null The plugin registered to handle the named action, or _null_ if no plugin is
-	 * registered for the action.
-	 */
-	public function pluginForAction(string $action): ?GenericPlugin
-	{
-		$action = mb_strtolower($action, "UTF-8");
-		$this->loadPlugins();
-		return $this->m_pluginsByAction[mb_strtolower($action, "UTF-8")] ?? null;
 	}
 
 	/**
@@ -1029,45 +925,12 @@ class WebApplication extends Application
 		$this->emitEvent("application.handlerequest.requestreceived", $request);
 		$this->verifyCsrf($request);
 
-		// if legacy `action` URL parameter is supported and the request path info is '/', any registered route handler
-		// for / - which is likely - will override the 'action' URL parameter, so in this scenario we skip the router
-		$useAction = $this->config("app.legacy.support-action-url-parameter", true);
-		$skipRouter = $useAction && "/" === $request->pathInfo() && $request->hasUrlParameter("action");
-
-		if (!$skipRouter) {
-			try {
-				$this->emitEvent("application.handlerequest.routing", $request);
-				$response = $this->router()->route($request);
-				$this->emitEvent("application.handlerequest.routed", $request);
-				$useAction = false;
-			}
-			catch (UnroutableRequestException $err) {
-				// fall back on deprecated use of special `action` URL parameter
-				AppLog::warning("Falling back on deprecated 'action' URL parameter to handle {$request->method()} request '{$request->rawUrl()}'", __FILE__, __LINE__, __FUNCTION__);
-			}
-		}
-
-		if ($useAction) {
-			$action = mb_strtolower($request->action(), "UTF-8");
-
-			if (empty($action) || "home" == $action) {
-				// TODO 404 page
-				return null;
-			}
-
-			$this->emitEvent("application.handlerequest.abouttofetchplugin");
-			$plugin = $this->pluginForAction($action);
-
-			if (!$plugin) {
-				// TODO 404 page
-				$this->emitEvent("application.handlerequest.failedtofetchplugin");
-				$this->popRequest();
-				return null;
-			}
-
-			$this->emitEvent("application.handlerequest.pluginfetched", $plugin);
-			$this->emitEvent("application.handlerequest.abouttoexecuteplugin", $plugin);
-			$response = $plugin->handleRequest($request);
+		try {
+			$this->emitEvent("application.handlerequest.routing", $request);
+			$response = $this->router()->route($request);
+			$this->emitEvent("application.handlerequest.routed", $request);
+		} catch (UnroutableRequestException $err) {
+			throw new NotFoundException($request, "", 0, $err);
 		}
 
 		$this->popRequest();
@@ -1111,15 +974,9 @@ class WebApplication extends Application
 		$response = $this->handleRequest(Request::originalRequest());
 		$this->emitEvent("application.executionfinished");
 
-		if (isset($response)) {
-			$this->emitEvent("application.sendingresponse");
-			$this->sendResponse($response);
-			$this->emitEvent("application.responsesent");
-		} else {
-			$this->emitEvent("application.abouttooutputpage");
-			$this->page()->output();
-			$this->emitEvent("application.pageoutputfinished");
-		}
+		$this->emitEvent("application.sendingresponse");
+		$this->sendResponse($response);
+		$this->emitEvent("application.responsesent");
 
 		if (!empty($this->m_session["current_user"])) {
 			$this->m_session["current_user"]["last_activity_time"] = time();

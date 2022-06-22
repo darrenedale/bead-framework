@@ -33,7 +33,7 @@ use Equit\AppLog;
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasPlaceholderAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A text editor for inclusion in forms.
@@ -71,7 +71,7 @@ use Equit\Html\PageElement;
  * @settings _None_
  * @session _None_
  */
-class TextEdit extends PageElement {
+class TextEdit extends Element {
 	use HasNameAttribute;
 	use HasPlaceholderAttribute;
 	use HasTooltip;

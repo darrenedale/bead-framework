@@ -48,7 +48,6 @@ namespace Equit\Html;
  * @author Darren Edale
  * @ingroup libequit
  * @package libequit
- * @see Page
  *
  * @actions _None_
  * @aio-api _None_
@@ -57,7 +56,7 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-abstract class PageElement
+abstract class Element
 {
 	/** @var array The element attributes. */
 	private array $m_attributes = [];
