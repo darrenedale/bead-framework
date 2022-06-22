@@ -1,13 +1,16 @@
 <?php
 
 namespace Equit\Exceptions;
+
 use Equit\Contracts\Response;
 use Equit\Request;
 use Equit\Responses\DoesntHaveHeaders;
 use Equit\Responses\NaivelySendsContent;
 use Equit\Responses\SendsHeaders;
+use Equit\View;
 use Equit\WebApplication;
 use \Exception;
+use \Throwable;
 
 /**
  * Base class for HTTP exceptions that can also act as responses.
