@@ -81,18 +81,49 @@ namespace
 			return $str;
 		}
 
-		if(isset($encoding)) {
+		if (isset($encoding)) {
 			$oldEncoding = mb_regex_encoding();
 			mb_regex_encoding($encoding);
 		}
 
 		$ret = mb_strtolower(mb_substr($str, 0, 1), $encoding) . mb_strtolower(mb_ereg_replace("([[:upper:]])", "_\\1", mb_substr($str, 1)), $encoding);
 
-		if(isset($oldEncoding)) {
+		if (isset($oldEncoding)) {
 			mb_regex_encoding($oldEncoding);
 		}
 
 		return $ret;
+	}
+
+	if (!function_exists("snakeToCamel")) {
+		/**
+		 * Convert a snake-case string to camel case.
+		 *
+		 * The string is expected to be lower-case and punctuated with single _ characters between words. If this is not the
+		 * form of the string passed in, you may not get the expected results.
+		 *
+		 * @param string $str The snake-case string to convert to camel case.
+		 * @param string|null $encoding The encoding expected in the string. If not given, UTF-8 is used.
+		 *
+		 * @return string The `camelCase` version of the `snake_case` string.
+		 */
+		function snakeToCamel(string $str, ?string $encoding = null): string
+		{
+			if (isset($encoding)) {
+				$oldEncoding = mb_regex_encoding();
+				mb_regex_encoding($encoding);
+			}
+
+			$ret = mb_ereg_replace_callback("_+(.)", function (array $matches) use ($encoding): string {
+				return mb_strtoupper($matches[1], $encoding ?? "UTF-8");
+			}, $str);
+
+			if (isset($oldEncoding)) {
+				mb_regex_encoding($oldEncoding);
+			}
+
+			return $ret;
+		}
 	}
 
 	/**

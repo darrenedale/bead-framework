@@ -4,12 +4,16 @@ namespace Equit\Test\Database;
 
 use DateTime;
 use Equit\Database\Model;
+use Equit\Exceptions\ModelPropertyCastException;
+use Equit\Test\Framework\CallTracker;
 use Equit\Test\Framework\TestCase;
 use Generator;
 use LogicException;
 use PDO;
+use Prophecy\Call\Call;
 use ReflectionProperty;
 use TypeError;
+use function Equit\Traversable\all;
 
 /**
  * Test case for the database Model class.
@@ -37,9 +41,7 @@ class ModelTest extends TestCase
                 static::$connection = $connection;
                 parent::__construct();
                 static::$properties = $properties;
-                $dataProperty = new ReflectionProperty(Model::class, "data");
-                $dataProperty->setAccessible(true);
-                $dataProperty->setValue($this, $data);
+				$this->data = $data;
             }
 
             public static function defaultConnection(): PDO
@@ -256,4 +258,151 @@ class ModelTest extends TestCase
         $model->{$property} = $newValue;
         $this->assertEquals($expectedNewValue, $model->{$property}, "The model's {$property} property was not set to the expected value.");
     }
+
+	/**
+	 * Test data provider for testCustomAccessor.
+	 *
+	 * @return array The test data.
+	 */
+	public function dataForTestCustomAccessor(): array
+	{
+		return [
+			["bar,baz", ["bar", "baz",],],
+			[null, [],],
+			["barbaz", ["barbaz"],],
+			["", [],],
+			[" ", [" "],],
+		];
+	}
+
+	/**
+	 * @dataProvider dataForTestCustomAccessor
+	 *
+	 * @param mixed $value The test value.
+	 * @param mixed $expected The expected value of the foo property.
+	 * @param string|null $exceptionClass The exception expected to be thrown, if any.
+	 *
+	 * @return void
+	 */
+	public function testCustomAccessor($value, $expected, ?string $exceptionClass = null): void
+	{
+		$connection = $this->createMock(PDO::class);
+		$callTracker = new CallTracker();
+
+		$model = new class($connection, $callTracker) extends Model
+		{
+			protected static PDO $connection;
+			protected CallTracker $callTracker;
+
+			protected static array $properties = [
+				"foo_bar" => "string",
+			];
+
+			public function __construct(PDO $connection, $callTracker)
+			{
+				static::$connection = $connection;
+				$this->callTracker = $callTracker;
+			}
+
+			public static function defaultConnection(): PDO
+			{
+				return static::$connection;
+			}
+
+			protected function getFooBarProperty(): ?array
+			{
+				$this->callTracker->increment();
+				return empty($this->data["foo_bar"]) ? [] :  explode(",", $this->data["foo_bar"]);
+			}
+		};
+
+		if (isset($exceptionClass)) {
+			$this->expectException($exceptionClass);
+		}
+
+		$model->foo_bar = $value;
+		$actual = $model->foo_bar;
+		$this->assertIsArray($actual, "Value of foo_bar property expected to be array.");
+		$this->assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
+		$this->assertEquals(1, $callTracker->callCount(), "Custom accessor was not called the correct number of times.");
+	}
+
+	/**
+	 * Test data provider for testCustomMutator.
+	 *
+	 * @return array The test data.
+	 */
+	public function dataForTestCustomMutator(): array
+	{
+		return [
+			["bar,baz", "bar,baz",],
+			[null, "",],
+			[["bar", "baz",], "bar,baz",],
+			["", "",],
+			[" ", " ",],
+			[new class{}, null, TypeError::class,]
+		];
+	}
+
+	/**
+	 * @dataProvider dataForTestCustomMutator
+	 *
+	 * @param mixed $value The test value.
+	 * @param mixed $expected The expected value of the "foo" member in the Model data array.
+	 * @param string|null $exceptionClass The exception expected to be thrown, if any.
+	 */
+	public function testCustomMutator($value, $expected, ?string $exceptionClass = null): void
+	{
+		$connection = $this->createMock(PDO::class);
+		$callTracker = new CallTracker();
+
+		$model = new class($connection, $callTracker) extends Model
+		{
+			protected static PDO $connection;
+			private CallTracker $callTracker;
+
+			protected static array $properties = [
+				"foo_bar" => "string",
+			];
+
+			public function __construct(PDO $connection, CallTracker $tracker)
+			{
+				static::$connection = $connection;
+				$this->callTracker = $tracker;
+			}
+
+			public static function defaultConnection(): PDO
+			{
+				return static::$connection;
+			}
+
+			protected function setFooBarProperty($value): void
+			{
+				$this->callTracker->increment();
+
+				if (!isset($value)) {
+					$this->data["foo_bar"] = "";
+				} else if (is_array($value) && all($value, "is_string")) {
+					$this->data["foo_bar"] = implode(",", $value);
+				} else if (is_string($value)) {
+					$this->data["foo_bar"] = $value;
+				} else {
+					throw new ModelPropertyCastException(self::class, "foo_bar", $value, "The value cannot be cast to a comma-delimited array of strings.");
+				}
+			}
+		};
+
+		if (isset($exceptionClass)) {
+			$this->expectException($exceptionClass);
+		}
+
+		$modelData = new ReflectionProperty(Model::class, "data");
+		$modelData->setAccessible(true);
+
+		$model->foo_bar = $value;
+		$actual = $modelData->getValue($model)["foo_bar"];
+		$this->assertIsString($actual, "Value of foo_bar property expected to be string.");
+		$this->assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
+		$this->assertEquals(1, $callTracker->callCount(), "Custom mutator was not called the correct number of times.");
+	}
 }

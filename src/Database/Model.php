@@ -22,7 +22,43 @@ use function Equit\Traversable\all;
 /**
  * Base class for database model classes.
  *
- * Subclasses **must** have a default constructor.
+ * Your model classes should derive from this class. Subclasses **must** have a default constructor. Each model class
+ * you create should define the properties of the model (i.e. the database columns) in the static `$properties` member.
+ * This is an associative array with column names as keys and column types as values. The following types are supported
+ * and will automatically be cast by the magic method that provides model property access:
+ * - timestamp (PHP DateTime)
+ * - date (DateTime)
+ * - datetime (DateTime)
+ * - time (DateTime)
+ * - int (int)
+ * - float (float)
+ * - string (string)
+ * - bool (bool)
+ * - json (object)
+ *
+ * Properties defined in this way can be accessed as properties of the Model instance. For example, if you define
+ * $properties as `["date_of_birth" => "date",]`, you can access the property on an instance using
+ * `$model->date_of_birth`. The Model base class will take care of casting the value from the database representation to
+ * a PHP `DateTime` object. All properties are nullable, albeit you are likely to encounter database exceptions if you
+ * set a property to null and its column in the database is not nullable.
+ *
+ * You can exert more control over the reading and writing of properties by providing custom property accessors and
+ * mutators in your model classes. By convention database columns are named using `snake_case` while class methods are
+ * named using `camelCase()`. The `Model` class will look for a camelCase equivalent of the snake_case property name
+ * prefixed with `get` for the accessor and `set` for the mutator, and suffixed with `Property`. So for example, to
+ * provide a custom accessor and mutuator for a column named `first_name` you would implement methods named
+ * `getFirstNameProperty()` and `setFirstNameProperty(mixed $value): void`. As a matter of good practice you should
+ * appropriately type-hint the return type of the accessor; the mutator should have its sole parameter type hinted
+ * `mixed` for PHP8+ or not type hinted for earlier PHP versions, since the `__set()` method could provide data of any
+ * type.
+ *
+ * If you implement custom accessors and/or mutators your methods are entirely responsible for converting the data
+ * between the database representation and your app's representation - none of the internal type casting provided
+ * by the Model base class will be performed, including setting to null. If your custom mutator is unable to accept the
+ * value provided, it must throw a `ModelPropertyCastException`. This will be caught by `__set()` which will throw a
+ * `TypeError` with the `ModelPropertyCastException` as its previous. This is done so that contextual information can
+ * be provided about property casting while remaining consistent with the exception PHP throws when a typed property is
+ * set to a value of an incorrect type.
  */
 abstract class Model
 {
@@ -35,26 +71,18 @@ abstract class Model
     /**
      * @var array The model's properties.
      *
-     * Property names (columns) are keys; values are the column type. The type indicates how the value in the column will
-     * be converted when accessed. The value will be converted in both directions. Types are:
-     * - timestamp
-     * - date
-     * - datetime
-     * - time
-     * - int
-     * - float
-     * - string
-     * - bool
-     * - json
+     * Property names (columns) are keys; values are the column type.
      */
     protected static array $properties = [];
 
     /** @var PDO The database connection the model uses. */
     private PDO $connection;
 
-    /** @var array The model instance's data. Always stored as the type comes out of the database, always contains keys
-     * for every property of the model and always in the order in which the properties are defined in `$properties` */
-    private array $data;
+    /**
+	 * @var array The model instance's data. Always stored as the type comes out of the database, always contains keys
+     * for every property of the model and always in the order in which the properties are defined in `$properties`
+	 */
+    protected array $data;
 
     /** @var array The loaded related models. */
     private array $related = [];
@@ -861,7 +889,19 @@ abstract class Model
      */
     public function __get(string $property)
     {
+		static $accessors = [];
+
         if (in_array($property, static::propertyNames())) {
+			$cacheKey = static::class . "::{$property}";
+
+			if (!isset($accessors[$cacheKey])) {
+				$accessors[$cacheKey] = snakeToCamel("get_{$property}_property");
+			}
+
+			if (method_exists($this, $accessors[$cacheKey])) {
+				return $this->{$accessors[$cacheKey]}();
+			}
+
             if (!isset($this->data[$property])) {
                 return null;
             }
@@ -923,13 +963,26 @@ abstract class Model
      */
     public function __set(string $property, $value): void
     {
-        if (in_array($property, static::propertyNames())) {
-            if (!isset($value)) {
-                $this->data[$property] = null;
-                return;
-            }
+		static $mutators = [];
 
-            try {
+        if (in_array($property, static::propertyNames())) {
+			$cacheKey = static::class . "::{$property}";
+
+			if (!isset($mutators[$cacheKey])) {
+				$mutators[$cacheKey] = snakeToCamel("set_{$property}_property");
+			}
+
+			try {
+				if (method_exists($this, $mutators[$cacheKey])) {
+					$this->{$mutators[$cacheKey]}($value);
+					return;
+				}
+
+				if (!isset($value)) {
+					$this->data[$property] = null;
+					return;
+				}
+
                 switch (static::$properties[$property]) {
                     case "timestamp":
                         $this->data[$property] = static::castToTimestampColumn($value, $property);
@@ -1111,6 +1164,7 @@ abstract class Model
     protected static function makeModelsFromQuery(PDOStatement $stmt): array
     {
         $models = [];
+		$stmt->setFetchMode(PDO::FETCH_ASSOC);
 
         foreach ($stmt as $data) {
             $model = new static();
