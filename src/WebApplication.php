@@ -638,7 +638,7 @@ class WebApplication extends Application
 	 *
 	 * @param Response $response The response to send.
 	 */
-	protected function sendResponse(Response $response): void
+	public function sendResponse(Response $response): void
 	{
 		if (0 != ob_get_level() && !ob_end_clean()) {
 			throw new RuntimeException("Failed to clear output buffer before sending response.");
