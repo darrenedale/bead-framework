@@ -12,7 +12,7 @@
  * @file LibEquit\PageElement.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -25,12 +25,6 @@ namespace Equit\Html;
  * Subclasses **must** call _parent::__construct()_ from inside all their constructors. This ensures that the
  * internal data structures for some of the facilities provided by the protected helper methods are properly
  * initialised. Failure to do so could result in your subclass generating PHP errors in calls to this base class.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -46,18 +40,14 @@ namespace Equit\Html;
  *
  * @class LibEquit\PageElement
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
- * @see Page
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
  * @session _None_
  */
-abstract class PageElement
+abstract class Element
 {
 	/** @var array The element attributes. */
 	private array $m_attributes = [];

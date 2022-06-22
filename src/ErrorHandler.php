@@ -3,6 +3,7 @@
 namespace Equit;
 
 use Equit\Contracts\ErrorHandler as ErrorHandlerContract;
+use Equit\Exceptions\HttpException;
 use Equit\Responses\AbstractResponse;
 use Error;
 use Throwable;
@@ -64,7 +65,11 @@ class ErrorHandler implements ErrorHandlerContract
     protected function displayInView(Throwable $error): void
     {
 		try {
-			WebApplication::instance()->sendResponse(new View($this->viewName(), compact("error")));
+			if ($error instanceof HttpException) {
+				WebApplication::instance()->sendResponse($error);
+			} else {
+				WebApplication::instance()->sendResponse(new View($this->viewName(), compact("error")));
+			}
 		} catch (Throwable $err) {
 			// extremely basic fallback display
 			WebApplication::instance()->sendResponse(new class($error) extends AbstractResponse {

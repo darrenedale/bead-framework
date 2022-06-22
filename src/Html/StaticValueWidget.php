@@ -15,7 +15,7 @@
  * @file StaticValueWidget.php
  * @author Darren Edale
  * @version 0.9.2
- * @version 0.9.2 * @package libequit
+ * @version 0.9.2 * @package bead-framework
  */
 
 namespace Equit\Html;
@@ -30,12 +30,6 @@ use Equit\Html\HiddenValueWidget;
  * static content that the user is not able to alter, and it's like a hidden value widget in that it contains a
  * value that the user is unable to modify that is submitted with the form data.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -48,8 +42,6 @@ use Equit\Html\HiddenValueWidget;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -57,7 +49,7 @@ use Equit\Html\HiddenValueWidget;
  *
  * @class StaticValueWidget
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class StaticValueWidget extends HiddenValueWidget {
 	/** @var int Content type enumerator representing plain text content. */

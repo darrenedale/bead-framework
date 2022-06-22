@@ -47,10 +47,10 @@ interface Router
 	 *
 	 * @param Request $request The request to route.
 	 *
-	 * @return Response|null The response to the request. `null` if the handler sends its own response.
+	 * @return Response The response to the request. `null` if the handler sends its own response.
 	 * @throws UnroutableRequestException if no registered route can be found for the request.
 	 */
-	public function route(Request $request): ?Response;
+	public function route(Request $request): Response;
 
 	/**
 	 * Register a route with the router.

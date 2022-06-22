@@ -32,7 +32,7 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class Template extends PageElement {
+class Template extends Element {
 	use HasTooltip;
 	use HasChildElements;
 

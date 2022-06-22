@@ -1,28 +1,5 @@
 <?php
 
-/**
-* Defines the Email class.
-*
-* ### Dependencies
-* - classes/equit/AppLog.php
-* - classes/equit/EmailPart.php
-* - classes/equit/EmailHeader.php
-*
-* ### Todo
-* - refactor the email classes so that Email objects can be other than multipart/mixed and EmailPart objects can have
-*   child parts so that proper MIME trees can be produced.
-* - refactor code common to Email and EmailPart into trait.
-*
-* ### Changes
-* - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
-* - (2014-04-29) Class ported from bpLibrary.
-*
-* @file Email.php
-* @author Darren Edale
-* @version 0.9.2
-* @package libequit
-* @version 0.9.2*/
-
 namespace Equit;
 
 /**
@@ -44,12 +21,6 @@ namespace Equit;
  * To add more parts to a multipart message, use the _addBodyPart()_, _addBodyPartContent()_ or _addAttachment()_
  * methods. The first two are generally more appropriate for content that is to be displayed inline; the latter is
  * for adding traditional file attachments to the message.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -73,7 +44,7 @@ namespace Equit;
  * @class Email
  * @version 0.9.2
  * @version 0.9.2 * @see EmailHeader EmailPart
- * @package libequit
+ * @package bead-framework
  */
 class Email {
 //		private const CRLF = "\r\n";
@@ -82,8 +53,7 @@ class Email {
 
 	/** @var string The default delimiter to use between parts in the message body. */
 	const DefaultDelimiter = "--email-delimiter-16fbcac50765f150dc35716069dba9c9--";
-	/* some old (< 2.9 AFAIK) versions of postfix need the line end to be this on
-	 * *nix */
+	/* some old (< 2.9 AFAIK) versions of postfix need the line end to be this on *nix */
 	/** @var string The line ending to use in the message body during transmission. */
 	const LineEnd = self::LF;
 //		const LineEnd = self::CRLF;

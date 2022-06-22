@@ -24,7 +24,7 @@
  * @file TextEdit.php
  * @author Darren Edale
  * @version 0.9.2
- * @version 0.9.2 * @package libequit
+ * @version 0.9.2 * @package bead-framework
  */
 
 namespace Equit\Html;
@@ -33,7 +33,7 @@ use Equit\AppLog;
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasPlaceholderAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A text editor for inclusion in forms.
@@ -41,12 +41,6 @@ use Equit\Html\PageElement;
  * This is a lightweight, general-purpose text editor that allows the user to enter plain text into forms. Objects can
  * be set up to be single-line, multi- line, or for password entry. They can also have an optional placeholder that is
  * put into the widget when it is empty (but is not submitted with the form data if the widget is empty).
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin does not provide any AIO API functions.
  *
  * ### Events
  * This module does not emit any events.
@@ -62,16 +56,14 @@ use Equit\Html\PageElement;
  *
  * @class TextEdit
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
  * @session _None_
  */
-class TextEdit extends PageElement {
+class TextEdit extends Element {
 	use HasNameAttribute;
 	use HasPlaceholderAttribute;
 	use HasTooltip;

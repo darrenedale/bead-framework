@@ -30,12 +30,6 @@ use Equit\AppLog;
  * uses one. The URL for this script is provided by the _runtimeScriptUrl()_ method. You should add this to your page,
  * using _Page::addScriptUrl()_ (assuming you are using the built-in LibEquit\Page class to build the HTML page).
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide any AIO API functions.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -48,8 +42,6 @@ use Equit\AppLog;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -57,7 +49,7 @@ use Equit\AppLog;
  *
  * @class AutocompleteTextEdit
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class InlineTextEdit extends TextEdit {
 	/** @var string The HTML class name used to identify inline editors. */

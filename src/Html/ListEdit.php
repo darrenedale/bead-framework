@@ -22,7 +22,7 @@
  * @file ListEdit.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -103,12 +103,6 @@ use Equit\AppLog;
  * Each of the HTML elements in the ListEdit object has a read-only `parentListEdit` property added that provides a
  * reference to the parent ListEdit in which it is embedded.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -121,8 +115,6 @@ use Equit\AppLog;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -130,9 +122,9 @@ use Equit\AppLog;
  *
  * @class ListEdit
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
-class ListEdit extends PageElement {
+class ListEdit extends Element {
 	use HasNameAttribute;
 	use HasTooltip;
 

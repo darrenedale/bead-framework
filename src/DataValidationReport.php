@@ -1,21 +1,5 @@
 <?php
 
-/**
- * Defines the _DataValidationReport_ class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- *
- * ### Changes
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-10) First version of this file.
- *
- * @file DataValidationReport.php
- * @author Darren Edale
- * @version 0.9.2
- * @package libequit
- * @version 0.9.2 */
-
 namespace Equit;
 
 /**
@@ -41,12 +25,6 @@ namespace Equit;
  * warnings will be provided. To get access to the errors or warnings associated with the data as a whole (rather than
  * individual fields), pass an empty string.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -61,11 +39,8 @@ namespace Equit;
  *
  * @class DataValidationReport
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

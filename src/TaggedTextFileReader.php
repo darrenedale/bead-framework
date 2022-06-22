@@ -1,20 +1,5 @@
 <?php
 
-/**
- * Defines the TaggedTextFileReader class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- *
- * ### Changes
- * - (2017-04) First version of this file.
- *
- * @file TaggedTextFileReader.php
- * @author Darren Edale
- * @version 0.9.2
- * @package libequit
- * @version 0.9.2 */
-
 namespace Equit;
 
 use StdClass;
@@ -115,12 +100,6 @@ use StdClass;
  * subclass-defined error codes. Subclasses may not use any error code that is smaller than _ErrUser_ and are encouraged
  * to define their custom error codes by referencing _ErrUser_ (e.g. `const MyCustomErrorCode = ErrUser + 1;`, etc.).
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -135,11 +114,8 @@ use StdClass;
  *
  * @class TaggedTextFileReader
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

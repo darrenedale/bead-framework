@@ -28,7 +28,7 @@
  * @file ResultsPager.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -295,12 +295,6 @@ use RuntimeException;
  * to ignore the options provided by the built-in implementations if they want to. Subclasses that implement their own
  * custom output MIME types are also free to invent their own sets of supported options.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin provides the following API functions:
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -313,8 +307,6 @@ use RuntimeException;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -322,10 +314,10 @@ use RuntimeException;
  *
  * @class ResultsPager
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  * @deprecated Use ResultsCache instead.
  */
-class ResultsPager extends PageElement implements Iterator, ArrayAccess, Countable
+class ResultsPager extends Element implements Iterator, ArrayAccess, Countable
 {
 	/** @var int The default number of rows per page. */
 	public const DefaultPageSize = 50;
@@ -448,7 +440,7 @@ class ResultsPager extends PageElement implements Iterator, ArrayAccess, Countab
 	/** @var array The column display titles. */
 	private $m_columnTitles = [];
 
-	/** @var string|PageElement|null The content to display when there is no data. */
+	/** @var string|Element|null The content to display when there is no data. */
 	private $m_noDataContent = null;
 
 	/** @var Request|null The request to submit when a new page is requested. */
@@ -997,13 +989,13 @@ class ResultsPager extends PageElement implements Iterator, ArrayAccess, Countab
 	 * and is distinct from _null_ which causes the column to have its default title.
 	 *
 	 * @param $col string The column whose title should be set.
-	 * @param $title string|PageElement|null The title to set.
+	 * @param $title string|Element|null The title to set.
 	 *
 	 * @return bool _true_ if the column title was set (or unset), _false_ if not.
 	 */
 	public function setColumnTitle(string $col, $title)
 	{
-		if(is_null($title) || is_string($title) || $title instanceof PageElement) {
+		if(is_null($title) || is_string($title) || $title instanceof Element) {
 			$this->m_columnTitles[$col] = $title;
 			$this->cacheColumnTitles();
 			return true;
@@ -1748,7 +1740,7 @@ class ResultsPager extends PageElement implements Iterator, ArrayAccess, Countab
 	/**
 	 * Fetch the content to display when the pager has no data.
 	 *
-	 * @return string|PageElement|null The content to display (_null_ if none has been set).
+	 * @return string|Element|null The content to display (_null_ if none has been set).
 	 */
 	public function noDataContent()
 	{
@@ -1758,13 +1750,13 @@ class ResultsPager extends PageElement implements Iterator, ArrayAccess, Countab
 	/**
 	 * Set the content to display when the pager has no data.
 	 *
-	 * @param $content string|PageElement|null The content to show.
+	 * @param $content string|Element|null The content to show.
 	 *
 	 * @return bool _true_ if the content was set, _false_ otherwise.
 	 */
 	public function setNoDataContent($content): bool
 	{
-		if(is_string($content) || is_null($content) || $content instanceof PageElement) {
+		if(is_string($content) || is_null($content) || $content instanceof Element) {
 			$this->m_noDataContent = $content;
 			return true;
 		}
@@ -2052,7 +2044,7 @@ class ResultsPager extends PageElement implements Iterator, ArrayAccess, Countab
 					if(array_key_exists($column, $this->m_columnTitles)) {
 						if(is_string($this->m_columnTitles[$column])) {
 							$tableHtml .= html($this->m_columnTitles[$column]);
-						} else if ($this->m_columnTitles[$column] instanceof PageElement) {
+						} else if ($this->m_columnTitles[$column] instanceof Element) {
 							$tableHtml .= $this->m_columnTitles[$column]->html();
 						} else {
 							$tableHtml .= html($column);
@@ -2177,7 +2169,7 @@ class ResultsPager extends PageElement implements Iterator, ArrayAccess, Countab
 
 		$noData = $this->noDataContent();
 
-		if($noData instanceof PageElement) {
+		if($noData instanceof Element) {
 			return $noData->html();
 		}
 

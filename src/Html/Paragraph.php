@@ -13,7 +13,7 @@
  * @file Paragraph.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -38,7 +38,7 @@ namespace Equit\Html;
  * @settings _None_
  * @session _None_
  */
-class Paragraph extends PageElement implements ContainerPageElement {
+class Paragraph extends Element implements ContainerElement {
 	use HasTooltip;
 	use HasChildElements;
 
@@ -46,11 +46,11 @@ class Paragraph extends PageElement implements ContainerPageElement {
 	 *
 	 * The ID parameter is optional. By default, a paragraph with no ID is created.
 	 *
-	 * @param $content string|PageElement|null The content for the paragraph.
+	 * @param $content string|Element|null The content for the paragraph.
 	 * @param $id string _optional_ The ID for the section.
 	 */
 	public function __construct($content = null, ?string $id = null) {
-		assert(is_null($content) || is_string($content) || $content instanceof PageElement, "invalid content provided for Paragraph object");
+		assert(is_null($content) || is_string($content) || $content instanceof Element, "invalid content provided for Paragraph object");
 		parent::__construct($id);
 
 		if(isset($content)) {

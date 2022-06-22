@@ -35,12 +35,6 @@ use Equit\AppLog;
  * any item is added without a display text, the value will be used for the display text. Every item added to the list
  * of options is required to have a value.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -53,8 +47,6 @@ use Equit\AppLog;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -62,9 +54,9 @@ use Equit\AppLog;
  *
  * @class PickList
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
-class PickList extends PageElement {
+class PickList extends Element {
 	// import traits
 	use HasNameAttribute;
 	use HasTooltip;

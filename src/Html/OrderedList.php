@@ -8,7 +8,7 @@
 
 namespace Equit\Html;
 
-class OrderedList extends PageElement {
+class OrderedList extends Element {
 	use HasListItems;
 
 	public function __construct(?string $id = null) {

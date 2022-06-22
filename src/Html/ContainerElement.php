@@ -7,15 +7,15 @@ namespace Equit\Html;
  *
  * @package Equit\Html
  */
-interface ContainerPageElement {
+interface ContainerElement {
 	/**
 	 * Add a child element to the container.
 	 *
-	 * @param $child PageElement The child element to add.
+	 * @param $child Element The child element to add.
 	 *
 	 * @return bool `true` if the child element was added, `false` otherwise.
 	 */
-	public function addChildElement(PageElement $child): bool;
+	public function addChildElement(Element $child): bool;
 
 	/**
 	 * Fetch all the child elements.

@@ -15,7 +15,7 @@ use Equit\AppLog;
  *
  * @package LibEquit
  */
-class TabbedView extends PageElement {
+class TabbedView extends Element {
 	use HasTooltip;
 
 	/**
@@ -47,17 +47,17 @@ class TabbedView extends PageElement {
 	 * string.
 	 *
 	 * @param int $idx
-	 * @param string|PageElement $label
-	 * @param PageElement $content
+	 * @param string|Element $label
+	 * @param Element $content
 	 *
 	 * @return bool `true` if the tab was inserted, `false` if not.
 	 */
-	public function insertTab(int $idx, $label, ?PageElement $content): bool {
+	public function insertTab(int $idx, $label, ?Element $content): bool {
 		if(is_string($label)) {
 			$label = new HtmlLiteral(html($label));
 		}
 
-		if(!$label instanceof PageElement) {
+		if(!$label instanceof Element) {
 			AppLog::error("invalid label content - expecting string or PageElement", __FILE__, __LINE__, __FUNCTION__);
 			return false;
 		}
@@ -82,11 +82,11 @@ class TabbedView extends PageElement {
 
 	/**
 	 * @param $label
-	 * @param PageElement|null $content
+	 * @param Element|null $content
 	 *
 	 * @return bool `true` if the tab was added, `false` if not.
 	 */
-	public function addTab($label, ?PageElement $content): bool {
+	public function addTab($label, ?Element $content): bool {
 		return $this->insertTab($this->tabCount(), $label, $content);
 	}
 
@@ -122,7 +122,7 @@ class TabbedView extends PageElement {
 		return count($this->m_tabs);
 	}
 
-	public function tabLabel(int $idx): ?PageElement {
+	public function tabLabel(int $idx): ?Element {
 		if(0 > $idx || $this->tabCount() <= $idx) {
 			return null;
 		}
@@ -130,7 +130,7 @@ class TabbedView extends PageElement {
 		return $this->m_tabs[$idx]->label;
 	}
 
-	public function tabContent(int $idx): ?PageElement {
+	public function tabContent(int $idx): ?Element {
 		if(0 > $idx || $this->tabCount() <= $idx) {
 			return null;
 		}

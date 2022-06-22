@@ -17,7 +17,7 @@
  * @file FileSelect.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -25,7 +25,7 @@ namespace Equit\Html;
 use Equit\AppLog;
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A file selector for inclusion in forms.
@@ -33,12 +33,6 @@ use Equit\Html\PageElement;
  * This is a lightweight, general-purpose file selector that allows the user to choose a file to upload. Objects can
  * have a number of MIME types added to hint to the user agent what MIME types the user should be allowed to choose.
  * Support for this is dependent on the user agent as it is only a hint.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -52,8 +46,6 @@ use Equit\Html\PageElement;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -61,9 +53,9 @@ use Equit\Html\PageElement;
  *
  * @class FileSelect
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
-class FileSelect extends PageElement {
+class FileSelect extends Element {
 	use HasTooltip;
 	use HasNameAttribute;
 

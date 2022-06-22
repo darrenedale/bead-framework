@@ -14,7 +14,7 @@
  * @file IndexView.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -29,7 +29,7 @@ use Equit\Request;
  *
  * @package Equit\Html
  */
-abstract class IndexView extends PageElement {
+abstract class IndexView extends Element {
 	/**
 	 * Initialise a new alphabetical index.
 	 *

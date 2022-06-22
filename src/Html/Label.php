@@ -16,7 +16,7 @@
  * @file Label.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -29,12 +29,6 @@ use Equit\AppLog;
  * Labels are useful in forms as labels for other widgets. They don't submit any data with the form. While this is their
  * primary intended use, it is valid to use _Label_ objects elsewhere in the page, although it is likely that other
  * classes are a better fit for such usage (e.g. _HtmlSection_).
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -50,16 +44,14 @@ use Equit\AppLog;
  *
  * @class Label
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
  * @session _None_
  */
-class Label extends PageElement {
+class Label extends Element {
 	use HasTooltip;
 
 	/** @var int Content type constant for plain text content. */

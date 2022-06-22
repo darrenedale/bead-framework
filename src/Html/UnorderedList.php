@@ -8,7 +8,7 @@
 
 namespace Equit\Html;
 
-class UnorderedList extends PageElement {
+class UnorderedList extends Element {
 	use HasListItems;
 	use HasTooltip;
 

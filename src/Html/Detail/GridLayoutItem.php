@@ -2,7 +2,7 @@
 
 namespace Equit\Html\Detail;
 
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
 * Represents a child item in a GridLayout.
@@ -17,12 +17,12 @@ use Equit\Html\PageElement;
 *
 * @class GridLayoutItem
 * @author Darren Edale
-* @package libequit
+* @package bead-framework
 */
 class GridLayoutItem
 {
-    /** @var PageElement|null */
-    public ?PageElement $content   = null;
+    /** @var Element|null */
+    public ?Element $content   = null;
     public ?int $anchorRow = null;
     public ?int $anchorCol = null;
     public ?int $rowSpan   = 1;

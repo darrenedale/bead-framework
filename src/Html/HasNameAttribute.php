@@ -5,7 +5,7 @@
  * @file HtmlName.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  */
 
 namespace Equit\Html;

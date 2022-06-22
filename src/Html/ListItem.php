@@ -2,7 +2,7 @@
 
 namespace Equit\Html;
 
-class ListItem extends PageElement implements ContainerPageElement {
+class ListItem extends Element implements ContainerElement {
 	use HasChildElements;
 
 	/**

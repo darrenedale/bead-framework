@@ -12,7 +12,7 @@
  * @file HtmlHeading.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
@@ -22,12 +22,6 @@ namespace Equit\Html;
  *
  * This generates <h1> to <h6> heading elements. The content of the heading is fully configurable by providing
  * PageElement objects, or can simply be used with plain text, which will be HTML-escaped before output.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -43,23 +37,20 @@ namespace Equit\Html;
  *
  * @class LibEquit\HtmlLiteral
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
  * @session _None_
  */
-class Heading extends PageElement {
+class Heading extends Element {
 	/**
 	 * Initialise a new HTML Heading.
 	 *
 	 * If an invalid heading level is provided
 	 *
-	 * @param $content string|PageElement The content for the heading.
+	 * @param $content string|Element The content for the heading.
 	 * @param int $level The level, 1-6.
 	 * @param string|null $id
 	 */
@@ -101,7 +92,7 @@ class Heading extends PageElement {
 	/**
 	 * Fetch the heading content.
 	 *
-	 * @return string|PageElement The heading content.
+	 * @return string|Element The heading content.
 	 */
 	public function content() {
 		return $this->m_content;
@@ -114,10 +105,10 @@ class Heading extends PageElement {
 	 *
 	 * Set the content to an empty string if you want an empty heading.
 	 *
-	 * @param $content string|PageElement The content for the heading.
+	 * @param $content string|Element The content for the heading.
 	 */
 	public function setContent($content) {
-		if(!is_string($content) && !($content instanceof PageElement)) {
+		if(!is_string($content) && !($content instanceof Element)) {
 			trigger_error(tr("Internal error generating page content (%1)", __FILE__, __LINE__, "ERR_INVALID_HTMLHEADING_CONTENT"), E_USER_ERROR);
 		}
 
@@ -148,7 +139,7 @@ class Heading extends PageElement {
 	private $m_level = 1;
 
 	/**
-	 * @var string|\Equit\Html\PageElement The heading content.
+	 * @var string|\Equit\Html\Element The heading content.
 	 */
 	private $m_content = "";
 }

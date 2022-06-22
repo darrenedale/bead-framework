@@ -1,20 +1,5 @@
 <?php
 
-/**
- * Defines the AppLog class.
- *
- * ### Dependencies
- * This file does not depend on any other files.
- *
- * ### Changes
- * - (2013-12-10) First version of this file.
- *
- * @file AppLog.php
- * @author Darren Edale
- * @version 0.9.2
- * @package libequit
- * @version 0.9.2 */
-
 namespace Equit;
 
 /**
@@ -26,12 +11,6 @@ namespace Equit;
  * level (message, error, warning) information.
  *
  * This class has no dependencies so it can easily be used in projects that do not use the full framework.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -47,10 +26,8 @@ namespace Equit;
  *
  * @class AppLog
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_

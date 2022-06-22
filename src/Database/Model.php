@@ -160,7 +160,7 @@ abstract class Model
      */
     protected static function defaultConnection(): PDO
     {
-        return Application::instance()->dataController();
+        return Application::instance()->database();
     }
 
     /**

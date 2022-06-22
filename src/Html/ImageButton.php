@@ -21,23 +21,17 @@
  * @file ImageButton.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
 
 use Equit\Html\HasNameAttribute;
 use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A push button using an image for inclusion in forms.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -53,16 +47,14 @@ use Equit\Html\PageElement;
  *
  * @class ImageButton
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
  * @session _None_
  */
-class ImageButton extends PageElement {
+class ImageButton extends Element {
 	use HasNameAttribute;
 	use HasTooltip;
 

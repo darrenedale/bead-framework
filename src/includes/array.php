@@ -1,18 +1,5 @@
 <?php
 
-/**
- * @file array.php
- * @author Darren Edale
- * @version 0.9.2
- * @version 0.9.2 * @ingroup generic-includes
- *
- * @brief Definitions of stand-alone array-processing functions.
- *
- * These functions complement the array processing functions PHP provides.
- *
- * @package libequit
- */
-
 if (!function_exists("recursiveCount")) {
     /**
      * Recursively count the items in an array or object.

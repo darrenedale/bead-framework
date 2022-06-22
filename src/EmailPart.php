@@ -1,42 +1,11 @@
 <?php
 
-/**
- * Defines the _EmailPart_ class.
- *
- * Applications that wish to construct multipart email messages should include this file.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/EmailHeader.php
- *
- * ### Todo
- * - propagate the new validation used here in addHeaderLine() to EmailHeader::setName(). perhaps an external validator
- *   class would be useful?
- *
- * ### Changes
- * - (2018-01) addHeaderLine() now validates header name according to RFC822 and setContentType validates the MIME/media
- *   type according to RFC 2045
- * - (2017-05) Documentation updated.
- * - (2014-04-29) Class ported from bpLibrary.
- *
- * @file EmailPart.php
- * @author Darren Edale
- * @version 0.9.2
- * @version 0.9.2 * @package libequit
- */
-
 namespace Equit;
 
 /**
  * Class representing a part of a multipart email message.
  *
  * Objects of this class can be used as parts in a multipart email message.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -61,7 +30,7 @@ namespace Equit;
  * @author Darren Edale
  * @version 0.9.2
  * @see Email EmailHeader
- * @package libequit
+ * @package bead-framework
  */
 class EmailPart {
 	/** @var string The default content type for email message parts. */

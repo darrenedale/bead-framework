@@ -16,7 +16,7 @@
  * @file GridLayout.php
  * @author Darren Edale
  * @version 0.9.2
- * @version 0.9.2 * @package libequit
+ * @version 0.9.2 * @package bead-framework
  */
 
 namespace Equit\Html;
@@ -35,12 +35,6 @@ use Equit\Html\Detail\GridLayoutItem;
  * element or layout is added to any cell that is occupied by an existing child element or layout, whether that cell is
  * its anchor cell or simply one it spans, the existing child is removed and replaced with the new element or layout.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -53,8 +47,6 @@ use Equit\Html\Detail\GridLayoutItem;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -62,7 +54,7 @@ use Equit\Html\Detail\GridLayoutItem;
  *
  * @class GridLayout
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class GridLayout extends Layout {
 	/** @var int Alignment flag to align content with the left edge of its cell. */
@@ -169,7 +161,7 @@ class GridLayout extends Layout {
 	 *
 	 * The alignment must be one of the class alignment constants.
 	 *
-	 * @param $element PageElement is the element to add.
+	 * @param $element Element is the element to add.
 	 * @param $row int The row at which to place the layout.
 	 * @param $col int The column at which to place the layout.
 	 * @param $rowSpan int The number of rows over which the layout spans. The default is 1 row.
@@ -178,7 +170,7 @@ class GridLayout extends Layout {
 	 *
 	 * @return bool _true_ if the element was added to the grid, _false_ otherwise.
 	 */
-		public function addElement(PageElement $element, int $row = 0, int $col = 0, int $rowSpan = 1, int $colSpan = 1, int $alignment = 0 ): bool {
+		public function addElement(Element $element, int $row = 0, int $col = 0, int $rowSpan = 1, int $colSpan = 1, int $alignment = 0 ): bool {
 		if(0 > $row || 0 > $col) {
 			AppLog::error("invalid cell index", __FILE__, __LINE__, __FUNCTION__);
 			return false;
@@ -292,10 +284,10 @@ class GridLayout extends Layout {
 	 * @param $row int is the row from which the element is sought.
 	 * @param $col int is the column from which the element is sought.
 	 *
-	 * @return PageElement|null the element at the cell index, or _null_ if the cell does not contain an element, is
+	 * @return Element|null the element at the cell index, or _null_ if the cell does not contain an element, is
 	 * not valid or an error occurred.
 	 */
-	public function elementAt(int $row, int $col): ?PageElement {
+	public function elementAt(int $row, int $col): ?Element {
 		if($row < 0 || $col < 0) {
 			AppLog::error('invalid cell index', __FILE__, __LINE__, __FUNCTION__);
 			return null;

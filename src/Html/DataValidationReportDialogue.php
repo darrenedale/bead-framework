@@ -14,8 +14,8 @@
  *
  * @file DataValidationReportDialogue.php
  * @author Darren Edale
- * @version 0.9.2 * @version 0.9.2
- * @package libequit
+ * @version 0.9.2
+ * @package bead-framework
  */
 
 namespace Equit\Html;
@@ -69,12 +69,6 @@ use Equit\DataValidationReport;
  * setting the report and calling _html()_ will not return the expected content, and calling _setMessage()_ or
  * _setFlags()_ will have no effect on the output of the dialogue.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -87,8 +81,6 @@ use Equit\DataValidationReport;
  * ### Session Data
  * This module does not create a session context.
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
@@ -96,7 +88,7 @@ use Equit\DataValidationReport;
  *
  * @class DataValidationReportDialogue
  * @author Darren Edale
- * @package libequit
+ * @package bead-framework
  */
 class DataValidationReportDialogue extends Dialogue {
 	/** @var \Equit\DataValidationReport|null The report to display in the dialogue. */

@@ -18,13 +18,13 @@
  * @file HiddenValueWidget.php
  * @author Darren Edale
  * @version 0.9.2
- * @package libequit
+ * @package bead-framework
  * @version 0.9.2 */
 
 namespace Equit\Html;
 
 use Equit\Html\HasNameAttribute;
-use Equit\Html\PageElement;
+use Equit\Html\Element;
 
 /**
  * A widget for inclusion in forms that contains a fixed, hidden
@@ -33,12 +33,6 @@ use Equit\Html\PageElement;
  * This class provides a means of placing hiddent values in forms to be
  * submitted with the rest of the form data. This is useful when a form needs
  * to submit a fixed value that the user cannot change.
- *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
  *
  * ### Events
  * This module does not emit any events.
@@ -54,17 +48,14 @@ use Equit\Html\PageElement;
  *
  * @class HiddenValueWidget
  * @author Darren Edale
- * @ingroup libequit
- * @package libequit
+ * @package bead-framework
  *
- * @actions _None_
- * @aio-api _None_
  * @events _None_
  * @connections _None_
  * @settings _None_
  * @session _None_
  */
-class HiddenValueWidget extends PageElement {
+class HiddenValueWidget extends Element {
 	use HasNameAttribute;
 
 	private static $s_hiddenValueWidgetAttributeNames = ["value", "name"];
