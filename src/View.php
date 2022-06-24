@@ -139,7 +139,7 @@ class View implements Response
 	/** @var bool Whether we're pushing to the current stack only if the content isn't already there. */
 	private bool $m_currentStackOnce = false;
 
-	/** @var array<string, string> The stack content, keyed by name. */
+	/** @var array<string, string[]> The stack content, keyed by name. */
 	private array $m_stacks = [];
 
 	/** @var string The view's name. */
@@ -600,6 +600,18 @@ class View implements Response
 	}
 
 	/**
+	 * Generate the placeholder for a named stack's content.
+	 *
+	 * @param string $name The stack name.
+	 *
+	 * @return string The placeholder to inject into the rendered view.
+	 */
+	protected static function stackPlaceholder(string $name): string
+	{
+		return "<!-- @@BEAD_STACK {$name} -->";
+	}
+
+	/**
 	 * Yield the content of a named stack into a layout.
 	 *
 	 * @param string $name The name of the stack.
@@ -616,9 +628,9 @@ class View implements Response
 			throw new LogicException("Can't output a stack when not rendering a view.");
 		}
 
-		if (isset($view->m_stacks[$name])) {
-			echo implode("", $view->m_stacks[$name]);
-		}
+		// NOTE we insert a placeholder comment rather than rendering the stack because more content might be pushed
+		// to the stack during the rendering of the remainder of the view
+		echo static::stackPlaceholder($name);
 	}
 
 	/**
@@ -715,11 +727,33 @@ class View implements Response
 		$content = ob_get_clean();
 
 		if (isset($this->m_layout)) {
-			$content = $this->m_layout->render() . $content;
+			$content = $this->m_layout->renderStacks($this->m_layout->render()) . $content;
 			array_pop(self::$m_layoutStack);
 		}
 
 		array_pop(self::$m_renderStack);
+		return $content;
+	}
+
+	/**
+	 * Helper to render the stack content to the rendered layout.
+	 *
+	 * The rendering process will insert placeholder HTML comments into the content whenever a stack is yielded. This
+	 * method will replace those placeholders with the content of the stack. This is called after rendering the layout
+	 * so that any content pushed to a stack after the call to yield the stack content is not ignored. This is typically
+	 * the case with scripts and styles that are yielded to the &lt;head&gt; but are not populated until the content for
+	 * the &lt;body&gt; is generated.
+	 *
+	 * @param string $content The rendered layout content.
+	 *
+	 * @return string The layout content with the stack placeholders replaced with stack content.
+	 */
+	protected function renderStacks(string $content): string
+	{
+		foreach ($this->m_stacks as $stackName => $stackContent) {
+			$content = str_replace(self::stackPlaceholder($stackName), implode("", $stackContent), $content);
+		}
+
 		return $content;
 	}
 
