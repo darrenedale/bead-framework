@@ -39,7 +39,9 @@ use Equit\Validation\Rules\Length;
 use Equit\Validation\Rules\LessThan;
 use Equit\Validation\Rules\LessThanOrEqual;
 use Equit\Validation\Rules\Max;
+use Equit\Validation\Rules\MaxLength;
 use Equit\Validation\Rules\Min;
+use Equit\Validation\Rules\MinLength;
 use Equit\Validation\Rules\NotEqualTo;
 use Equit\Validation\Rules\NotIn;
 use Equit\Validation\Rules\Number;
@@ -120,6 +122,8 @@ class Validator
         "greater-than-or-equals" => GreaterThanOrEqual::class,
         "gte" => GreaterThanOrEqual::class,
         "length" => Length::class,
+        "min-length" => MinLength::class,
+        "max-length" => MaxLength::class,
         "regex" => RegEx::class,
         "regexp" => RegEx::class,
         "required-if" => RequiredIf::class,
