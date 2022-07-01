@@ -59,13 +59,13 @@ class Length implements Rule
      * @param string $field The field name of the data being checked.
      * @param mixed $data The data to check.
      *
-     * @return bool `true` if the data is a string or array of the required length, `false` otherwise..
+     * @return bool `true` if the data is a string or array of the required length, `false` otherwise.
      */
     public function passes(string $field, $data): bool
     {
         if (is_string($data)) {
             return $this->length() === strlen($data);
-        } else if (is_array($data)) {
+        } else if (is_array($data) || $data instanceof Countable) {
             return $this->length() === count($data);
         }
 
