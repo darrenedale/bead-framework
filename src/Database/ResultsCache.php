@@ -54,6 +54,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	/** @var int The number of rows in results being paged. */
 	private int $m_rowCount = 0;
 
+
 	/** @var int|null The index of the current chunk in memory when performing array access. */
 	private ?int $m_arrayAccessChunkIndex = null;
 
