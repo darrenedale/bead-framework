@@ -509,7 +509,7 @@ class WebApplication extends Application
 			}
 
 			/* load the ordered plugins, then the rest after */
-			$pluginLoadOrder = $this->config("app.plugins.generic.loadorder", []);
+			$pluginLoadOrder = $this->config("app.plugins.loadorder", []);
 
 			foreach ($pluginLoadOrder as $pluginName) {
 				$pluginFile = new SplFileInfo("{$info->getRealPath()}/{$pluginName}.php");
