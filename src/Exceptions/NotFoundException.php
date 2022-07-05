@@ -2,8 +2,6 @@
 
 namespace Equit\Exceptions;
 
-use Equit\Contracts\Response;
-
 /**
  * Exception-response to use when a request can't be fulfilled because it identifies a resource that does not exist.
  */

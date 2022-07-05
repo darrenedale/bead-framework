@@ -2,8 +2,6 @@
 
 namespace Equit\Exceptions;
 
-use Equit\Contracts\Response;
-
 /**
  * Exception-response to use when a user has attempted something they're not authorised to do.
  */
