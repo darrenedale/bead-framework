@@ -51,12 +51,14 @@ use UnexpectedValueException;
  * access to all the services that the application provides.
  *
  * ## Plugins
- * Plugins are loaded automatically by the `exec()` method and are sourced from the `plugins/generic/` subdirectory by
- * default. (This path is the default for historical reasons, and it is recommended that you use the app configuration
- * file to change this to `plugins`. A future release will change the default.) This can be customised in the app config
- * file, by providing a path (relative to the application's root directory). Any plugin found in this directory is
- * loaded. Subdirectories within the plugins directory are not scanned. It is therefore sufficient to install a plugin's
- * PHP file in the `plugins/generic/` subdirectory for it to be loaded and enabled by the application.
+ * Plugins are loaded automatically by the `exec()` method and are sourced from the `app/plugins/` subdirectory by
+ * default. This can be customised in the app config file, by providing a path (relative to the application's root
+ * directory) in the `plugins.path` item. Any plugin found in this directory is loaded. Plugin classes should be in the
+ * `App\Plugins` namespace. This too can be customised in the app config file, by providing a valid namespace in the
+ * `plugins.namespace` item. All plugins must be in the same namespace.
+ *
+ * Subdirectories within the plugins directory are not scanned. It is therefore sufficient to install a plugin's PHP
+ * file in the plugins subdirectory for it to be loaded and enabled by the application.
  *
  * The primary use-case for plugins is to monitor for events and augment the functionality of the application while not
  * actually handling requests themselves.
@@ -133,10 +135,10 @@ class WebApplication extends Application
 	public const SessionDataContext = "application";
 
 	/** @var string Where plugins are loaded from by default. Relative to the app root directory. */
-	protected const DefaultPluginsPath = "plugins/generic";
+	protected const DefaultPluginsPath = "app/Plugins";
 
 	/** @var string The default namespace for plugin classes. */
-	protected const DefaultPluginsNamespace = "";
+	protected const DefaultPluginsNamespace = "App\\Plugins";
 
 	/** @var string Where plugins are loaded from. */
 	private string $m_pluginsDirectory = self::DefaultPluginsPath;
@@ -178,6 +180,10 @@ class WebApplication extends Application
 
 		if (!empty($this->config("app.plugins.path"))) {
 			$this->setPluginsDirectory($this->config("app.plugins.path"));
+		}
+
+		if (!empty($this->config("app.plugins.namespace"))) {
+			$this->setPluginsNamespace($this->config("app.plugins.namespace"));
 		}
 	}
 
@@ -437,8 +443,8 @@ class WebApplication extends Application
 
         $pluginClassInfo = new ReflectionClass($className);
 
-		if (!$pluginClassInfo->isSubclassOf(GenericPlugin::class)) {
-			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" contains the class \"{$className}\" which does not implement " . GenericPlugin::class);
+		if (!$pluginClassInfo->isSubclassOf(Plugin::class)) {
+			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" contains the class \"{$className}\" which does not implement " . Plugin::class);
 		}
 
 		try {
@@ -461,7 +467,7 @@ class WebApplication extends Application
 			throw new InvalidPluginException($path, null, "{$className}::instance() has no return type");
 		}
 
-		if ($instanceFnReturnType->isBuiltin() || ("self" != $instanceFnReturnType->getName() && !is_a($instanceFnReturnType->getName(), GenericPlugin::class, true))) {
+		if ($instanceFnReturnType->isBuiltin() || ("self" != $instanceFnReturnType->getName() && !is_a($instanceFnReturnType->getName(), Plugin::class, true))) {
 			throw new InvalidPluginException($path, null, "{$className}::instance() must return an instance of {$className}");
 		}
 
@@ -603,9 +609,9 @@ class WebApplication extends Application
 	 *
 	 * @param $name string The class name of the plugin.
 	 *
-	 * @return GenericPlugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
+	 * @return Plugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
 	 */
-	public function pluginByName(string $name): ?GenericPlugin
+	public function pluginByName(string $name): ?Plugin
 	{
 		$this->loadPlugins();
 		return $this->m_pluginsByName[mb_strtolower($name, "UTF-8")] ?? null;
