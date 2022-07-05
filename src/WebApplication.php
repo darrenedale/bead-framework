@@ -31,31 +31,32 @@ use UnexpectedValueException;
  * method and wait for it to return.
  *
  * When the `exec()` method is called it reads the received HTTP request, passes it to `handleRequest()` for dispatch,
- * and returns. `handleRequest()` asks the installed Router to route the request to a handler, which responds to the
- * request and returns the response. The response is then sent to the client and `exec()` returns. The WebApplication
- * instance emits some useful events along the way.
+ * and returns. `handleRequest()` asks the installed `Router` to route the request to a handler, which actions the
+ * request and returns the `Response`. The response is then sent to the client and `exec()` returns. The
+ * `WebApplication` instance emits some useful events along the way.
  *
  * Some useful administrative information about the running application can be set using the `setTitle()`,
- * `setVersion()` and `setMinimumPhpVersion()` methods. The title and version are made available to any other code
- * that fetches the running instance so that, for example, user messages can show the application title without
- * having to have it hard-coded.
+ * `setVersion()` and `setMinimumPhpVersion()` methods. The title and version are made available to any other code that
+ * fetches the running instance so that, for example, user messages can show the application title without having to
+ * have it hard-coded.
  *
  * Applications that require a particular minimum version of PHP can set it using the `setMinimumPhpVersion()`
  * method. If this is done before `exec()` is called, the application will exit with an appropriate error message
  * when `exec()` is called if the PHP version on which the application is running is below the minimum set.
  *
- * For applications that make use of a data store, the `database()` method provides access to the DatabaseConnection
+ * For applications that make use of a data store, the `database()` method provides access to the `DatabaseConnection`
  * responsible for the interface between the application and the data store.
  *
  * The running `WebApplication` instance can be retrieved using the `instance()` static method. This instance provides
  * access to all the services that the application provides.
  *
  * ## Plugins
- * Plugins are loaded automatically by the `exec()` method and are sourced from the `plugins/generic/`
- * subdirectory by default. This can be customised in the app config file, by providing a path (relative to the
- * application's root directory). Any plugin found in this directory is loaded. Subdirectories within the plugins
- * directory are not scanned. It is therefore sufficient to install a plugin's PHP file in the `plugins/generic/`
- * subdirectory for it to be loaded and enabled by the application.
+ * Plugins are loaded automatically by the `exec()` method and are sourced from the `plugins/generic/` subdirectory by
+ * default. (This path is the default for historical reasons, and it is recommended that you use the app configuration
+ * file to change this to `plugins`. A future release will change the default.) This can be customised in the app config
+ * file, by providing a path (relative to the application's root directory). Any plugin found in this directory is
+ * loaded. Subdirectories within the plugins directory are not scanned. It is therefore sufficient to install a plugin's
+ * PHP file in the `plugins/generic/` subdirectory for it to be loaded and enabled by the application.
  *
  * The primary use-case for plugins is to monitor for events and augment the functionality of the application while not
  * actually handling requests themselves.
@@ -72,7 +73,7 @@ use UnexpectedValueException;
  * arguments).
  *
  * Events are emitted by calling the `emitEvent()` method. Subscriptions to events are achieved by calling the
- * `connect()` method. Subscriptions can be unsubscribed by calling  `disconnect()`. Events do not need to be
+ * `connect()` method. Subscriptions can be unsubscribed by calling `disconnect()`. Events do not need to be
  * registered or defined before they are emitted - it is sufficient just to call `emitEvent()` in order to emit an
  * event. Any code -- plugin, class or even the main application script or `WebApplication` object -- can emit events.
  *
@@ -81,9 +82,9 @@ use UnexpectedValueException;
  * events distinct to avoid event naming clashes between different emitters.
  *
  * ## Session management
- * The `WebApplication` class can be used to manage session data in a way that guarantees clashes between plugins and
- * other applications running on the same domain are avoided. It implements a mechanism that is very simple to use
- * by hiding the complexities of keeping session data distinct behind simple, unique "context" strings. See the
+ * The `WebApplication` class can be used to manage session data in a way that all-but guarantees clashes between the
+ * bead app and other applications running on the same domain are avoided. It implements a mechanism that is very simple
+ * to use by hiding the complexities of keeping session data distinct behind simple, unique "context" strings. See the
  * `sessionData()` method for details of how this works.
  *
  * ### Events
@@ -116,25 +117,13 @@ use UnexpectedValueException;
  * - `application.responsesent`
  *   Emitted by `exec()` immediately after the response returned by handleRequest() has been sent to the client.
  *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not use any settings.
- *
  * ### Session Data
  * The Application class creates a session context with the identifier **application**.
  *
  * @events application.pluginsloaded application.executionstarted application.handlerequest.requestreceived
  *     application.handlerequest.routing application.handlerequest.routed
  *     application.executionfinished application.sendingresponse application.responsesent
- * @connections `None`
- * @settings `None`
  * @session application
- *
- * @class WebApplication
- * @author Darren Edale
- * @package bead-framework
  *
  * @method static self instance()
  */
@@ -173,8 +162,7 @@ class WebApplication extends Application
 	/**
 	 * Construct a new Application object.
 	 *
-	 * Application is a singleton class. Once an instance has been created, attempts to create another will trigger
-	 * a fatal error.
+	 * WebApplication is a singleton class. Once an instance has been created, attempts to create another will throw.
 	 *
 	 * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
 	 * @param $db DatabaseConnection|null The data controller for the application.
@@ -187,29 +175,21 @@ class WebApplication extends Application
 		$this->initialiseSession();
 		$this->m_session = &$this->sessionData(self::SessionDataContext);
 		$this->setRouter(new Router());
+
+		if (!empty($this->config("app.plugins.path"))) {
+			$this->setPluginsDirectory($this->config("app.plugins.path"));
+		}
 	}
 
 	/**
-	 * Initialise the application session data.
+	 * Initialise the bead-framework application's session data.
 	 */
 	private function initialiseSession(): void
 	{
-		static $s_basePath = null;
-		$appUid = $this->config("app.uid");
-
-		if (is_null($s_basePath)) {
-			$s_basePath = ["app", $appUid,];
-		}
-
 		session_start();
-		$session =& $_SESSION;
 
-		foreach ($s_basePath as $p) {
-			if (!array_key_exists($p, $session) || !is_array($session[$p])) {
-				$session[$p] = [];
-			}
-
-			$session =& $session[$p];
+		if (!array_key_exists("bead-app", $_SESSION) || !is_array($_SESSION["bead-app"])) {
+			$_SESSION["bead-app"] = [];
 		}
 
 		// forces the CSRF token to be generated if there isn't one
@@ -218,7 +198,8 @@ class WebApplication extends Application
 		$this->sessionData(self::SessionDataContext)["_transient.flush"] = [];
 	}
 
-	/** Determine whether the application is currently running or not.
+	/**
+	 * Determine whether the application is currently running or not.
 	 *
 	 * The application is running if its `exec()` method has been called and has not yet returned.
 	 *
@@ -303,27 +284,25 @@ class WebApplication extends Application
 	 * Fetch the application's session data.
 	 *
 	 * This method should be used to access the session data rather than using `$_SESSION` directly as it ensures
-	 * that the application's session data is kept separate from any other session data that is using the same
-	 * domain name. Use of the context parameter ensures that different parts of the application can keep their
-	 * session data separate from other parts and therefore avoid namespace clashes and so on.
+	 * that the bead framework application's session data is kept separate from any other session code's session data.
+	 * Use of the context parameter ensures that different parts of the application can keep their session data separate
+	 * from other parts and therefore avoid namespace clashes and so on.
 	 *
-	 * The session data for the context is returned as an array reference, which calling code will need to assign
-	 * by
+	 * The session data for the context is returned as an array reference, which calling code will need to assign by
 	 * reference in order to use successfully. If it is not assigned by reference, any changes made to the provided
 	 * session array will not persist between requests. To do this, do something like the following in your code:
 	 *
-	 *     $mySession = & LibEquit\Application::instance()->sessionData("mycontext");
+	 *     $session = & Equit\WebApplication::instance()->sessionData("context");
 	 *
-	 * Once you have done this, you can use `$mySession` just like you would use `$_SESSION` to store your session
-	 * data.
+	 * Once you have done this, you can use `$session` just like you would use `$_SESSION` to store your session data.
 	 *
 	 * There is nothing special that needs to be done to create a new session context. If a request is made for a
 	 * context that does not already exist, a new one is automatically initialised and returned.
 	 *
 	 * @param $context string A unique context identifier for the session data.
 	 *
-	 * @return array[mixed => mixed] A reference to the session data for the given context.
-	 * @throws \InvalidArgumentException If an empty context is given.
+	 * @return array<mixed,mixed> A reference to the session data for the given context.
+	 * @throws InvalidArgumentException If an empty context is given.
 	 */
 	public function & sessionData(string $context): array
 	{
@@ -333,13 +312,12 @@ class WebApplication extends Application
 
 		// ensure context is not numeric (avoids issues when un-serialising session data)
 		$context = "ctx-$context";
-		$session = &$_SESSION["app"][$this->config("app.uid")];
 
-		if (!isset($session[$context])) {
-			$session[$context] = [];
+		if (!isset($_SESSION["bead-app"][$context])) {
+			$_SESSION["bead-app"][$context] = [];
 		}
 
-		$session = &$session[$context];
+		$session = &$_SESSION["bead-app"][$context];
 		return $session;
 	}
 
