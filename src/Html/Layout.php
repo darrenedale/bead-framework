@@ -1,51 +1,12 @@
 <?php
 
-/**
- * Defines the Layout interface.
- *
- * ### Dependencies
- * No dependencies.
- *
- * ### Changes
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-22) class created.
- *
- * @file Layout.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- */
-
 namespace Equit\Html;
-
-use Equit\AppLog;
-use Equit\Html\Element;
 
 /** An interface for page element layouts.
  *
  * This class defines the interface that must be implemented to provide a layout for a web page.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class Layout
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 abstract class Layout extends Element{
 	/**

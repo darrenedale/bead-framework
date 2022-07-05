@@ -1,21 +1,5 @@
 <?php
 
-/**
- * Defines the Dialogue class.
- *
- * ### Dependencies
- * - classes/equit/PageSection.php
- *
- * ### Changes
- * - (2017-05) Updated documentation.
- * - (2013-12-10) First version of this file.
- *
- * @file Dialogue.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 /**
@@ -38,28 +22,10 @@ namespace Equit\Html;
  * default is for the dialogue to assume its message is plain text, which means that it will escape the message for HTML
  * when generating its output.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class Dialogue
- * @author Darren Edale
- * @package bead-framework
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class Dialogue extends Division {
+class Dialogue extends Division
+{
 	/** @var int Flag indicating that the client-provided message is already in HTML format. */
 	const MessageIsHtml = 0x01;
 

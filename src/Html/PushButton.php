@@ -1,28 +1,8 @@
 <?php
 
-/**
- * Defines the PushButton class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Changes
- * - (2017-05) Updated documentation.
- * - (2013-12-10) First version of this file.
- *
- * @file PushButton.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\HasTooltip;
-use Equit\Html\Element;
 
 /**
  * A push button for inclusion in forms.
@@ -38,24 +18,7 @@ use Equit\Html\Element;
  * As yet there are no facilities to enable push buttons to have runtime code
  * attached. This is likely to follow in the near future.
  *
- * ### Events
- * This module does not emit any events.
- *
- * @noconnections
- * ### Connections
- * This module does not connect to any events.
- *
- * @nosettings
- * ### Settings
- * This module does not read any settings.
- *
- * @nosession
- * ### Session Data
- * This module does not create a session context.
- *
- * @class PushButton
- * @author Darren Edale
- * @package bead-framework
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class PushButton extends Element {
 	use HasTooltip;

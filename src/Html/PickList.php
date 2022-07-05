@@ -1,21 +1,5 @@
 <?php
 
-/**
- * Defines the _PickList_ class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/Page.php
- * - classes/equit/PageElement.php
- *
- * ### Changes
- * - (2017-05) Updated documentation. Migrated array literals to `[]` syntax.
- * - (2013-12-10) First version of this file.
- *
- * @file PickList.php
- * @author Darren Edale
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
@@ -35,26 +19,7 @@ use Equit\AppLog;
  * any item is added without a display text, the value will be used for the display text. Every item added to the list
  * of options is required to have a value.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
- *
- * @class PickList
- * @author Darren Edale
- * @package bead-framework
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class PickList extends Element {
 	// import traits

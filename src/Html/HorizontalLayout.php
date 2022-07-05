@@ -1,27 +1,5 @@
 <?php
 
-/**
-* Defines the _HorizontalLayout_ class.
-*
-* Applications that wish to lay out forms using horizontal boxes must include
-* this file.
-*
-* ### Dependencies
-* - classes/equit/AppLog.php
-* - classes/equit/Layout.php
-* - classes/equit/LibEquit\PageElement.php
-* - classes/equit/LibEquit\Page.php
-*
-* ### Changes
-* - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
-* - (2013-12-22) class created.
-*
-* @file HorizontalLayout.php
-* @author Darren Edale
-* @version 0.9.2
-* @version 0.9.2* @package bead-framework
-*/
-
 namespace Equit\Html;
 
 /**
@@ -33,26 +11,7 @@ namespace Equit\Html;
  * If an element or layout is inserted to any position that is occupied by an existing child  element or layout the
  * existing child is moved to the right and the new element or layout occupies its original position.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
- *
- * @class HorizontalLayout
- * @author Darren Edale
- * @package bead-framework
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class HorizontalLayout extends Layout {
 	/**

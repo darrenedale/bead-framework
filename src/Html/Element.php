@@ -1,20 +1,5 @@
 <?php
 
-/**
- * Defines the LibEquit\PageElement base class.
- *
- * ### Dependencies
- *
- * ### Changes
- * - (2017-05) Updated documentation. Migrated to `[]` syntax for array literals.
- * - (2013-12-10) First version of this file.
- *
- * @file LibEquit\PageElement.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 /**
@@ -26,26 +11,7 @@ namespace Equit\Html;
  * internal data structures for some of the facilities provided by the protected helper methods are properly
  * initialised. Failure to do so could result in your subclass generating PHP errors in calls to this base class.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class LibEquit\PageElement
- * @author Darren Edale
- * @package bead-framework
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 abstract class Element
 {

@@ -1,13 +1,10 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: darren
- * Date: 23/03/19
- * Time: 14:53
- */
 
 namespace Equit\Html;
 
+/**
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ */
 class UnorderedList extends Element {
 	use HasListItems;
 	use HasTooltip;

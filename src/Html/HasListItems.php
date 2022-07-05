@@ -1,18 +1,10 @@
 <?php
 
-/**
- * Defines the HasListItems trait.
- *
- * Classes that utilise this trait can have a list items added.
- *
- * @file HasListItems.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- */
-
 namespace Equit\Html;
 
+/**
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ */
 trait HasListItems {
 
 	/**

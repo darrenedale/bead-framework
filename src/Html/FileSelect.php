@@ -1,31 +1,8 @@
 <?php
 
-/**
- * Defines the _FileSelect_ class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Changes
- * - (2018-09) Uses traits for common HTML attributes.
- * - (2018-09) Uses string type hints.
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from `array()`.
- * - (2013-12-10) First version of this file.
- *
- * @file FileSelect.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\HasNameAttribute;
-use Equit\Html\HasTooltip;
-use Equit\Html\Element;
 
 /**
  * A file selector for inclusion in forms.
@@ -34,26 +11,7 @@ use Equit\Html\Element;
  * have a number of MIME types added to hint to the user agent what MIME types the user should be allowed to choose.
  * Support for this is dependent on the user agent as it is only a hint.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
- *
- * @class FileSelect
- * @author Darren Edale
- * @package bead-framework
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class FileSelect extends Element {
 	use HasTooltip;

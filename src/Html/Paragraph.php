@@ -1,21 +1,5 @@
 <?php
 
-/**
- * Defines the Paragraph page element class.
- *
- * ### Dependencies
- * - Equit\Html\PageElement.php
- * - Equit\Html\Tooltip.php
- *
- * ### Changes
- * - (2019-03) First version of this file.
- *
- * @file Paragraph.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 /**
@@ -27,16 +11,7 @@ namespace Equit\Html;
  * The section can be cleared of all its child elements with the clear()
  * method. There is as yet no facility to remove children.
  *
- * @class Paragraph
- * @author Darren Edale
- * @package Equit\Html
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class Paragraph extends Element implements ContainerElement {
 	use HasTooltip;

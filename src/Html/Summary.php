@@ -2,6 +2,9 @@
 
 namespace Equit\Html;
 
+/**
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ */
 class Summary extends Element
 {
     use HasChildElements;

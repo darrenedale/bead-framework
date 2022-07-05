@@ -1,22 +1,5 @@
 <?php
 
-/**
- * Defines the Division page element class.
- *
- * ### Dependencies
- * - Equit\Html\PageElement
- * - Equit\Html\Tooltip
- *
- * ### Changes
- * - (2019-03) Renamed Division to avoid confusion with HTML section elements.
- * - (2013-12-10) First version of this file.
- *
- * @file Division.php
- * @author Darren Edale
- * @version 0.9.2
- * @package Equit\Html
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 /**
@@ -27,16 +10,7 @@ namespace Equit\Html;
  * The division can be cleared of all its child elements with the clear() method. There is as yet no facility to remove
  * individual children.
  *
- * @class Division
- * @author Darren Edale
- * @package \Equit\Html
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class Division extends Element implements ContainerElement {
 	use HasTooltip;

@@ -1,18 +1,10 @@
 <?php
 
-/**
- * Defines the HasDisabledAttribute trait.
- *
- * Classes that utilise this trait can have a **disabled** attribute set.
- *
- * @file HasDisabledAttribute.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- */
-
 namespace Equit\Html;
 
+/**
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ */
 trait HasDisabledAttribute {
 	/**
 	 * Set the disabled attribute for the element.

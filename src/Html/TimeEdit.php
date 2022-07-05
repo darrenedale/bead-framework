@@ -8,26 +8,6 @@ use Equit\AppLog;
 use Exception;
 
 /**
- * Defines the TimeEdit class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Changes
- * - (2018-09) Uses traits for common HTML attributes.
- * - (2018-09) Uses string type hints.
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-10) First version of this file.
- *
- * @file DateEdit.php
- * @author Darren Edale
- * @version 0.9.2
- * @version 0.9.2 * @package bead-framework
- */
-
-/**
  * A time editor for inclusion in forms.
  *
  * The date editor currently uses the HTML5 _time_ input type. User agents that do not support this element _should_
@@ -39,26 +19,7 @@ use Exception;
  * content can be entered. It's good practice to do such validation anyway (and you're asking for trouble if you don't),
  * but in this case it is a necessity.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class DateEdit
- * @author Darren Edale
- * @package bead-framework
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class TimeEdit extends Element {
 	use HasNameAttribute;

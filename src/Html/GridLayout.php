@@ -1,24 +1,5 @@
 <?php
 
-/**
- * Defines the GridLayout class.
- *
- * ### Dependencies
- * - classes/equit/Layout.php
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Changes
- * - (2018-10) Wrapped in LibEquit namespace. PHP7.2 type hinting.
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-22) class ported from bpLibrary.
- *
- * @file GridLayout.php
- * @author Darren Edale
- * @version 0.9.2
- * @version 0.9.2 * @package bead-framework
- */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
@@ -35,26 +16,7 @@ use Equit\Html\Detail\GridLayoutItem;
  * element or layout is added to any cell that is occupied by an existing child element or layout, whether that cell is
  * its anchor cell or simply one it spans, the existing child is removed and replaced with the new element or layout.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
- *
- * @class GridLayout
- * @author Darren Edale
- * @package bead-framework
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class GridLayout extends Layout {
 	/** @var int Alignment flag to align content with the left edge of its cell. */

@@ -1,12 +1,4 @@
 <?php
-/**
- * Defines the HasTooltip trait.
- *
- * @file HasTooltip.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- */
 
 namespace Equit\Html;
 
@@ -14,6 +6,8 @@ namespace Equit\Html;
  * Trait HtmlTooltip.
  *
  * Trait to enable HTML elements to support tooltips without having to reimplement the functionality over and over.
+ *
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 trait HasTooltip
 {

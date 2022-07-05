@@ -6,6 +6,8 @@ use TypeError;
 
 /**
  * A &lt;details&gt; page element.
+ *
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class Details extends Element
 {

@@ -1,24 +1,5 @@
 <?php
 
-/**
- * Defines the Label class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- * - classes/equit/HtmlTooltip.php
- *
- * ### Changes
- * - (2017-05) Updated documentation.
- * - (2013-12-10) First version of this file.
- *
- * @file Label.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
@@ -30,26 +11,7 @@ use Equit\AppLog;
  * primary intended use, it is valid to use _Label_ objects elsewhere in the page, although it is likely that other
  * classes are a better fit for such usage (e.g. _HtmlSection_).
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class Label
- * @author Darren Edale
- * @package bead-framework
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class Label extends Element {
 	use HasTooltip;

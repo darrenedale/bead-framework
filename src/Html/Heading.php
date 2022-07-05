@@ -1,20 +1,5 @@
 <?php
 
-/**
- * Defines the LibEquit\HtmlHeading class.
- *
- * ### Dependencies
- * - classes/equit/PageElement.php
- *
- * ### Changes
- * - (2019-03) First version of this file.
- *
- * @file HtmlHeading.php
- * @author Darren Edale
- * @version 0.9.2
- * @package bead-framework
- * @version 0.9.2 */
-
 namespace Equit\Html;
 
 /**
@@ -23,26 +8,7 @@ namespace Equit\Html;
  * This generates <h1> to <h6> heading elements. The content of the heading is fully configurable by providing
  * PageElement objects, or can simply be used with plain text, which will be HTML-escaped before output.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class LibEquit\HtmlLiteral
- * @author Darren Edale
- * @package bead-framework
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class Heading extends Element {
 	/**

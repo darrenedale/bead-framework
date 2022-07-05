@@ -1,27 +1,8 @@
 <?php
 
-/**
- * Defines the StaticValueWidget class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Changes
- * - (2017-05) Updated documentation.
- * - (2013-12-10) First version of this file.
- *
- * @file StaticValueWidget.php
- * @author Darren Edale
- * @version 0.9.2
- * @version 0.9.2 * @package bead-framework
- */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\HiddenValueWidget;
 
 /**
  * A widget for inclusion in forms that contains a fixed value with a display text.
@@ -30,26 +11,7 @@ use Equit\Html\HiddenValueWidget;
  * static content that the user is not able to alter, and it's like a hidden value widget in that it contains a
  * value that the user is unable to modify that is submitted with the form data.
  *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
- *
- * @class StaticValueWidget
- * @author Darren Edale
- * @package bead-framework
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class StaticValueWidget extends HiddenValueWidget {
 	/** @var int Content type enumerator representing plain text content. */
