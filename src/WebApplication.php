@@ -146,14 +146,11 @@ class WebApplication extends Application
 	/** @var string The namespace where plugins are located. */
 	private string $m_pluginsNamespace = self::DefaultPluginsNamespace;
 
-	/** Application class's session data array. */
+	/** WebApplication class's session data array. */
 	protected ?array $m_session = null;
 
 	/** Loaded plugin storage.*/
 	private array $m_pluginsByName = [];
-
-	/** Stack of requests passed to handleRequest(). */
-	private array $m_requestStack = [];
 
 	/** @var bool True when exec() is in progress, false otherwise. */
 	private bool $m_isRunning = false;
@@ -162,7 +159,7 @@ class WebApplication extends Application
 	private RouterContract $m_router;
 
 	/**
-	 * Construct a new Application object.
+	 * Construct a new WebApplication object.
 	 *
 	 * WebApplication is a singleton class. Once an instance has been created, attempts to create another will throw.
 	 *
@@ -219,8 +216,8 @@ class WebApplication extends Application
 	/**
 	 * Set the plugins directory.
 	 *
-	 * The plugins directory can only be set before exec() is called. If exec() has been called, calling
-	 * setPluginsDirectory() will fail.
+	 * The plugins directory can only be set before `exec()` is called. If `exec()` has been called, calling
+	 * `setPluginsDirectory()` will fail.
 	 *
 	 * @param string $dir The directory to load plugins from.
 	 *
@@ -400,18 +397,15 @@ class WebApplication extends Application
 	/**
 	 * Load a plugin.
 	 *
-	 * Various checks are performed to ensure that the path represents a genuine plugin for the application. If it
-	 * does, it is loaded and added to the application's set of available plugins. Each plugin is guaranteed to be
-	 * loaded just once.
+	 * Various checks are performed to ensure that the path represents a genuine plugin for the application. If it does,
+	 * it is loaded and added to the application's set of available plugins. Each plugin is guaranteed to be loaded just
+	 * once.
 	 *
 	 * Plugins are required to meet the following conditions:
 	 * - defined in a file named exactly as the plugin class is named, with the extension ".php"
-	 * - define a class that inherits the *\Equit\GenericPlugin* base class
+	 * - define a class that inherits the `Equit\Plugin` base class
 	 * - provide a valid instance of the appropriate class from the `instance()` method of the main plugin class
 	 *   defined in the file
-	 *
-	 * ### Todo
-	 * - How to allow plugin classes to exist in a namespace other than the global namespace?
 	 *
 	 * @param $path string The path to the plugin to load.
 	 *
@@ -484,10 +478,10 @@ class WebApplication extends Application
 		$this->m_pluginsByName[$classNameKey] = $plugin;
 	}
 
-	/** Load all the available plugins.
+	/**
+	 * Load all the available plugins.
 	 *
-	 * Plugins are loaded from the default plugins path. All valid plugins found are loaded and instantiated. The
-	 * error log will contain details of any plugins that failed to load.
+	 * Plugins are loaded from the configured plugins path. All valid plugins found are loaded and instantiated.
 	 *
 	 * @return bool true if the plugins path was successfully scanned for plugins, false otherwise.
 	 * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
@@ -601,11 +595,8 @@ class WebApplication extends Application
 	/**
 	 * Fetch a plugin by its name.
 	 *
-	 * If the plugin has been loaded, the created instance of that plugin will be returned.
-	 *
-	 * Plugins can use this method to fetch instances of any other plugins on which they depend. If this method
-	 * returns `null` then plugins should assume that the plugin on which they depend is not available and act
-	 * accordingly.
+	 * If the plugin has been loaded, the created instance of that plugin will be returned. The provided class name must
+	 * be fully-qualified with its namespace.
 	 *
 	 * @param $name string The class name of the plugin.
 	 *
