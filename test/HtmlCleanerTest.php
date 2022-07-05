@@ -14,7 +14,7 @@ namespace Equit\Test;
 use Equit\Test\Framework\TestCase;
 use Exception;
 use InvalidArgumentException;
-use Equit\HtmlCleaner;
+use Equit\Util\HtmlCleaner;
 use StdClass;
 use TypeError;
 

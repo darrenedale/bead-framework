@@ -9,7 +9,7 @@
 
 declare(strict_types = 1);
 
-namespace Equit;
+namespace Equit\Util;
 
 use DOMDocument;
 use DOMNode;

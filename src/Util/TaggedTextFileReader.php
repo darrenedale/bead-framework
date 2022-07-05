@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit;
+namespace Equit\Util;
 
 use StdClass;
 
