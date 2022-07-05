@@ -5,6 +5,7 @@ namespace Equit;
 use DirectoryIterator;
 use Equit\Contracts\Response;
 use Equit\Contracts\Router as RouterContract;
+use Equit\Database\Connection;
 use Equit\Exceptions\CsrfTokenVerificationException;
 use Equit\Exceptions\InvalidPluginException;
 use Equit\Exceptions\InvalidPluginsDirectoryException;
@@ -44,7 +45,7 @@ use UnexpectedValueException;
  * method. If this is done before `exec()` is called, the application will exit with an appropriate error message
  * when `exec()` is called if the PHP version on which the application is running is below the minimum set.
  *
- * For applications that make use of a data store, the `database()` method provides access to the `DatabaseConnection`
+ * For applications that make use of a data store, the `database()` method provides access to the `Connection`
  * responsible for the interface between the application and the data store.
  *
  * The running `WebApplication` instance can be retrieved using the `instance()` static method. This instance provides
@@ -164,11 +165,11 @@ class WebApplication extends Application
 	 * WebApplication is a singleton class. Once an instance has been created, attempts to create another will throw.
 	 *
 	 * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
-	 * @param $db DatabaseConnection|null The data controller for the application.
+	 * @param $db Connection|null The data controller for the application.
 	 *
 	 * @throws \Exception if an Application instance has already been created.
 	 */
-	public function __construct(string $appRoot, ?DatabaseConnection $db = null)
+	public function __construct(string $appRoot, ?Connection $db = null)
 	{
 		parent::__construct($appRoot, $db);
 		$this->initialiseSession();

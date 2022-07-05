@@ -3,6 +3,7 @@
 namespace Equit;
 
 use Equit\Contracts\ErrorHandler;
+use Equit\Database\Connection;
 use DirectoryIterator;
 use Equit\ErrorHandler as EquitErrorHandler;
 use Exception;
@@ -46,19 +47,19 @@ abstract class Application
     /** @var \Equit\Contracts\ErrorHandler|null The currently installed error handler. */
     private ?ErrorHandler $m_errorHandler = null;
 
-    /** @var DatabaseConnection|null The data controller. */
-    private ?DatabaseConnection $m_dbConnection = null;
+    /** @var Connection|null The data controller. */
+    private ?Connection $m_dbConnection = null;
 
     /** @var array The loaded config. */
     private array $m_config = [];
 
     /**
      * @param string $appRoot
-     * @param \Equit\DatabaseConnection|null $db
+     * @param Connection|null $db
      *
      * @throws \Exception if the singleton has already been created or if the provided root directory does not exist.
      */
-    public function __construct(string $appRoot, ?DatabaseConnection $db = null)
+    public function __construct(string $appRoot, ?Connection $db = null)
     {
         $this->setErrorHandler(new EquitErrorHandler());
 
@@ -292,9 +293,9 @@ abstract class Application
      * The returned data controller should be used by all classes and plugins whenever access to the database is
      * required.
      *
-     * @return DatabaseConnection|null The data controller.
+     * @return Connection|null The data controller.
      */
-    public function database(): ?DatabaseConnection
+    public function database(): ?Connection
     {
         return $this->m_dbConnection;
     }
@@ -304,9 +305,9 @@ abstract class Application
      * The data controller mediates all interaction between the application (including classes and plugins) and the
      * database.
      *
-     * @param $controller DatabaseConnection|null The data controller to use.
+     * @param $controller Connection|null The data controller to use.
      */
-    public function setDatabase(?DatabaseConnection $controller): void
+    public function setDatabase(?Connection $controller): void
     {
         $this->m_dbConnection = $controller;
     }

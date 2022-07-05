@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit;
+namespace Equit\Database;
 
 use DateTime;
 use Exception;
@@ -50,7 +50,7 @@ use StdClass;
  * @settings _None_
  * @session _None_
  */
-class DatabaseConnection extends PDO
+class Connection extends PDO
 {
 	/**
 	 * Create a new instance of a data controller.
