@@ -51,7 +51,7 @@ class ErrorHandler implements ErrorHandlerContract
 	 */
 	protected function errorPageViewName(): string
 	{
-		return "errors.generic";
+		return "errors.error";
 	}
 
     /**
