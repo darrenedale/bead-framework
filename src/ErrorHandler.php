@@ -19,11 +19,11 @@ class ErrorHandler implements ErrorHandlerContract
      *
      * The default implementation will display the error if the Application is in debug mode.
      *
-     * @param Throwable $err The exception.
+     * @param Throwable $error The exception.
      *
      * @return bool true if it should be displayed, false otherwise.
      */
-    protected function shouldDisplay(Throwable $err): bool
+    protected function shouldDisplay(Throwable $error): bool
     {
         $app = Application::instance();
         return $app && $app->isInDebugMode();
@@ -60,16 +60,16 @@ class ErrorHandler implements ErrorHandlerContract
      * Display will be to the WebApplication's page (if it has one, a default page if it does not); or to standard
      * output if the application is not a WebApplication.
      *
-     * @param Throwable $err The exception to display.
+     * @param Throwable $error The exception to display.
      */
-    protected function display(Throwable $err): void
+    protected function display(Throwable $error): void
     {
         $app = Application::instance();
 
         if ($app instanceof WebApplication) {
-            $this->displayExceptionInView($err);
+            $this->displayExceptionInView($error);
         } else {
-            $this->outputToStream($err, STDERR);
+            $this->outputToStream($error, STDERR);
         }
     }
 
@@ -82,7 +82,7 @@ class ErrorHandler implements ErrorHandlerContract
     {
 		try {
 			WebApplication::instance()->sendResponse(new View($this->exceptionDisplayViewName(), compact("error")));
-		} catch (Throwable $err) {
+		} catch (Throwable $error) {
 			// extremely basic fallback display
 			WebApplication::instance()->sendResponse(new class($error) extends AbstractResponse {
 				private Throwable $m_error;
@@ -121,7 +121,7 @@ class ErrorHandler implements ErrorHandlerContract
 	{
 		try {
 			WebApplication::instance()->sendResponse(new View($this->errorPageViewName()));
-		} catch (Throwable $err) {
+		} catch (Throwable $error) {
 			// extremely basic fallback display
 			WebApplication::instance()->sendResponse(new class() extends AbstractResponse {
 				public function statusCode(): int
@@ -181,14 +181,14 @@ HTML;
     /**
      * Output an exception to a stream.
      *
-     * @param Throwable $err The exception to output.
+     * @param Throwable $error The exception to output.
      * @param resource $stream The stream resource to which it should be output.
      */
-    protected function outputToStream(Throwable $err, $stream): void
+    protected function outputToStream(Throwable $error, $stream): void
     {
-        fputs($stream, "Exception `" . get_class($err) . "` in '{$err->getFile()}' @ {$err->getLine()}: [{$err->getCode()}] {$err->getMessage()}\n");
+        fputs($stream, "Exception `" . get_class($error) . "` in '{$error->getFile()}' @ {$error->getLine()}: [{$error->getCode()}] {$error->getMessage()}\n");
 
-        foreach ($err->getTrace() as $frame) {
+        foreach ($error->getTrace() as $frame) {
             fputs($stream, "... from '{$frame["file"]}' @ {$frame["line"]}");
 
             if (isset($frame["function"])) {
@@ -209,11 +209,11 @@ HTML;
      * The default implementation just logs it to the current error log. Subclass this error handler to do something
      * more detailed.
      *
-     * @param Throwable $err The exception to report.
+     * @param Throwable $error The exception to report.
      */
-    protected function report(Throwable $err): void
+    protected function report(Throwable $error): void
     {
-        AppLog::error($err->getMessage(), $err->getFile(), $err->getLine());
+        AppLog::error($error->getMessage(), $error->getFile(), $error->getLine());
     }
 
     /**
@@ -238,23 +238,23 @@ HTML;
      * The exception is reported, displayed if necessary, and the script exits. The exception's error code is used as
      * the script exit code.
      *
-     * @param Throwable $err The exception that was thrown.
+     * @param Throwable $error The exception that was thrown.
      */
-    public function handleException(Throwable $err): void
+    public function handleException(Throwable $error): void
     {
-        $this->report($err);
+        $this->report($error);
 
-		if (Application::instance() instanceof WebApplication && $err instanceof Response) {
+		if (Application::instance() instanceof WebApplication && $error instanceof Response) {
 			// if the exception is itself a response, send it
 			WebApplication::instance()->sendResponse($error);
-		} else if ($this->shouldDisplay($err)) {
+		} else if ($this->shouldDisplay($error)) {
 			// display the error information
-            $this->display($err);
+            $this->display($error);
         } else if (Application::instance() instanceof WebApplication) {
 			// in production, just show the generic error page
 			$this->showErrorPage();
 		}
 
-        exit($err->getCode());
+        exit($error->getCode());
     }
 }
