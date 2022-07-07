@@ -3,6 +3,7 @@
 namespace Equit;
 
 use Equit\Contracts\ErrorHandler as ErrorHandlerContract;
+use Equit\Contracts\Response;
 use Equit\Exceptions\HttpException;
 use Equit\Responses\AbstractResponse;
 use Error;
@@ -31,11 +32,26 @@ class ErrorHandler implements ErrorHandlerContract
 	/**
 	 * Fetch the name of the view to use to render exceptions.
 	 *
+	 * This is used to display exception details when the web app is in debug mode.
+	 *
 	 * @return string The view name.
 	 */
-	protected function viewName(): string
+	protected function exceptionDisplayViewName(): string
 	{
 		return "errors.exception";
+	}
+
+	/**
+	 * Fetch the name of the view to use when exceptions are not being shown.
+	 *
+	 * This means the user is not greeted with an entirely blank page when an error occurs and the web app is not in
+	 * debug mode (i.e. in production).
+	 *
+	 * @return string The view name.
+	 */
+	protected function errorPageViewName(): string
+	{
+		return "errors.generic";
 	}
 
     /**
@@ -51,7 +67,7 @@ class ErrorHandler implements ErrorHandlerContract
         $app = Application::instance();
 
         if ($app instanceof WebApplication) {
-            $this->displayInView($err);
+            $this->displayExceptionInView($err);
         } else {
             $this->outputToStream($err, STDERR);
         }
@@ -62,14 +78,10 @@ class ErrorHandler implements ErrorHandlerContract
      *
      * @param Throwable $error The exception to display.
      */
-    protected function displayInView(Throwable $error): void
+    protected function displayExceptionInView(Throwable $error): void
     {
 		try {
-			if ($error instanceof HttpException) {
-				WebApplication::instance()->sendResponse($error);
-			} else {
-				WebApplication::instance()->sendResponse(new View($this->viewName(), compact("error")));
-			}
+			WebApplication::instance()->sendResponse(new View($this->exceptionDisplayViewName(), compact("error")));
 		} catch (Throwable $err) {
 			// extremely basic fallback display
 			WebApplication::instance()->sendResponse(new class($error) extends AbstractResponse {
@@ -97,6 +109,74 @@ class ErrorHandler implements ErrorHandlerContract
 			});
 		}
     }
+
+	/**
+	 * Display the generic error page.
+	 *
+	 * This is used in a web app when the error handler indicates error details should not be displayed.
+	 *
+	 * @return void
+	 */
+	protected function showErrorPage(): void
+	{
+		try {
+			WebApplication::instance()->sendResponse(new View($this->errorPageViewName()));
+		} catch (Throwable $err) {
+			// extremely basic fallback display
+			WebApplication::instance()->sendResponse(new class() extends AbstractResponse {
+				public function statusCode(): int
+				{
+					return 500;
+				}
+
+				public function contentType(): string
+				{
+					return "text/html";
+				}
+
+				public function content(): string
+				{
+					return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Error Page</title>
+<style>
+h1 {
+	margin: 0;
+	padding: 10px 20%;
+	font-family: sans-serif;
+	font-size: 40px;
+	font-weight: bold;
+	background: #ff4040;
+	color: #fff;
+	border-bottom: 5px solid #660000;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+}
+
+p {
+	margin: 20px 10px;
+	padding: 10px 20%;
+	font-size: 22px;
+}
+</style>
+</head>
+<body>
+<h1>Error</h1>
+<p>
+An application error has occurred. It has been reported and should be investigated and fixed in due course.
+</p>
+</body>
+</html>
+HTML;
+				}
+			});
+		}
+	}
 
     /**
      * Output an exception to a stream.
@@ -164,9 +244,16 @@ class ErrorHandler implements ErrorHandlerContract
     {
         $this->report($err);
 
-        if ($this->shouldDisplay($err)) {
+		if (Application::instance() instanceof WebApplication && $err instanceof Response) {
+			// if the exception is itself a response, send it
+			WebApplication::instance()->sendResponse($error);
+		} else if ($this->shouldDisplay($err)) {
+			// display the error information
             $this->display($err);
-        }
+        } else if (Application::instance() instanceof WebApplication) {
+			// in production, just show the generic error page
+			$this->showErrorPage();
+		}
 
         exit($err->getCode());
     }
