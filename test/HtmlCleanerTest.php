@@ -754,17 +754,17 @@ class HtmlCleanerTest extends TestCase
         $this->assertSame($allowed, $this->m_cleaner->isAllowedTag($tag));
     }
 
-    public function testIsAllowedNode()
-    {
-    }
-
-    public function testIsAllowedId()
-    {
-    }
-
-    public function testIsAllowedClassAttribute()
-    {
-    }
+//    public function testIsAllowedNode()
+//    {
+//    }
+//
+//    public function testIsAllowedId()
+//    {
+//    }
+//
+//    public function testIsAllowedClassAttribute()
+//    {
+//    }
 
     public function dataForTestClean(): array
     {

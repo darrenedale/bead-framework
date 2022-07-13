@@ -23,11 +23,14 @@
     </coverage>
 
     <testsuites>
-        <testsuite name="libequit-php Full Test Suite">
+        <testsuite name="bead-framework Full Test Suite">
             <directory>./</directory>
         </testsuite>
-        <testsuite name="libequit-php Validator Rules">
+        <testsuite name="bead-framework Validator Rules">
             <directory>./Validation/Rules</directory>
+        </testsuite>
+        <testsuite name="bead-framework Utils">
+            <directory>./Util</directory>
         </testsuite>
     </testsuites>
 </phpunit>
