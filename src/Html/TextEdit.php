@@ -1,40 +1,8 @@
 <?php
 
-/**
- * Defines the _TextEdit_ class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- * - classes/equit/HtmlName.php
- * - classes/equit/HtmlPlaceholder.php
- * - classes/equit/HtmlTooltip.php
- *
- * ### Changes
- * - (2018-09) Uses html attribute traits.
- * - (2018-09) Uses strict type hints.
- * - (2017-05) Updated documentation. Migrated to `[]` syntax for array literals.
- *   Refactored all the single-line type widget creation code into a single method
- *   that adapts the `type` attribute.
- * - (2016-10-17) Added Email, Url and Search input types.
- * - (2016-10-17) Added support for "autocomplete" attribute.
- * - (2013-12-10) First version of this file.
- *
- * @file TextEdit.php
- * @author Darren Edale
- * @version 1.2.0
- * @date Jan 2018
- * @package libequit
- */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\HasNameAttribute;
-use Equit\Html\HasPlaceholderAttribute;
-use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
 
 /**
  * A text editor for inclusion in forms.
@@ -43,36 +11,9 @@ use Equit\Html\PageElement;
  * be set up to be single-line, multi- line, or for password entry. They can also have an optional placeholder that is
  * put into the widget when it is empty (but is not submitted with the form data if the widget is empty).
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin does not provide any AIO API functions.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class TextEdit
- * @author Darren Edale
- * @package libequit
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class TextEdit extends PageElement {
+class TextEdit extends Element {
 	use HasNameAttribute;
 	use HasPlaceholderAttribute;
 	use HasTooltip;

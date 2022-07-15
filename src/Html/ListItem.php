@@ -2,7 +2,10 @@
 
 namespace Equit\Html;
 
-class ListItem extends PageElement implements ContainerPageElement {
+/**
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ */
+class ListItem extends Element implements ContainerElement {
 	use HasChildElements;
 
 	/**

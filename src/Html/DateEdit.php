@@ -4,31 +4,6 @@ declare(strict_types=1);
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\HasNameAttribute;
-use Equit\Html\HasPlaceholderAttribute;
-use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
-
-/**
- * Defines the DateEdit class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Changes
- * - (2018-09) Uses traits for common HTML attributes.
- * - (2018-09) Uses string type hints.
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-10) First version of this file.
- *
- * @file DateEdit.php
- * @author Darren Edale
- * @version 1.2.0
- * @date Jan 2018
- * @package libequit
- */
 
 /**
  * A date editor for inclusion in forms.
@@ -42,36 +17,10 @@ use Equit\Html\PageElement;
  * content can be entered. It's good practice to do such validation anyway (and you're asking for trouble if you don't),
  * but in this case it is a necessity.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class DateEdit
- * @author Darren Edale
- * @package libequit
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class DateEdit extends PageElement {
+class DateEdit extends Element
+{
 	use HasNameAttribute;
 	use HasPlaceholderAttribute;
 	use HasTooltip;

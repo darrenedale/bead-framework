@@ -1,40 +1,13 @@
 <?php
 
-/**
- * Defines the Section page element class.
- *
- * ### Dependencies
- * - Equit\Html\PageElement
- * - Equit\Html\Tooltip
- * - Equit\Html\ChildElements
- *
- * ### Changes
- * - (2019-04) First version of this file.
- *
- * @file Section.php
- * @author Darren Edale
- * @version 1.2.0
- * @package Equit\Html
- * @date Apr 2019
- */
-
 namespace Equit\Html;
 
 /**
  * A page element intended to act as a major section of a page.
  *
- * @class Section
- * @author Darren Edale
- * @package \Equit\Html
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class Section extends PageElement implements ContainerPageElement {
+class Section extends Element implements ContainerElement {
 	use HasTooltip;
 	use HasChildElements;
 

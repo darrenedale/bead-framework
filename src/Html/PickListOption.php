@@ -1,16 +1,6 @@
 <?php
-/**
- * Defines the _PickListOption_ class.
- *
- * ### Changes
- * - (2019-01) First version of this file.
- *
- * @file PickListOption.php
- * @author Darren Edale
- * @date Jan 2019
- */
 
-namespace Equit\Html ;
+namespace Equit\Html;
 
 /**
  * A class representing a single option in a pick list.
@@ -25,7 +15,7 @@ namespace Equit\Html ;
  * lists if you wish, but it is recommended (and almost always more convenient) to provide the string texts and values
  * to the PickList object rather than encumber your code with calls to the PickListOption constructor.
  *
- * @class PickListOption
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class PickListOption {
 	/** @var string|null The value for the option. */

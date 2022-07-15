@@ -1,64 +1,14 @@
 <?php
 
-/**
- * Defines the Layout interface.
- *
- * ### Dependencies
- * No dependencies.
- *
- * ### Changes
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-22) class created.
- *
- * @file Layout.php
- * @author Darren Edale
- * @date Jan 2018
- * @version 1.2.0
- * @package libequit
- */
-
 namespace Equit\Html;
-
-use Equit\AppLog;
-use Equit\Html\PageElement;
 
 /** An interface for page element layouts.
  *
  * This class defines the interface that must be implemented to provide a layout for a web page.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class Layout
- * @author Darren Edale
- * @date Jan 2018
- * @version 1.2.0
- * @package libequit
- * @ingroup libequit
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-abstract class Layout extends PageElement{
+abstract class Layout extends Element{
 	/**
 	 * Create a new layout.
 	 *
@@ -73,14 +23,14 @@ abstract class Layout extends PageElement{
 	/**
 	 * Add an element to the layout.
 	 *
-	 * @param $element PageElement is the element to add.
+	 * @param $element Element is the element to add.
 	 *
 	 * The element is added to the layout. Further parameters can be defined that allow for customisation of exactly how
 	 * the element is added (for example, an order number or coordinate).
 	 *
 	 * @return bool `true` if the element was added, `false` otherwise.
 	 */
-	public abstract function addElement(PageElement $element): bool;
+	public abstract function addElement(Element $element): bool;
 
 	/**
 	 * Fetch the child elements in the layout.

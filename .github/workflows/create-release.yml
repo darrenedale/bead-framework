@@ -1,0 +1,60 @@
+name: Create Release
+
+# Controls when the workflow will run
+on:
+  push:
+    tags:
+      - '*'
+      
+jobs:
+  release:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: version
+        run: echo "::set-output name=version::$(cat $GITHUB_WORKSPACE/composer.json | jq .version | sed 's/"//g')"
+        id: version
+
+      # create the downloadable assets for the release
+      - name: Compress PHP project release files
+        run: |
+          cd src
+          tar -czf ../bead-framework-${{ steps.version.outputs.version }}.tar.gz *
+          zip -r ../bead-framework-${{ steps.version.outputs.version }}.zip *
+          cd ..
+
+      - name: Create release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: true
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref }}
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Upload PHP library tarball
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: bead-framework-${{ steps.version.outputs.version }}.tar.gz
+          asset_name: bead-framework-${{ steps.version.outputs.version }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload PHP library zip archive
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: bead-framework-${{ steps.version.outputs.version }}.zip
+          asset_name: bead-framework-${{ steps.version.outputs.version }}.zip
+          asset_content_type: application/gzip

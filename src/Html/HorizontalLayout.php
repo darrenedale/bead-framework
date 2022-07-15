@@ -1,28 +1,5 @@
 <?php
 
-/**
-* Defines the _HorizontalLayout_ class.
-*
-* Applications that wish to lay out forms using horizontal boxes must include
-* this file.
-*
-* ### Dependencies
-* - classes/equit/AppLog.php
-* - classes/equit/Layout.php
-* - classes/equit/LibEquit\PageElement.php
-* - classes/equit/LibEquit\Page.php
-*
-* ### Changes
-* - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
-* - (2013-12-22) class created.
-*
-* @file HorizontalLayout.php
-* @author Darren Edale
-* @version 1.2.0
-* @date Jan 2018
-* @package libequit
-*/
-
 namespace Equit\Html;
 
 /**
@@ -34,34 +11,7 @@ namespace Equit\Html;
  * If an element or layout is inserted to any position that is occupied by an existing child  element or layout the
  * existing child is moved to the right and the new element or layout occupies its original position.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
- *
- * @class HorizontalLayout
- * @author Darren Edale
- * @package libequit
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class HorizontalLayout extends Layout {
 	/**
@@ -80,11 +30,11 @@ class HorizontalLayout extends Layout {
 	 *
 	 * The element is added after the last current child.
 	 *
-	 * @param $element PageElement is the element to add.
+	 * @param $element Element is the element to add.
 	 *
 	 * @return bool true
 	 */
-	public function addElement(PageElement $element): bool {
+	public function addElement(Element $element): bool {
 		$this->insertElement($element, $this->elementCount());
 		return true;
 	}
@@ -97,13 +47,13 @@ class HorizontalLayout extends Layout {
 	 * child in the layout. If the index is already occupied, the existing child and all children to its right are
 	 * shifted one position to the right and the new form element occupies the vacated index.
 	 *
-	 * @param $element PageElement is the page element to add.
+	 * @param $element Element is the page element to add.
 	 * @param $insertIndex int _optional_ is the index at which to insert the form element. The default is to insert
 	 * the element at the beginning.
 	 *
 	 * @return bool true
 	 */
-	public function insertElement(PageElement $element, int $insertIndex = 0): bool {
+	public function insertElement(Element $element, int $insertIndex = 0): bool {
 		$elementCount = $this->elementCount();
 
 		if($insertIndex < 0) {

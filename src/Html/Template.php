@@ -1,39 +1,13 @@
 <?php
-/**
- * Defines the Template page element class.
- *
- * ### Dependencies
- * - Equit\Html\PageElement
- * - Equit\Html\Tooltip
- * - Equit\Html\ChildElements
- *
- * ### Changes
- * - (2019-06) First version of this file.
- *
- * @file Template.php
- * @author Darren Edale
- * @version 1.2.0
- * @package Equit\Html
- * @date Jun 2019
- */
 
 namespace Equit\Html;
 
 /**
  * A page element providing template content.
  *
- * @class Template
- * @author Darren Edale
- * @package \Equit\Html
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class Template extends PageElement {
+class Template extends Element {
 	use HasTooltip;
 	use HasChildElements;
 

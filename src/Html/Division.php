@@ -1,23 +1,5 @@
 <?php
 
-/**
- * Defines the Division page element class.
- *
- * ### Dependencies
- * - Equit\Html\PageElement
- * - Equit\Html\Tooltip
- *
- * ### Changes
- * - (2019-03) Renamed Division to avoid confusion with HTML section elements.
- * - (2013-12-10) First version of this file.
- *
- * @file Division.php
- * @author Darren Edale
- * @version 1.2.0
- * @package Equit\Html
- * @date Mar 2019
- */
-
 namespace Equit\Html;
 
 /**
@@ -28,29 +10,17 @@ namespace Equit\Html;
  * The division can be cleared of all its child elements with the clear() method. There is as yet no facility to remove
  * individual children.
  *
- * @class Division
- * @author Darren Edale
- * @package \Equit\Html
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class Division extends PageElement implements ContainerPageElement {
+class Division extends Element implements ContainerElement {
 	use HasTooltip;
 	use HasChildElements;
-
-	/** @var array[PageElement] The child elements for the division. */
-	private $m_children = [];
 
 	/** Create a new PageDivision object.
 	 *
 	 * The ID parameter is optional. By default, a division with no ID is created.
 	 *
-	 * @param $id string _optional_ The ID for the division.
+	 * @param $id string|null The ID for the division.
 	 */
 	public function __construct(?string $id = null) {
 		parent::__construct($id);

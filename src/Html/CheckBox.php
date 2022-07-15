@@ -3,35 +3,6 @@ declare(strict_types=1);
 
 namespace Equit\Html;
 
-use Equit\Html\HasDisabledAttribute;
-use Equit\Html\HasNameAttribute;
-use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
-
-/**
- * Defines the CheckBox class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Todo
- * - Event attributes as a trait.
- *
- * ### Changes
- * - (2018-09) Uses traits for common HTML attributes.
- * - (2018-09) Uses string type hints.
- * - (2017-05) Updated documentation. Migrated to use `[]` instead of array().
- * - (2013-12-10) First version of this file.
- *
- * @file CheckBox.php
- * @author Darren Edale
- * @version 1.2.0
- * @package libequit
- * @date Jan 2018
- */
-
 /**
  * A check box for inclusion in forms.
  *
@@ -45,36 +16,9 @@ use Equit\Html\PageElement;
  * the label. To turn off the label, whether it's set or not, set the label position to _NoLabel_ (this is the default
  * setting).
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin provides the following API functions:
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class CheckBox
- * @author Darren Edale
- * @package libequit
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class CheckBox extends PageElement {
+class CheckBox extends Element {
 	use HasNameAttribute;
 	use HasTooltip;
 	use HasDisabledAttribute;

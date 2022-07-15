@@ -1,23 +1,5 @@
 <?php
 
-/**
-* Defines the EmailHeader class.
-*
-* ### Dependencies
-* - classes/equit/AppLog.php
-*
-* ### Changes
-* - (201-05) Updated documentation. Migrated to `[]` syntax from array().
-* - (2014-04-29) Class ported from bpLibrary.
-*
-* @file EmailHeader.php
-* @author Darren Edale
-* @version 1.2.0
-* @package libequit
-* @date Jan 2018
-*/
-
-
 namespace Equit;
 
 /**
@@ -41,12 +23,6 @@ namespace Equit;
  * The full string representation of the header, suitable for inclusion in an email message header section, can be
  * fetched by calling _generate()_.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
  * ### Events
  * This module does not emit any events.
  *
@@ -67,10 +43,9 @@ namespace Equit;
  * @session _None_
  *
  * @class EmailHeader
- * @version 1.2.0
- * @date Jan 2018
- * @see Email EmailPart
- * @package libequit
+ * @version 0.9.2
+ * @version 0.9.2 * @see Email EmailPart
+ * @package bead-framework
  */
 class EmailHeader {
 	/** @var string|null The name of the header. */

@@ -1,25 +1,5 @@
 <?php
 
-/**
- * Defines the GridLayout class.
- *
- * ### Dependencies
- * - classes/equit/Layout.php
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Changes
- * - (2018-10) Wrapped in LibEquit namespace. PHP7.2 type hinting.
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-22) class ported from bpLibrary.
- *
- * @file GridLayout.php
- * @author Darren Edale
- * @version 1.2.0
- * @date Jan 2018
- * @package libequit
- */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
@@ -36,34 +16,7 @@ use Equit\Html\Detail\GridLayoutItem;
  * element or layout is added to any cell that is occupied by an existing child element or layout, whether that cell is
  * its anchor cell or simply one it spans, the existing child is removed and replaced with the new element or layout.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
- *
- * @class GridLayout
- * @author Darren Edale
- * @package libequit
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class GridLayout extends Layout {
 	/** @var int Alignment flag to align content with the left edge of its cell. */
@@ -170,7 +123,7 @@ class GridLayout extends Layout {
 	 *
 	 * The alignment must be one of the class alignment constants.
 	 *
-	 * @param $element PageElement is the element to add.
+	 * @param $element Element is the element to add.
 	 * @param $row int The row at which to place the layout.
 	 * @param $col int The column at which to place the layout.
 	 * @param $rowSpan int The number of rows over which the layout spans. The default is 1 row.
@@ -179,7 +132,7 @@ class GridLayout extends Layout {
 	 *
 	 * @return bool _true_ if the element was added to the grid, _false_ otherwise.
 	 */
-		public function addElement(PageElement $element, int $row = 0, int $col = 0, int $rowSpan = 1, int $colSpan = 1, int $alignment = 0 ): bool {
+		public function addElement(Element $element, int $row = 0, int $col = 0, int $rowSpan = 1, int $colSpan = 1, int $alignment = 0 ): bool {
 		if(0 > $row || 0 > $col) {
 			AppLog::error("invalid cell index", __FILE__, __LINE__, __FUNCTION__);
 			return false;
@@ -293,10 +246,10 @@ class GridLayout extends Layout {
 	 * @param $row int is the row from which the element is sought.
 	 * @param $col int is the column from which the element is sought.
 	 *
-	 * @return PageElement|null the element at the cell index, or _null_ if the cell does not contain an element, is
+	 * @return Element|null the element at the cell index, or _null_ if the cell does not contain an element, is
 	 * not valid or an error occurred.
 	 */
-	public function elementAt(int $row, int $col): ?PageElement {
+	public function elementAt(int $row, int $col): ?Element {
 		if($row < 0 || $col < 0) {
 			AppLog::error('invalid cell index', __FILE__, __LINE__, __FUNCTION__);
 			return null;

@@ -3,17 +3,17 @@
 /**
  * @file string.php
  * @author Darren Edale
- * @version 1.2.0
- * @date Jan 2018
- *
+ * @version 0.9.2
+ * @version 0.9.2 *
  * @brief Definitions of stand-alone string-processing functions.
  *
  * These functions complement the string processing functions PHP provides.
  *
- * @package libequit
+ * @package bead-framework
  */
 
-namespace {
+namespace
+{
 
 	/**
 	 * @param mixed $var Value/object to stringify
@@ -81,18 +81,49 @@ namespace {
 			return $str;
 		}
 
-		if(isset($encoding)) {
+		if (isset($encoding)) {
 			$oldEncoding = mb_regex_encoding();
 			mb_regex_encoding($encoding);
 		}
 
 		$ret = mb_strtolower(mb_substr($str, 0, 1), $encoding) . mb_strtolower(mb_ereg_replace("([[:upper:]])", "_\\1", mb_substr($str, 1)), $encoding);
 
-		if(isset($oldEncoding)) {
+		if (isset($oldEncoding)) {
 			mb_regex_encoding($oldEncoding);
 		}
 
 		return $ret;
+	}
+
+	if (!function_exists("snakeToCamel")) {
+		/**
+		 * Convert a snake-case string to camel case.
+		 *
+		 * The string is expected to be lower-case and punctuated with single _ characters between words. If this is not the
+		 * form of the string passed in, you may not get the expected results.
+		 *
+		 * @param string $str The snake-case string to convert to camel case.
+		 * @param string|null $encoding The encoding expected in the string. If not given, UTF-8 is used.
+		 *
+		 * @return string The `camelCase` version of the `snake_case` string.
+		 */
+		function snakeToCamel(string $str, ?string $encoding = null): string
+		{
+			if (isset($encoding)) {
+				$oldEncoding = mb_regex_encoding();
+				mb_regex_encoding($encoding);
+			}
+
+			$ret = mb_ereg_replace_callback("_+(.)", function (array $matches) use ($encoding): string {
+				return mb_strtoupper($matches[1], $encoding ?? "UTF-8");
+			}, $str);
+
+			if (isset($oldEncoding)) {
+				mb_regex_encoding($oldEncoding);
+			}
+
+			return $ret;
+		}
 	}
 
 	/**
@@ -160,6 +191,57 @@ namespace {
 		}
 
 		return str_replace($placeholders->toArray(), $args, $template);
+	}
+
+    /**
+     * Convert a string in a given encoding to an array of Unicode code points.
+     *
+     * The encoding must be one supported by the mb-string extension.
+     *
+     * @param string $str The string to convert.
+     * @param string $encoding The string's encoding. Default is "UTF-8".
+     *
+     * @return array<int> The code points.
+     */
+    function toCodePoints(string $str, string $encoding): array
+    {
+        // convert the string to UTF32LE, where each character is represented by four bytes, each of which is a 32-bit
+        // LE int, the Unicode code point
+        if ("UTF-32LE" !== $encoding) {
+            $str = mb_convert_encoding($str, "UTF-32LE", $encoding);
+        }
+
+        // then split it into chunks of four chars so that we have the four bytes of the code point for each character
+        // in an array of four-byte strings; then map that array by unpacking each four-byte string to an int value
+        return array_map(function (string $codePointBytes): int {
+            return unpack("V", $codePointBytes)[1];
+        }, str_split($str, 4));
+    }
+
+	/**
+	 * Generate a cryptographically-secure random string of a given length.
+	 *
+	 * The string generated will consist entirely of alphanumeric characters, dashes and underscores. The source of
+	 * randomness for the characters is cryptographically-secure. This does not mean you can't create poor random
+	 * strings with this function - if you pass a length of 1 you won't get a very strong random string.
+	 *
+	 * @param int $length The number of characters in the string.
+	 *
+	 * @return string
+	 * @throws Exception if a cryptographically-secure source of randomness is not available.
+	 */
+	function randomString(int $length): string
+	{
+		$str = "";
+
+		while (0 < $length) {
+			// NOTE base64 of 30 bytes gives 40 chars, none of which is '=' padding
+			$chars  = min($length, 40);
+			$str    .= str_replace(["/", "+",], ["-", "_",], substr(base64_encode(random_bytes(30)), 0, $chars));
+			$length -= $chars;
+		}
+
+		return $str;
 	}
 
     if (!function_exists("str_starts_with")) {

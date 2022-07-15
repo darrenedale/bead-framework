@@ -1,69 +1,13 @@
 <?php
 
-/**
- * Defines the ImageButton class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\PageElement.php
- * - classes/equit/HtmlName.php
- * - classes/equit/HtmlTooltip.php
- *
- * ### Changes
- * - (2018-09) Uses traits for common HTML attributes.
- * - (2018-09) Uses string type hints.
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-10) First version of this file.
- *
- * ### Todo
- * Tooltip as a trait.
- *
- * @file ImageButton.php
- * @author Darren Edale
- * @version 1.2.0
- * @package libequit
- * @date Jan 2018
- */
-
 namespace Equit\Html;
-
-use Equit\Html\HasNameAttribute;
-use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
 
 /**
  * A push button using an image for inclusion in forms.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class ImageButton
- * @author Darren Edale
- * @package libequit
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class ImageButton extends PageElement {
+class ImageButton extends Element {
 	use HasNameAttribute;
 	use HasTooltip;
 

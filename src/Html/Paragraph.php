@@ -1,22 +1,5 @@
 <?php
 
-/**
- * Defines the Paragraph page element class.
- *
- * ### Dependencies
- * - Equit\Html\PageElement.php
- * - Equit\Html\Tooltip.php
- *
- * ### Changes
- * - (2019-03) First version of this file.
- *
- * @file Paragraph.php
- * @author Darren Edale
- * @version 1.2.0
- * @package libequit
- * @date Jan 2018December 2013
- */
-
 namespace Equit\Html;
 
 /**
@@ -28,33 +11,21 @@ namespace Equit\Html;
  * The section can be cleared of all its child elements with the clear()
  * method. There is as yet no facility to remove children.
  *
- * @class Paragraph
- * @author Darren Edale
- * @package Equit\Html
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class Paragraph extends PageElement implements ContainerPageElement {
+class Paragraph extends Element implements ContainerElement {
 	use HasTooltip;
 	use HasChildElements;
-
-	/** @var array[PageElement] The child elements for the section. */
-	private $m_children = [];
 
 	/** Initialiwse a new Paragraph object.
 	 *
 	 * The ID parameter is optional. By default, a paragraph with no ID is created.
 	 *
-	 * @param $content string|PageElement|null The content for the paragraph.
+	 * @param $content string|Element|null The content for the paragraph.
 	 * @param $id string _optional_ The ID for the section.
 	 */
 	public function __construct($content = null, ?string $id = null) {
-		assert(is_null($content) || is_string($content) || $content instanceof PageElement, "invalid content provided for Paragraph object");
+		assert(is_null($content) || is_string($content) || $content instanceof Element, "invalid content provided for Paragraph object");
 		parent::__construct($id);
 
 		if(isset($content)) {

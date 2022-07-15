@@ -1,24 +1,5 @@
 <?php
 
-/**
- * Defines the LibEquit\HtmlLiteral class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/PageElement.php
- *
- * ### Changes
- * - (2018-09) Uses string type hints.
- * - (2017-05) Updated documentation. Removed unused dependencies.
- * - (2013-12-10) First version of this file.
- *
- * @file HtmlLiteral.php
- * @author Darren Edale
- * @version 1.2.0
- * @package libequit
- * @date Jan 2018
- */
-
 namespace Equit\Html;
 
 /**
@@ -26,37 +7,9 @@ namespace Equit\Html;
  *
  * This class is just a thin LibEquit\PageElement wrapper around a string containing pre-validated HTML.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class LibEquit\HtmlLiteral
- * @author Darren Edale
- * @ingroup libequit
- * @package libequit
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class HtmlLiteral extends PageElement {
+class HtmlLiteral extends Element {
 	/** @var string The HTML. */
 	private $m_html = "";
 

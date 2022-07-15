@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.5/phpunit.xsd"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true"
+         bootstrap="./bootstrap.php"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         processIsolation="false"
+         stopOnError="false"
+         stopOnFailure="false"
+         verbose="true"
+         executionOrder="random"
+>
+    <coverage processUncoveredFiles="true">
+        <include>
+            <directory suffix=".php">../src</directory>
+        </include>
+    </coverage>
+
+    <testsuites>
+        <testsuite name="bead-framework Full Test Suite">
+            <directory>./</directory>
+        </testsuite>
+        <testsuite name="bead-framework Validator Rules">
+            <directory>./Validation/Rules</directory>
+        </testsuite>
+        <testsuite name="bead-framework Utils">
+            <directory>./Util</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

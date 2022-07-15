@@ -1,31 +1,6 @@
 <?php
 
-/**
- * Defines the VerticalLayout class.
- * 
- * Applications that wish to lay out forms using vertical boxes must include this file.
- * 
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/Layout.php
- * - classes/equit/LibEquit\PageElement.php
- * - classes/equit/LibEquit\Page.php
- *
- * ### Changes
- * - (2017-05) Updated documentation. Migrated to `[]` syntax for array literals.
- * - (2013-12-22) class created.
- *
- * @file VerticalLayout.php
- * @author Darren Edale
- * @date Jan 2018
- * @version 1.2.0
- * @package libequit
- */
-
 namespace Equit\Html;
-
-	use Equit\Html\Layout;
-	use Equit\Html\PageElement;
 
 /**
  * A layout based on a single vertical column.
@@ -37,36 +12,7 @@ namespace Equit\Html;
  * If an element or layout is inserted to any position that is occupied by an existing child  element or layout the
  * existing child is moved down and the new element or layout occupies its original position.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
- *
- * @class VerticalLayout
- * @author Darren Edale
- * @date Jan 2018
- * @version 1.2.0
- * @package libequit
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
 class VerticalLayout extends Layout {
 	/**
@@ -85,11 +31,11 @@ class VerticalLayout extends Layout {
 	 *
 	 * The element is added after the last current child.
 	 *
-	 * @param $element PageElement is the element to add.
+	 * @param $element Element is the element to add.
 	 *
 	 * @return bool _true_ if the element was added, _false_ otherwise.
 	 */
-	public function addElement(PageElement $element): bool {
+	public function addElement(Element $element): bool {
 		return $this->insertElement($element, $this->elementCount());
 	}
 
@@ -101,12 +47,12 @@ class VerticalLayout extends Layout {
 	 * in the layout. If the index is already occupied, the existing child and all children below it are shifted one
 	 * position down and the new form element occupies the vacated index.
 	 *
-	 * @param $element PageElement is the form element to add.
+	 * @param $element Element is the form element to add.
 	 * @param $insertIndex int _optional_ is the index at which to insert the form element.
 	 *
 	 * @return bool _true_ if the form element was inserted, _false_ otherwise.
 	 */
-	public function insertElement(PageElement $element, int $insertIndex = 0): bool {
+	public function insertElement(Element $element, int $insertIndex = 0): bool {
 		if($insertIndex >= $this->elementCount()) {
 			$this->m_elements[] = $element;
 		}

@@ -1,14 +1,11 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: darren
- * Date: 23/03/19
- * Time: 14:53
- */
 
 namespace Equit\Html;
 
-class OrderedList extends PageElement {
+/**
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ */
+class OrderedList extends Element {
 	use HasListItems;
 
 	public function __construct(?string $id = null) {

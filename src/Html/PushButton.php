@@ -1,29 +1,8 @@
 <?php
 
-/**
- * Defines the PushButton class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- *
- * ### Changes
- * - (2017-05) Updated documentation.
- * - (2013-12-10) First version of this file.
- *
- * @file PushButton.php
- * @author Darren Edale
- * @version 1.2.0
- * @package libequit
- * @date Jan 2018
- */
-
 namespace Equit\Html;
 
 use Equit\AppLog;
-use Equit\Html\HasTooltip;
-use Equit\Html\PageElement;
 
 /**
  * A push button for inclusion in forms.
@@ -39,32 +18,9 @@ use Equit\Html\PageElement;
  * As yet there are no facilities to enable push buttons to have runtime code
  * attached. This is likely to follow in the near future.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This plugin provides the following API functions:
- *
- * ### Events
- * This module does not emit any events.
- *
- * @noconnections
- * ### Connections
- * This module does not connect to any events.
- *
- * @nosettings
- * ### Settings
- * This module does not read any settings.
- *
- * @nosession
- * ### Session Data
- * This module does not create a session context.
- *
- * @class PushButton
- * @author Darren Edale
- * @package libequit
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class PushButton extends PageElement {
+class PushButton extends Element {
 	use HasTooltip;
 
 	/** Flag to mark a push button as a form submission button. */

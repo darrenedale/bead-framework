@@ -1,18 +1,10 @@
 <?php
 
-/**
- * Defines the HasListItems trait.
- *
- * Classes that utilise this trait can have a list items added.
- *
- * @file HasListItems.php
- * @author Darren Edale
- * @version 1.2.0
- * @package libequit
- */
-
 namespace Equit\Html;
 
+/**
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ */
 trait HasListItems {
 
 	/**
@@ -20,10 +12,10 @@ trait HasListItems {
 	 *
 	 * It is undefined behaviour to add an item that is neither a string nor a PageElement.
 	 *
-	 * @param $item string|PageElement The item to add.
+	 * @param $item string|Element The item to add.
 	 */
 	public function addItem($item): void {
-		assert(is_string($item) || $item instanceof PageElement);
+		assert(is_string($item) || $item instanceof Element);
 
 		if($item instanceof ListItem) {
 			$this->m_items[] = $item;

@@ -1,31 +1,6 @@
 <?php
 
-/**
- * Defines the HiddenValueWidget class.
- *
- * ### Dependencies
- * - classes/equit/AppLog.php
- * - classes/equit/LibEquit\Page.php
- * - classes/equit/LibEquit\PageElement.php
- * - classes/equit/HtmlName.php
- *
- * ### Changes
- * - (2018-09) Uses traits for common HTML attributes.
- * - (2018-09) Uses string type hints.
- * - (2017-05) Updated documentation. Migrated to `[]` syntax from array().
- * - (2013-12-10) First version of this file.
- *
- * @file HiddenValueWidget.php
- * @author Darren Edale
- * @version 1.2.0
- * @package libequit
- * @date Jan 2018
- */
-
 namespace Equit\Html;
-
-use Equit\Html\HasNameAttribute;
-use Equit\Html\PageElement;
 
 /**
  * A widget for inclusion in forms that contains a fixed, hidden
@@ -35,37 +10,9 @@ use Equit\Html\PageElement;
  * submitted with the rest of the form data. This is useful when a form needs
  * to submit a fixed value that the user cannot change.
  *
- * ### Actions
- * This module does not support any actions.
- *
- * ### API Functions
- * This module does not provide an API.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class HiddenValueWidget
- * @author Darren Edale
- * @ingroup libequit
- * @package libequit
- *
- * @actions _None_
- * @aio-api _None_
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
  */
-class HiddenValueWidget extends PageElement {
+class HiddenValueWidget extends Element {
 	use HasNameAttribute;
 
 	private static $s_hiddenValueWidgetAttributeNames = ["value", "name"];
