@@ -91,7 +91,7 @@ to your application. You should therefore keep your plugin constructors relative
 
 An encapsulation of a request from the client. The call to `WebApplication::exec()` constructs an instance of this class
 by examining the `$_GET`, `$_POST`, `$_FILES` and `$_SERVER` superglobals. The incoming request is always available by
-calling the `WebApplication` object's `originalRequest()` method$articleId.
+calling the `WebApplication` object's `originalRequest()` method.
 
 The request class provides access to the URL parameters, POST data and uploaded files that were provided with the client
 request. It also provides access to the HTTP headers.
