@@ -262,7 +262,7 @@ abstract class Application
      * default Equit error handler. If you find you're receiving a RuntimeException indicating you don't have an error
      * handler, it's likely you've created an Application subclass that doesn't call the base class constructor.
      *
-     * @return \Equit\Contracts\ErrorHandler
+     * @return ErrorHandler
      */
     public function errorHandler(): ErrorHandler
     {
