@@ -353,8 +353,8 @@ class WebApplication extends Application
 			--$age;
 
 			if (0 >= $age) {
-				[$context, $key] = explode("::", $key, 2);
-				unset($this->sessionData($context)[$key]);
+				[$context, $transientKey] = explode("::", $key, 2);
+				unset($this->sessionData($context)[$transientKey]);
 				unset($this->sessionData(self::SessionDataContext)["_transient"][$key]);
 			}
 		}

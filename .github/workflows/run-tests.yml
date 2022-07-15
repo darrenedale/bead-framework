@@ -1,0 +1,21 @@
+name: Run unit tests
+
+on:
+  push:
+    branches: ["production"]
+  pull_request:
+    branches: ["production"]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # ensure PHPunit is installed
+      - name: Install composer dependencies
+        run: composer install
+
+      - name: Run PHPUnit
+        run: php ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result --teamcity ./test

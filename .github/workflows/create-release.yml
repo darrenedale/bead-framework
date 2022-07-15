@@ -1,5 +1,3 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Create Release
 
 # Controls when the workflow will run
@@ -21,27 +19,12 @@ jobs:
         run: echo "::set-output name=version::$(cat $GITHUB_WORKSPACE/composer.json | jq .version | sed 's/"//g')"
         id: version
 
-      # required to compile equit.js asset
-      - name: Install TSC
-        run: npm install -g typescript
-
-      # Build the main equit.js product from the tsconfig.json project file
-      - name: Compile Typescript
-        run: tsc -p $GITHUB_WORKSPACE/js/tsconfig.json
-
       # create the downloadable assets for the release
       - name: Compress PHP project release files
         run: |
           cd src
-          tar -czf ../libequit-php-${{ steps.version.outputs.version }}.tar.gz *
-          zip -r ../libequit-php-${{ steps.version.outputs.version }}.zip *
-          cd ..
-
-      - name: Compress Typescript project release files
-        run: |
-          cd js
-          tar -czf ../libequit-js-${{ steps.version.outputs.version }}.tar.gz equit.js equit.d.ts
-          zip -r ../libequit-js-${{ steps.version.outputs.version }}.zip equit.js equit.d.ts
+          tar -czf ../bead-framework-${{ steps.version.outputs.version }}.tar.gz *
+          zip -r ../bead-framework-${{ steps.version.outputs.version }}.zip *
           cd ..
 
       - name: Create release
@@ -56,54 +39,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Upload compiled typescript js file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: js/equit.js
-          asset_name: equit-${{ steps.version.outputs.version }}.js
-          asset_content_type: text/javascript
-
-      - name: Upload compiled typescript definitions file
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: js/equit.d.ts
-          asset_name: equit-${{ steps.version.outputs.version }}.d.ts
-          asset_content_type: text/javascript
-
-      - name: Upload compiled typescript tarball
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: libequit-js-${{ steps.version.outputs.version }}.tar.gz
-          asset_name: libequit-js-${{ steps.version.outputs.version }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload compiled typescript zip archive
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: libequit-js-${{ steps.version.outputs.version }}.zip
-          asset_name: libeequit-js-${{ steps.version.outputs.version }}.zip
-          asset_content_type: application/zip
-
       - name: Upload PHP library tarball
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: libequit-php-${{ steps.version.outputs.version }}.tar.gz
-          asset_name: libequit-php-${{ steps.version.outputs.version }}.tar.gz
+          asset_path: bead-framework-${{ steps.version.outputs.version }}.tar.gz
+          asset_name: bead-framework-${{ steps.version.outputs.version }}.tar.gz
           asset_content_type: application/gzip
 
       - name: Upload PHP library zip archive
@@ -112,6 +55,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: libequit-php-${{ steps.version.outputs.version }}.zip
-          asset_name: libequit-php-${{ steps.version.outputs.version }}.zip
+          asset_path: bead-framework-${{ steps.version.outputs.version }}.zip
+          asset_name: bead-framework-${{ steps.version.outputs.version }}.zip
           asset_content_type: application/gzip
