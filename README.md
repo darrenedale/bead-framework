@@ -98,7 +98,40 @@ request. It also provides access to the HTTP headers.
 
 ## Views
 
-[TBD].
+Views are plain PHP files, stored in the `/views` directory. You can structure your views in whatever way makes sense
+for your project. Views are identified using dot notation. To instantiate a view pass its name to the `View` constuctor -
+for example the view stored in `/views/users/edit.php` would be instantiated using `new View("users.edit")` Note that
+the base `/views` directory is not included in the name, nor is the `.php` fiole extension.
+
+You can pass data to views using a second argument to the constructor. Data is passed as an assiciative array. The view
+will receive a set of variables named after the keys in the array. All views also receive two convenience variables:
+`$app` is the current running `WebApplication` instance; and `$data` is the array of data for the view passed to the
+constructor. Views are rendered sandboxed by an anonymous function - no global variables are available to views, only
+`$app`, the view data and the PHP superglobals.
+
+To keep your pages consistent, each view can use a layout. Layouts are no different from regular views, except that (in
+order to be useful), they should contain named sections. Views intended to be used as layouts should have one or more
+calls to `View::yieldSection("section-name")`. Each named section defines a location where views can add content. Views
+indicate which layout they use by calling `View::layout("layouts.layout-name")` at the start of the view, and provide
+content for the layout's sections by placing content between calls to `View::section("section-name")` and
+`View::endSection()`. When the layout yields the section, the content placed in it by the view will be rendered. Layouts
+can define as many named sections as they wish. Layouts can be stored anwyhere in your `/views` tree, but it is
+recommended that you use `/views/layouts` for clarity.
+
+You can build re-usable parts for your views in two ways: one way is to call `View::include("view-name")` to include the
+content of another view directly; the other is to call `View::component("component-name")` and `View::endComponent()` to 
+include the content of another view as a component. There are only small differences between using includes and
+components:
+
+- includes inherit all the view data from the view that includes them
+- components have their own data context and can have content provided to them in _slots_
+
+In general, if the view fragment you wish to include is a relatively static part of your page (e.g. a navigation) that
+you're just abstracting for ease of housekeeping, using `View::include()` is probably most appropriate. If you're
+including a configurable component that requires parameters (e.g. a type of user input control) you're probably best using
+components. For full details, see the separate documentation for the `View` class.
+
+All `View`s fulfil the `Response` contract, so you can simply return a `View` instance from your handler methods.
 
 ## Database and Models
 
