@@ -1,6 +1,6 @@
 name: Create Release
 
-# Controls when the workflow will run
+# Run the workflow whenever a git tag is created
 on:
   push:
     tags:
@@ -8,13 +8,12 @@ on:
       
 jobs:
   release:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - uses: actions/checkout@v3
 
+     # extract the version number from the composer file
       - name: version
         run: echo "::set-output name=version::$(cat $GITHUB_WORKSPACE/composer.json | jq .version | sed 's/"//g')"
         id: version
@@ -27,6 +26,7 @@ jobs:
           zip -r ../bead-framework-${{ steps.version.outputs.version }}.zip *
           cd ..
 
+      # create the github release ...
       - name: Create release
         uses: actions/create-release@v1
         id: create_release
@@ -39,6 +39,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      # ... upload the asset tarball ...
       - name: Upload PHP library tarball
         uses: actions/upload-release-asset@v1
         env:
@@ -49,6 +50,7 @@ jobs:
           asset_name: bead-framework-${{ steps.version.outputs.version }}.tar.gz
           asset_content_type: application/gzip
 
+      # .. and zip archive ...
       - name: Upload PHP library zip archive
         uses: actions/upload-release-asset@v1
         env:
