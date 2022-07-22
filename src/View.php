@@ -6,6 +6,7 @@ use Equit\Contracts\Response;
 use Equit\Exceptions\ViewNotFoundException;
 use Equit\Exceptions\ViewRenderingException;
 use Equit\Responses\DoesntHaveHeaders;
+use Equit\Responses\NaivelySendsContent;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
@@ -98,6 +99,7 @@ use function Equit\Traversable\some;
 class View implements Response
 {
 	use DoesntHaveHeaders;
+    use NaivelySendsContent;
 
 	/**
 	 * @var array Stack of the views that are rendering. The top view on the stack is the one currently being rendered,
@@ -783,21 +785,5 @@ class View implements Response
 	public function content(): string
 	{
 		return $this->render();
-	}
-
-	/**
-	 * Send the response.
-	 * @throws ViewRenderingException
-	 */
-	public function send(): void
-	{
-		http_response_code($this->statusCode());
-		header("content-type", $this->contentType());
-
-		foreach ($this->headers() as $header => $value) {
-			header($header, $value);
-		}
-
-		echo $this->content();
 	}
 }
