@@ -4,6 +4,11 @@ namespace Equit\Responses;
 
 use Equit\Contracts\Response;
 
+/**
+ * Base class for responses with default boilerplate implementations.
+ *
+ * Use this as the base for your response classes when their behaviour deviates from the default in only minor ways.
+ */
 abstract class AbstractResponse implements Response
 {
 	use CanSetStatusCode;
