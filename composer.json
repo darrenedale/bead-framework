@@ -15,7 +15,8 @@
     "ext-dom": "*",
     "ext-pdo": "*",
     "ext-iconv": "*",
-    "ext-json": "*"
+    "ext-json": "*",
+    "ext-uopz": "^7"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
