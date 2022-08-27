@@ -15,9 +15,12 @@ jobs:
 
       # ensure uopz extension is installed
       - name: Install php-uopz
-        run: sudo apt install php-uopz
+        run: |
+          sudo add-apt-repository -y ppa:ondrej/php
+          sudo apt-get update
+          sudo apt-get -y upgrade
+          sudo apt-get -y install php-uopz
 
-      # ensure PHPunit is installed
       - name: Install composer dependencies
         run: composer install
 
