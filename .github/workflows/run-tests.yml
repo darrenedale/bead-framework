@@ -13,9 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      # ensure uopz extension is installed
+      - name: Install php-uopz
+        run: apt install php-uopz
+
       # ensure PHPunit is installed
       - name: Install composer dependencies
         run: composer install
 
       - name: Run PHPUnit
-        run: php ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result --teamcity ./test
+        run: php ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test

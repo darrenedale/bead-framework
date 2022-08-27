@@ -10,6 +10,13 @@ use Equit\UploadedFile;
 use ReflectionClass;
 use SplFileInfo;
 
+use function uopz_get_mock;
+use function uopz_set_mock;
+use function uopz_unset_mock;
+use function uopz_get_return;
+use function uopz_set_return;
+use function uopz_unset_return;
+
 class MockSplFileInfo extends SplFileInfo
 {
     public function __construct($filename)
@@ -286,7 +293,7 @@ class UploadedFileTest extends TestCase
         //  we don't want to interfere with that, so we wait until all classes have been autoloaded
         $this->mockFilesystemFunctions();
         self::assertSame(self::TempFileSize, $file->actualSize());
-        self::assertSame(0, $this->m_callCounts["file_get_contents"]);
+        self::assertSame(0, $this->m_callCounts["file_get_contents"] ?? 0);
 
         // test using length of content read from temp file
         uopz_unset_mock(SplFileInfo::class);
