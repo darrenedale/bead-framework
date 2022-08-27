@@ -19,7 +19,7 @@ jobs:
           sudo add-apt-repository -y ppa:ondrej/php
           sudo apt-get update
           sudo apt-get -y upgrade
-          sudo apt-get -y install php-uopz
+          sudo apt-get -y install php7.4-uopz php8.0-uopz php8.1-uopz
 
       - name: Install composer dependencies
         run: composer install
