@@ -2,9 +2,14 @@
 
 namespace Equit\Testing;
 
+use Error;
 use ReflectionFunction;
+use ReflectionIntersectionType;
+use ReflectionNamedType;
 use ReflectionParameter;
+use ReflectionUnionType;
 use TypeError;
+
 
 /**
  * Class to check whether some arguments are valid for a function.
@@ -51,6 +56,82 @@ class FunctionArgumentChecker
         return $this->m_parameters;
     }
 
+    protected final function checkNamedType(ReflectionNamedType $type, $arg): void
+    {
+        $paramType = $type->getName();
+
+        if (is_object($arg)) {
+            if (!is_a($arg, $paramType, true)) {
+                $argClass = get_class($arg);
+                throw new Error("expected {$paramType}, {$argClass} found.");
+            }
+        } else {
+            $argType = gettype($arg);
+
+            // integers and floats can be automatically cast to one another, even under strict_types
+            // NOTE that reflection API provides "int" as the type name for ints...
+            if ($paramType === "int" || $paramType === "float") {
+                $paramType = "number";
+            }
+
+            // ... while gettype provides "integer" for int values
+            if ($argType === "integer" || $argType === "float") {
+                $argType = "number";
+            }
+
+            if ($paramType !== $argType) {
+                throw new TypeError("expected {$paramType}, {$argType} found.");
+            }
+        }
+    }
+
+    /**
+     * @param ReflectionUnionType $type
+     * @param mixed $value
+     */
+    protected final function checkUnionType($type, $value): void
+    {
+        foreach ($type->getTypes() as $memberType) {
+            try {
+                $this->checkNamedType($memberType, $value);
+                return;
+            } catch (Error $err) {
+                // nothing to do, try the next type
+            }
+        }
+
+        throw new Error(
+            "expected " .
+            grammaticalImplode(
+                array_map(fn(ReflectionNamedType $type) => $type->getName(), $type->getTypes()),
+                ", ",
+                " or "
+            ) .
+            "; found " . (is_object($value) ? get_class($value) : gettype($value))
+        );
+    }
+
+    /**
+     * @param ReflectionIntersectionType $type
+     * @param mixed $value
+     */
+    protected final function checkIntersectionType($type, $value): void
+    {
+        foreach ($type->getTypes() as $memberType) {
+            try {
+                $this->checkNamedType($memberType, $value);
+            } catch (Error $err) {
+                throw new Error(
+                    "expected " .
+                    grammaticalImplode(
+                        array_map(fn(ReflectionNamedType $type) => $type->getName(), $type->getTypes()),
+                    ) .
+                    "; found " . (is_object($value) ? get_class($value) : gettype($value))
+                );
+            }
+        }
+    }
+
     /**
      * Check some args for the function.
      *
@@ -82,36 +163,27 @@ class FunctionArgumentChecker
             }
 
             $arg = $args[$idx];
+            /** @var ReflectionNamedType $paramType */
             $paramType = $param->getType();
 
             if ($paramType->allowsNull() && null === $arg) {
                 continue;
             }
 
-            $paramType = $paramType->getName();
-
-            if (is_object($arg)) {
-                if (!is_a($arg, $paramType, true)) {
-                    $argClass = get_class($arg);
-                    throw new TypeError("Argument #{$param->getPosition()} ({$param->getName()}) of {$param->getDeclaringFunction()->getName()}() expects an instance of {$paramType}, {$argClass} found.");
-                }
-            } else {
-                $argType = gettype($arg);
-
-                // integers and floats can be automatically cast to one another, even under strict_types
-                // NOTE that reflection API provides "int" as the type name for ints...
-                if ($paramType === "int" || $paramType === "float") {
-                    $paramType = "number";
+            try {
+                if (8 <= PHP_MAJOR_VERSION) {
+                    if ($paramType instanceof ReflectionUnionType) {
+                        $this->checkUnionType($paramType, $arg);
+                        continue;
+                    } else if (80100 <= PHP_VERSION_ID && $paramType instanceof ReflectionIntersectionType) {
+                        $this->checkIntersectionType($paramType, $arg);
+                        continue;
+                    }
                 }
 
-                // ... while gettype provides "integer" for int values
-                if ($argType === "integer" || $argType === "float") {
-                    $argType = "number";
-                }
-
-                if ($paramType !== $argType) {
-                    throw new TypeError("Argument #{$param->getPosition()} ({$param->getName()}) of {$param->getDeclaringFunction()->getName()}() expects a {$paramType}, {$argType} found.");
-                }
+                $this->checkNamedType($paramType, $arg);
+            } catch (Error $err) {
+                throw new TypeError("Argument #{$param->getPosition()} ({$param->getName()}) of {$param->getDeclaringFunction()->getName()}() - {$err->getMessage()}");
             }
         }
     }

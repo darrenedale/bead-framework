@@ -3,11 +3,15 @@
 namespace Equit\Testing;
 
 use Closure;
+use Error;
 use InvalidArgumentException;
 use LogicException;
+use ReflectionException;
 use ReflectionFunction;
+use ReflectionIntersectionType;
 use ReflectionNamedType;
 use ReflectionParameter;
+use ReflectionUnionType;
 use ReflectionType;
 use RuntimeException;
 use TypeError;
@@ -15,20 +19,19 @@ use TypeError;
 /**
  * Mock any PHP function.
  *
- * Create instances and install them to mock functions. Any function can be mocked any number of times. A stack is
- * maintained of mocks for each function. When a mock is installed it is placed on top of the stack of mocks for that
- * function and activated. If/when the mock is removed, the next mock for the function (i.e. the new top of the stack)
- * is activated, until there are no more mocks on the stack (at which point the original function is restored).
+ * Create and install instances to mock functions. Any function can be mocked any number of times. A stack is maintained
+ * of mocks for each function. When a mock is installed it is placed on top of the stack of mocks for that function and
+ * activated. If/when the mock is removed, the next mock for the function (i.e. the new top of the stack) is activated,
+ * until there are no more mocks on the stack (at which point the original function is restored).
  *
  * Active mocks can be temporarily suspended without being removed. Call suspend()/resume() on the mock in question, or
  * call the static suspendMock() and resumeMock() method with the function name to suspend the currently active mock for
  * that function.
  *
- * By defualt, mocks must be compatible with the function they replace - parameter types and return type must agree, and
+ * By default, mocks must be compatible with the function they replace - parameter types and return type must agree, and
  * arguments passed at call time must be compatible with the original. These checks can be switched off for individual
  * mocks.
  *
- * TODO handle union/intersection types if runtime PHP version supports them (8+)
  * TODO need a strong unit test for this one...
  */
 class MockFunction
@@ -47,10 +50,10 @@ class MockFunction
     private ReflectionFunction $m_function;
 
     /** @var int The type of mock being used. */
-    private int $m_mockType;
+    private int $m_mockType = self::UNDEFINED_TYPE;
 
     /** @var mixed|array|Closure The mock for the function. */
-    private $m_mock;
+    private $m_mock = null;
 
     /** @var bool Whether to check the return type of the mock with the original when it's set. */
     private bool $m_checkReturnType = true;
@@ -68,8 +71,6 @@ class MockFunction
      */
     public function __construct(?string $functionName = null)
     {
-        $this->m_mockType = self::UNDEFINED_TYPE;
-
         if (isset($functionName)) {
             $this->setName($functionName);
         }
@@ -82,6 +83,10 @@ class MockFunction
      */
     public function name(): string
     {
+        if (!isset($this->m_function)) {
+            throw new LogicException("Mock function name has not been initialised.");
+        }
+
         return $this->m_function->getName();
     }
 
@@ -95,8 +100,8 @@ class MockFunction
     {
         try {
             $this->m_function = new ReflectionFunction($name);
-        } catch (\ReflectionException $err) {
-            throw new InvalidArgumentException("Function {$name} is not defined.", $err);
+        } catch (ReflectionException $err) {
+            throw new InvalidArgumentException("Function {$name} is not defined.", 0, $err);
         }
     }
 
@@ -181,7 +186,7 @@ class MockFunction
      */
     public function setCheckReturnType(bool $check): void
     {
-        $this->m_checkReplacementParams = $check;
+        $this->m_checkReturnType = $check;
     }
 
     /**
@@ -205,7 +210,7 @@ class MockFunction
      */
     public function withReturnTypeCheck(): self
     {
-        $this->setCheckParameters(true);
+        $this->setCheckReturnType(true);
         return $this;
     }
 
@@ -228,7 +233,7 @@ class MockFunction
      */
     public function setCheckArguments(bool $check): void
     {
-        $this->m_checkReplacementParams = $check;
+        $this->m_checkCallArgs = $check;
     }
 
     /**
@@ -241,7 +246,7 @@ class MockFunction
      */
     public function withoutArgumentChecks(): self
     {
-        $this->setCheckReturnType(false);
+        $this->setCheckArguments(false);
         return $this;
     }
 
@@ -252,7 +257,7 @@ class MockFunction
      */
     public function withArgumentChecks(): self
     {
-        $this->setCheckParameters(true);
+        $this->setCheckArguments(true);
         return $this;
     }
 
@@ -301,7 +306,28 @@ class MockFunction
         return $type;
     }
 
-    static protected final function checkParameterEquality(ReflectionParameter $original, ReflectionParameter $replacement)
+    /**
+     * @param ReflectionUnionType|ReflectionIntersectionType $original
+     * @param ReflectionUnionType|ReflectionIntersectionType $replacement
+     */
+    static protected final function checkCompositeTypeEquality($original, $replacement): void
+    {
+        $originalTypes = $original->getTypes();
+        $replacementTypes = $replacement->getTypes();
+
+        $typeName = fn(ReflectionNamedType $type) => $type->getName();
+
+        if (
+            count($originalTypes) !== count($replacementTypes) ||
+            count($originalTypes) !== count(array_intersect(
+                array_map($typeName, $originalTypes),
+                array_map($typeName, $replacementTypes)
+            ))) {
+            throw new Error("does not match original.");
+        }
+    }
+
+    static protected final function checkParameterEquality(ReflectionParameter $original, ReflectionParameter $replacement): void
     {
         // NOTE no need to check optional: caller has already ensured the param counts and # of required params match
 
@@ -328,13 +354,44 @@ class MockFunction
             return;
         }
 
+        $originalType = $original->getType();
+        $replacementType = $replacement->getType();
+
+        if (8 <= PHP_MAJOR_VERSION) {
+            if (($originalType instanceof ReflectionUnionType) !== ($replacementType instanceof ReflectionUnionType)) {
+                throw new InvalidArgumentException("Parameter #{$original->getPosition()} in the replacement should be a union type if the original is.");
+            }
+
+            $performCompositeTypeCheck = ($originalType instanceof ReflectionUnionType);
+
+            if (80100 <= PHP_VERSION_ID) {
+                if (($originalType instanceof ReflectionUnionType) !== ($replacementType instanceof ReflectionUnionType)) {
+                    throw new InvalidArgumentException("Parameter #{$original->getPosition()} in the replacement should be an intersection type if the original is.");
+                }
+
+                $performCompositeTypeCheck = ($originalType instanceof ReflectionIntersectionType);
+            }
+
+            if ($performCompositeTypeCheck) {
+                try {
+                    self::checkCompositeTypeEquality($originalType, $replacementType);
+                } catch (Error $err) {
+                    throw new InvalidArgumentException("Parameter #{$original->getPosition()} composite type {$err->getMessage()}.");
+                }
+
+                return;
+            }
+        }
+
         if ($original->getType()->getName() != $replacement->getType()->getName()) {
-            throw new InvalidArgumentException("Parameter #{$original->getPosition()} in the replacement have the same type as the original.");
+            throw new InvalidArgumentException("Parameter #{$original->getPosition()} in the replacement should have the same type as the original.");
         }
     }
 
     static protected final function checkReturnTypeEquality(ReflectionNamedType $original, ReflectionNamedType $replacement)
     {
+        // TODO composite types
+
         if ($original->getName() !== $replacement->getName()) {
             throw new InvalidArgumentException("The replacement return type does not match the original.");
         }
