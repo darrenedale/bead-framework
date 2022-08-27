@@ -26,18 +26,18 @@ jobs:
           sudo update-alternatives --set php /usr/bin/php7.4
           rm -rf vendor
           composer install
-          php ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
+          ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
 
       - name: Install composer dependencies and run unit tests for PHP8.0
         run: |
           sudo update-alternatives --set php /usr/bin/php8.0
           rm -rf vendor
           composer install
-          php ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
+          ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
 
       - name: Install composer dependencies and run unit tests for PHP8.1
         run: |
           sudo update-alternatives --set php /usr/bin/php8.1
           rm -rf vendor
           composer install
-          php ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
+          ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
