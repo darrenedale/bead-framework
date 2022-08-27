@@ -19,10 +19,16 @@ jobs:
           sudo add-apt-repository -y ppa:ondrej/php
           sudo apt-get update
           sudo apt-get -y upgrade
-          sudo apt-get -y install php7.4-uopz php8.0-uopz php8.1-uopz
+          sudo apt-get -y install php7.4 php8.0 php8.1 php7.4-uopz php8.0-uopz php8.1-uopz
 
       - name: Install composer dependencies
         run: composer install
 
-      - name: Run PHPUnit
-        run: php ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
+      - name: Run PHPUnit for PHP7.4
+        run: /usr/bin/php7.4 ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
+
+      - name: Run PHPUnit for PHP8.0
+        run: /usr/bin/php8.0 ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
+
+      - name: Run PHPUnit for PHP8.1
+        run: /usr/bin/php8.1 ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
