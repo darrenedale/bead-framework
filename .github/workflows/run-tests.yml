@@ -15,7 +15,7 @@ jobs:
 
       # ensure uopz extension is installed
       - name: Install php-uopz
-        run: apt install php-uopz
+        run: sudo apt install php-uopz
 
       # ensure PHPunit is installed
       - name: Install composer dependencies
