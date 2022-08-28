@@ -89,7 +89,7 @@ class MockFunction
     public function functionName(): string
     {
         if (!isset($this->m_functionReflector)) {
-            throw new LogicException("Mock function name has not been initialised.");
+            throw new LogicException("Mock has not been initialised with a function or method to mock.");
         }
 
         return $this->m_functionReflector->getName();
@@ -130,6 +130,10 @@ class MockFunction
      */
     public function className(): ?string
     {
+        if (!isset($this->m_functionReflector)) {
+            throw new LogicException("Mock has not been initialised with a function or method to mock.");
+        }
+
         if ($this->m_functionReflector instanceof ReflectionMethod) {
             return $this->m_functionReflector->getDeclaringClass()->getName();
         }
@@ -140,8 +144,9 @@ class MockFunction
     /**
      * Fluently set the name of the function being mocked.
      *
-     * @param string $name The function name.
-     * @throws InvalidArgumentException if the named function does not exist.
+     * @param string $className The class name.
+     * @param string $methodName The name of the method to mock.
+     * @throws InvalidArgumentException if the class does not exist or does not have the named method.
      */
     public function setMethod(string $className, string $methodName): void
     {
@@ -165,6 +170,26 @@ class MockFunction
     {
         $this->setMethod($className, $methodName);
         return $this;
+    }
+
+    /**
+     * Check whether the mock is for a function.
+     *
+     * @return bool `true` if the mock is for a function, `false` otherwise.
+     */
+    public function isFunction(): bool
+    {
+        return !$this->isMethod();
+    }
+
+    /**
+     * Check whether the mock is for a method.
+     *
+     * @return bool `true` if the mock is for a method, `false` otherwise.
+     */
+    public function isMethod(): bool
+    {
+        return $this->m_functionReflector instanceof ReflectionMethod;
     }
 
     /**
@@ -621,58 +646,6 @@ class MockFunction
     }
 
     /**
-     * Check whether the mock is for a function.
-     *
-     * @return bool `true` if the mock is for a function, `false` otherwise.
-     */
-    public function isFunction(): bool
-    {
-        return !$this->isMethod();
-    }
-
-    /**
-     * Check whether the mock is for a method.
-     *
-     * @return bool `true` if the mock is for a method, `false` otherwise.
-     */
-    public function isMethod(): bool
-    {
-        return $this->m_functionReflector instanceof ReflectionMethod;
-    }
-
-    /**
-     * Check whether the mock is installed.
-     *
-     * An installed mock may not necessarily be active.
-     *
-     * @return bool `true` if the mock is installed, `false` otherwise.
-     */
-    public final function isInstalled(): bool
-    {
-        return self::mockIsInstalled($this);
-    }
-
-    /**
-     * Check whether the mock is top of the stack for its function.
-     *
-     * @return bool `true` if the mock is top of the function's stack of mocks, `false` otherwise.
-     */
-    public final function isTop(): bool
-    {
-        return self::mockIsTop($this);
-    }
-
-    /**
-     * Check whether the mock is currently active.
-     *
-     * @return bool `true` if the mock is active, `false` otherwise.
-     */
-    public final function isActive(): bool
-    {
-        return self::mockIsActive($this);
-    }
-
-    /**
      * Remove the mock.
      *
      * The mock is removed from the stack. If it is currently active the next mock in the stack is activated.
@@ -717,6 +690,38 @@ class MockFunction
         } else {
             self::resumeMock($this->functionName());
         }
+    }
+
+    /**
+     * Check whether the mock is installed.
+     *
+     * An installed mock may not necessarily be active.
+     *
+     * @return bool `true` if the mock is installed, `false` otherwise.
+     */
+    public final function isInstalled(): bool
+    {
+        return self::mockIsInstalled($this);
+    }
+
+    /**
+     * Check whether the mock is top of the stack for its function.
+     *
+     * @return bool `true` if the mock is top of the function's stack of mocks, `false` otherwise.
+     */
+    public final function isTop(): bool
+    {
+        return self::mockIsTop($this);
+    }
+
+    /**
+     * Check whether the mock is currently active.
+     *
+     * @return bool `true` if the mock is active, `false` otherwise.
+     */
+    public final function isActive(): bool
+    {
+        return self::mockIsActive($this);
     }
 
     protected function createArgumentChecker(): FunctionArgumentChecker
@@ -1035,11 +1040,15 @@ class MockFunction
             return false;
         }
 
+        // NOTE there's a bug in uopz where the fn name is lower-cased when stored in the hash table, but the name is
+        //  not lower-cased when doing the lookup in uopz_get_return, so we work around that here
+        $functionName = mb_convert_case($mock->functionName(), MB_CASE_LOWER);
+
         if ($mock->isMethod()) {
-            return null !== uopz_get_return($mock->className(), $mock->functionName());
+            return null !== uopz_get_return($mock->className(), $functionName);
         }
 
-        return null !== uopz_get_return($mock->functionName());
+        return null !== uopz_get_return(strtolower($functionName));
     }
 
     /**
