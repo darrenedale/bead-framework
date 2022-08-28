@@ -103,8 +103,8 @@ class StopwatchTest extends TestCase
             "typical1000" => [1000],
         ];
 
-        for ($idx = 0; $idx < 100; ++$idx) {
-            yield "randomTypical{$idx}" => [mt_rand(100, 500)];
+        for ($idx = 0; $idx < 25; ++$idx) {
+            yield "randomTypical{$idx}" => [mt_rand(5, 50)];
         }
     }
 
