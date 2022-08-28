@@ -19,7 +19,7 @@
   },
   "require-dev": {
     "phpunit/phpunit": "^9.5",
-    "ext-uopz": "*"
+    "ext-uopz": "^7"
   },
   "autoload": {
     "psr-4": {
