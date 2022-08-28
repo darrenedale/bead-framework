@@ -9,6 +9,7 @@ use LogicException;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionIntersectionType;
+use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionUnionType;
@@ -17,20 +18,21 @@ use RuntimeException;
 use TypeError;
 
 /**
- * Mock any PHP function.
+ * Mock any PHP function or method.
  *
- * Create and install instances to mock functions. Any function can be mocked any number of times. A stack is maintained
- * of mocks for each function. When a mock is installed it is placed on top of the stack of mocks for that function and
- * activated. If/when the mock is removed, the next mock for the function (i.e. the new top of the stack) is activated,
- * until there are no more mocks on the stack (at which point the original function is restored).
+ * Create and install instances to mock functions. Any function/method can be mocked any number of times. A stack is
+ * maintained of mocks for each function/method. When a mock is installed it is placed on top of the stack of mocks for
+ * that function/method and activated. If/when the mock is removed, the next mock for the function/method (i.e. the new
+ * top of the stack) is activated, until there are no more mocks on the stack (at which point the original function/
+ * method is restored).
  *
  * Active mocks can be temporarily suspended without being removed. Call suspend()/resume() on the mock in question, or
- * call the static suspendMock() and resumeMock() method with the function name to suspend the currently active mock for
- * that function.
+ * call the static suspendMock() and resumeMock() method with the function name or class and method names to suspend the
+ * currently active mock for that function/method.
  *
- * By default, mocks must be compatible with the function they replace - parameter types and return type must agree, and
- * arguments passed at call time must be compatible with the original. These checks can be switched off for individual
- * mocks.
+ * By default, mocks must be compatible with the function/method they replace - parameter types and return type must
+ * agree, and arguments passed at call time must be compatible with the original. These checks can be switched off for
+ * individual mocks.
  *
  * TODO need a strong unit test for this one...
  */
@@ -46,8 +48,8 @@ class MockFunction
     /** @var array<string,MockFunction[]>  */
     private static array $m_mocks = [];
 
-    /** @var ReflectionFunction The function being mocked. */
-    private ReflectionFunction $m_function;
+    /** @var ReflectionFunction|ReflectionMethod The function being mocked. */
+    private $m_functionReflector;
 
     /** @var int The type of mock being used. */
     private int $m_mockType = self::UNDEFINED_TYPE;
@@ -67,12 +69,15 @@ class MockFunction
     /**
      * Initialise a new function mock.
      *
-     * @param string|null $functionName The optional name of the function to mock.
+     * @param string|null $functionOrClassName The optional name of the class or function to mock.
+     * @param string|null $methodName The optional name of the method to mock.
      */
-    public function __construct(?string $functionName = null)
+    public function __construct(?string $functionOrClassName = null, ?string $methodName = null)
     {
-        if (isset($functionName)) {
-            $this->setName($functionName);
+        if (isset($methodName)) {
+            $this->setMethod($functionOrClassName, $methodName);
+        } else if (isset($functionOrClassName)) {
+            $this->setFunctionName($functionOrClassName);
         }
     }
 
@@ -81,13 +86,13 @@ class MockFunction
      *
      * @return string The function name.
      */
-    public function name(): string
+    public function functionName(): string
     {
-        if (!isset($this->m_function)) {
+        if (!isset($this->m_functionReflector)) {
             throw new LogicException("Mock function name has not been initialised.");
         }
 
-        return $this->m_function->getName();
+        return $this->m_functionReflector->getName();
     }
 
     /**
@@ -96,10 +101,10 @@ class MockFunction
      * @param string $name The function name.
      * @throws InvalidArgumentException if the named function does not exist.
      */
-    public function setName(string $name): void
+    public function setFunctionName(string $name): void
     {
         try {
-            $this->m_function = new ReflectionFunction($name);
+            $this->m_functionReflector = new ReflectionFunction($name);
         } catch (ReflectionException $err) {
             throw new InvalidArgumentException("Function {$name} is not defined.", 0, $err);
         }
@@ -112,9 +117,53 @@ class MockFunction
      *
      * @return $this The MockFunction instance for further method chaining.
      */
-    public function named(string $name): self
+    public function forFunction(string $name): self
     {
-        $this->setName($name);
+        $this->setFunctionName($name);
+        return $this;
+    }
+
+    /**
+     * Fetch the name of the class whose method is being mocked.
+     *
+     * @return string|null The class name, or `null` if the mock is for a function not a method.
+     */
+    public function className(): ?string
+    {
+        if ($this->m_functionReflector instanceof ReflectionMethod) {
+            return $this->m_functionReflector->getDeclaringClass()->getName();
+        }
+
+        return null;
+    }
+
+    /**
+     * Fluently set the name of the function being mocked.
+     *
+     * @param string $name The function name.
+     * @throws InvalidArgumentException if the named function does not exist.
+     */
+    public function setMethod(string $className, string $methodName): void
+    {
+        try {
+            $this->m_functionReflector = new ReflectionMethod($className, $methodName);
+        } catch (ReflectionException $err) {
+            throw new InvalidArgumentException("Method {$className}::{$methodName} is not defined.", 0, $err);
+        }
+    }
+
+    /**
+     * Fluently set the method being mocked.
+     *
+     * @param string $className The class of the method being mocked.
+     * @param string $methodName The method being mocked.
+     *
+     * @return $this The MockFunction instance for further method chaining.
+     * @throws InvalidArgumentException if the class or method does not exist.
+     */
+    public function forMethod(string $className, string $methodName): self
+    {
+        $this->setMethod($className, $methodName);
         return $this;
     }
 
@@ -416,24 +465,24 @@ class MockFunction
     {
         $replacement = new ReflectionFunction($replacement);
 
-        if ($this->willCheckReturnType() && $this->m_function->hasReturnType()) {
+        if ($this->willCheckReturnType() && $this->m_functionReflector->hasReturnType()) {
             if (!$replacement->hasReturnType()) {
                 throw new InvalidArgumentException("The original has a return type but the replacement does not.");
             }
 
-            self::checkReturnTypeEquality($this->m_function->getReturnType(), $replacement->getReturnType());
+            self::checkReturnTypeEquality($this->m_functionReflector->getReturnType(), $replacement->getReturnType());
         }
 
         if ($this->willCheckParameters()) {
-            if ($replacement->getNumberOfParameters() !== $this->m_function->getNumberOfParameters()) {
+            if ($replacement->getNumberOfParameters() !== $this->m_functionReflector->getNumberOfParameters()) {
                 throw new InvalidArgumentException("The replacement function does not match the parameter count of the original function.");
             }
 
-            if ($replacement->getNumberOfRequiredParameters() !== $this->m_function->getNumberOfRequiredParameters()) {
+            if ($replacement->getNumberOfRequiredParameters() !== $this->m_functionReflector->getNumberOfRequiredParameters()) {
                 throw new InvalidArgumentException("The replacement function does not match the required parameter count of the original function.");
             }
 
-            $originalParams    = $this->m_function->getParameters();
+            $originalParams    = $this->m_functionReflector->getParameters();
             $replacementParams = $replacement->getParameters();
 
             for ($idx = 0; $idx < count($originalParams); ++$idx) {
@@ -470,15 +519,15 @@ class MockFunction
      */
     public function shouldReturn($value): self
     {
-        if ($this->willCheckReturnType() && $this->m_function->hasReturnType()) {
-            $expectedType = $this->m_function->getReturnType();
+        if ($this->willCheckReturnType() && $this->m_functionReflector->hasReturnType()) {
+            $expectedType = $this->m_functionReflector->getReturnType();
 
             if (!$expectedType->allowsNull() && is_null($value)) {
-                throw new TypeError("Return type for mocked function {$this->name()} is not nullable but given null value to return.");
+                throw new TypeError("Return type for mocked function {$this->functionName()} is not nullable but given null value to return.");
             }
 
             if (self::canonicalReflectionTypeName($expectedType) !== self::typeOf($value)) {
-                throw new TypeError("Return type for mocked function {$this->name()} expected to be '{$expectedType}', found '" . self::typeOf($value) . "'.");
+                throw new TypeError("Return type for mocked function {$this->functionName()} expected to be '{$expectedType}', found '" . self::typeOf($value) . "'.");
             }
         }
 
@@ -502,18 +551,18 @@ class MockFunction
             throw new RuntimeException("Mock functions returning maps of values cannot use an empty map.");
         }
 
-        if ($this->willCheckReturnType() && $this->m_function->hasReturnType()) {
-            $expectedType = $this->m_function->getReturnType();
+        if ($this->willCheckReturnType() && $this->m_functionReflector->hasReturnType()) {
+            $expectedType = $this->m_functionReflector->getReturnType();
             $allowsNull = $expectedType->allowsNull();
             $expectedType = self::canonicalReflectionTypeName($expectedType);
 
             foreach ($map as $value) {
                 if (!$allowsNull && is_null($value)) {
-                    throw new TypeError("Return type for mocked function {$this->name()} is not nullable but given null value in map to return.");
+                    throw new TypeError("Return type for mocked function {$this->functionName()} is not nullable but given null value in map to return.");
                 }
 
                 if ($expectedType !== self::typeOf($value)) {
-                    throw new TypeError("Return type for mocked function {$this->name()} expected to be '{$expectedType}', found '" . self::typeOf($value) . "' in map.");
+                    throw new TypeError("Return type for mocked function {$this->functionName()} expected to be '{$expectedType}', found '" . self::typeOf($value) . "' in map.");
                 }
             }
         }
@@ -539,18 +588,18 @@ class MockFunction
             throw new RuntimeException("Mock functions returning sequences of values cannot use an empty sequence.");
         }
 
-        if ($this->willCheckReturnType() && $this->m_function->hasReturnType()) {
-            $expectedType = $this->m_function->getReturnType();
+        if ($this->willCheckReturnType() && $this->m_functionReflector->hasReturnType()) {
+            $expectedType = $this->m_functionReflector->getReturnType();
             $allowsNull = $expectedType->allowsNull();
             $expectedType = self::canonicalReflectionTypeName($expectedType);
 
             foreach ($sequence as $value) {
                 if (!$allowsNull && is_null($value)) {
-                    throw new TypeError("Return type for mocked function {$this->name()} is not nullable but given null value in sequence to return.");
+                    throw new TypeError("Return type for mocked function {$this->functionName()} is not nullable but given null value in sequence to return.");
                 }
 
                 if ($expectedType !== self::typeOf($value)) {
-                    throw new TypeError("Return type for mocked function {$this->name()} expected to be '{$expectedType}', found '" . self::typeOf($value) . "' in sequence.");
+                    throw new TypeError("Return type for mocked function {$this->functionName()} expected to be '{$expectedType}', found '" . self::typeOf($value) . "' in sequence.");
                 }
             }
         }
@@ -569,6 +618,26 @@ class MockFunction
     public function install(): void
     {
         self::installMock($this);
+    }
+
+    /**
+     * Check whether the mock is for a function.
+     *
+     * @return bool `true` if the mock is for a function, `false` otherwise.
+     */
+    public function isFunction(): bool
+    {
+        return !$this->isMethod();
+    }
+
+    /**
+     * Check whether the mock is for a method.
+     *
+     * @return bool `true` if the mock is for a method, `false` otherwise.
+     */
+    public function isMethod(): bool
+    {
+        return $this->m_functionReflector instanceof ReflectionMethod;
     }
 
     /**
@@ -624,7 +693,11 @@ class MockFunction
             return;
         }
 
-        self::suspendMock($this->name());
+        if ($this->isMethod()) {
+            self::suspendMock($this->className(), $this->functionName());
+        } else {
+            self::suspendMock($this->functionName());
+        }
     }
 
     /**
@@ -639,7 +712,20 @@ class MockFunction
             return;
         }
 
-        self::resumeMock($this->name());
+        if ($this->isMethod()) {
+            self::resumeMock($this->className(), $this->functionName());
+        } else {
+            self::resumeMock($this->functionName());
+        }
+    }
+
+    protected function createArgumentChecker(): FunctionArgumentChecker
+    {
+        if ($this->isMethod()) {
+            return new FunctionArgumentChecker($this->className(), $this->functionName());
+        }
+
+        return new FunctionArgumentChecker($this->functionName());
     }
 
     /**
@@ -649,17 +735,22 @@ class MockFunction
      */
     protected final function createClosureForStaticValue(): Closure
     {
-        $argChecker = new FunctionArgumentChecker($this->name());
-
         if (is_object($this->m_mock)) {
             $value = clone $this->m_mock;
         } else {
             $value = $this->m_mock;
         }
 
-        return function(...$args) use ($value, $argChecker)
-        {
-            $argChecker->check(...$args);
+        if ($this->willCheckArguments()) {
+            $argChecker = $this->createArgumentChecker();
+
+            return function (...$args) use ($value, $argChecker) {
+                $argChecker->check(...$args);
+                return $value;
+            };
+        }
+
+        return function (...$args) use ($value) {
             return $value;
         };
     }
@@ -672,13 +763,22 @@ class MockFunction
      */
     protected final function createClosureForSequence(): Closure
     {
-        $argChecker = new FunctionArgumentChecker($this->name());
         $values = $this->m_mock;
 
-        return function(...$args) use ($values, $argChecker)
-        {
+        if ($this->willCheckArguments()) {
+            $argChecker = $this->createArgumentChecker();
+
+            return function (...$args) use ($values, $argChecker) {
+                static $idx = 0;
+                $argChecker->check(...$args);
+                $ret = $values[$idx];
+                $idx = ++$idx % count($values);
+                return $ret;
+            };
+        }
+
+        return function (...$args) use ($values) {
             static $idx = 0;
-            $argChecker->check(...$args);
             $ret = $values[$idx];
             $idx = ++$idx % count($values);
             return $ret;
@@ -694,12 +794,18 @@ class MockFunction
      */
     protected final function createClosureForReplacementClosure(): Closure
     {
-        $argChecker = new FunctionArgumentChecker($this->name());
         $fn = $this->m_mock;
 
-        return function(...$args) use ($fn, $argChecker)
-        {
-            $argChecker->check(...$args);
+        if ($this->willCheckArguments()) {
+            $argChecker = $this->createArgumentChecker();
+
+            return function (...$args) use ($fn, $argChecker) {
+                $argChecker->check(...$args);
+                return $fn(...$args);
+            };
+        }
+
+        return function (...$args) use ($fn) {
             return $fn(...$args);
         };
     }
@@ -711,13 +817,29 @@ class MockFunction
      */
     protected final function createClosureForMap(): Closure
     {
-        $argChecker = new FunctionArgumentChecker($this->name());
         $values = $this->m_mock;
 
-        return function(...$args) use ($values, $argChecker)
-        {
-            $argChecker->check(...$args);
+        if ($this->willCheckArguments()) {
+            $argChecker = $this->createArgumentChecker();
 
+            return function(...$args) use ($values, $argChecker)
+            {
+                $argChecker->check(...$args);
+
+                if (0 === count($args)) {
+                    throw new RuntimeException("Mock function with mapped return values must receive at least one argument.");
+                }
+
+                if (!isset($values[$args[0]])) {
+                    throw new RuntimeException("Mock function with mapped return values missing mapped value for provided argument.");
+                }
+
+                return $values[$args[0]];
+            };
+        }
+
+        return function(...$args) use ($values)
+        {
             if (0 === count($args)) {
                 throw new RuntimeException("Mock function with mapped return values must receive at least one argument.");
             }
@@ -731,7 +853,7 @@ class MockFunction
     }
 
     /**
-     * Create the closure that will double for the mocked function.
+     * Create the closure that will double for the mocked function/method.
      * @return Closure
      */
     protected final function createClosure(): Closure
@@ -757,6 +879,41 @@ class MockFunction
     }
 
     /**
+     * Get the key into the register of installed mocks for a mock.
+     *
+     * @param string $functionOrClass The function name, or class name if it's a method mock.
+     * @param string|null $methodName The method name if it's a method mock, or null if it's a function mock.
+     *
+     * @return string The key.
+     */
+    private static function keyForClassAndFunction(string $functionOrClass, ?string $methodName = null): string
+    {
+        if (isset($methodName)) {
+            return "{$functionOrClass}::{$methodName}";
+        }
+
+        return $functionOrClass;
+    }
+
+    /**
+     * Get the key into the register of installed mocks for a mock.
+     *
+     * @param MockFunction $mock The mock whose key is sought.
+     *
+     * @return string The key.
+     */
+    private static function keyForMock(MockFunction $mock): string
+    {
+        $className = $mock->className();
+
+        if (isset($className)) {
+            return self::keyForClassAndFunction($className, $mock->functionName());
+        }
+
+        return self::keyForClassAndFunction($mock->functionName());
+    }
+
+    /**
      * Install a mock.
      *
      * A register is kept of each function mocked. For each function mocked a stack is built of the installed mocks for
@@ -766,23 +923,27 @@ class MockFunction
      */
     public static function installMock(MockFunction $mock): void
     {
-        $name = $mock->name();
+        $key = self::keyForMock($mock);
         
         if (!self::mockIsInstalled($mock)) {
             // if it's not already on the stack, push it on
-            if (!isset(self::$m_mocks[$name])) {
-                self::$m_mocks[$name] = [$mock];
+            if (!isset(self::$m_mocks[$key])) {
+                self::$m_mocks[$key] = [$mock];
             } else {
-                self::$m_mocks[$name][] = $mock;
+                self::$m_mocks[$key][] = $mock;
             }
         } else {
             // if it's already on the stack, put it on top
-            $idx = array_search($mock, self::$m_mocks[$name]);
-            array_splice(self::$m_mocks[$name], $idx, 1);
-            self::$m_mocks[$name][] = $mock;
+            $idx = array_search($mock, self::$m_mocks[$key]);
+            array_splice(self::$m_mocks[$key], $idx, 1);
+            self::$m_mocks[$key][] = $mock;
         }
 
-        uopz_set_return($name, $mock->createClosure(), true);
+        if ($mock->isMethod()) {
+            uopz_set_return($mock->className(), $mock->functionName(), $mock->createClosure(), true);
+        } else {
+            uopz_set_return($mock->functionName(), $mock->createClosure(), true);
+        }
     }
 
     /**
@@ -798,26 +959,36 @@ class MockFunction
      */
     public static function removeMock(MockFunction $mock): void
     {
-        $name = $mock->name();
-        $idx = array_search($mock, self::$m_mocks[$name] ?? []);
+        $key = self::keyForMock($mock);
+        $idx = array_search($mock, self::$m_mocks[$key] ?? []);
 
         if (false === $idx) {
             return;
         }
 
-        array_splice(self::$m_mocks[$name], $idx, 1);
+        array_splice(self::$m_mocks[$key], $idx, 1);
 
         // if the mock is currently active and the mock for the function is not suspended, activate the next mock on the
         // stack
-        if (0 !== $idx && $idx === count(self::$m_mocks[$name]) && uopz_get_return($name)) {
-            uopz_set_return($name, end(self::$m_mocks[$name])->createClosure(), true);
+        if (0 !== $idx && $idx === count(self::$m_mocks[$key]) && $mock->isActive()) {
+            $newMock = end(self::$m_mocks[$key]);
+
+            if ($mock->isMethod()) {
+                uopz_set_return($mock->className(), $mock->functionName(), $newMock->createClosure(), true);
+            } else {
+                uopz_set_return($mock->functionName(), $newMock->createClosure(), true);
+            }
         } else {
             // if there are no more mocks on the stack for this function, remove it from the register
-            if (empty(self::$m_mocks[$name])) {
-                unset(self::$m_mocks[$name]);
+            if (empty(self::$m_mocks[$key])) {
+                unset(self::$m_mocks[$key]);
             }
 
-            uopz_unset_return($name);
+            if ($mock->isMethod()) {
+                uopz_unset_return($mock->className(), $mock->functionName());
+            } else {
+                uopz_unset_return($mock->functionName());
+            }
         }
     }
 
@@ -832,7 +1003,8 @@ class MockFunction
      */
     public static function mockIsInstalled(MockFunction $mock): bool
     {
-        return isset(self::$m_mocks[$mock->name()]) && in_array($mock, self::$m_mocks[$mock->name()]);
+        $key = self::keyForMock($mock);
+        return isset(self::$m_mocks[$key]) && in_array($mock, self::$m_mocks[$key]);
     }
 
     /**
@@ -844,8 +1016,9 @@ class MockFunction
      */
     public static function mockIsTop(MockFunction $mock): bool
     {
+        $key = self::keyForMock($mock);
         // NOTE the register is guaranteed to be a non-empty array if it is set
-        return isset(self::$m_mocks[$mock->name()]) && end(self::$m_mocks[$mock->name()]) === $mock;
+        return isset(self::$m_mocks[$key]) && end(self::$m_mocks[$key]) === $mock;
     }
 
     /**
@@ -858,33 +1031,52 @@ class MockFunction
      */
     public static function mockIsActive(MockFunction $mock): bool
     {
-        return null !== uopz_get_return($mock->name()) && self::mockIsTop($mock);
+        if (!self::mockIsTop($mock)) {
+            return false;
+        }
+
+        if ($mock->isMethod()) {
+            return null !== uopz_get_return($mock->className(), $mock->functionName());
+        }
+
+        return null !== uopz_get_return($mock->functionName());
     }
 
     /**
-     * Suspend mocking of a named function.
+     * Suspend mocking of a named function/method.
      *
-     * @param string $function The function for which to suspend mocking.
+     * @param string $functionOrClass The function or class for which to suspend mocking.
+     * @param ?string $methodName The method for which to suspend mocking if `$functionOrClass` is a class name.
      */
-    public function suspendMock(string $function): void
+    public function suspendMock(string $functionOrClass, ?string $methodName = null): void
     {
-        uopz_unset_return($function);
+        if (isset($functionName)) {
+            uopz_unset_return($functionOrClass, $methodName);
+        } else {
+            uopz_unset_return($functionOrClass);
+        }
     }
 
     /**
-     * Resume mocking of a named function.
+     * Resume mocking of a named function/method.
      *
      * If the named function has no installed mocks an exception is thrown. Otherwise, the mock on top of the function's
      * stack is activated.
      *
      * @param string $function The function for which to resume mocking.
      */
-    public function resumeMock(string $function): void
+    public function resumeMock(string $functionOrClass, ?string $methodName = null): void
     {
-        if (!isset(self::$m_mocks[$function])) {
-            throw new RuntimeException("No mocks are installed for '{$function}'.");
+        $key = self::keyForClassAndFunction($functionOrClass, $methodName);
+
+        if (!isset(self::$m_mocks[$key])) {
+            throw new RuntimeException("No mocks are installed for '{$key}'.");
         }
 
-        uopz_set_return($function, end(self::$m_mocks[$function])->createClosure());
+        if (isset($methodName)) {
+            uopz_set_return($functionOrClass, $methodName, end(self::$m_mocks[$key])->createClosure());
+        } else {
+            uopz_set_return($functionOrClass, end(self::$m_mocks[$key])->createClosure());
+        }
     }
 }

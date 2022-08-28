@@ -8,11 +8,12 @@ use Equit\Test\Framework\TestCase;
 use Equit\Testing\MockFunction;
 use InvalidArgumentException;
 use LogicException;
+use SplFileInfo;
 use TypeError;
 
 class MockFunctionTest extends TestCase
 {
-    public function dataForTestConstructor(): iterable
+    public function dataForTestConstructorForFunction(): iterable
     {
         yield from [
             "typical" => ["strpos"],
@@ -40,11 +41,14 @@ class MockFunctionTest extends TestCase
     }
 
     /**
-     * @dataProvider dataForTestConstructor
+     * Test the constructor when used to mock a freestanding function.
+     *
+     * @dataProvider dataForTestConstructorForFunction
+     *
      * @param mixed $name The function name to pass to the constructor.
      * @param string|null $exceptionClass The exception expected, if any.
      */
-    public function testConstructor($name, ?string $exceptionClass = null): void
+    public function testConstructorForFunction($name, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             self::expectException($exceptionClass);
@@ -56,12 +60,94 @@ class MockFunctionTest extends TestCase
             self::expectException(LogicException::class);
         }
 
-        self::assertEquals($name, $mock->name());
+        self::assertEquals($name, $mock->functionName());
+        self::assertTrue($mock->isFunction());
     }
 
+    public function dataForTestConstructorForMethod(): iterable
+    {
+        yield from [
+            "typical" => [SplFileInfo::class, "getSize",],
+            "typicalNullClass" => [null, null,],
+            "invalidUndefinedClass" => ["foo_class_does_not_exist", "getSize", InvalidArgumentException::class,],
+            "invalidUndefinedMethod" => [SplFileInfo::class, "fooGetSizeDoesNotExist", InvalidArgumentException::class,],
+            "invalidEmptyClassName" => ["", "getSize", InvalidArgumentException::class,],
+            "invalidEmptyMethodName" => [SplFileInfo::class, "", InvalidArgumentException::class,],
+            "invalidStringableClassName" => [new class()
+            {
+                public function __toString(): string
+                {
+                    return SplFileInfo::class;
+                }
+            }, "getSize", TypeError::class,],
+            "invalidArrayClassName" => [[SplFileInfo::class], "getSize", TypeError::class,],
+            "invalidIntClassName" => [42, "getSize", TypeError::class,],
+            "invalidFloatClassName" => [3.1415927, "getSize", TypeError::class,],
+            "invalidBoolClassName" => [true, "getSize", TypeError::class,],
+            "invalidObjectClassName" => [(object)[
+                "__toString" => function(): string
+                {
+                    return SplFileInfo::class;
+                }
+            ], "getSize", TypeError::class,],
+            "invalidStringableMethodName" => [SplFileInfo::class, new class()
+            {
+                public function __toString(): string
+                {
+                    return SplFileInfo::class;
+                }
+            }, TypeError::class,],
+            "invalidArrayMethodName" => [SplFileInfo::class, ["getSize"], TypeError::class,],
+            "invalidIntMethodName" => [SplFileInfo::class, 42, TypeError::class,],
+            "invalidFloatMethodName" => [SplFileInfo::class, 3.1415927, TypeError::class,],
+            "invalidBoolMethodName" => [SplFileInfo::class, true, TypeError::class,],
+            "invalidObjectMethodName" => [
+                SplFileInfo::class,
+                (object) [
+                "__toString" => function(): string
+                {
+                    return "getSize";
+                }
+            ], TypeError::class,],
+        ];
+    }
+
+    /**
+     * Test the constructor when used to mock a class method.
+     *
+     * @dataProvider dataForTestConstructorForMethod
+     *
+     * @param mixed $className The class name to pass to the constructor.
+     * @param mixed $methodName The method name to pass to the constructor.
+     * @param string|null $exceptionClass The exception expected, if any.
+     */
+    public function testConstructorForMethod($className, $methodName, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            self::expectException($exceptionClass);
+        }
+
+        $mock = new MockFunction($className, $methodName);
+
+        if (!isset($className)) {
+            self::expectException(LogicException::class);
+        }
+
+        self::assertEquals($className, $mock->className());
+        self::assertEquals($methodName, $mock->functionName());
+        self::assertTrue($mock->isMethod());
+    }
+    
     public function testConstructorInitialState(): void
     {
         $mock = new MockFunction("strpos");
+        self::assertTrue($mock->isFunction(), "MockFunction was not initialised as a function mock.");
+        self::assertTrue($mock->willCheckParameters(), "MockFunction does not have correct initial state for parameter checks.");
+        self::assertTrue($mock->willCheckReturnType(), "MockFunction does not have correct initial state for return type checks.");
+        self::assertTrue($mock->willCheckArguments(), "MockFunction does not have correct initial state for call-time argument checks.");
+
+        $mock = new MockFunction(SplFileInfo::class, "getSize");
+        self::assertTrue($mock->isMethod(), "MockFunction was not initialised as a function mock.");
         self::assertTrue($mock->willCheckParameters(), "MockFunction does not have correct initial state for parameter checks.");
         self::assertTrue($mock->willCheckReturnType(), "MockFunction does not have correct initial state for return type checks.");
         self::assertTrue($mock->willCheckArguments(), "MockFunction does not have correct initial state for call-time argument checks.");
@@ -115,8 +201,8 @@ class MockFunctionTest extends TestCase
         }
 
         $mock = new MockFunction();
-        $mock->setName($name);
-        self::assertEquals($name, $mock->name());
+        $mock->setFunctionName($name);
+        self::assertEquals($name, $mock->functionName());
     }
 
     /**
@@ -131,9 +217,9 @@ class MockFunctionTest extends TestCase
         }
 
         $mock = new MockFunction();
-        $actual = $mock->named($name);
+        $actual = $mock->forFunction($name);
         self::assertSame($mock, $actual, "named() did not return the same MockFunction object.");
-        self::assertEquals($name, $mock->name());
+        self::assertEquals($name, $mock->functionName());
     }
 
     public function dataForTestName(): iterable
@@ -158,7 +244,7 @@ class MockFunctionTest extends TestCase
             self::expectException(LogicException::class);
         }
 
-        self::assertEquals($name, $mock->name());
+        self::assertEquals($name, $mock->functionName());
     }
     
     public function testWillCheckParameters(): void

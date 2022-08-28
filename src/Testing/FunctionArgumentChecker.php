@@ -5,6 +5,7 @@ namespace Equit\Testing;
 use Error;
 use ReflectionFunction;
 use ReflectionIntersectionType;
+use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionUnionType;
@@ -16,20 +17,34 @@ use TypeError;
  */
 class FunctionArgumentChecker
 {
+    private ?string $m_class;
     private string $m_function;
 
     /** @var array<ReflectionParameter> - lazily populated when first required. */
     private ?array $m_parameters;
 
     /**
-     * Initialise a new argument checker for a function.
+     * Initialise a new argument checker for a function/method.
      *
-     * @param string $functionName The name of the function to check against.
+     * @param string $functionOrClassName The name of the function to check against, or the class if it's a method.
+     * @param string|null $methodName The name of the method to check against.
      */
-    public function __construct(string $functionName)
+    public function __construct(string $functionOrClassName, ?string $methodName = null)
     {
         $this->m_parameters = null;
-        $this->m_function = $functionName;
+
+        if (isset($methodName)) {
+            $this->m_class = $functionOrClassName;
+            $this->m_function = $methodName;
+        } else {
+            $this->m_class = null;
+            $this->m_function = $functionOrClassName;
+        }
+    }
+
+    public function className(): ?string
+    {
+        return $this->m_class;
     }
 
     /**
@@ -40,6 +55,11 @@ class FunctionArgumentChecker
     public function functionName(): string
     {
         return $this->m_function;
+    }
+
+    public function isMethod(): bool
+    {
+        return isset($this->m_class);
     }
 
     /**
@@ -193,6 +213,10 @@ class FunctionArgumentChecker
      */
     protected final function readParameters(): void
     {
-        $this->m_parameters = (new ReflectionFunction($this->functionName()))->getParameters();
+        if ($this->isMethod()) {
+            $this->m_parameters = (new ReflectionMethod($this->className(), $this->functionName()))->getParameters();
+        } else {
+            $this->m_parameters = (new ReflectionFunction($this->functionName()))->getParameters();
+        }
     }
 }
