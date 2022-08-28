@@ -21,16 +21,18 @@ jobs:
           sudo apt-get -y upgrade
           sudo apt-get -y install php7.4 php8.0 php8.1 php7.4-uopz php8.0-uopz php8.1-uopz
 
-      - name: Install composer dependencies and run unit tests for PHP8.0
+      - name: Install composer dependencies and run unit tests for PHP8.1
         run: |
-          sudo update-alternatives --set php /usr/bin/php8.0
+          sudo update-alternatives --set php /usr/bin/php8.1
+          rm composer.lock
           rm -rf vendor
           composer install
           ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
 
-      - name: Install composer dependencies and run unit tests for PHP8.1
+      - name: Install composer dependencies and run unit tests for PHP8.0
         run: |
-          sudo update-alternatives --set php /usr/bin/php8.1
+          sudo update-alternatives --set php /usr/bin/php8.0
+          rm composer.lock
           rm -rf vendor
           composer install
           ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
@@ -38,6 +40,7 @@ jobs:
       - name: Install composer dependencies and run unit tests for PHP7.4
         run: |
           sudo update-alternatives --set php /usr/bin/php7.4
+          rm composer.lock
           rm -rf vendor
           composer install
           ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
