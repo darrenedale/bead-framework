@@ -1,0 +1,29 @@
+name: PHP 8.1 unit tests
+
+on:
+  push:
+    branches: ["production"]
+  pull_request:
+    branches: ["production"]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install PHP versions and extensions
+        run: |
+          sudo add-apt-repository -y ppa:ondrej/php
+          sudo apt-get update
+          sudo apt-get -y upgrade
+          sudo apt-get -y install php8.1 php8.1-dom php8.1-mbstring php8.1-uopz
+
+      - name: Install composer dependencies and run unit tests for PHP8.1
+        run: |
+          sudo update-alternatives --set php /usr/bin/php8.1
+          rm composer.lock
+          rm -rf vendor
+          composer install
+          ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
