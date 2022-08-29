@@ -7,9 +7,9 @@ namespace Equit\Test\Testing;
 use ArrayObject;
 use Equit\Test\Framework\TestCase;
 use Equit\Testing\MockFunction;
-use Equit\Util\ScopeGuard;
 use InvalidArgumentException;
 use LogicException;
+use RuntimeException;
 use SplFileInfo;
 use TypeError;
 
@@ -22,6 +22,11 @@ class MockFunctionTest extends TestCase
     private const SplFileInfoGetSizeStaticValue = 1024;
     private const SplFileInfoGetSizeSequence = [1024, 2048,];
     private const SplFileInfoGetSizeMap = ["foo" => 1024, "bar" => 2048,];
+
+    public function tearDown(): void
+    {
+        MockFunction::removeAllMocks();
+    }
 
     public function dataForTestConstructorForFunction(): iterable
     {
@@ -218,6 +223,20 @@ class MockFunctionTest extends TestCase
     }
 
     /**
+     * Ensure setFunctionName() throws when use while the mock is installed.
+     */
+    public function testSetFunctionNameWhenInstalled(): void
+    {
+        $mock = new MockFunction();
+        $mock->setFunctionName("strlen");
+        $mock->shouldReturn(42);
+        $mock->install();
+        self::assertTrue($mock->isInstalled());
+        self::expectException(RuntimeException::class);
+        $mock->setFunctionName("strspn");
+    }
+
+    /**
      * @dataProvider dataForTestSetFunctionName
      *
      * @param mixed $name The function name to pass to the forFunction().
@@ -234,6 +253,20 @@ class MockFunctionTest extends TestCase
         self::assertSame($mock, $actual, "forFunction() did not return the same MockFunction object.");
         self::assertTrue($mock->isFunction());
         self::assertEquals($name, $mock->functionName());
+    }
+
+    /**
+     * Ensure forFunction() throws when use while the mock is installed.
+     */
+    public function testForFunctionWhenInstalled(): void
+    {
+        $mock = new MockFunction();
+        $mock->forFunction("strlen");
+        $mock->shouldReturn(42);
+        $mock->install();
+        self::assertTrue($mock->isInstalled());
+        self::expectException(RuntimeException::class);
+        $mock->forFunction("strspn");
     }
 
     /**
@@ -312,6 +345,20 @@ class MockFunctionTest extends TestCase
     }
 
     /**
+     * Ensure setMethod() throws when use while the mock is installed.
+     */
+    public function testSetMethodWhenInstalled(): void
+    {
+        $mock = new MockFunction();
+        $mock->setMethod(SplFileInfo::class, "getSize");
+        $mock->shouldReturn(42);
+        $mock->install();
+        self::assertTrue($mock->isInstalled());
+        self::expectException(RuntimeException::class);
+        $mock->setMethod(SplFileInfo::class, "getInode");
+    }
+
+    /**
      * @dataProvider dataForTestSetMethod
      *
      * @param mixed $className The class name to pass to forMethod().
@@ -330,6 +377,20 @@ class MockFunctionTest extends TestCase
         self::assertTrue($mock->isMethod());
         self::assertEquals($className, $mock->className());
         self::assertEquals($methodName, $mock->functionName());
+    }
+
+    /**
+     * Ensure forMethod() throws when use while the mock is installed.
+     */
+    public function testForMethodWhenInstalled(): void
+    {
+        $mock = new MockFunction();
+        $mock->forMethod(SplFileInfo::class, "getSize");
+        $mock->shouldReturn(42);
+        $mock->install();
+        self::assertTrue($mock->isInstalled());
+        self::expectException(RuntimeException::class);
+        $mock->forMethod(SplFileInfo::class, "getInode");
     }
 
     public function dataForTestFunctionName(): iterable
@@ -700,7 +761,6 @@ class MockFunctionTest extends TestCase
             ->forFunction("strlen")
             ->shouldBeReplacedWith($replacement);
 
-        $guard = new ScopeGuard(fn() => $mock->remove());
         $mock->install();
         self::assertTrue($mock->isInstalled());
         self::assertTrue($mock->isActive());
@@ -716,7 +776,6 @@ class MockFunctionTest extends TestCase
             ->forMethod(SplFileInfo::class, "getSize")
             ->shouldBeReplacedWith($replacement);
 
-        $guard = new ScopeGuard(fn() => $mock->remove());
         $mock->install();
         self::assertTrue($mock->isInstalled());
         self::assertTrue($mock->isActive());
@@ -732,7 +791,6 @@ class MockFunctionTest extends TestCase
             ->forFunction("strlen")
             ->shouldBeReplacedWith($replacement);
 
-        $guard = new ScopeGuard(fn() => $mock->remove());
         $mock->install();
         self::assertTrue($mock->isActive());
         $mock->remove();
@@ -749,7 +807,6 @@ class MockFunctionTest extends TestCase
             ->forMethod(SplFileInfo::class, "getSize")
             ->shouldBeReplacedWith($replacement);
 
-        $guard = new ScopeGuard(fn() => $mock->remove());
         $mock->install();
         self::assertTrue($mock->isActive());
         $mock->remove();
@@ -759,5 +816,554 @@ class MockFunctionTest extends TestCase
         self::assertEquals($expected, (new SplFileInfo(__FILE__))->getSize(), "Method with removed mock did not return expected value.");
     }
 
+    public function testSuspendForFunction(): void
+    {
+        $replacement = self::strlenReplacement();
+
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldBeReplacedWith($replacement);
+
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        $mock->suspend();
+        self::assertTrue($mock->isInstalled());
+        self::assertTrue($mock->isTop());
+        self::assertFalse($mock->isActive());
+        self::assertEquals(3, strlen("foo"), "Function with suspended mock did not return expected value.");
+
+        // test it's safe to call suspend on an inactive mock
+        $mock->suspend();
+        self::assertFalse($mock->isActive());
+
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldBeReplacedWith($replacement);
+
+        self::assertFalse($mock->isActive());
+        $mock->suspend();
+        self::assertFalse($mock->isActive());
+    }
+
+    public function testSuspendForMethod(): void
+    {
+        $replacement = self::splFileInfoGetSizeReplacement();
+
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldBeReplacedWith($replacement);
+
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        $mock->suspend();
+        self::assertTrue($mock->isInstalled());
+        self::assertTrue($mock->isTop());
+        self::assertFalse($mock->isActive());
+        $expected = strlen(file_get_contents(__FILE__));
+        self::assertEquals($expected, (new SplFileInfo(__FILE__))->getSize(), "Method with suspended mock did not return expected value.");
+
+        // test it's safe to call suspend on an inactive mock
+        $mock->suspend();
+        self::assertFalse($mock->isActive());
+
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldBeReplacedWith($replacement);
+
+        self::assertFalse($mock->isActive());
+        $mock->suspend();
+        self::assertFalse($mock->isActive());
+    }
+
+    public function testResumeForFunction(): void
+    {
+        $replacement = self::strlenReplacement();
+
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldBeReplacedWith($replacement);
+
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        $mock->suspend();
+        self::assertTrue($mock->isInstalled(), "Suspended mock reports it is not installed.");
+        self::assertTrue($mock->isTop(), "Suspended mock is not top of the stack.");
+        self::assertFalse($mock->isActive(), "Suspended mock function did not return false from isActive().");
+        $mock->resume();
+        self::assertTrue($mock->isActive());
+        $expected = $replacement("foo");
+        self::assertEquals($expected, strlen("foo"), "Function with resumed mock did not return expected value.");
+
+        // test it's safe to call resume on an active mock
+        $mock->resume();
+        self::assertTrue($mock->isActive());
+    }
+
+    public function testResumeForMethod(): void
+    {
+        $replacement = self::splFileInfoGetSizeReplacement();
+
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldBeReplacedWith($replacement);
+
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        $mock->suspend();
+        self::assertTrue($mock->isInstalled(), "Suspended mock reports it is not installed.");
+        self::assertTrue($mock->isTop(), "Suspended mock is not top of the stack.");
+        self::assertFalse($mock->isActive(), "Suspended mock method did not return false from isActive().");
+        $mock->resume();
+        self::assertTrue($mock->isActive());
+        $expected = $replacement("foo");
+        self::assertEquals($expected,  (new SplFileInfo("foo"))->getSize(), "Method with resumed mock did not return expected value.");
+
+        // test it's safe to call resume on an active mock
+        $mock->resume();
+        self::assertTrue($mock->isActive());
+    }
+
+    public function testIsTopForFunction(): void
+    {
+        $mock1 = (new MockFunction("strlen"))
+            ->shouldBeReplacedWith(self::strlenReplacement());
+        $mock1->install();
+        self::assertTrue($mock1->isTop());
+        $mock2 = (new MockFunction("strlen"))
+            ->shouldReturn(-1);
+        $mock2->install();
+
+        self::assertFalse($mock1->isTop());
+        self::assertTrue($mock2->isTop());
+        $mock2->remove();
+        self::assertTrue($mock1->isTop());
+    }
+
+    public function testIsTopForMethod(): void
+    {
+        $mock1 = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldBeReplacedWith(self::splFileInfoGetSizeReplacement());
+        $mock1->install();
+        self::assertTrue($mock1->isTop());
+        $mock2 = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(-1);
+        $mock2->install();
+
+        self::assertFalse($mock1->isTop());
+        self::assertTrue($mock2->isTop());
+        $mock2->remove();
+        self::assertTrue($mock1->isTop());
+    }
+
+    public function testIsActiveForFunction(): void
+    {
+        // ensure installing a mock makes it active
+        $mock1 = (new MockFunction("strlen"))
+            ->shouldBeReplacedWith(self::strlenReplacement());
+        $mock1->install();
+        self::assertTrue($mock1->isActive());
+
+        // ensure installing a second mock makes it active
+        $mock2 = (new MockFunction("strlen"))
+            ->shouldReturn(-1);
+        $mock2->install();
+
+        self::assertFalse($mock1->isActive());
+        self::assertTrue($mock2->isActive());
+
+        // ensure removing an active mock activates the next mock on the stack
+        $mock2->remove();
+        self::assertTrue($mock1->isActive());
+
+        // just putting it back on the stack
+        $mock2->install();
+        self::assertFalse($mock1->isActive());
+        self::assertTrue($mock2->isActive());
+
+        // ensure installing a mock already on the stack activates it
+        $mock1->install();
+        self::assertTrue($mock1->isActive());
+        self::assertFalse($mock2->isActive());
+
+        // ensure suspending an active mock makes it inactive
+        $mock1->suspend();
+        self::assertFalse($mock1->isActive());
+        self::assertFalse($mock2->isActive());
+
+        // ensure resuming a suspended mock makes it active
+        $mock1->resume();
+        self::assertTrue($mock1->isActive());
+        self::assertFalse($mock2->isActive());
+
+        // ensure removing a promoted mock activates the next mock on the stack
+        $mock1->remove();
+        self::assertFalse($mock1->isActive());
+        self::assertTrue($mock2->isActive());
+
+        // ensure removing the last mock on the stack deactivates it
+        $mock2->remove();
+        self::assertFalse($mock1->isActive());
+        self::assertFalse($mock2->isActive());
+    }
+
+    public function testIsActiveForMethod(): void
+    {
+        // ensure installing a mock makes it active
+        $mock1 = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldBeReplacedWith(self::splFileInfoGetSizeReplacement());
+        $mock1->install();
+        self::assertTrue($mock1->isActive());
+
+        // ensure installing a second mock makes it active
+        $mock2 = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(-1);
+        $mock2->install();
+
+        self::assertFalse($mock1->isActive());
+        self::assertTrue($mock2->isActive());
+
+        // ensure removing an active mock activates the next mock on the stack
+        $mock2->remove();
+        self::assertTrue($mock1->isActive());
+
+        // just putting it back on the stack
+        $mock2->install();
+        self::assertFalse($mock1->isActive());
+        self::assertTrue($mock2->isActive());
+
+        // ensure installing a mock already on the stack activates it
+        $mock1->install();
+        self::assertTrue($mock1->isActive());
+        self::assertFalse($mock2->isActive());
+
+        // ensure suspending an active mock makes it inactive
+        $mock1->suspend();
+        self::assertFalse($mock1->isActive());
+        self::assertFalse($mock2->isActive());
+
+        // ensure resuming a suspended mock makes it active
+        $mock1->resume();
+        self::assertTrue($mock1->isActive());
+        self::assertFalse($mock2->isActive());
+
+        // ensure removing a promoted mock activates the next mock on the stack
+        $mock1->remove();
+        self::assertFalse($mock1->isActive());
+        self::assertTrue($mock2->isActive());
+
+        // ensure removing the last mock on the stack deactivates it
+        $mock2->remove();
+        self::assertFalse($mock1->isActive());
+        self::assertFalse($mock2->isActive());
+    }
+
+    public function testIsInstalledForFunction(): void
+    {
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldBeReplacedWith(self::strlenReplacement());
+
+        self::assertFalse($mock->isInstalled());
+        $mock->install();
+        self::assertTrue($mock->isInstalled());
+        $mock->remove();
+        self::assertFalse($mock->isInstalled());
+    }
+
+    public function testIsInstalledForMethod(): void
+    {
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldBeReplacedWith(self::splFileInfoGetSizeReplacement());
+
+        self::assertFalse($mock->isInstalled());
+        $mock->install();
+        self::assertTrue($mock->isInstalled());
+        $mock->remove();
+        self::assertFalse($mock->isInstalled());
+    }
+
+    public function testStaticSuspendMock(): void
+    {
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldReturn(self::StrlenStaticValue);
+
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        self::assertEquals(self::StrlenStaticValue, strlen("foo"));
+        MockFunction::suspendMock("strlen");
+        self::assertFalse($mock->isActive());
+        self::assertEquals(3, strlen("foo"));
+
+        // ensure it's safe to call when there is no mock active
+        $mock->remove();
+        self::assertFalse($mock->isInstalled());
+        MockFunction::suspendMock("strlen");
+    }
+
+    public function testStaticResumeMockWithFunction(): void
+    {
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldReturn(self::StrlenStaticValue);
+
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        self::assertEquals(self::StrlenStaticValue, strlen("foo"));
+        MockFunction::suspendMock("strlen");
+        self::assertFalse($mock->isActive());
+        self::assertEquals(3, strlen("foo"));
+        MockFunction::resumeMock("strlen");
+        self::assertTrue($mock->isActive());
+        self::assertEquals(self::StrlenStaticValue, strlen("foo"));
+
+        // ensure call when no mocks available throws
+        $mock->remove();
+        self::assertFalse($mock->isInstalled());
+
+        self::expectException(RuntimeException::class);
+        MockFunction::resumeMock("strlen");
+    }
+
+    public function testStaticResumeMockWithMethod(): void
+    {
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(self::SplFileInfoGetSizeStaticValue);
+
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        self::assertEquals(self::SplFileInfoGetSizeStaticValue, (new SplFileInfo("any-file"))->getSize());
+        MockFunction::suspendMock(SplFileInfo::class, "getSize");
+        self::assertFalse($mock->isActive());
+        self::assertEquals(strlen(file_get_contents(__FILE__)), (new SplFileInfo(__FILE__))->getSize());
+        MockFunction::resumeMock(SplFileInfo::class, "getSize");
+        self::assertTrue($mock->isActive());
+        self::assertEquals(self::SplFileInfoGetSizeStaticValue, (new SplFileInfo("any-file"))->getSize());
+
+        // ensure call when no mocks available throws
+        $mock->remove();
+        self::assertFalse($mock->isInstalled());
+
+        self::expectException(RuntimeException::class);
+        MockFunction::resumeMock(SplFileInfo::class, "getSize");
+    }
+
+    public function testStaticActiveMockForFunction(): void
+    {
+        // ensure null is returned when no mocks have ever been activated
+        self::assertNull(MockFunction::activeMock("strlen"));
+
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldReturn(self::StrlenStaticValue);
+
+        // ensure a mock is retrievable when it's active
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        self::assertSame($mock, MockFunction::activeMock("strlen"));
+        self::assertNull(MockFunction::activeMock("strspn"));
+
+        // ensure the correct mock is returned when a new mock replaces the active one
+        $mock2 = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldReturn(self::strlenReplacement());
+
+        $mock2->install();
+        self::assertTrue($mock2->isActive());
+        self::assertSame($mock2, MockFunction::activeMock("strlen"));
+
+        // ensure the correct mock is returned when an installed one is promoted
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        self::assertSame($mock, MockFunction::activeMock("strlen"));
+
+        // ensure null is returned when the active mock is suspended
+        MockFunction::suspendMock("strlen");
+        self::assertFalse($mock->isActive());
+        self::assertNull(MockFunction::activeMock("strlen"));
+
+        // ensure the correct mock is returned when the active mock is resumed
+        MockFunction::resumeMock("strlen");
+        self::assertTrue($mock->isActive());
+        self::assertSame($mock, MockFunction::activeMock("strlen"));
+
+        // ensure the correct mock is returned when the active one is removed
+        $mock->remove();
+        self::assertFalse($mock->isActive());
+        self::assertTrue($mock2->isActive());
+        self::assertSame($mock2, MockFunction::activeMock("strlen"));
+
+        // ensure null is returned when the stack is empty
+        $mock2->remove();
+        self::assertFalse($mock2->isActive());
+        self::assertNull(MockFunction::activeMock("strlen"));
+    }
+
+    public function testStaticActiveMockForMethod(): void
+    {
+        // ensure null is returned when no mocks have ever been activated
+        self::assertNull(MockFunction::activeMock(SplFileInfo::class, "getSize"));
+
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(self::SplFileInfoGetSizeStaticValue);
+
+        // ensure a mock is retrievable when it's active
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        self::assertSame($mock, MockFunction::activeMock(SplFileInfo::class, "getSize"));
+        self::assertNull(MockFunction::activeMock(SplFileInfo::class, "getInode"));
+
+        // ensure the correct mock is returned when a new mock replaces the active one
+        $mock2 = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(self::splFileInfoGetSizeReplacement());
+
+        $mock2->install();
+        self::assertTrue($mock2->isActive());
+        self::assertSame($mock2, MockFunction::activeMock(SplFileInfo::class, "getSize"));
+
+        // ensure the correct mock is returned when an installed one is promoted
+        $mock->install();
+        self::assertTrue($mock->isActive());
+        self::assertSame($mock, MockFunction::activeMock(SplFileInfo::class, "getSize"));
+
+        // ensure null is returned when the active mock is suspended
+        MockFunction::suspendMock(SplFileInfo::class, "getSize");
+        self::assertFalse($mock->isActive());
+        self::assertNull(MockFunction::activeMock(SplFileInfo::class, "getSize"));
+
+        // ensure the correct mock is returned when the active mock is resumed
+        MockFunction::resumeMock(SplFileInfo::class, "getSize");
+        self::assertTrue($mock->isActive());
+        self::assertSame($mock, MockFunction::activeMock(SplFileInfo::class, "getSize"));
+
+        // ensure the correct mock is returned when the active one is removed
+        $mock->remove();
+        self::assertFalse($mock->isActive());
+        self::assertTrue($mock2->isActive());
+        self::assertSame($mock2, MockFunction::activeMock(SplFileInfo::class, "getSize"));
+
+        // ensure null is returned when the stack is empty
+        $mock2->remove();
+        self::assertFalse($mock2->isActive());
+        self::assertNull(MockFunction::activeMock(SplFileInfo::class, "getSize"));
+    }
+
+    public function testStaticTopMockForFunction(): void
+    {
+        // ensure null is returned when no mocks have ever been activated
+        self::assertNull(MockFunction::topMock("strlen"));
+
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldReturn(self::StrlenStaticValue);
+
+        // ensure a mock is retrievable when it's active
+        $mock->install();
+        self::assertTrue($mock->isTop());
+        self::assertSame($mock, MockFunction::topMock("strlen"));
+        self::assertNull(MockFunction::topMock("strspn"));
+
+        // ensure the correct mock is returned when a new mock replaces the active one
+        $mock2 = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldReturn(self::strlenReplacement());
+
+        $mock2->install();
+        self::assertTrue($mock2->isTop());
+        self::assertSame($mock2, MockFunction::topMock("strlen"));
+
+        // ensure the correct mock is returned when an installed one is promoted
+        $mock->install();
+        self::assertTrue($mock->isTop());
+        self::assertSame($mock, MockFunction::topMock("strlen"));
+
+        // ensure correct mock is returned when the active mock is suspended
+        MockFunction::suspendMock("strlen");
+        self::assertTrue($mock->isTop());
+        self::assertSame($mock, MockFunction::topMock("strlen"));
+
+        // ensure the correct mock is returned when the active mock is resumed
+        MockFunction::resumeMock("strlen");
+        self::assertTrue($mock->isTop());
+        self::assertSame($mock, MockFunction::topMock("strlen"));
+
+        // ensure the correct mock is returned when the active one is removed
+        $mock->remove();
+        self::assertFalse($mock->isActive());
+        self::assertTrue($mock2->isActive());
+        self::assertSame($mock2, MockFunction::topMock("strlen"));
+
+        // ensure null is returned when the stack is empty
+        $mock2->remove();
+        self::assertFalse($mock2->isActive());
+        self::assertNull(MockFunction::activeMock("strlen"));
+    }
+
+    public function testStaticTopMockForMethod(): void
+    {
+        // ensure null is returned when no mocks have ever been activated
+        self::assertNull(MockFunction::topMock(SplFileInfo::class, "getSize"));
+
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(self::SplFileInfoGetSizeStaticValue);
+
+        // ensure a mock is retrievable when it's active
+        $mock->install();
+        self::assertTrue($mock->isTop());
+        self::assertSame($mock, MockFunction::topMock(SplFileInfo::class, "getSize"));
+        self::assertNull(MockFunction::topMock(SplFileInfo::class, "getInode"));
+
+        // ensure the correct mock is returned when a new mock replaces the active one
+        $mock2 = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(self::splFileInfoGetSizeReplacement());
+
+        $mock2->install();
+        self::assertTrue($mock2->isTop());
+        self::assertSame($mock2, MockFunction::topMock(SplFileInfo::class, "getSize"));
+
+        // ensure the correct mock is returned when an installed one is promoted
+        $mock->install();
+        self::assertTrue($mock->isTop());
+        self::assertSame($mock, MockFunction::topMock(SplFileInfo::class, "getSize"));
+
+        // ensure the correct mock is still returned when the active mock is suspended
+        MockFunction::suspendMock(SplFileInfo::class, "getSize");
+        self::assertTrue($mock->isTop());
+        self::assertSame($mock, MockFunction::topMock(SplFileInfo::class, "getSize"));
+
+        // ensure the correct mock is returned when the active mock is resumed
+        MockFunction::resumeMock(SplFileInfo::class, "getSize");
+        self::assertTrue($mock->isTop());
+        self::assertSame($mock, MockFunction::topMock(SplFileInfo::class, "getSize"));
+
+        // ensure the correct mock is returned when the active one is removed
+        $mock->remove();
+        self::assertFalse($mock->isTop());
+        self::assertTrue($mock2->isTop());
+        self::assertSame($mock2, MockFunction::topMock(SplFileInfo::class, "getSize"));
+
+        // ensure null is returned when the stack is empty
+        $mock2->remove();
+        self::assertFalse($mock2->isTop());
+        self::assertNull(MockFunction::topMock(SplFileInfo::class, "getSize"));
+    }
+
     // TODO test stack of mocks
+    // TODO test compatibility checks throw appropriately
+    // TODO test other replacement types (sequence, mapped, static)
+    // TODO test replacement types with arg checks turned off
+    // TODO test static replacement with object returns clone
+    // TODO test static removeMock()
+    // TODO test static installMock()
+    // TODO test with functions that have named return types (coverage)
 }

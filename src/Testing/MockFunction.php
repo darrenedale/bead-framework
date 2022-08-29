@@ -103,6 +103,10 @@ class MockFunction
      */
     public function setFunctionName(string $name): void
     {
+        if ($this->isInstalled()) {
+            throw new RuntimeException("Cannot change the method/function of a mock that is installed. Call remove() first.");
+        }
+
         try {
             $this->m_functionReflector = new ReflectionFunction($name);
         } catch (ReflectionException $err) {
@@ -150,6 +154,10 @@ class MockFunction
      */
     public function setMethod(string $className, string $methodName): void
     {
+        if ($this->isInstalled()) {
+            throw new RuntimeException("Cannot change the method/function of a mock that is installed. Call remove() first.");
+        }
+
         try {
             $this->m_functionReflector = new ReflectionMethod($className, $methodName);
         } catch (ReflectionException $err) {
@@ -681,7 +689,7 @@ class MockFunction
      */
     public function resume(): void
     {
-        if (!$this->isTop()) {
+        if ($this->isActive() || !$this->isTop()) {
             return;
         }
 
@@ -701,7 +709,7 @@ class MockFunction
      */
     public final function isInstalled(): bool
     {
-        return self::mockIsInstalled($this);
+        return isset($this->m_functionReflector) && self::mockIsInstalled($this);
     }
 
     /**
@@ -919,6 +927,20 @@ class MockFunction
     }
 
     /**
+     * Helper to activate a mock.
+     *
+     * @param MockFunction $mock
+     */
+    private static function activateMock(MockFunction $mock): void
+    {
+        if ($mock->isMethod()) {
+            uopz_set_return($mock->className(), $mock->functionName(), $mock->createClosure(), true);
+        } else {
+            uopz_set_return($mock->functionName(), $mock->createClosure(), true);
+        }
+    }
+
+    /**
      * Install a mock.
      *
      * A register is kept of each function mocked. For each function mocked a stack is built of the installed mocks for
@@ -944,11 +966,7 @@ class MockFunction
             self::$m_mocks[$key][] = $mock;
         }
 
-        if ($mock->isMethod()) {
-            uopz_set_return($mock->className(), $mock->functionName(), $mock->createClosure(), true);
-        } else {
-            uopz_set_return($mock->functionName(), $mock->createClosure(), true);
-        }
+        self::activateMock($mock);
     }
 
     /**
@@ -971,18 +989,14 @@ class MockFunction
             return;
         }
 
+        // if the mock is currently active and there are other mocks on the stack, activate the next one on removal
+        $activateNextMock = $mock->isActive() && 0 !== $idx;
         array_splice(self::$m_mocks[$key], $idx, 1);
 
         // if the mock is currently active and the mock for the function is not suspended, activate the next mock on the
         // stack
-        if (0 !== $idx && $idx === count(self::$m_mocks[$key]) && $mock->isActive()) {
-            $newMock = end(self::$m_mocks[$key]);
-
-            if ($mock->isMethod()) {
-                uopz_set_return($mock->className(), $mock->functionName(), $newMock->createClosure(), true);
-            } else {
-                uopz_set_return($mock->functionName(), $newMock->createClosure(), true);
-            }
+        if ($activateNextMock) {
+            self::activateMock(end(self::$m_mocks[$key]));
         } else {
             // if there are no more mocks on the stack for this function, remove it from the register
             if (empty(self::$m_mocks[$key])) {
@@ -1057,13 +1071,40 @@ class MockFunction
      * @param string $functionOrClass The function or class for which to suspend mocking.
      * @param ?string $methodName The method for which to suspend mocking if `$functionOrClass` is a class name.
      */
-    public function suspendMock(string $functionOrClass, ?string $methodName = null): void
+    public static function suspendMock(string $functionOrClass, ?string $methodName = null): void
     {
-        if (isset($functionName)) {
-            uopz_unset_return($functionOrClass, $methodName);
+        if (isset($methodName)) {
+            $methodName = mb_convert_case($methodName, MB_CASE_LOWER);
+
+            if (null !== uopz_get_return($functionOrClass, $methodName)) {
+                uopz_unset_return($functionOrClass, $methodName);
+            }
         } else {
-            uopz_unset_return($functionOrClass);
+            $functionOrClass = mb_convert_case($functionOrClass, MB_CASE_LOWER);
+
+            if (null !== uopz_get_return($functionOrClass)) {
+                uopz_unset_return($functionOrClass);
+            }
         }
+    }
+
+    public static function suspendAllMocks(): void
+    {
+        foreach (self::$m_mocks as $mocks) {
+            $mock = end($mocks);
+
+            if ($mock->isMethod()) {
+                self::suspendMock($mock->className(), $mock->functionName());
+            } else {
+                self::suspendMock($mock->functionName());
+            }
+        }
+    }
+
+    public static function removeAllMocks(): void
+    {
+        self::suspendAllMocks();
+        self::$m_mocks = [];
     }
 
     /**
@@ -1072,9 +1113,10 @@ class MockFunction
      * If the named function has no installed mocks an exception is thrown. Otherwise, the mock on top of the function's
      * stack is activated.
      *
-     * @param string $function The function for which to resume mocking.
+     * @param string $functionOrClass The function for which to resume mocking, or the class if it's a method mock.
+     * @param ?string $methodName The method for which to resume mocking, or `null` if it's a standalone function mock..
      */
-    public function resumeMock(string $functionOrClass, ?string $methodName = null): void
+    public static function resumeMock(string $functionOrClass, ?string $methodName = null): void
     {
         $key = self::keyForClassAndFunction($functionOrClass, $methodName);
 
@@ -1082,10 +1124,31 @@ class MockFunction
             throw new RuntimeException("No mocks are installed for '{$key}'.");
         }
 
-        if (isset($methodName)) {
-            uopz_set_return($functionOrClass, $methodName, end(self::$m_mocks[$key])->createClosure());
-        } else {
-            uopz_set_return($functionOrClass, end(self::$m_mocks[$key])->createClosure());
+        self::activateMock(end(self::$m_mocks[$key]));
+    }
+
+    /**
+     * Fetch the active mock for a function/method.
+     *
+     * @param string $functionOrClass The function name or class name.
+     * @param string|null $methodName The method name if the mock sought is for a method.
+     *
+     * @return MockFunction|null The active mock, or `null` if no mock is active.
+     */
+    public static function activeMock(string $functionOrClass, ?string $methodName = null): ?MockFunction
+    {
+        $mock = self::topMock($functionOrClass, $methodName);
+        return (isset($mock) && $mock->isActive()) ? $mock : null;
+    }
+
+    public static function topMock(string $functionOrClass, ?string $methodName = null): ?MockFunction
+    {
+        $key = self::keyForClassAndFunction($functionOrClass, $methodName);
+
+        if (!isset(self::$m_mocks[$key])) {
+            return null;
         }
+
+        return end(self::$m_mocks[$key]);
     }
 }
