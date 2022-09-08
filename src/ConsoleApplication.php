@@ -175,6 +175,19 @@ class ConsoleApplication extends Application
     }
 
     /**
+     * Fetch the executed script.
+     *
+     * This is the script name, exactly as typed by the user. This may be null (for example, if the command was invoked
+     * programmatically).
+     *
+     * @return string The script name, or null if it could not be determined.
+     */
+    public function executedScript(): ?string
+    {
+        return $this->m_cmd;
+    }
+    
+    /**
      * Fetch all the command-line arguments.
      * @return array
      */
