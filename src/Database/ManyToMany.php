@@ -68,7 +68,7 @@ class ManyToMany extends Relation
      */
     public function pivotRelatedKey(): string
     {
-        return $this->pivotLocalKey;
+        return $this->pivotRelatedKey;
     }
 
     /**
