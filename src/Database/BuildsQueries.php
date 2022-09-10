@@ -16,6 +16,7 @@ use Equit\Exceptions\Database\InvalidQueryExpressionException;
 use Equit\Exceptions\Database\InvalidTableNameException;
 use Equit\Exceptions\Database\OrphanedJoinException;
 use InvalidArgumentException;
+use PDO;
 use TypeError;
 use function Equit\Traversable\some;
 
