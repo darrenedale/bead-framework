@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Equit\Test\Testing;
 
 use ArrayObject;
+use DateTime;
 use Equit\Test\Framework\TestCase;
 use Equit\Testing\MockFunction;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
 use SplFileInfo;
+use SplFixedArray;
 use TypeError;
 
 class MockFunctionTest extends TestCase
@@ -1358,12 +1360,238 @@ class MockFunctionTest extends TestCase
         self::assertNull(MockFunction::topMock(SplFileInfo::class, "getSize"));
     }
 
+    public function testStaticInstallMockForFunction(): void
+    {
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldReturn(self::StrlenStaticValue);
+
+        self::assertFalse(MockFunction::mockIsInstalled($mock));
+        MockFunction::installMock($mock);
+        self::assertTrue(MockFunction::mockIsInstalled($mock));
+        self::assertEquals(self::StrlenStaticValue, strlen("foo"));
+        
+        // ensure installing mock replaces existing mock
+        $replacement = self::strlenReplacement();
+        $mock2 = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldBeReplacedWith($replacement);
+
+        self::assertFalse(MockFunction::mockIsInstalled($mock2));
+        MockFunction::installMock($mock2);
+        self::assertTrue(MockFunction::mockIsInstalled($mock2));
+        self::assertTrue(MockFunction::mockIsActive($mock2));
+        self::assertEquals($replacement("foo"), strlen("foo"));
+        
+        // ensure installing existing mock promotes it
+        self::assertFalse(MockFunction::mockIsActive($mock));
+        MockFunction::installMock($mock);
+        self::assertTrue(MockFunction::mockIsActive($mock));
+        self::assertEquals(self::StrlenStaticValue, strlen("foo"));
+    }
+
+    public function testStaticInstallMockForMethod(): void
+    {
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(self::SplFileInfoGetSizeStaticValue);
+
+        self::assertFalse(MockFunction::mockIsInstalled($mock));
+        MockFunction::installMock($mock);
+        self::assertTrue(MockFunction::mockIsInstalled($mock));
+        self::assertEquals(self::SplFileInfoGetSizeStaticValue, (new SplFileInfo("any-file"))->getSize());
+
+        // ensure installing mock replaces existing mock
+        $replacement = self::splFileInfoGetSizeReplacement();
+        $mock2 = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldBeReplacedWith($replacement);
+
+        self::assertFalse(MockFunction::mockIsInstalled($mock2));
+        MockFunction::installMock($mock2);
+        self::assertTrue(MockFunction::mockIsInstalled($mock2));
+        self::assertTrue(MockFunction::mockIsActive($mock2));
+        self::assertEquals($replacement(), (new SplFileInfo("any-file"))->getSize());
+
+        // ensure installing existing mock promotes it
+        self::assertFalse(MockFunction::mockIsActive($mock));
+        MockFunction::installMock($mock);
+        self::assertTrue(MockFunction::mockIsActive($mock));
+        self::assertEquals(self::SplFileInfoGetSizeStaticValue, (new SplFileInfo("any-file"))->getSize());
+    }
+
+    public function testStaticRemoveMockForFunction(): void
+    {
+        $mock = (new MockFunction())
+            ->forFunction("strlen")
+            ->shouldReturn(self::StrlenStaticValue);
+
+        $mock->install();
+        self::assertTrue(MockFunction::mockIsInstalled($mock));
+        MockFunction::removeMock($mock);
+        self::assertFalse(MockFunction::mockIsInstalled($mock));
+
+        // ensure it's safe to call removeMock with a mock that isn't installed
+        MockFunction::removeMock($mock);
+    }
+
+    public function testStaticRemoveMockForMethod(): void
+    {
+        $mock = (new MockFunction())
+            ->forMethod(SplFileInfo::class, "getSize")
+            ->shouldReturn(self::SplFileInfoGetSizeStaticValue);
+
+        $mock->install();
+        self::assertTrue(MockFunction::mockIsInstalled($mock));
+        MockFunction::removeMock($mock);
+        self::assertFalse(MockFunction::mockIsInstalled($mock));
+
+        // ensure it's safe to call removeMock with a mock that isn't installed
+        MockFunction::removeMock($mock);
+    }
+
+    public function dataForTestSequenceMockForFunction(): iterable
+    {
+        yield from [
+            "typical" => ["strlen", ["foo",], self::StrlenSequence,],
+            "typicalSubstantialArray" => ["strpos", ["foo", "bar",], [14, 12, 42, 901, 8, -11, 44, 7, 24,],],
+            "extremeSingleItemArray" => ["strspn", ["foo", "abcdefghijklmnopqrstuvwxyz",], [self::StrlenStaticValue,],],
+            "invalidEmptySequence" => ["strlen", [], [], InvalidArgumentException::class],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestSequenceMockForFunction
+     *
+     * @param string $function The function to mock.
+     * @param array $sequence The sequence of values the mock should return.
+     * @param string|null $exceptionClass The exception expected to be thrown, if any.
+     */
+    public function testSequenceMockForFunction(string $function, array $callArgs, array $sequence, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            self::expectException($exceptionClass);
+        }
+
+        $mock = (new MockFunction())
+            ->forFunction($function)
+            ->shouldReturnSequence($sequence);
+
+        $mock->install();
+
+        // ensure the sequence repeated by the mock when required
+        $expectedSequence = [...$sequence, ...$sequence];
+
+        foreach ($expectedSequence as $expected) {
+            self::assertEquals($expected, $function(...$callArgs));
+        }
+    }
+
+    /**
+     * @dataProvider dataForTestSequenceMockForFunction
+     *
+     * @param string $function The function to mock.
+     * @param array $sequence The sequence of values the mock should return.
+     * @param string|null $exceptionClass The exception expected to be thrown, if any.
+     */
+    public function testSequenceMockForFunctionWithoutArgChecks(string $function, array $callArgs, array $sequence, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            self::expectException($exceptionClass);
+        }
+
+        $mock = (new MockFunction())
+            ->forFunction($function)
+            ->withoutArgumentChecks()
+            ->shouldReturnSequence($sequence);
+
+        $mock->install();
+
+        // ensure the sequence repeated by the mock when required
+        $expectedSequence = [...$sequence, ...$sequence];
+
+        foreach ($expectedSequence as $expected) {
+            self::assertEquals($expected, $function(...$callArgs));
+        }
+    }
+
+    public function dataForTestSequenceMockForMethod(): iterable
+    {
+        yield from [
+            "typical" => [SplFileInfo::class, "getSize", ["any-file",], [], self::SplFileInfoGetSizeSequence,],
+            "typicalSubstantialArray" => [SplFixedArray::class, "key", [20], [], [14, 12, 42, 901, 8, -11, 44, 7, 24,],],
+            "extremeSingleItemArray" => [DateTime::class, "format", [], ["Y-m-d H:i:s",], ["FooBar",],],
+            "invalidEmptySequence" => [SplFileInfo::class, "getSize", ["any-file",], [], [], InvalidArgumentException::class],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestSequenceMockForMethod
+     *
+     * @param string $class The class to mock.
+     * @param string $method The method to mock.
+     * @param array $constructorArgs The args to pass to the constructor of the test object.
+     * @param array $callArgs The args to pass to the method call.
+     * @param array $sequence The sequence of values the mock should return.
+     * @param string|null $exceptionClass The exception expected to be thrown, if any.
+     */
+    public function testSequenceMockForMethod(string $class, string $method, array $constructorArgs, array $callArgs, array $sequence, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            self::expectException($exceptionClass);
+        }
+
+        $mock = (new MockFunction())
+            ->forMethod($class, $method)
+            ->shouldReturnSequence($sequence);
+
+        $mock->install();
+
+        // ensure the sequence repeated by the mock when required
+        $expectedSequence = [...$sequence, ...$sequence];
+        $testObject = new $class(...$constructorArgs);
+
+        foreach ($expectedSequence as $expected) {
+            self::assertEquals($expected, $testObject->$method(...$callArgs));
+        }
+    }
+
+    /**
+     * @dataProvider dataForTestSequenceMockForMethod
+     *
+     * @param string $class The class to mock.
+     * @param string $method The method to mock.
+     * @param array $constructorArgs The args to pass to the constructor of the test object.
+     * @param array $callArgs The args to pass to the method call.
+     * @param array $sequence The sequence of values the mock should return.
+     * @param string|null $exceptionClass The exception expected to be thrown, if any.
+     */
+    public function testSequenceMockForMethodWithoutArgChecks(string $class, string $method, array $constructorArgs, array $callArgs, array $sequence, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            self::expectException($exceptionClass);
+        }
+
+        $mock = (new MockFunction())
+            ->forMethod($class, $method)
+            ->withoutArgumentChecks()
+            ->shouldReturnSequence($sequence);
+
+        $mock->install();
+
+        // ensure the sequence repeated by the mock when required
+        $expectedSequence = [...$sequence, ...$sequence];
+        $testObject = new $class(...$constructorArgs);
+
+        foreach ($expectedSequence as $expected) {
+            self::assertEquals($expected, $testObject->$method(...$callArgs));
+        }
+    }
+
     // TODO test stack of mocks
     // TODO test compatibility checks throw appropriately
-    // TODO test other replacement types (sequence, mapped, static)
+    // TODO test other replacement types (mapped, static)
     // TODO test replacement types with arg checks turned off
     // TODO test static replacement with object returns clone
-    // TODO test static removeMock()
-    // TODO test static installMock()
     // TODO test with functions that have named return types (coverage)
 }

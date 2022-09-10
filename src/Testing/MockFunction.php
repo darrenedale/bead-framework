@@ -618,7 +618,7 @@ class MockFunction
     public function shouldReturnSequence(array $sequence): self
     {
         if (empty($sequence)) {
-            throw new RuntimeException("Mock functions returning sequences of values cannot use an empty sequence.");
+            throw new InvalidArgumentException("Mock functions returning sequences of values cannot use an empty sequence.");
         }
 
         if ($this->willCheckReturnType() && $this->m_functionReflector->hasReturnType()) {
@@ -776,25 +776,35 @@ class MockFunction
      */
     protected final function createClosureForSequence(): Closure
     {
-        $values = $this->m_mock;
+        // uopz only likes closures and static variables in closures don't retain state between calls so we wrap an
+        // invocable object in a closure so that we can keep track of the index in the sequence
+        $callable = new class($this->m_mock) {
+            private int $m_idx;
+            private array $m_values;
+
+            public function __construct(array $values)
+            {
+                $this->m_idx = 0;
+                $this->m_values = $values;
+            }
+
+            public function __invoke()
+            {
+                return $this->m_values[$this->m_idx++ % count($this->m_values)];
+            }
+        };
 
         if ($this->willCheckArguments()) {
             $argChecker = $this->createArgumentChecker();
 
-            return function (...$args) use ($values, $argChecker) {
-                static $idx = 0;
+            return function (...$args) use ($callable, $argChecker) {
                 $argChecker->check(...$args);
-                $ret = $values[$idx];
-                $idx = ++$idx % count($values);
-                return $ret;
+                return $callable();
             };
         }
 
-        return function (...$args) use ($values) {
-            static $idx = 0;
-            $ret = $values[$idx];
-            $idx = ++$idx % count($values);
-            return $ret;
+        return function (...$args) use ($callable) {
+            return $callable();
         };
     }
 
