@@ -5,8 +5,8 @@ namespace Equit\Util;
 /**
  * Call some code a given number of times. optionally until the result passes a callback.
  *
- * This is useful for things like attempting to come up with a unique filename for a directory where you need to retry
- * the same piece of code until a given conditionis reached, up to a maximum number of times.
+ * This is useful for things like attempting to come up with a unique filename for a directory, where you need to retry
+ * the same piece of code until a given condition is reached, up to a maximum number of times.
  *
  * Example:
  *
