@@ -2,6 +2,8 @@
 
 namespace Equit\Util;
 
+use InvalidArgumentException;
+
 /**
  * Call some code a given number of times. optionally until the result passes a callback.
  *
@@ -21,47 +23,51 @@ namespace Equit\Util;
 final class Retry
 {
     /** @var int How many times to retry before giving up. */
-    private int $repetitions = 1;
+    private int $m_maxRetries = 1;
 
     /** @var int|null How many attempts the last retry took, `null` if the current setup hasn't been attempted. */
-    private ?int $attemptsTaken = null;
+    private ?int $m_attemptsTaken = null;
  
     /** @var callable The callable encapsulating the code to be repeated. */
-    private $fn;
+    private $m_codeToRetry;
 
     /** @var ?callable A closure to determine when the result is acceptable. */
-    private $exitCondition = null;
+    private $m_exitCondition = null;
 
     /**
      * Initialise a new retry with a callable.
      */
     public function __construct(callable $fn)
     {
-        $this->fn = $fn;
+		$this->setCallableToRetry($fn);
     }
 
     /**
      * Fluently set how many times to execute the code.
+	 *
+	 * This method must not be called from within the callable being retried.
      */
     public function times(int $times): self
     {
-        assert(0 < $times);
-        $this->repetitions = $times;
-        $this->attemptsTaken = null;
+		$this->setMaxRetries($times);
         return $this;
     }
 
     /**
-     * Fluently set a callback to deermine whether the code needs to continue retrying.
+     * Fluently set a callback to determine whether the code needs to continue retrying.
      *
      * The callback will be called after each attempt. If it returns `true` no more attempts will be made and the result of the last
      * attempt will be returned.
+	 *
+	 * This method must not be called from within the callable being retried.
+	 *
+	 * @param callable $exitCondition The callable that determines whether the retry loop can exit.
      *
      * @return self The Retry instance for further method chaining.
      */
     public function until(callable $exitCondition): self
     {
-        $this->exitCondition = $exitCondition;
+		$this->setExitCondition($exitCondition);
         return $this;
     }
 
@@ -74,34 +80,113 @@ final class Retry
      */
     public function __invoke(...$args): mixed
     {
-        for ($this->attemptsTaken = 0; $this->attemptsTaken < $this->repetitions; ++$this->attemptsTaken) {
-            $result = ($this->fn)(...$args);
+        for ($this->m_attemptsTaken = 0; $this->m_attemptsTaken < $this->m_maxRetries; ++$this->m_attemptsTaken) {
+            $result = ($this->m_codeToRetry)(...$args);
 
-            if (null !== $this->exitCondition && ($this->exitCondition)($result)) {
-                echo "took {$this->attemptsTaken} retries\n";
+            if (null !== $this->m_exitCondition && ($this->m_exitCondition)($result)) {
+                echo "took {$this->m_attemptsTaken} retries\n";
                 return $result;
             }
         }
 
-        return (null === $this->exitCondition) ? $result : null;
+        return (null === $this->m_exitCondition) ? $result : null;
     }
+
+	/**
+	 * Set how many times to execute the code.
+	 *
+	 * This method must not be called from within the callable being retried.
+	 *
+	 * @param int $retries The maximum number of retries.
+	 */
+	public function setMaxRetries(int $retries): void
+	{
+		if (1 > $retries) {
+			throw new InvalidArgumentException("Can't retry fewer than 1 time.");
+		}
+
+		$this->m_maxRetries = $retries;
+		$this->m_attemptsTaken = null;
+	}
+
+	/**
+	 * The maximum number of retries that will be attampted.
+	 *
+	 * @return int The max retries.
+	 */
+	public function maxRetries(): int
+	{
+		return $this->m_maxRetries;
+	}
+
+	/**
+	 * Set the callable to retry.
+	 *
+	 * This method must not be called from within the callable being retried.
+	 *
+	 * @param $fn callable The callable.
+	 */
+	public function setCallableToRetry(callable $fn): void
+	{
+		$this->m_attemptsTaken = null;
+		$this->m_codeToRetry = $fn;
+	}
+
+	/**
+	 * Fetch the callable to retry.
+	 *
+	 * @return callable The callable.
+	 */
+	public function callableToRetry(): callable
+	{
+		return $this->m_codeToRetry;
+	}
+
+	/**
+	 * Set a callback to determine whether the code needs to continue retrying.
+	 *
+	 * The callback will be called after each attempt. If it returns `true` no more attempts will be made and the result of the last
+	 * attempt will be returned. Set the exit condition to `null` to remove it, in which case the maximum number of
+	 * retries will always be made when invoked.
+	 *
+	 * This method must not be called from within the callable being retried.
+	 *
+	 * @param callable|null $exitCondition The callable that determines whether the retry loop can exit.
+	 */
+	public function setExitCondition(?callable $exitCondition): void
+	{
+		$this->m_exitCondition = $exitCondition;
+		$this->m_attemptsTaken = null;
+	}
+
+	/**
+	 * Fetch the callback that checks whether the retry loop can exit.
+	 *
+	 * @return callable|null The callable, or `null` if there is no exit condition set.
+	 */
+	public function exitCondition(): ?callable
+	{
+		return $this->m_exitCondition;
+	}
 
     /**
      * How many attempts did the last retry of the current setup take?
+	 *
+	 * This is reset if the max retries or callable is changed.
      */
-    public function attempts(): ?int
+    public function attemptsTaken(): ?int
     {
-        return $this->attemptsTaken;
+        return $this->m_attemptsTaken;
     }
 
     /**
-     * Cehck whether the last retry succeeded.
+     * Cehck whether the last time the retry was invoked was successful.
      *
      * @return `true` if the last retry succeeded (or no success vallback was set), `false` if the retry hasn't run or did not pass the success
      * callback.
      */
     public function succeeded(): bool
     {
-        return null !== $this->attemptsTaken && $this->attemptsTaken < $this->repetitions;
+        return null !== $this->m_attemptsTaken && $this->m_attemptsTaken < $this->m_maxRetries;
     }
 }
