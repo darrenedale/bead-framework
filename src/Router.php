@@ -127,7 +127,7 @@ class Router implements RouterContract
 	 * array_shift($arguments);
 	 * ```
 	 *
-	 * `$arguments` will be `["article", "1"]`.
+	 * `$arguments` will be `["article", "33"]`.
 	 *
 	 * @param string $route The route definition for which to create the regex.
 	 *
