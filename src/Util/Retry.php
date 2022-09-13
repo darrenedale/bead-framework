@@ -75,10 +75,10 @@ final class Retry
     /**
      * Start executing the code.
      *
-     * @return The value returned from the last attempt, or null if no attempts passed the exit callback. If no exit callback is set,
+     * @return mixed The value returned from the last attempt, or null if no attempts passed the exit callback. If no exit callback is set,
      * the value of the last attempt is returned.
      */
-    public function __invoke(...$args): mixed
+    public function __invoke(...$args)
     {
         for ($this->m_attemptsTaken = 0; $this->m_attemptsTaken < $this->m_maxRetries; ++$this->m_attemptsTaken) {
             $result = ($this->m_codeToRetry)(...$args);
