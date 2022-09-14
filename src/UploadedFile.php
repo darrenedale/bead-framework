@@ -66,6 +66,8 @@ final class UploadedFile
         static $files = null;
 
         if (!isset($files)) {
+			$files = [];
+
             foreach ($_FILES as $name => $file) {
                 $files[$name] = new UploadedFile($file);
             }
