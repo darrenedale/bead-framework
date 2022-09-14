@@ -52,7 +52,7 @@ class Request
 	/** @var array<string, array|string> The request's POST data. */
 	private array $m_postData = [];
 
-	/** @var array<string,\Equit\UploadedFile> The files uploaded with the request. */
+	/** @var array<string,UploadedFile> The files uploaded with the request. */
 	private array $m_files = [];
 
 	/** @var array<string, string> The request's HTTP headers. */
@@ -533,7 +533,7 @@ class Request
 	 * Set an uploaded file.
 	 *
 	 * @param $identifier string The identifier for the uploaded file.
-	 * @param $file `UploadedFile` The file to set.
+	 * @param $file UploadedFile The file to set.
 	 *
 	 * Uploaded file identifiers are not case-sensitive. All identifiers are
 	 * converted to lower- case for consistency. Updating a file that already
@@ -610,11 +610,7 @@ class Request
 				$req->setPostData($key, $value);
 			}
 
-			foreach ($_FILES as $key => $value) {
-				$file = UploadedFile::createFromFile($value["tmp_name"], $value["name"]);
-				$file->setMimeType($value["type"]);
-				$req->m_files[$key] = $file;
-			}
+			$req->m_files = UploadedFile::allUploadedFiles();
 
 			foreach ($_SERVER as $key => $value) {
 				if ("HTTP_" === substr($key, 0, 5)) {

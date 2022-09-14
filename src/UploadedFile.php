@@ -46,7 +46,7 @@ final class UploadedFile
 	private function __construct(array $uploadedFile)
 	{
         $this->m_tempFile = $uploadedFile["tmp_name"];
-        $this->m_name     = $uploadedFile["name"];
+        $this->m_name = $uploadedFile["name"];
         $this->m_clientPath = $uploadedFile["full_path"] ?? "";
         $this->m_size = $uploadedFile["size"];
         $this->m_errorCode = $uploadedFile["error"] ?? 0;
