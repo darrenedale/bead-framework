@@ -141,6 +141,9 @@ class RetryTest extends TestCase
 		self::assertSame($predicate, $retry->exitCondition());
 	}
 
+	/**
+	 * @doesNotPerformAssertions
+	 */
 	public function testInvoke(): void
 	{
 		// TODO implement
@@ -265,26 +268,117 @@ class RetryTest extends TestCase
 		self::assertSame($callable, $retry->callableToRetry());
 	}
 
-	public function testCallableToRetry(): void
+	public function dataForTestCallableToRetry(): iterable
 	{
-		// TODO implement
+		yield from [
+			"typicalClosure" => [self::createCallable(),],
+			"typicalStaticMethod" => [[self::class, 'staticCallableToRetry',],],
+			"typicalMethod" => [[$this, 'callableToRetry',],],
+			"typicalInvokable" => [
+				new class {
+					public function __invoke()
+					{
+						return null;
+					}
+				},
+			],
+		];
 	}
 
-	public function testSetExitCondition(): void
+	/**
+	 * @dataProvider dataForTestCallableToRetry
+	 */
+	public function testCallableToRetry(callable $callable): void
 	{
-		// TODO implement
+		$retry = new Retry($callable);
+		$this->assertSame($callable, $retry->callableToRetry());
 	}
 
-	public function testExitCondition(): void
+	public function dataForTestSetExitCondition(): iterable
 	{
-		// TODO implement
+		yield from [
+			"typicalClosure" => [self::createCallable(),],
+			"typicalStaticMethod" => [[self::class, 'staticExitFunction',],],
+			"typicalMethod" => [[$this, 'exitFunction',],],
+			"typicalInvokable" => [
+				new class {
+					public function __invoke()
+					{
+						return true;
+					}
+				},
+			],
+			"typicalNull" => [null,],
+
+			"invalidString" => ["5", TypeError::class,],
+			"invalidArray" => [[5,], TypeError::class,],
+			"invalidObject" => [
+				new class {
+					public function __toString(): string
+					{
+						return "5";
+					}
+				},
+				TypeError::class,
+			],
+			"invalidInt" => [42, TypeError::class,],
+			"invalidFloat" => [3.1415927, TypeError::class,],
+			"invalidBool" => [true, TypeError::class,],
+		];
 	}
 
+	/**
+	 * @dataProvider dataForTestSetExitCondition
+	 */
+	public function testSetExitCondition($exitCondition, ?string $exceptionClass = null): void
+	{
+		if (isset($exceptionClass)) {
+			$this->expectException($exceptionClass);
+		}
+
+		$retry = new Retry(self::createCallable());
+		$retry->setExitCondition($exitCondition);
+		self::assertSame($exitCondition, $retry->exitCondition());
+	}
+
+	public function dataForTestExitCondition(): iterable
+	{
+		yield from [
+			"typicalClosure" => [self::createCallable(),],
+			"typicalStaticMethod" => [[self::class, 'staticExitFunction',],],
+			"typicalMethod" => [[$this, 'exitFunction',],],
+			"typicalInvokable" => [
+				new class {
+					public function __invoke()
+					{
+						return true;
+					}
+				},
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider dataForTestExitCondition
+	 */
+	public function testExitCondition(callable $exitCondition): void
+	{
+		$retry = (new Retry(self::createCallable()))
+			->until($exitCondition);
+		self::assertSame($exitCondition, $retry->exitCondition());
+	}
+
+	/**
+	 * @doesNotPerformAssertions
+	 */
 	public function testAttemptsTaken(): void
 	{
 		// TODO implement
 	}
 
+	/**
+	 * @doesNotPerformAssertions
+	 */
 	public function testSucceeded(): void
 	{
 		// TODO implement
