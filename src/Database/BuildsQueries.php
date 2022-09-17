@@ -67,49 +67,6 @@ trait BuildsQueries
     private ?string $compiledOrderBys = null;
 
     /**
-     * Initialise a new QueryBuilder instance.
-     *
-     * @param array|null $columns The set of columns to initialise the builder with.
-     * @param string|null $tables The set of tables to initialise the builder with.
-     *
-     * @throws DuplicateColumnNameException
-     * @throws DuplicateTableNameException
-     * @throws InvalidColumnException
-     * @throws InvalidTableNameException
-     */
-    public function __construct(?array $columns = null, ?string $tables = null)
-    {
-        $this->connection = Application::instance()->database();
-
-        if (isset($selects)) {
-            $this->select($columns);
-        }
-
-        if (isset($tables)) {
-            $this->from($tables);
-        }
-    }
-
-    /**
-     * Fetch the connection to use when preparing and/or executing the query.
-     * @return PDO The connection.
-     */
-    public function connection(): PDO
-    {
-        return $this->connection;
-    }
-
-    /**
-     * Set the database connection to use when preparing and/or executing the query.
-     *
-     * @param PDO $connection The connection to use.
-     */
-    public function setConnection(PDO $connection): void
-    {
-        $this->connection = $connection;
-    }
-
-    /**
      * Given a name, extract the table and column parts.
      *
      * A tuple of two strings is returned. The first is the table name, the second is the column name. Where no table
@@ -1788,7 +1745,7 @@ trait BuildsQueries
         static $validDirections = ["ASC", "DESC",];
 
         if (is_array($columns)) {
-            if (all(array_keys($columns), "is_int")) {
+            if (array_is_list($columns)) {
                 $columns = array_combine($columns, array_fill(0, count($columns), $direction ?? "ASC"));
             }
         } else {
@@ -1831,7 +1788,7 @@ trait BuildsQueries
         static $validDirections = ["ASC", "DESC",];
 
         if (is_array($expressions)) {
-            if (all(array_keys($expressions), "is_int")) {
+            if (array_is_list($expressions)) {
                 $expressions = array_combine($expressions, array_fill(0, count($expressions), $direction ?? "ASC"));
             }
         } else {

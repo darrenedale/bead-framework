@@ -8,9 +8,9 @@ namespace Database;
 
 use DateTime;
 use Equit\Application;
-use Equit\ConsoleApplication;
 use Equit\Database\Connection;
 use Equit\Database\QueryBuilder;
+use Equit\Exceptions\DuplicateColumnNameException;
 use Equit\Exceptions\DuplicateTableNameException;
 use Equit\Exceptions\InvalidColumnException;
 use Equit\Exceptions\InvalidLimitException;
@@ -22,13 +22,21 @@ use Equit\Exceptions\InvalidTableNameException;
 use Equit\Exceptions\OrphanedJoinException;
 use Equit\Test\Framework\TestCase;
 use InvalidArgumentException;
+use Mockery;
+use PDO;
 use TypeError;
+
+use function uopz_set_return;
+use function uopz_unset_return;
 
 /**
  * Test the query builder class.
  */
 class QueryBuilderTest extends TestCase
 {
+    private ?Application $m_application;
+    private ?Connection $m_defaultConnection;
+
     /**
      * Sets up for every test.
      *
@@ -36,24 +44,25 @@ class QueryBuilderTest extends TestCase
      */
     public function setUp(): void
     {
-        if (Application::instance()) {
-            return;
-        }
+        $this->m_application = Mockery::mock(Application::class);
+        $this->m_defaultConnection = Mockery::mock(Connection::class);
 
-        new class(__DIR__) extends ConsoleApplication
-        {
-            public function dataController(): ?Connection
-            {
-                return new class() extends Connection
-                {
-                    public function __construct()
-                    {}
-                };
-            }
+        uopz_set_return(Application::class, "instance", $this->m_application);
 
-            protected function loadConfig(string $path): void
-            {}
-        };
+        $this->m_application->shouldReceive("dataController")
+            ->andReturn($this->m_defaultConnection);
+    }
+
+    public function tearDown(): void
+    {
+        uopz_unset_return(Application::class, "instance");
+
+        unset(
+            $this->m_application,
+            $this->m_defaultConnection
+        );
+
+        Mockery::close();
     }
 
     /**
@@ -94,6 +103,64 @@ class QueryBuilderTest extends TestCase
         }
 
         return $builder;
+    }
+
+    public function testDefaultConstructor(): void
+    {
+        $builder = new QueryBuilder();
+        $this->m_application->shouldHaveReceived("dataController")->once();
+        $this->assertSame($this->m_defaultConnection, $builder->connection());
+    }
+
+    public function testConstructorWithConnection(): void
+    {
+        $connection = Mockery::mock(Connection::class);
+        $builder = new QueryBuilder($connection);
+        $this->m_application->shouldNotHaveReceived("dataController");
+        $this->assertSame($connection, $builder->connection());
+    }
+
+    public function dataForTestSetConnection(): iterable
+    {
+        yield from [
+            "typical" => [Mockery::mock(PDO::class),],
+            "invalidString" => [PDO::class, TypeError::class,],
+            "invalidInt" => [42, TypeError::class,],
+            "invalidFloat" => [3.1415926, TypeError::class,],
+            "invalidBool" => [true, TypeError::class,],
+            "invalidObject" => [new class{}, TypeError::class,],
+            "invalidArray" => [[Mockery::mock(PDO::class)], TypeError::class,],
+            "invalidNull" => [null, TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestSetConnection
+     *
+     * @param $connection mixed The value to test the mutator with.
+     * @param string|null $exceptionClass The class of the expected exception, if any.
+     */
+    public function testSetConnection($connection, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        $builder = new QueryBuilder();
+        $builder->setConnection($connection);
+        $this->assertSame($connection, $builder->connection());
+    }
+
+    /**
+     * Ensure connection() returns the expected connection.
+     */
+    public function testConnection(): void
+    {
+        $builder = new QueryBuilder();
+        $connection = Mockery::mock(PDO::class);
+        $this->assertSame($this->m_defaultConnection, $builder->connection());
+        $builder->setConnection($connection);
+        $this->assertSame($connection, $builder->connection());
     }
 
     /**
@@ -150,6 +217,10 @@ class QueryBuilderTest extends TestCase
             "typicalMultipleColumnsMultipleColumns" => [["fizz", "buzz",], ["foo", "bar",], "bar", "SELECT `fizz`,`buzz`,`foo`,`bar` FROM `bar`"],
             "typicalMultipleColumnsSingleColumnWithAlias" => [["fizz", "buzz",], ["bar" => "foo",], "bar", "SELECT `fizz`,`buzz`,`foo` AS `bar` FROM `bar`"],
             "typicalMultipleColumnsMultipleColumnsOneAlias" => [["fizz", "buzz",], ["bar" => "foo", "baz",], "bar", "SELECT `fizz`,`buzz`,`foo` AS `bar`,`baz` FROM `bar`"],
+
+            "invalidEmptyAddIntColumns" => [[], 42, "bar", "", TypeError::class,],
+
+            "invalidDuplicateColumn" => [["foo"], "foo", "bar", "", DuplicateColumnNameException::class,],
         ];
     }
 
@@ -161,9 +232,14 @@ class QueryBuilderTest extends TestCase
      * @param mixed $tables The tables to add to the test QueryBuilder.
      * @param string $sql The SQL the QueryBuilder is expected to generate.
      */
-    public function testAddSelect($initialSelects, $addSelects, $tables, string $sql): void
+    public function testAddSelect($initialSelects, $addSelects, $tables, string $sql, ?string $exceptionClass = null): void
     {
         $builder = self::createBuilder($initialSelects, $tables);
+
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
         $actual = $builder->addSelect($addSelects);
         $this->assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
         $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
@@ -448,7 +524,17 @@ class QueryBuilderTest extends TestCase
         $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
-    
+
+    /**
+     * Ensure adding a left join with an empty local table throws.
+     */
+    public function testLeftJoinWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->leftJoin("fizz", "", "id", "fizz_id");
+    }
+
     /**
      * Data provider for testInnerJoin()
      *
@@ -508,7 +594,17 @@ class QueryBuilderTest extends TestCase
         $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
-    
+
+    /**
+     * Ensure adding an inner join with an empty local table throws.
+     */
+    public function testInnerJoinWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->innerJoin("fizz", "", "id", "fizz_id");
+    }
+
     /**
      * Data provider for testRightJoin()
      *
@@ -568,7 +664,17 @@ class QueryBuilderTest extends TestCase
         $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
-    
+
+    /**
+     * Ensure adding a right join with an empty local table throws.
+     */
+    public function testRightJoinWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->rightJoin("fizz", "", "id", "fizz_id");
+    }
+
     /**
      * Data provider for testLeftJoinAs()
      *
@@ -639,7 +745,17 @@ class QueryBuilderTest extends TestCase
         $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
-    
+
+    /**
+     * Ensure adding an aliased left join with an empty local table throws.
+     */
+    public function testLeftJoinAsWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->leftJoinAs("fizz", "f", "", "id", "fizz_id");
+    }
+
     /**
      * Data provider for testInnerJoinAs()
      *
@@ -710,7 +826,17 @@ class QueryBuilderTest extends TestCase
         $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
-    
+
+    /**
+     * Ensure adding an aliased inner join with an empty local table throws.
+     */
+    public function testInnerJoinAsWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->innerJoinAs("fizz", "f", "", "id", "fizz_id");
+    }
+
     /**
      * Data provider for testRightJoinAs()
      *
@@ -781,7 +907,17 @@ class QueryBuilderTest extends TestCase
         $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
-    
+
+    /**
+     * Ensure adding an aliased right join with an empty local table throws.
+     */
+    public function testRightJoinAsWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->rightJoinAs("fizz", "f", "", "id", "fizz_id");
+    }
+
     /**
      * Data provider for testRightJoinAs()
      *
@@ -851,6 +987,16 @@ class QueryBuilderTest extends TestCase
         $actual = $builder->rawLeftJoin($joinExpression, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
         $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Ensure adding a raw left join with an empty local table throws.
+     */
+    public function testRawLeftJoinAsWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->rawLeftJoin("(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`))", "f", "", "id", "fizz_id");
     }
 
     /**
@@ -925,6 +1071,16 @@ class QueryBuilderTest extends TestCase
     }
 
     /**
+     * Ensure adding a raw right join with an empty local table throws.
+     */
+    public function testRawRightJoinAsWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->rawRightJoin("(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`))", "f", "", "id", "fizz_id");
+    }
+
+    /**
      * Data provider for testRightJoinAs()
      *
      * @return array The test data.
@@ -993,6 +1149,16 @@ class QueryBuilderTest extends TestCase
         $actual = $builder->rawInnerJoin($joinExpression, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
         $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Ensure adding a raw inner join with an empty local table throws.
+     */
+    public function testRawInnerJoinAsWithEmptyTable(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(InvalidTableNameException::class);
+        $builder->rawInnerJoin("(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`))", "f", "", "id", "fizz_id");
     }
 
     /**
@@ -1729,6 +1895,9 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyInArrayAsArray" => [["foo" => [],], null, "", InvalidArgumentException::class,],
             "invalidMultipleOneEmptyInArray" => [["foo" => ["foo", "bar",], "bar" => [], "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
 
+            "invalidNonArray" => [["foo" => ""], null, "", InvalidArgumentException::class,],
+            "invalidMultipleOneNonArray" => [["foo" => ["foo", "bar",], "bar" => "", "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
+
             "invalidEmptyField" => ["", ["bar", "baz",], "", InvalidColumnException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnException::class,],
@@ -1887,9 +2056,33 @@ class QueryBuilderTest extends TestCase
                     return "42";
                 }
             }, "", TypeError::class,],
+            "invalidClosureLength" => ["foo", fn(): int => 42, "", TypeError::class,],
             "invalidFloatLength" => ["foo", 3.1415927, "", TypeError::class,],
             "invalidNullLength" => ["foo", null, "", TypeError::class,],
             "invalidBoolLength" => ["foo", true, "", TypeError::class,],
+
+            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", TypeError::class,],
+            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", TypeError::class,],
+            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", TypeError::class,],
+            "invalidArrayOneStringableLength" => [
+                [
+                    "foo" => 42,
+                    "bar" => new class
+                    {
+                        public function __string(): string
+                        {
+                            return "42";
+                        }
+                    },
+                ],
+                null,
+                "",
+                TypeError::class,
+            ],
+            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn(): int => 42,], null, "", TypeError::class,],
+            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", TypeError::class,],
+            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", TypeError::class,],
+            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", TypeError::class,],
         ];
     }
 
@@ -1941,12 +2134,41 @@ class QueryBuilderTest extends TestCase
             "typicalMultipleColumnsSameDirectionDesc" => [["foo", "bar",], "DESC", "`foo` DESC,`bar` DESC"],
             "typicalMultipleColumnsCustomLowerCaseDirections" => [["foo" => "asc", "bar" => "desc",], null, "`foo` ASC,`bar` DESC"],
             "typicalMultipleColumnsCustomDirections" => [["foo" => "ASC", "bar" => "DESC",], null, "`foo` ASC,`bar` DESC"],
+            "typicalArrayOfAscColumns" => [["foo", "bar",], null, "`foo` ASC,`bar` ASC",],
+
+            "extremeEmptyArrayColumn" => [[], null, "",],
+
             "invalidBadColumnName" => ["foobar.foo.bar", null, "`foo` ASC,`bar` DESC", InvalidColumnException::class,],
+            "invalidEmptyStringColumn" => ["", null, "", InvalidColumnException::class,],
+
             "invalidSingleColumnBadDirection" => ["foo", "foo", "", InvalidOrderByDirection::class,],
             "invalidMultipleColumnsBadDirection" => [["foo", "bar",], "foo", "", InvalidOrderByDirection::class,],
             "invalidMultipleColumnsCustomDirectionsOneBad" => [["foo" => "desc", "bar" => "foo",], null, "", InvalidOrderByDirection::class,],
 
-            // TODO finish test data
+            "invalidIntColumn" => [42, null, "", TypeError::class,],
+            "invalidStringableColumn" => [new class() {
+                public function __toString(): string {
+                    return "foo";
+                }
+            }, null, "", TypeError::class,],
+            "invalidClosureColumn" => [fn(): string => "foo", null, "", TypeError::class,],
+            "invalidFloatColumn" => [3.1415927, null, "", TypeError::class,],
+            "invalidNullColumn" => [null, null, "", TypeError::class,],
+            "invalidBoolColumn" => [true, null, "", TypeError::class,],
+
+            "invalidArrayBadColumnName" => [["foobar.foo.bar" => "asc",], null, "`foo` ASC,`bar` DESC", InvalidColumnException::class,],
+            "invalidArrayEmptyStringColumn" => [["" => "asc",], null, "", InvalidColumnException::class,],
+
+            "invalidArrayIntColumn" => [[42 => "asc",], null, "", TypeError::class,],
+            "invalidArrayStringableColumn" => [new class() {
+                public function __toString(): string {
+                    return "foo";
+                }
+            }, null, "", TypeError::class,],
+            "invalidArrayClosureDirection" => [["foo" => (fn(): string => "foo"),], null, "", TypeError::class,],
+            "invalidArrayFloatDirection" => [["foo" => 3.1415927,], null, "", TypeError::class,],
+            "invalidArrayNullDirection" => [["foo" => null,], null, "", TypeError::class,],
+            "invalidArrayBoolDirection" => [["foo" => true,], null, "", TypeError::class,],
         ];
     }
 
@@ -1965,11 +2187,18 @@ class QueryBuilderTest extends TestCase
 
         $builder = $this->createBuilder(["foo", "bar", "buzz",], "foobar");
         $builder->orderBy($columns, $direction);
-        $this->assertEquals("SELECT `foo`,`bar`,`buzz` FROM `foobar` ORDER BY {$sqlOrderBy}", $builder->sql());
+
+        if (empty($sqlOrderBy)) {
+            $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar`";
+        } else {
+            $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar` ORDER BY {$sqlOrderBy}";
+        }
+
+        $this->assertEquals($expectedSql, $builder->sql());
     }
 
     /**
-     * Ensure attempting to add bad order bys does not alter builder state.
+     * Ensure attempting to add bad order by does not alter builder state.
      */
     public function testInvalidOrderByPreservesState(): void
     {
