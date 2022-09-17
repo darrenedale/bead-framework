@@ -25,6 +25,7 @@ use InvalidArgumentException;
 use Mockery;
 use PDO;
 use TypeError;
+
 use function uopz_set_return;
 use function uopz_unset_return;
 
