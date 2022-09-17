@@ -8,7 +8,6 @@ namespace Database;
 
 use DateTime;
 use Equit\Application;
-use Equit\ConsoleApplication;
 use Equit\Database\Connection;
 use Equit\Database\QueryBuilder;
 use Equit\Exceptions\DuplicateColumnNameException;
