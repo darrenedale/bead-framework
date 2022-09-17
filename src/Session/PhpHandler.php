@@ -163,6 +163,7 @@ class PhpHandler implements Handler
      * @inheritDoc
      */
     public static function prune(): void
+    public static function purge(): void
     {
         session_gc();
     }
