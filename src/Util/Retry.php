@@ -5,7 +5,7 @@ namespace Equit\Util;
 use InvalidArgumentException;
 
 /**
- * Call some code a given number of times. optionally until the result passes a callback.
+ * Call some code a given number of times, optionally until the result passes a callback.
  *
  * This is useful for things like attempting to come up with a unique filename for a directory, where you need to retry
  * the same piece of code until a given condition is reached, up to a maximum number of times.
@@ -17,8 +17,8 @@ use InvalidArgumentException;
  *                 ->until(fn(string $name) => !file_exists($name)))
  *                 ();
  *
- * If $fileName is null, an unused filename could not be found after 5 attempts; otherwise it's the first name that didn't
- * already exist. 
+ * If `$fileName` is `null`, an unused filename could not be found after 5 attempts; otherwise it's the first name that
+ * didn't already exist.
  */
 final class Retry
 {
@@ -27,9 +27,12 @@ final class Retry
 
     /** @var int|null How many attempts the last retry took, `null` if the current setup hasn't been attempted. */
     private ?int $m_attemptsTaken = null;
- 
+
+    /** @var bool Whether the last retry succeeded, `false` if the current setup hasn't been attempted. */
+    private bool $m_succeeded = false;
+
     /** @var callable The callable encapsulating the code to be repeated. */
-    private $m_codeToRetry;
+    private $m_retry;
 
     /** @var ?callable A closure to determine when the result is acceptable. */
     private $m_exitCondition = null;
@@ -39,7 +42,7 @@ final class Retry
      */
     public function __construct(callable $fn)
     {
-		$this->setCallableToRetry($fn);
+		$this->setRetry($fn);
     }
 
     /**
@@ -80,11 +83,14 @@ final class Retry
      */
     public function __invoke(...$args)
     {
-        for ($this->m_attemptsTaken = 0; $this->m_attemptsTaken < $this->m_maxRetries; ++$this->m_attemptsTaken) {
-            $result = ($this->m_codeToRetry)(...$args);
+		$this->m_attemptsTaken = 0;
 
-            if (null !== $this->m_exitCondition && ($this->m_exitCondition)($result)) {
-                echo "took {$this->m_attemptsTaken} retries\n";
+        for ($attempt = 0; $attempt < $this->m_maxRetries; ++$attempt) {
+			++$this->m_attemptsTaken;
+            $result = ($this->m_retry)(...$args);
+
+            if (null !== $this->m_exitCondition && true === ($this->m_exitCondition)($result)) {
+				$this->m_succeeded = true;
                 return $result;
             }
         }
@@ -107,6 +113,7 @@ final class Retry
 
 		$this->m_maxRetries = $retries;
 		$this->m_attemptsTaken = null;
+		$this->m_succeeded = false;
 	}
 
 	/**
@@ -124,12 +131,13 @@ final class Retry
 	 *
 	 * This method must not be called from within the callable being retried.
 	 *
-	 * @param $fn callable The callable.
+	 * @param $retry callable The callable to retry.
 	 */
-	public function setCallableToRetry(callable $fn): void
+	public function setRetry(callable $retry): void
 	{
 		$this->m_attemptsTaken = null;
-		$this->m_codeToRetry = $fn;
+		$this->m_retry = $retry;
+		$this->m_succeeded = false;
 	}
 
 	/**
@@ -137,9 +145,9 @@ final class Retry
 	 *
 	 * @return callable The callable.
 	 */
-	public function callableToRetry(): callable
+	public function retry(): callable
 	{
-		return $this->m_codeToRetry;
+		return $this->m_retry;
 	}
 
 	/**
@@ -157,6 +165,7 @@ final class Retry
 	{
 		$this->m_exitCondition = $exitCondition;
 		$this->m_attemptsTaken = null;
+		$this->m_succeeded = false;
 	}
 
 	/**
@@ -187,6 +196,6 @@ final class Retry
      */
     public function succeeded(): bool
     {
-        return null !== $this->m_attemptsTaken && $this->m_attemptsTaken < $this->m_maxRetries;
+        return $this->m_succeeded;
     }
 }

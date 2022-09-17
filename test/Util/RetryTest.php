@@ -11,40 +11,77 @@ use TypeError;
 
 class RetryTest extends TestCase
 {
+	/**
+	 * Helper to create a callable to test with.
+	 *
+	 * @return callable The test callable.
+	 */
 	private static function createCallable(): callable
 	{
 		return function(){};
 	}
 
+	/**
+	 * Static function to use as an exit condition in tests.
+	 *
+	 * @param $value The value to test.
+	 *
+	 * @return bool Always `true`.
+	 */
 	public static function staticExitFunction($value): bool
 	{
 		return true;
 	}
 
+	/**
+	 * Function to use as an exit condition in tests.
+	 *
+	 * @param $value The value to test.
+	 *
+	 * @return bool Always `true`.
+	 */
 	public function exitFunction($value): bool
 	{
 		return true;
 	}
 
+	/**
+	 * Static function to use as a callable in tests.
+	 *
+	 * @return bool Always `null`.
+	 */
 	public static function staticCallableToRetry()
 	{
 		return null;
 	}
 
+	/**
+	 * Function to use as a callable in tests.
+	 *
+	 * @return bool Always `null`.
+	 */
 	public function callableToRetry()
 	{
 		return null;
 	}
 
+	/**
+	 * Ensure the constructor sets up the Retry object in the expected state.
+	 */
 	public function testConstructor(): void
 	{
 		$fn = self::createCallable();
 		$retry = new Retry($fn);
-		$this->assertSame($fn, $retry->callableToRetry());
+		$this->assertSame($fn, $retry->retry());
 		$this->assertSame(1, $retry->maxRetries());
 		$this->assertNull($retry->exitCondition());
 	}
 
+	/**
+	 * Test data for testTimes().
+	 *
+	 * @return iterable The test data.
+	 */
 	public function dataForTestTimes(): iterable
 	{
 		yield from [
@@ -75,6 +112,8 @@ class RetryTest extends TestCase
 	}
 
 	/**
+	 * Ensure time() sets the max retry count and returns the same Retry instance.
+	 *
 	 * @dataProvider dataForTestTimes
 	 *
 	 * @param $times
@@ -88,10 +127,15 @@ class RetryTest extends TestCase
 
 		$retry = new Retry(self::createCallable());
 		$actual = $retry->times($times);
-		self::assertSame($retry, $actual);
-		self::assertEquals($times, $actual->maxRetries());
+		$this->assertSame($retry, $actual);
+		$this->assertEquals($times, $actual->maxRetries());
 	}
 
+	/**
+	 * Test data for testUntil().
+	 *
+	 * @return iterable The test data.
+	 */
 	public function dataForTestUntil(): iterable
 	{
 		yield from [
@@ -119,6 +163,8 @@ class RetryTest extends TestCase
 	}
 
 	/**
+	 * Ensure the until() method sets the exit condition and returns the same Retry instance.
+	 *
 	 * @dataProvider dataForTestUntil
 	 *
 	 * @param int $times
@@ -137,18 +183,153 @@ class RetryTest extends TestCase
 			->times($times);
 
 		$actual = $retry->until($predicate);
-		self::assertSame($retry, $actual);
-		self::assertSame($predicate, $retry->exitCondition());
+		$this->assertSame($retry, $actual);
+		$this->assertSame($predicate, $retry->exitCondition());
 	}
 
 	/**
-	 * @doesNotPerformAssertions
+	 * Test data for invokeFixedTimes()
+	 *
+	 * @return iterable The test data.
 	 */
-	public function testInvoke(): void
+	public function dataForTestInvokeFixedTimes(): iterable
 	{
-		// TODO implement
+		for ($times = 1; $times < 30; ++$times) {
+			yield [$times,];
+		}
 	}
 
+	/**
+	 * Ensure invoking with no exit condition retries the max number of times.
+	 *
+	 * @param int $times The max retries.
+	 *
+	 * @dataProvider dataForTestInvokeFixedTimes
+	 */
+	public function testInvokeFixedTimes(int $times): void
+	{
+		$actualTimes = 0;
+
+		$invokable = function() use (&$actualTimes): void
+		{
+			++$actualTimes;
+		};
+
+		$retry = (new Retry($invokable))
+			->times($times);
+
+		$retry();
+		$this->assertLessThanOrEqual($times, $retry->attemptsTaken());
+		$this->assertEquals($times, $actualTimes);
+	}
+
+	/**
+	 * Test data for testInvokeWithExitCondition.
+	 *
+	 * @return iterable The test data.
+	 */
+	public function dataForTestInvokeWithExitCondition(): iterable
+	{
+		yield from [
+			"typicalPassesFirstTime" => [
+				function() {
+					return 6;
+				},
+				fn(int $result): bool => 6 === $result,
+				5,
+				1,
+				true,
+				6,
+			],
+			"typicalPassesLastTime" => [
+				function() {
+					static $ret = 0;
+					return ++$ret;
+				},
+				fn(int $result): bool => 5 === $result,
+				5,
+				5,
+				true,
+				5,
+			],
+			"extremeOneAttemptMaxPasses" => [
+				function() {
+					static $ret = 0;
+					return ++$ret;
+				},
+				fn(int $result): bool => 1 === $result,
+				1,
+				1,
+				true,
+				1,
+			],
+			"typicalPassesAfterThreeOfFive" => [
+				function() {
+					static $ret = 0;
+					$ret += 2;
+					return $ret;
+				},
+				fn(int $result): bool => 6 === $result,
+				5,
+				3,
+				true,
+				6,
+			],
+			"typicalWouldPassWithMoreAttempts" => [
+				function() {
+					static $ret = 0;
+					$ret += 2;
+					return $ret;
+				},
+				fn(int $result): bool => 6 === $result,
+				2,
+				2,
+				false,
+				null,
+			],
+			"extremeCanNeverPass" => [
+				function() {
+					return mt_rand(1, 100);
+				},
+				fn($result): bool => "never this" === $result,
+				5,
+				5,
+				false,
+				null,
+			],
+		];
+	}
+
+	/**
+	 * Ensure invoking a Retry produces the expected results when an exit condition is present.
+	 *
+	 * @dataProvider dataForTestInvokeWithExitCondition
+	 *
+	 * @param callable $retryCode The callable to retry.
+	 * @param callable $exitCondition The exit condition for the retry loop.
+	 * @param int $maxTimes The maximum number of times to retry.
+	 * @param int $expectedTimes The number of times the code is expected to actually be retried.
+	 * @param bool $expectedSuccess Whether the retry is expected ultimately to succeed.
+	 * @param mixed $expectedResult The expected return value from invoking the Retry.
+	 */
+	public function testInvokeWithExitCondition(callable $retryCode, callable $exitCondition, int $maxTimes, int $expectedTimes, bool $expectedSuccess, $expectedResult = null): void
+	{
+		$retry = (new Retry($retryCode))
+			->times($maxTimes)
+			->until($exitCondition);
+
+		$result = $retry();
+		$this->assertEquals($expectedTimes, $retry->attemptsTaken());
+		$this->assertLessThanOrEqual($maxTimes, $retry->attemptsTaken());
+		$this->assertEquals($expectedSuccess, $retry->succeeded());
+		$this->assertEquals($expectedResult, $result);
+	}
+
+	/**
+	 * Data for testSetMaxRetries()
+	 *
+	 * @return iterable The test data.
+	 */
 	public function dataForTestSetMaxRetries(): iterable
 	{
 		yield from $this->dataForTestMaxRetries();
@@ -179,11 +360,14 @@ class RetryTest extends TestCase
 	}
 
 	/**
+	 * Ensure setMaxRetries() sets the maximum and resets the internal outcome state.
+	 *
 	 * @dataProvider dataForTestSetMaxRetries
 	 *
-	 * @param int $retries
+	 * @param mixed $retries The number of retries to test with.
+	 * @param string|null $exceptionClass The class of the exception expected, if any.
 	 */
-	public function testSetMaxRetries($retries, ?string $exceptionClass =  null): void
+	public function testSetMaxRetries($retries, ?string $exceptionClass = null): void
 	{
 		$retry = (new Retry(self::createCallable()));
 		$retry();
@@ -198,7 +382,11 @@ class RetryTest extends TestCase
 		$this->assertNull($retry->attemptsTaken());
 	}
 
-
+	/**
+	 * Test data for testMaxRetries()
+	 *
+	 * @return iterable The test data.
+	 */
 	public function dataForTestMaxRetries(): iterable
 	{
 		for ($retries = 1; $retries < 30; ++$retries) {
@@ -207,8 +395,11 @@ class RetryTest extends TestCase
 	}
 
 	/**
+	 * Ensure maxRetries() accessor returns the expected value.
+	 *
 	 * @dataProvider dataForTestMaxRetries
-	 * @param int $retries
+	 *
+	 * @param int $retries The number of retries to test with.
 	 */
 	public function testMaxRetries(int $retries): void
 	{
@@ -218,7 +409,12 @@ class RetryTest extends TestCase
 		$this->assertEquals($retries, $retry->maxRetries());
 	}
 
-	public function dataForTestSetCallableToRetry(): iterable
+	/**
+	 * Test data for testSetRetry()
+	 *
+	 * @return iterable The test data.
+	 */
+	public function dataForTestSetRetry(): iterable
 	{
 		yield from [
 			"typicalClosure" => [self::createCallable(),],
@@ -252,23 +448,30 @@ class RetryTest extends TestCase
 	}
 
 	/**
-	 * @dataProvider dataForTestSetCallableToRetry
+	 * Ensure setting the callable to retry works as expected and throws with invalid data.
 	 *
-	 * @param $callable
-	 * @param string|null $exceptionClass
+	 * @dataProvider dataForTestSetRetry
+	 *
+	 * @param mixed $callable The data to test with.
+	 * @param string|null $exceptionClass The class of exception expected to be thrown, if any.
 	 */
-	public function testSetCallableToRetry($callable, ?string $exceptionClass = null): void
+	public function testSetRetry($callable, ?string $exceptionClass = null): void
 	{
 		if (isset($exceptionClass)) {
 			$this->expectException($exceptionClass);
 		}
 
 		$retry = new Retry(self::createCallable());
-		$retry->setCallableToRetry($callable);
-		self::assertSame($callable, $retry->callableToRetry());
+		$retry->setRetry($callable);
+		$this->assertSame($callable, $retry->retry());
 	}
 
-	public function dataForTestCallableToRetry(): iterable
+	/**
+	 * Test data for testRetry()
+	 *
+	 * @return iterable The test data.
+	 */
+	public function dataForTestRetry(): iterable
 	{
 		yield from [
 			"typicalClosure" => [self::createCallable(),],
@@ -286,14 +489,21 @@ class RetryTest extends TestCase
 	}
 
 	/**
-	 * @dataProvider dataForTestCallableToRetry
+	 * Ensure retry() accessor returns the expected value.
+	 *
+	 * @dataProvider dataForTestRetry
 	 */
-	public function testCallableToRetry(callable $callable): void
+	public function testRetry(callable $callable): void
 	{
 		$retry = new Retry($callable);
-		$this->assertSame($callable, $retry->callableToRetry());
+		$this->assertSame($callable, $retry->retry());
 	}
 
+	/**
+	 * Test data for testSetExitCondition().
+	 *
+	 * @return iterable The test data.
+	 */
 	public function dataForTestSetExitCondition(): iterable
 	{
 		yield from [
@@ -328,6 +538,8 @@ class RetryTest extends TestCase
 	}
 
 	/**
+	 * Ensure the exit condition is set correctly, and throws with invalid data.
+	 *
 	 * @dataProvider dataForTestSetExitCondition
 	 */
 	public function testSetExitCondition($exitCondition, ?string $exceptionClass = null): void
@@ -338,9 +550,14 @@ class RetryTest extends TestCase
 
 		$retry = new Retry(self::createCallable());
 		$retry->setExitCondition($exitCondition);
-		self::assertSame($exitCondition, $retry->exitCondition());
+		$this->assertSame($exitCondition, $retry->exitCondition());
 	}
 
+	/**
+	 * Test data for testExitCondition().
+	 *
+	 * @return iterable The test data.
+	 */
 	public function dataForTestExitCondition(): iterable
 	{
 		yield from [
@@ -365,22 +582,90 @@ class RetryTest extends TestCase
 	{
 		$retry = (new Retry(self::createCallable()))
 			->until($exitCondition);
-		self::assertSame($exitCondition, $retry->exitCondition());
+		$this->assertSame($exitCondition, $retry->exitCondition());
 	}
 
 	/**
-	 * @doesNotPerformAssertions
+	 * Ensure attemptsTaken() returns the expected results:
+	 * - ensure it returns max when retry doesn't have an exit condition
+	 * - ensure it gets reset when max retries is changed
+	 * - ensure it gets reset when callable is changed
+	 * - ensure it gets reset when exit condition is changed
+	 * - ensure it returns the correct number of retries when an exit condition is present
 	 */
 	public function testAttemptsTaken(): void
 	{
-		// TODO implement
+		// ensure it returns null on initialisation
+		$retry = new Retry(self::createCallable());
+		$this->assertNull($retry->attemptsTaken());
+
+		// ensure it returns max when retry doesn't have an exit condition
+		$retry->times(1);
+		$retry();
+		$this->assertEquals(1, $retry->attemptsTaken());
+
+		// ensure it gets reset when max changed
+		$retry->times(2);
+		$this->assertNull($retry->attemptsTaken());
+		$retry();
+		$this->assertEquals(2, $retry->attemptsTaken());
+
+		// ensure it gets reset when callable changed
+		$retry->setRetry(self::createCallable());
+		$this->assertNull($retry->attemptsTaken());
+		$retry();
+		$this->assertEquals(2, $retry->attemptsTaken());
+
+		// ensure it gets reset when exit condition changed
+		$retry->setExitCondition(fn($result): bool => true);
+		$this->assertNull($retry->attemptsTaken());
+
+		// ensure it returns the correct value when the exit condition is in effect
+		$retry();
+		$this->assertEquals(1, $retry->attemptsTaken());
 	}
 
-	/**
-	 * @doesNotPerformAssertions
-	 */
 	public function testSucceeded(): void
 	{
-		// TODO implement
+		// ensure it returns false on initialisation
+		$retry = new Retry(self::createCallable());
+		$this->assertFalse($retry->succeeded());
+
+		// ensure it returns true when exit condition passes
+		$retry->setExitCondition(fn($result): bool => true);
+		$retry();
+		$this->assertTrue($retry->succeeded());
+
+		// ensure it gets reset when max changed
+		$retry->times(2);
+		$this->assertFalse($retry->succeeded());
+
+		// ensure it returns true when exit condition passes with greater max
+		$retry();
+		$this->assertEquals(1, $retry->attemptsTaken());
+		$this->assertTrue($retry->succeeded());
+
+		// ensure it gets reset when callable changed
+		$retry->setRetry(self::createCallable());
+		$this->assertFalse($retry->succeeded());
+
+		// ensure it gets reset when exit condition changed
+		$retry->setExitCondition(function($result): bool {
+			static $ret = false;
+			
+			if (!$ret) {
+				$ret = true;
+				return false;
+			}
+			
+			return $ret;
+		});
+		
+		$this->assertFalse($retry->succeeded());
+
+		// ensure it returns the correct value when the exit condition returns true on a later attempt
+		$retry();
+		$this->assertEquals(2, $retry->attemptsTaken());
+		$this->assertTrue($retry->succeeded());
 	}
 }
