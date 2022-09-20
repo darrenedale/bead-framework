@@ -32,7 +32,7 @@ class Minutes implements TimestampInterval
 	public function plus(int $mins): self
 	{
 		$clone = clone $this;
-		$clone->m_days += $mins;
+		$clone->m_mins += $mins;
 		return $clone;
 	}
 

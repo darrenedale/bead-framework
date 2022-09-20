@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Equit\Test\Util;
 
 use Equit\Test\Framework\TestCase;
-use Equit\Util\Days;
+use Equit\Util\Hours;
 use TypeError;
 
-class DaysTest extends TestCase
+class HoursTest extends TestCase
 {
 	/**
 	 * Test data for testConstructor
@@ -17,8 +17,8 @@ class DaysTest extends TestCase
 	 */
 	public function dataForTestConstructor(): iterable
 	{
-		for ($days = -100; $days <= 100; ++$days) {
-			yield "typical{$days}Days" => [$days,];
+		for ($hours = -72; $hours <= 72; ++$hours) {
+			yield "typical{$hours}Hours" => [$hours,];
 		}
 
 		yield from [
@@ -32,7 +32,7 @@ class DaysTest extends TestCase
 			"invalidObject" => [
 				new class
 				{
-					public function days(): int
+					public function hours(): int
 					{
 						return 42;
 					}
@@ -48,17 +48,17 @@ class DaysTest extends TestCase
 	 *
 	 * @dataProvider dataForTestConstructor
 	 *
-	 * @param mixed $days The days to test with.
+	 * @param mixed $hours The hours to test with.
 	 * @param string|null $exceptionCalss The exception expected, if any.
 	 */
-	public function testConstructor($days, ?string $exceptionCalss = null): void
+	public function testConstructor($hours, ?string $exceptionCalss = null): void
 	{
 		if (isset($exceptionCalss)) {
 			$this->expectException($exceptionCalss);
 		}
 
-		$testObject = new Days($days);
-		$this->assertEquals($days, $testObject->days());
+		$testObject = new Hours($hours);
+		$this->assertEquals($hours, $testObject->hours());
 	}
 
 	/**
@@ -66,10 +66,10 @@ class DaysTest extends TestCase
 	 *
 	 *@return iterable The test data.
 	 */
-	public function dataForTestDays(): iterable
+	public function dataForTestHours(): iterable
 	{
-		for ($days = -100; $days <= 100; ++$days) {
-			yield "typical{$days}Days" => [$days,];
+		for ($hours = -72; $hours <= 72; ++$hours) {
+			yield "typical{$hours}Hours" => [$hours,];
 		}
 
 		yield from [
@@ -79,14 +79,14 @@ class DaysTest extends TestCase
 	}
 
 	/**
-	 * @dataProvider dataForTestDays
+	 * @dataProvider dataForTestHours
 	 *
-	 * @param int $days The number of days to test with.
+	 * @param int $hours The number of hours to test with.
 	 */
-	public function testDays(int $days): void
+	public function testHours(int $hours): void
 	{
-		$testObject = new Days($days);
-		$this->assertEquals($days, $testObject->days());
+		$testObject = new Hours($hours);
+		$this->assertEquals($hours, $testObject->hours());
 	}
 
 	/**
@@ -107,7 +107,7 @@ class DaysTest extends TestCase
 			"typicalPositivePositivePositive" => [12, 14, 26,],
 			"typicalPositiveNegativePositive" => [42, -21, 21,],
 			"typicalPositiveNegativeNegative" => [15, -31, -16,],
-			
+
 			"invalidFloat" => [42, 3.1415927, 0, TypeError::class,],
 			"invalidBool" => [42, true, 0, TypeError::class,],
 			"invalidNull" => [42, null, 0, TypeError::class,],
@@ -117,7 +117,7 @@ class DaysTest extends TestCase
 				42,
 				new class
 				{
-					public function days(): int
+					public function hours(): int
 					{
 						return 42;
 					}
@@ -126,7 +126,7 @@ class DaysTest extends TestCase
 				TypeError::class,
 			],
 			"invalidClosure" => [42, fn(): int => 42, 0, TypeError::class,],
-		];		
+		];
 	}
 
 	/**
@@ -134,9 +134,9 @@ class DaysTest extends TestCase
 	 *
 	 * @dataProvider dataForTestPlus
 	 *
-	 * @param int $initial The number of days in the test object.
+	 * @param int $initial The number of hours in the test object.
 	 * @param mixed $add The value to add.
-	 * @param int $expected The expected number of days after the addition.
+	 * @param int $expected The expected number of hours after the addition.
 	 * @param string|null $exceptionClass The exception expected, if any.
 	 */
 	public function testPlus(int $initial, $add, int $expected, ?string $exceptionClass = null): void
@@ -144,12 +144,12 @@ class DaysTest extends TestCase
 		if (isset($exceptionClass)) {
 			$this->expectException($exceptionClass);
 		}
-		
-		$days = new Days($initial);
-		$actual = $days->plus($add);
-		$this->assertNotSame($days, $actual);
-		$this->assertEquals($initial, $days->days());
-		$this->assertEquals($expected, $actual->days());
+
+		$hours = new Hours($initial);
+		$actual = $hours->plus($add);
+		$this->assertNotSame($hours, $actual);
+		$this->assertEquals($initial, $hours->hours());
+		$this->assertEquals($expected, $actual->hours());
 	}
 
 	/**
@@ -180,7 +180,7 @@ class DaysTest extends TestCase
 				42,
 				new class
 				{
-					public function days(): int
+					public function hours(): int
 					{
 						return 42;
 					}
@@ -197,9 +197,9 @@ class DaysTest extends TestCase
 	 *
 	 * @dataProvider dataForTestMinus
 	 *
-	 * @param int $initial The number of days in the test object.
+	 * @param int $initial The number of hours in the test object.
 	 * @param mixed $sub The value to subtract.
-	 * @param int $expected The expected number of days after the addition.
+	 * @param int $expected The expected number of hours after the addition.
 	 * @param string|null $exceptionClass The exception expected, if any.
 	 */
 	public function testMinus(int $initial, $sub, int $expected, ?string $exceptionClass = null): void
@@ -208,11 +208,11 @@ class DaysTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$days = new Days($initial);
-		$actual = $days->minus($sub);
-		$this->assertNotSame($days, $actual);
-		$this->assertEquals($initial, $days->days());
-		$this->assertEquals($expected, $actual->days());
+		$hours = new Hours($initial);
+		$actual = $hours->minus($sub);
+		$this->assertNotSame($hours, $actual);
+		$this->assertEquals($initial, $hours->hours());
+		$this->assertEquals($expected, $actual->hours());
 	}
 
 	/**
@@ -222,8 +222,8 @@ class DaysTest extends TestCase
 	 */
 	public function dataForTestInSeconds(): iterable
 	{
-		for ($days = -100; $days <= 100; ++$days)
-			yield "typical{$days}Days" => [$days, Days::SecondsPerDay * $days,];
+		for ($hours = -72; $hours <= 72; ++$hours)
+			yield "typical{$hours}Hours" => [$hours, Hours::SecondsPerHour * $hours,];
 
 	}
 
@@ -231,8 +231,8 @@ class DaysTest extends TestCase
 	 * Ensure the conversion behaves as expected.
 	 * @dataProvider dataForTestInSeconds
 	 */
-	public function testInSeconds(int $days, int $expectedSeconds): void
+	public function testInSeconds(int $hours, int $expectedSeconds): void
 	{
-		$this->assertEquals($expectedSeconds, (new Days($days))->inSeconds());
+		$this->assertEquals($expectedSeconds, (new Hours($hours))->inSeconds());
 	}
 }
