@@ -16,7 +16,8 @@ use Equit\Html\Detail\GridLayoutItem;
  * element or layout is added to any cell that is occupied by an existing child element or layout, whether that cell is
  * its anchor cell or simply one it spans, the existing child is removed and replaced with the new element or layout.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class GridLayout extends Layout {
 	/** @var int Alignment flag to align content with the left edge of its cell. */

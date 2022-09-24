@@ -10,7 +10,8 @@ namespace Equit\Html;
  * submitted with the rest of the form data. This is useful when a form needs
  * to submit a fixed value that the user cannot change.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class HiddenValueWidget extends Element {
 	use HasNameAttribute;

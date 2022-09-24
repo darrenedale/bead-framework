@@ -5,7 +5,8 @@ namespace Equit\Html;
 /**
  * A page element intended to act as a major section of a page.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class Section extends Element implements ContainerElement {
 	use HasTooltip;

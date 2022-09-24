@@ -15,7 +15,8 @@ namespace Equit\Html;
  * lists if you wish, but it is recommended (and almost always more convenient) to provide the string texts and values
  * to the PickList object rather than encumber your code with calls to the PickListOption constructor.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class PickListOption {
 	/** @var string|null The value for the option. */

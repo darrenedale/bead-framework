@@ -17,7 +17,8 @@ use Equit\AppLog;
  * content can be entered. It's good practice to do such validation anyway (and you're asking for trouble if you don't),
  * but in this case it is a necessity.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class DateEdit extends Element
 {

@@ -9,7 +9,8 @@ namespace Equit\Html;
  * It also provides a convenience protected method to emit the HTML for the child elements. This is not part of the
  * ContainerPageElement interface.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 trait HasChildElements
 {

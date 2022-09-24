@@ -11,7 +11,8 @@ namespace Equit\Html;
  * internal data structures for some of the facilities provided by the protected helper methods are properly
  * initialised. Failure to do so could result in your subclass generating PHP errors in calls to this base class.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 abstract class Element
 {

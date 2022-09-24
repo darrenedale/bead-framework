@@ -6,7 +6,8 @@ namespace Equit\Html;
  *
  * This class defines the interface that must be implemented to provide a layout for a web page.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 abstract class Layout extends Element{
 	/**

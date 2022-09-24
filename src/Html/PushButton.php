@@ -18,7 +18,8 @@ use Equit\AppLog;
  * As yet there are no facilities to enable push buttons to have runtime code
  * attached. This is likely to follow in the near future.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class PushButton extends Element {
 	use HasTooltip;

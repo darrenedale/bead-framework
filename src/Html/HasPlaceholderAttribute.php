@@ -7,7 +7,8 @@ namespace Equit\Html;
  *
  * Trait to enable HTML elements to support placeholders without having to reimplement the functionality over and over.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 trait HasPlaceholderAttribute
 {

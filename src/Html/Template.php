@@ -5,7 +5,8 @@ namespace Equit\Html;
 /**
  * A page element providing template content.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class Template extends Element {
 	use HasTooltip;

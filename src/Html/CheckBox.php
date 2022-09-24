@@ -16,7 +16,8 @@ namespace Equit\Html;
  * the label. To turn off the label, whether it's set or not, set the label position to _NoLabel_ (this is the default
  * setting).
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class CheckBox extends Element {
 	use HasNameAttribute;

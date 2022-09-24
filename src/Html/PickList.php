@@ -19,7 +19,8 @@ use Equit\AppLog;
  * any item is added without a display text, the value will be used for the display text. Every item added to the list
  * of options is required to have a value.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class PickList extends Element {
 	// import traits

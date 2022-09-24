@@ -11,7 +11,8 @@ use Equit\AppLog;
  * primary intended use, it is valid to use _Label_ objects elsewhere in the page, although it is likely that other
  * classes are a better fit for such usage (e.g. _HtmlSection_).
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class Label extends Element {
 	use HasTooltip;

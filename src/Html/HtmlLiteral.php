@@ -7,7 +7,8 @@ namespace Equit\Html;
  *
  * This class is just a thin LibEquit\PageElement wrapper around a string containing pre-validated HTML.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class HtmlLiteral extends Element {
 	/** @var string The HTML. */

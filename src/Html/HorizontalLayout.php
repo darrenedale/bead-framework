@@ -11,7 +11,8 @@ namespace Equit\Html;
  * If an element or layout is inserted to any position that is occupied by an existing child  element or layout the
  * existing child is moved to the right and the new element or layout occupies its original position.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class HorizontalLayout extends Layout {
 	/**

@@ -22,7 +22,8 @@ namespace Equit\Html;
  * default is for the dialogue to assume its message is plain text, which means that it will escape the message for HTML
  * when generating its output.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class Dialogue extends Division
 {

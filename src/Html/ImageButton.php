@@ -5,7 +5,8 @@ namespace Equit\Html;
 /**
  * A push button using an image for inclusion in forms.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class ImageButton extends Element {
 	use HasNameAttribute;

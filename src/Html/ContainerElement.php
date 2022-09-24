@@ -5,7 +5,8 @@ namespace Equit\Html;
 /**
  * Page elements that act as containers for other elements should implement this interface.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 interface ContainerElement {
 	/**

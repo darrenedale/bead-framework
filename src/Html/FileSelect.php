@@ -11,7 +11,8 @@ use Equit\AppLog;
  * have a number of MIME types added to hint to the user agent what MIME types the user should be allowed to choose.
  * Support for this is dependent on the user agent as it is only a hint.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class FileSelect extends Element {
 	use HasTooltip;

@@ -11,7 +11,8 @@ use Equit\AppLog;
  * be set up to be single-line, multi- line, or for password entry. They can also have an optional placeholder that is
  * put into the widget when it is empty (but is not submitted with the form data if the widget is empty).
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class TextEdit extends Element {
 	use HasNameAttribute;

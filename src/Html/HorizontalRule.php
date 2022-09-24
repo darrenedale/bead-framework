@@ -5,7 +5,8 @@ namespace Equit\Html;
 /**
  * A `HR` element for use in HTML pages.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class HorizontalRule extends Element {
 	/**

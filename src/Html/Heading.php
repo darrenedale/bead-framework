@@ -8,7 +8,8 @@ namespace Equit\Html;
  * This generates <h1> to <h6> heading elements. The content of the heading is fully configurable by providing
  * PageElement objects, or can simply be used with plain text, which will be HTML-escaped before output.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class Heading extends Element {
 	/**

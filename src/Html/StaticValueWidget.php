@@ -11,7 +11,8 @@ use Equit\AppLog;
  * static content that the user is not able to alter, and it's like a hidden value widget in that it contains a
  * value that the user is unable to modify that is submitted with the form data.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class StaticValueWidget extends HiddenValueWidget {
 	/** @var int Content type enumerator representing plain text content. */

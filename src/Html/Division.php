@@ -10,7 +10,8 @@ namespace Equit\Html;
  * The division can be cleared of all its child elements with the clear() method. There is as yet no facility to remove
  * individual children.
  *
- * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes.
+ * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
+ * removed before the version 2.0 release.
  */
 class Division extends Element implements ContainerElement {
 	use HasTooltip;
