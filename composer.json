@@ -9,7 +9,6 @@
       "email": "packagist@equit.dev"
     }
   ],
-  "version": "0.9.4",
   "require": {
     "ext-mbstring": "*",
     "ext-dom": "*",
