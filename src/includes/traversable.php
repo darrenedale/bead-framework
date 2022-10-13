@@ -37,6 +37,23 @@ function & transform(&$collection, callable $fn): Traversable
 }
 
 /**
+ * Map the items in an iterable, using a trasnforamtion function.
+ *
+ * Similar to transform, except this is not in-place, and yields each transformed item in sequence.
+ *
+ * @param iterable $collection The collection from which to map items.
+ * @param callable $fn The transformation function to use on each item.
+ *
+ * @return iterable The mapped items.
+ */
+function map(iterable $collection, callable $fn): iterable
+{
+	foreach ($collection as $item) {
+		yield $fn($item);
+	}
+}
+
+/**
  * Reduce a Traversable collection by successive application of a function.
  *
  * The function receives each item in the traversable, along with the current reduced value. The reduced value is
