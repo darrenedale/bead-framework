@@ -12,7 +12,6 @@ use Equit\Exceptions\ServiceAlreadyBoundException;
 use Equit\Exceptions\ServiceNotFoundException;
 use Exception;
 use InvalidArgumentException;
-use ContainerIn;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
