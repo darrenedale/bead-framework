@@ -133,26 +133,12 @@ use Equit\Contracts\Translator as TranslatorContract;
  *
  *        return str_replace($ph, $args, $s);
  *     }
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class LibEquit\Translator
- * @author Darren Edale
- * @package bead-framework
- *
- * @connections _None_
- * @settings _None_
- * @session _None_
  */
 class Translator implements TranslatorContract
 {
+    /** @var string The default language. */
+    protected const DefaultLanguage = "en";
+
 	/** @var int The column in the translation file that contains the file name. */
 	protected const FILE_COL = 0;
 
@@ -166,20 +152,21 @@ class Translator implements TranslatorContract
 	protected const TRANSLATION_COL = 3;
 
 	/** The translator's language. */
-	private $m_lang = null;
+	private string $m_lang;
 
 	/** The cache of translated text. */
-	private $m_cache = [];
+	private array $m_cache = [];
 
 	/** The paths to search for translation files. */
-	private $m_searchPaths = [];
+	private array $m_searchPaths = [];
 
 	/**
 	 * Create a translator for a given language.
 	 *
 	 * @param $lang string _optional_ The language into which to translate.
 	 */
-	public function __construct(?string $lang = null) {
+	public function __construct(string $lang = self::DefaultLanguage)
+    {
 		$this->setLanguage($lang);
 	}
 
@@ -188,7 +175,8 @@ class Translator implements TranslatorContract
 	 *
 	 * @return string The target language.
 	 */
-	public function language(): string {
+	public function language(): string
+    {
 		return $this->m_lang;
 	}
 
@@ -202,7 +190,8 @@ class Translator implements TranslatorContract
 	 *
 	 * @param $lang string|null The target language.
 	 */
-	public function setLanguage(?string $lang): void {
+	public function setLanguage(string $lang): void
+    {
 		$this->m_lang = $lang;
 	}
 
@@ -222,7 +211,8 @@ class Translator implements TranslatorContract
 	 *
 	 * @param $path string The path to add.
 	 */
-	public function addSearchPath(string $path): void {
+	public function addSearchPath(string $path): void
+    {
 		$path = realpath($path);
 
 		if($path && !in_array($path, $this->m_searchPaths)) {
@@ -241,7 +231,8 @@ class Translator implements TranslatorContract
 	 *
 	 * @param $path string The path to remove.
 	 */
-	public function removeSearchPath(string $path): void {
+	public function removeSearchPath(string $path): void
+    {
 		$path = realpath($path);
 
 		if($path) {
@@ -265,7 +256,8 @@ class Translator implements TranslatorContract
 	 * which it has already loaded a translation file. Translation files are loaded the first time they are needed -
 	 * i.e. when a new language is encountered in a call to either hasTranslation() or translate().
 	 */
-	public function clearSearchPaths(): void {
+	public function clearSearchPaths(): void
+    {
 		$this->m_searchPaths = [];
 	}
 
@@ -276,7 +268,8 @@ class Translator implements TranslatorContract
 	 *
 	 * @return array[string] The list of search paths.
 	 */
-	public function searchPaths(): array {
+	public function searchPaths(): array
+    {
 		return $this->m_searchPaths;
 	}
 
@@ -285,7 +278,8 @@ class Translator implements TranslatorContract
 	 *
 	 * @return bool _true_ if the translation file has been loaded, _false_ if not.
 	 */
-	private function isLoaded(): bool {
+	private function isLoaded(): bool
+    {
 		return is_string($this->m_lang) && array_key_exists($this->m_lang, $this->m_cache);
 	}
 
@@ -298,7 +292,8 @@ class Translator implements TranslatorContract
 	 *
 	 * @return string The key.
 	 */
-	private static function cacheKey(string $string, ?string $file, ?int $line): string {
+	private static function cacheKey(string $string, ?string $file, ?int $line): string
+    {
 		if(empty($file)) {
 			$file = "~~NOFILE~~";
 		}
@@ -320,18 +315,19 @@ class Translator implements TranslatorContract
 	 *
 	 * @return bool _true_ if a translation file for the current language was loaded, _false_ otherwise.
 	 */
-	private function load(): bool {
+	private function load(): bool
+    {
 		if(!empty($this->m_lang)) {
 			foreach($this->m_searchPaths as $path) {
 				$filePath = "$path/{$this->m_lang}.csv";
 
 				if(file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
-					$f                            = fopen($filePath, "r");
+					$f = fopen($filePath, "r");
 					$this->m_cache[$this->m_lang] = [];
 
 					while(false !== ($line = fgetcsv($f))) {
-						$myFile  = $line[self::FILE_COL];
-						$myLine  = $line[self::LINE_COL];
+						$myFile  = empty($line[self::FILE_COL]) ? null : $line[self::FILE_COL];
+						$myLine  = empty($line[self::LINE_COL]) ? null : (intval($line[self::LINE_COL]) ?: null);
 						$myOrig  = $line[self::ORIGINAL_COL];
 						$myTrans = $line[self::TRANSLATION_COL];
 
@@ -360,7 +356,8 @@ class Translator implements TranslatorContract
 	 *
 	 * @return bool _true_ if the requested translation is available, _false_ if not.
 	 */
-	public function hasTranslation(string $string, ?string $file = null, ?int $line = null): bool {
+	public function hasTranslation(string $string, ?string $file = null, ?int $line = null): bool
+    {
 		if(!$this->isLoaded()) {
 			$this->load();
 		}
@@ -386,12 +383,13 @@ class Translator implements TranslatorContract
 	 *
 	 * @return string The translated string, or the original string if no suitable translation can be found.
 	 */
-	public function translate(string $string, string $file = null, $line = null): string {
-		if(!$this->isLoaded()) {
+	public function translate(string $string, string $file = null, $line = null): string
+    {
+		if (!$this->isLoaded()) {
 			$this->load();
 		}
 
-		if($this->isLoaded()) {
+		if ($this->isLoaded()) {
 			$keys = [
 				[$string, $file, $line],
 				[$string, $file, null],
