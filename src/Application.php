@@ -3,10 +3,16 @@
 namespace Equit;
 
 use Equit\Contracts\ErrorHandler;
+use Equit\Contracts\ServiceContainer;
+use Equit\Contracts\Translator as TranslatorContract;
 use Equit\Database\Connection;
 use DirectoryIterator;
 use Equit\ErrorHandler as EquitErrorHandler;
+use Equit\Exceptions\ServiceAlreadyBoundException;
+use Equit\Exceptions\ServiceNotFoundException;
 use Exception;
+use InvalidArgumentException;
+use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
 use Throwable;
@@ -17,8 +23,10 @@ use Throwable;
  * This provides a bunch of core data and functionality: loading configuration, storing the singleton, the database and
  * various metadata about the application. What you most likely want to do is use or create a subclass of
  * ConsoleApplication or WebApplication.
+ *
+ * Instances of this class implement PSR11 ContainerInterface.
  */
-abstract class Application
+abstract class Application implements ServiceContainer, ContainerInterface
 {
     /** @var int Exit status code for exec() indicating all was well. */
     public const ExitOk = 0;
@@ -52,6 +60,9 @@ abstract class Application
 
     /** @var array The loaded config. */
     private array $m_config = [];
+
+    /** @var array The sesrvices bound to the container. */
+    private array $m_services = [];
 
     /**
      * @param string $appRoot
@@ -105,6 +116,8 @@ abstract class Application
         $this->m_translator = new Translator();
         $this->m_translator->addSearchPath("i18n");
         $this->m_translator->setLanguage($this->config("app.language", "en-GB"));
+
+        $this->bindService(TranslatorContract::class, $this->m_translator);
     }
 
     /**
@@ -216,14 +229,104 @@ abstract class Application
         return $this->m_minimumPhpVersion;
     }
 
-	/** Fetch the application's translator.
+    /**
+     * Bind an instance to an identified service.
+     *
+     * @param string $service The service identifier to bind to.
+     * @param mixed $instance The service instance.
+     *
+     * @throws ServieAlreadyBoundException if there is already a service bound to the identifier.
+     */
+    public function bindService(string $service, $instance): void
+    {
+        if ($this->serviceIsBound($service)) {
+            throw new ServiceAlreadyBoundException($service, "The service '{$service}' is already bound to the Application instance.");
+        }
+
+        $this->m_services[$service] = $instance;
+    }
+
+    /**
+     * Replace a service already bound to the Application instance.
+     *
+     * @param string $service The service identifier to bind to.
+     * @param mixed $object The service instance.
+     *
+     * @return mixed The previously-bound service.
+     * @throws ServiceNotFoundException If no instance is currently bound to the identified service.
+     */
+    public function replaceService(string $service, $object)
+    {
+        if (!$this->serviceIsBound($service)) {
+            throw new ServiceNotFoundException($service, "The service '{$service}' is not bound to the Application instance.");
+        }
+
+        $previous = $this->m_services[$service];
+        $this->m_services[$service] = $object;
+        return $previous;
+    }
+
+    /**
+     * Check whether a service is bound to an identifier.
+     *
+     * @param string $service
+     *
+     * @return bool `true` if the service is bound, `false` if not.
+     */
+    public function serviceIsBound(string $service): bool
+    {
+        return array_key_exists($service, $this->m_services);
+    }
+
+    /**
+     * Fetch the service bound to a given identifier.
+     *
+     * @param string $service The identifier of the service sought.
+     *
+     * @return mixed The service.
+     * @throws ServiceNotFoundException If no service is bound to the identifier.
+     */
+    public function service(string $service)
+    {
+        if (!array_key_exists($service, $this->m_services)) {
+            throw new ServiceNotFoundException("The service {$service} was not found in the container.");
+        }
+
+        return $this->m_services[$service];
+    }
+
+    /**
+     * Implemented for PSR11 compatibility.
+     *
+     * @param string $id The service identifier.
+     * @return bool `true` if a service is bound to the given identifier, `false` otherwise.
+     */
+    public function has(string $id): bool
+    {
+        return $this->serviceIsBound($id);
+    }
+
+    /**
+     * Implemented for PSR11 comaptibility.
+     *
+     * @param string $id The service identifier.
+     * @return mixed The service instance.
+     * @throws ServiceNotFoundException if no service is bound for the provided identifier.
+     */
+    public function get(string $id)
+    {
+        return $this->service($id);
+    }
+
+    /**
+     * Fetch the application's translator.
 	 *
 	 * The application's translator handles translation of strings into the user's chosen language. Client code
 	 * should never need to use this method: it is far simpler to use the tr() function.
 	 *
-	 * @return Translator|null The translator.
+	 * @return TranslatorContract|null The translator.
 	 */
-	public function translator(): ?Translator
+	public function translator(): ?TranslatorContract
 	{
 		return $this->m_translator;
 	}
