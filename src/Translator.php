@@ -2,6 +2,8 @@
 
 namespace Equit;
 
+use Equit\Contracts\Translator as TranslatorContract;
+
 /**
  * Class to handle translation of UI strings into alternate languages.
  *
@@ -149,7 +151,8 @@ namespace Equit;
  * @settings _None_
  * @session _None_
  */
-class Translator {
+class Translator implements TranslatorContract
+{
 	/** @var int The column in the translation file that contains the file name. */
 	protected const FILE_COL = 0;
 

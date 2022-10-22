@@ -10,11 +10,13 @@
     }
   ],
   "require": {
+    "php": "^7.4 || ^8",
     "ext-mbstring": "*",
     "ext-dom": "*",
     "ext-pdo": "*",
     "ext-iconv": "*",
-    "ext-json": "*"
+    "ext-json": "*",
+    "psr/container": "^1.1 || ^2.0"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
