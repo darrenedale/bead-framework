@@ -25,6 +25,11 @@ class ApplicationTest extends TestCase
         };
     }
 
+    public function tearDown(): void
+    {
+        unset($this->m_app);
+    }
+
     public function testReplaceService(): void
     {
         $original = (object) ["foo" => "bar",];
