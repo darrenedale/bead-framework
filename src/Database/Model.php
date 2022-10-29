@@ -329,10 +329,12 @@ abstract class Model
      */
     public function insert(): bool
     {
+		$primaryKeyProperty = static::primaryKey();
+
         if ($this->connection()
-            ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([static::primaryKey()])}) VALUES ({$this->buildPropertyPlaceholderList([static::primaryKey()])})")
-            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== static::primaryKey()), ARRAY_FILTER_USE_KEY)))) {
-            $this->data[static::primaryKey()] = $this->connection()->lastInsertId();
+            ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([$primaryKeyProperty])}) VALUES ({$this->buildPropertyPlaceholderList([$primaryKeyProperty])})")
+            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== $primaryKeyProperty), ARRAY_FILTER_USE_KEY)))) {
+            $this->data[$primaryKeyProperty] = static::castInsertedKeyToPrimaryKey($this->connection()->lastInsertId());
             return true;
         }
 
@@ -448,6 +450,34 @@ abstract class Model
 			$model->populate($data);
 			return $model;
 		}, $data);
+	}
+
+	/**
+	 * Cast a value provided by the database connection from an INSERT statuement to the correct primary key type.
+	 *
+	 * PDO provides `lastInsertId()` as a string. This method can be used to cast the provided last insert ID to the
+	 * correct type for the primary column. The default implementation converts strings to ints if required. Reimplement
+	 * in your model classes if you need conversion to other types.
+	 *
+	 * @param $value The value to cast.
+	 *
+	 * @return mixed The value to store in the model for the primary key.
+	 */
+	protected static function castInsertedKeyToPrimaryKey($value)
+	{
+		$primaryKeyProperty = static::primaryKey();
+
+		if ("int" === static::$properties[$primaryKeyProperty]) {
+			$castValue = filter_var($value, FILTER_VALIDATE_INT, ["flags" => FILTER_NULL_ON_FAILURE,]);
+
+			if (!isset($castValue)) {
+				throw new ModelPropertyCastException(static::class, static::primaryKey(), "The value {$value} provided by the database for the primary key when inserting a " . static::table() . " row is not a valid int.");
+			}
+
+			return $castValue;
+		}
+
+		return $value;
 	}
 
     /**
