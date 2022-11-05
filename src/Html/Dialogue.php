@@ -2,6 +2,8 @@
 
 namespace Equit\Html;
 
+use function Equit\Helpers\String\html;
+
 /**
  * Represents a dialogue presented to the user on the page.
  *

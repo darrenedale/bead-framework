@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Equit\Html;
 
+use function Equit\Helpers\String\html;
+
 /**
  * A check box for inclusion in forms.
  *

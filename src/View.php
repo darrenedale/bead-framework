@@ -13,6 +13,8 @@ use RuntimeException;
 use TypeError;
 use function Equit\Traversable\some;
 
+use function Equit\Helpers\String\html;
+
 /**
  * Encapsulates a Bead view in your app.
  *

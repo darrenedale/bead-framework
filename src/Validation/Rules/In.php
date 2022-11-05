@@ -11,7 +11,7 @@ declare(strict_types=1);
 namespace Equit\Validation\Rules;
 
 use Equit\Validation\Rule;
-use function Equit\Traversable\all;
+use function Equit\Helpers\Iterable\all;
 
 /**
  * Validator rule to ensure that some data is in a given set of values.

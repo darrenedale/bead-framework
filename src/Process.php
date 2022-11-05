@@ -6,7 +6,8 @@ namespace Equit;
 use Closure;
 use RuntimeException;
 use InvalidArgumentException;
-use function Equit\Traversable\all;
+
+use function Equit\Helpers\Iterable\all;
 
 /**
  * Encapsulation of an external process.

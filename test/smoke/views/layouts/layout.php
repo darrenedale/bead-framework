@@ -6,7 +6,7 @@ use Equit\View;
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-        <title><?= html($pageTitle) ?></title>
+        <title><?= Equit\Helpers\String\html($pageTitle) ?></title>
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
         <meta name="keywords" content="PHP framework MVC view bead" />
         <meta name="description" content="A simple test page for the view component of the Bead framework." />
@@ -19,7 +19,7 @@ use Equit\View;
 	<body>
         <header id="page-header">
             <img class="logo" src="/images/logo.svg" alt="logo "/>
-            <h1><?= html($pageTitle) ?></h1>
+            <h1><?= Equit\Helpers\String\html($pageTitle) ?></h1>
         </header>
 
         <!-- MAIN CONTAINER -->

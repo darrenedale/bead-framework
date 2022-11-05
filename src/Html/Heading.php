@@ -2,6 +2,8 @@
 
 namespace Equit\Html;
 
+use function Equit\Helpers\String\html;
+
 /**
  * A heading element for use in HTML pages.
  *

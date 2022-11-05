@@ -13,7 +13,7 @@ use PDO;
 use Prophecy\Call\Call;
 use ReflectionProperty;
 use TypeError;
-use function Equit\Traversable\all;
+use function Equit\Helpers\Iterable\all;
 
 /**
  * Test case for the database Model class.

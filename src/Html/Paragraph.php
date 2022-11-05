@@ -2,6 +2,8 @@
 
 namespace Equit\Html;
 
+use function Equit\Helpers\String\html;
+
 /**
  * A page element intended to act as a container for other page elements.
  *

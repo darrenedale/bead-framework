@@ -17,7 +17,9 @@ use PDOStatement;
 use ReflectionException;
 use ReflectionMethod;
 use TypeError;
-use function Equit\Traversable\all;
+
+use function Equit\Helpers\Iterable\all;
+use function Equit\Helpers\String\snakeToCamel;
 
 /**
  * Base class for database model classes.

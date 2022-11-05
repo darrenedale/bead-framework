@@ -21,6 +21,8 @@ use RuntimeException;
 use SplFileInfo;
 use UnexpectedValueException;
 
+use function Equit\Helpers\String\randomString;
+
 /**
  * Core Application class for sites/applications using the framework.
  *

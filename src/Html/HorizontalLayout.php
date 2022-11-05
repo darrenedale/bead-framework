@@ -2,6 +2,8 @@
 
 namespace Equit\Html;
 
+use function Equit\Helpers\String\html;
+
 /**
  * A HTML layout based on a single horizontal row.
  *

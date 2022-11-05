@@ -60,6 +60,8 @@
             "time": "2021-11-05T16:47:00+00:00"
         }
     ],
+    "content-hash": "301a1aad5de63de50a57636171b4871f",
+    "packages": [],
     "packages-dev": [
         {
             "name": "doctrine/instantiator",

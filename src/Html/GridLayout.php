@@ -5,6 +5,8 @@ namespace Equit\Html;
 use Equit\AppLog;
 use Equit\Html\Detail\GridLayoutItem;
 
+use function Equit\Helpers\String\html;
+
 /**
  * A HTML layout based on a two-dimensional grid.
  *

@@ -12,7 +12,7 @@ namespace Equit\Validation\Rules;
 
 use Equit\Validation\DatasetAwareRule;
 use InvalidArgumentException;
-use function Equit\Traversable\all;
+use function Equit\Helpers\Iterable\all;
 
 /**
  * Validator rule to ensure that some data is non-empty if all of another set of fields are non-empty.

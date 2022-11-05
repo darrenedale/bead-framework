@@ -2,6 +2,8 @@
 
 namespace Equit\Html;
 
+use function Equit\Helpers\String\html;
+
 /**
  *
  * Base class for all elements that can be added to the page.

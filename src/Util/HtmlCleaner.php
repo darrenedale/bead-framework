@@ -16,7 +16,9 @@ use DOMNode;
 use Exception;
 use InvalidArgumentException;
 use StdClass;
-use function Equit\Traversable\all;
+
+use function Equit\Helpers\Iterable\all;
+use function Equit\Helpers\String\toCodePoints;
 
 /**
  * Sanitise HTML according to configurable rules.

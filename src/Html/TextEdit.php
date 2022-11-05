@@ -4,6 +4,8 @@ namespace Equit\Html;
 
 use Equit\AppLog;
 
+use function Equit\Helpers\String\html;
+
 /**
  * A text editor for inclusion in forms.
  *

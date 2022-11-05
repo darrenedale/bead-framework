@@ -19,8 +19,9 @@ use ReflectionClass;
 use ReflectionFunction;
 use Throwable;
 use TypeError;
-use function Equit\Traversable\all;
-use function Equit\Traversable\isSubsetOf;
+
+use function Equit\Helpers\Iterable\all;
+use function Equit\Helpers\Iterable\isSubsetOf;
 
 /**
  * A simple router that routes requests based on the URI path.

@@ -26,6 +26,8 @@ use PDO;
 use PDOStatement;
 use RuntimeException;
 
+use function Equit\Helpers\String\randomString;
+
 /**
  * Cache a set of database results.
  *

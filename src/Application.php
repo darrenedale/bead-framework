@@ -17,6 +17,8 @@ use RuntimeException;
 use SplFileInfo;
 use Throwable;
 
+use function Equit\Helpers\String\stringify;
+
 /**
  * Abstract base class for all applications.
  *
@@ -457,7 +459,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
         if (isset($this->m_eventCallbacks[$event])) {
             foreach ($this->m_eventCallbacks[$event] as $callback) {
                 if (!is_callable($callback, false)) {
-                    AppLog::error("ignoring un-callable callback: " . stringify($callback), __FILE__, __LINE__, __FUNCTION__);
+                    AppLog::warning("ignoring un-callable callback: " . stringify($callback), __FILE__, __LINE__, __FUNCTION__);
                     continue;
                 }
 

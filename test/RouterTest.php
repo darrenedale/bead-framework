@@ -16,7 +16,8 @@ use Equit\Exceptions\UnroutableRequestException;
 use Equit\Contracts\Router as RouterContract;
 use Equit\Router;
 use Equit\Request;
-use function Equit\Traversable\accumulate;
+
+use function Equit\Helpers\Iterable\accumulate;
 
 /**
  * Test case for the Router class.

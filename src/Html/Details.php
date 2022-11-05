@@ -4,6 +4,8 @@ namespace Equit\Html;
 
 use TypeError;
 
+use function Equit\Helpers\String\html;
+
 /**
  * A &lt;details&gt; page element.
  *

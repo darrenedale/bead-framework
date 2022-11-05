@@ -2,6 +2,8 @@
 
 namespace Equit\Html;
 
+use function Equit\Helpers\String\html;
+
 /**
  * @deprecated The HTML library of the framework has been replaced by the `View` and `Layout` classes. It will be
  * removed before the version 2.0 release.

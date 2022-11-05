@@ -4,6 +4,8 @@ namespace Equit\Html;
 
 use Equit\AppLog;
 
+use function Equit\Helpers\String\html;
+
 /**
  * A widget for inclusion in forms that contains a fixed value with a display text.
  *
