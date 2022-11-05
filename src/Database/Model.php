@@ -1349,6 +1349,58 @@ abstract class Model
     }
 
     /**
+     * Query for models where a property is greater than a given value.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return array The matching models.
+     */
+    public static function queryGreaterThan(string $property, $value): array
+    {
+        return self::querySimpleComparison($property, ">", $value);
+    }
+
+    /**
+     * Query for models where a property is greater than or equal to  a given value.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return array The matching models.
+     */
+    public static function queryGreaterThanEquals(string $property, $value): array
+    {
+        return self::querySimpleComparison($property, ">=", $value);
+    }
+
+    /**
+     * Query for models where a property is less than a given value.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return array The matching models.
+     */
+    public static function queryLessThan(string $property, $value): array
+    {
+        return self::querySimpleComparison($property, "<", $value);
+    }
+
+    /**
+     * Query for models where a property is less than or equal to  a given value.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return array The matching models.
+     */
+    public static function queryLessThanEquals(string $property, $value): array
+    {
+        return self::querySimpleComparison($property, "<=", $value);
+    }
+
+    /**
      * Query for models where a property is like a given value.
      *
      * The value supports the SQL wildcards '%' and '_'.
@@ -1444,6 +1496,18 @@ abstract class Model
             case "<>":
                 return static::queryNotEquals($properties, $value);
 
+            case ">":
+                return static::queryGreaterThan($properties, $value);
+
+            case ">=":
+                return static::queryGreaterThanEquals($properties, $value);
+
+            case "<":
+                return static::queryLessThan($properties, $value);
+
+            case "<=":
+                return static::queryLessThanEquals($properties, $value);
+
             case "like":
                 return static::queryLike($properties, $value);
 
@@ -1535,6 +1599,66 @@ abstract class Model
 	public static function removeNotEquals(string $property, $value): bool
 	{
 		return self::removeSimpleComparison($property, "<>", $value);
+	}
+
+	/**
+	 * Remove models where a property is greater than a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeGreaterThan(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, ">", $value);
+	}
+
+	/**
+	 * Remove models where a property is greater than or equal to a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeGreaterThanEquals(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, ">=", $value);
+	}
+
+	/**
+	 * Remove models where a property is less than a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeLessThan(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, "<", $value);
+	}
+
+	/**
+	 * Remove models where a property is less than or equal to a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeLessThanEquals(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, "<=", $value);
 	}
 
 	/**
@@ -1640,6 +1764,18 @@ abstract class Model
 			case "!=":
 			case "<>":
 				return static::removeNotEquals($properties, $value);
+
+			case ">":
+				return static::removeGreaterThan($properties, $value);
+
+			case ">=":
+				return static::removeGreaterThanEquals($properties, $value);
+
+			case "<":
+				return static::removeLessThan($properties, $value);
+
+			case "<=":
+				return static::removeLessThanEquals($properties, $value);
 
 			case "like":
 				return static::removeLike($properties, $value);
