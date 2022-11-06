@@ -1211,6 +1211,44 @@ abstract class Model
     }
 
     /**
+     * Helper to prepare values for a WHERE clause involving field => value equality pairs.
+     *
+     * The provided array is treated as a map of field => value pairs to be used as a set of `field` = value expressions
+     * in a WHERE clause. It returns a typle of two, containing the SQL expressions to use in a PDO prepared statement's
+     * WHERE clause in the first member, and an array of values to bind to the prepared statement in the second member.
+     * It guarantees that the number of items in the values array matches the number of placeholders in the expressions
+     * array.
+     *
+     * For example, given the array ["name" => "Darren", "deleted_at" => null,]
+     *
+     * The returned tuple will be
+     * [
+     *   ["`name` = ?", "`deleted_at` IS NULL",],
+     *   ["Darren",],
+     * ]
+     *
+     * @param array $terms The pairs of fields and values.
+     *
+     * @return array[] A tuple of the WHERE expressions and values to bind.
+     */
+    protected static function prepareEqualityWheres(array $terms): array
+    {
+        $values = [];
+        $where = [];
+
+        foreach ($terms as $property => $value) {
+            if (is_null($value)) {
+                $where[] = "`{$property}` IS NULL";
+            } else {
+                $where[] = "`{$property}` = ?";
+                $values[] = $value;
+            }
+        }
+
+        return [$where, $values];
+    }
+
+    /**
      * Helper to provide WHERE expressions that should be applied to all queries.
      *
      * This is useful as a customisation point to inject fixed conditions into queries, for example to exclude soft-
@@ -1256,22 +1294,14 @@ abstract class Model
      */
     protected static function queryAll(array $terms): array
     {
+        [$where, $values] = self::prepareEqualityWheres($terms);
+
         $stmt = static::defaultConnection()->prepare(
-            "SELECT " .
-            static::buildSelectList() . " FROM `" . static::table() . "` WHERE " .
-            implode(
-                " AND ",
-                array_map(
-                    function(string $property): string {
-                        return "`{$property}` = ?";
-                    },
-                    array_keys($terms)
-                )
-            ) .
-            static::fixedWhereExpressionsSql()
+            "SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (" .
+            implode(" AND ", $where) . ")" . static::fixedWhereExpressionsSql()
         );
 
-        $stmt->execute(array_values($terms));
+        $stmt->execute($values);
         return static::makeModelsFromQuery($stmt);
     }
 
@@ -1287,22 +1317,14 @@ abstract class Model
      */
     protected static function queryAny(array $terms): array
     {
+        [$where, $values] = self::prepareEqualityWheres($terms);
+
         $stmt = static::defaultConnection()->prepare(
-            "SELECT " .
-            static::buildSelectList() . " FROM `" . static::table() . "` WHERE (" .
-            implode(
-                " OR ",
-                array_map(
-                    function(string $property): string {
-                        return "`{$property}` = ?";
-                    },
-                    array_keys($terms)
-                )
-            ) .
-            ")" . static::fixedWhereExpressionsSql()
+            "SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (" .
+            implode(" OR ", $where) . ")" . static::fixedWhereExpressionsSql()
         );
 
-        $stmt->execute(array_values($terms));
+        $stmt->execute($values);
         return static::makeModelsFromQuery($stmt);
     }
 
@@ -1332,6 +1354,11 @@ abstract class Model
      */
     public static function queryEquals(string $property, $value): array
     {
+        if (is_null($value)) {
+            $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `{$property}` IS NULL");
+            return $stmt->execute();
+        }
+
         return self::querySimpleComparison($property, "=", $value);
     }
 
@@ -1538,20 +1565,10 @@ abstract class Model
 	 */
 	protected static function removeWhereAll(array $terms): bool
 	{
-		$stmt = static::defaultConnection()->prepare(
-			"DELETE FROM `" . static::$table . "` WHERE " .
-			implode(
-				" AND ",
-				array_map(
-					function(string $property): string {
-						return "`{$property}` = ?";
-					},
-					array_keys($terms)
-				)
-			)
-		);
-
-		return $stmt->execute(array_values($terms));
+        [$values, $where] = self::prepareEqualityWheres($terms);
+		$stmt = static::defaultConnection()
+            ->prepare("DELETE FROM `" . static::table() . "` WHERE " . implode(" AND ", $where));
+		return $stmt->execute($values);
 	}
 
 	/**
@@ -1567,7 +1584,7 @@ abstract class Model
 	 */
 	protected static final function removeSimpleComparison(string $property, string $operator, $value): bool
 	{
-		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` {$operator} ?)");
+		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)");
 		return $stmt->execute([$value]);
 	}
 
@@ -1583,6 +1600,11 @@ abstract class Model
 	 */
 	public static function removeEquals(string $property, $value): bool
 	{
+        if (is_null($value)) {
+            $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NULL");
+            return $stmt->execute();
+        }
+
 		return self::removeSimpleComparison($property, "=", $value);
 	}
 
@@ -1598,7 +1620,12 @@ abstract class Model
 	 */
 	public static function removeNotEquals(string $property, $value): bool
 	{
-		return self::removeSimpleComparison($property, "<>", $value);
+        if (is_null($value)) {
+            $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NOT NULL");
+            return $stmt->execute();
+        }
+
+        return self::removeSimpleComparison($property, "<>", $value);
 	}
 
 	/**
