@@ -148,7 +148,7 @@ class UriSigner implements UriSignerContract
 	 *
 	 * @return string The query string.
 	 */
-	protected function queryString(array $parameters): string
+	final protected static function queryString(array $parameters): string
 	{
 		return implode(
 			"&",
@@ -158,6 +158,26 @@ class UriSigner implements UriSignerContract
 				array_values($parameters)
 			)
 		);
+	}
+
+	/**
+	 * Extract the URI parameters from a URI string.
+	 *
+	 * @param string $uri The URI.
+	 *
+	 * @return array<string,string> The parameters.
+	 */
+	final protected static function uriParameters(string $uri): array
+	{
+		$queryString = parse_url($uri, PHP_URL_QUERY);
+		$params = [];
+
+		foreach (explode("&", $queryString) as $param) {
+			[$key, $value] = explode("=", $param, 2);
+			$params[urldecode($key)] = urldecode($value);
+		}
+
+		return $params;
 	}
 
 	/**
@@ -180,7 +200,7 @@ class UriSigner implements UriSignerContract
 	{
 		assert($expires instanceof DateTimeInterface || is_int($expires), new TypeError("Argument for parameter #3 '\$expires' is not valied - expected DateTimeInterface or int."));
 		$parameters["expires"] = ($expires instanceof DateTimeInterface ? $expires->getTimestamp() : $expires);
-		$queryString = $this->queryString($parameters);
+		$queryString = self::queryString($parameters);
 
 		if (false === strpos($uri, "?")) {
 			$uri = "{$uri}?{$queryString}";
@@ -192,14 +212,26 @@ class UriSigner implements UriSignerContract
 	}
 
 	/**
-	 * Verify the URI was signed with the configured parameters and secret.
+	 * Verify the URI was signed with the configured secret and has not expired.
 	 *
 	 * @param string $signedUri The URI to verify.
+	 * @param int|DateTimeInterface|null $at The point in time at which to do the verification. Defaults to `null` for
+	 * the current time.
 	 *
 	 * @return bool `true` if the signature is verified, `false` if not.
 	 */
-	public function verify(string $signedUri): bool
+	public function verify(string $signedUri, $at = null): bool
 	{
+		if (!isset($at)) {
+			$at = time();
+		} else {
+			assert($at instanceof DateTimeInterface || is_int($at), new TypeError("Argument for parameter #2 '\$at' is not valied - expected DateTimeInterface or int."));
+
+			if ($at instanceof DateTimeInterface) {
+				$at = $at->getTimestamp();
+			}
+		}
+
 		// NOTE signature MUST always be last URI parameter, this is mandated in sign() above
 		$signaturePos = strpos($signedUri, "signature=");
 
@@ -210,6 +242,9 @@ class UriSigner implements UriSignerContract
 		$signature = substr($signedUri, $signaturePos + 10);
 		// subtract 1 to adjust for the & or ? preceding the signature URI parameter
 		$uri = substr($signedUri, 0, $signaturePos - 1);
-		return $this->signature($uri) === $signature;
+		$params = self::uriParameters($uri);
+		$params["expires"] = filter_var($params["expires"] ?? null, FILTER_VALIDATE_INT, ["flags" => FILTER_NULL_ON_FAILURE,]);
+
+		return isset($params["expires"]) && $params["expires"] > $at && $this->signature($uri) === $signature;
 	}
 }
