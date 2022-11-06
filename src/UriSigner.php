@@ -2,9 +2,11 @@
 
 namespace Equit;
 
+use DateTimeInterface;
 use Equit\Contracts\UriSigner as UriSignerContract;
 use Equit\Exceptions\UriSignerException;
 use InvalidArgumentException;
+use TypeError;
 
 /**
  * Implementation of the UriSigner contract that uses HMACs for signatures.
@@ -29,10 +31,7 @@ class UriSigner implements UriSignerContract
 	/** @var string The secret to use when signing URIs. */
 	private string $m_secret;
 
-	/** @var array The parameters to use when generating the signature. */
-	private array $m_parameters;
-
-	/**
+  /**
 	 * Initialise a new signer.
 	 *
 	 * @param string $algorithm The optional algorithm
@@ -41,7 +40,6 @@ class UriSigner implements UriSignerContract
 	{
 		$this->setAlgorithm($algorithm);
 		$this->m_secret = "";
-		$this->m_parameters = [];
 	}
 
 	/**
@@ -49,9 +47,18 @@ class UriSigner implements UriSignerContract
 	 */
 	public function __destruct()
 	{
-		// scrub before it's deallocated
-		if (0 < strlen($this->m_secret)) {
-			$this->m_secret = random_bytes(strlen($this->m_secret));
+		self::scrubSecret($this->m_secret);
+	}
+
+	/**
+	 * Helper to securely erase a string before it's deallocated.
+	 *
+	 * @param string $secret A reference to the string to scrub.
+	 */
+	final protected static function scrubSecret(string &$secret): void
+	{
+		for ($idx = 0; $idx < strlen($secret); ++$idx) {
+			$secret[$idx] = chr(mt_rand(0, 255));
 		}
 	}
 
@@ -103,22 +110,6 @@ class UriSigner implements UriSignerContract
 	}
 
 	/**
-	 * Fluently set the parameters to use when signing URIs.
-	 *
-	 * UriSigners are immutable, a clone of the current signer is altered and returned.
-	 *
-	 * @param array $parameters The paramters.
-	 *
-	 * @return $this A UriSigner for further methdo chaining.
-	 */
-	public function withParameters(array $parameters): self
-	{
-		$clone = clone $this;
-		$clone->m_parameters = $parameters;
-		return $clone;
-	}
-
-	/**
 	 * Fetch the secret to use to sign URIs.
 	 *
 	 * @return string The secret.
@@ -126,16 +117,6 @@ class UriSigner implements UriSignerContract
 	public function secret(): string
 	{
 		return $this->m_secret;
-	}
-
-	/**
-	 * Fetch the URI parameters to use in the signing process.
-	 *
-	 * @return array The parameters.
-	 */
-	public function parameters(): array
-	{
-		return $this->m_parameters;
 	}
 
 	/**
@@ -151,26 +132,24 @@ class UriSigner implements UriSignerContract
 		$secret = $this->secret();
 
 		if (self::MinimumSecretLength > strlen($secret)) {
-			// scrub before it's deallocated
-			$secret = random_bytes(strlen($secret));
+			self::scrubSecret($secret);
 			throw new UriSignerException("The secret for signing the URI is too short or has not been set.");
 		}
 
 		$signature = hash_hmac($this->algorithm(), $uriWithParams, $secret);
-		// scrub before it's deallocated
-		$secret = random_bytes(strlen($secret));
+		self::scrubSecret($secret);
 		return $signature;
 	}
 
 	/**
 	 * Helper to generate the query string for the signer's configured parameters.
 	 *
+	 * @param array $parameters The parameters to place in the query string.
+	 *
 	 * @return string The query string.
 	 */
-	protected function queryString(): string
+	protected function queryString(array $parameters): string
 	{
-		$parameters = $this->parameters();
-
 		return implode(
 			"&",
 			array_map(
@@ -182,20 +161,26 @@ class UriSigner implements UriSignerContract
 	}
 
 	/**
-	 * Sign the given URI with the configured secret and parameters.
+	 * Sign the given URI with the configured secret.
 	 *
-	 * The parameters will be appended to the URI, appropriately encoded. The singature will then be appended using the
-	 * URL parameter signature. The parameters for the signer must not include a signature parameter. The generated
-	 * signature parameter will always be the last parameter in the signed URI. In order to pass verification, the URI
-	 * must be exactly as returned from sign() - the order of the parameters must not change.
+	 * The parameters will be appended to the URI, appropriately encoded. An expiry parameter will also be added with
+	 * the UNIX timestamp equivalent of the given expiry. The singature will then be appended using the URL parameter
+	 * `signature`. The parameters, if not empty, must not include a `signature` parameter. If the given parameters
+	 * include an `expires` parameter, it will be overwritten. The generated signature parameter will always be the last
+	 * parameter in the signed URI. In order to pass verification, the URI must be exactly as returned from sign() - the
+	 * order of the parameters must not change. The signed URI will only pass verify() until the expiry time.
 	 *
 	 * @param string $uri The URI to sign.
+	 * @param array<string,string> $parameters The parameters for the URI. Can be empty.
+	 * @param int|DateTimeInterface $expires The point in time at which the signed URI expires.
 	 *
 	 * @return string The signed URI.
 	 */
-	public function sign(string $uri): string
+	public function sign(string $uri, array $parameters, $expires): string
 	{
-		$queryString = $this->queryString();
+		assert($expires instanceof DateTimeInterface || is_int($expires), new TypeError("Argument for parameter #3 '\$expires' is not valied - expected DateTimeInterface or int."));
+		$parameters["expires"] = ($expires instanceof DateTimeInterface ? $expires->getTimestamp() : $expires);
+		$queryString = $this->queryString($parameters);
 
 		if (false === strpos($uri, "?")) {
 			$uri = "{$uri}?{$queryString}";
@@ -203,11 +188,7 @@ class UriSigner implements UriSignerContract
 			$uri = "{$uri}&{$queryString}";
 		}
 
-		if (false === strpos($uri, "?")) {
-			return "{$uri}?signature={$this->signature($uri)}";
-		} else {
-			return "{$uri}&signature={$this->signature($uri)}";
-		}
+		return "{$uri}&signature={$this->signature($uri)}";
 	}
 
 	/**

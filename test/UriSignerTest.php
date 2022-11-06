@@ -2,6 +2,8 @@
 
 namespace Equit\Test;
 
+use DateTime;
+use DateTimeImmutable;
 use Equit\Exceptions\UriSignerException;
 use Equit\UriSigner;
 use PHPUnit\Framework\TestCase;
@@ -11,14 +13,17 @@ class UriSignerTest extends TestCase
 	private const Secret = "yhkja7hbvlkajsdu6fb";
 	private const Parameters = [
 		"id" => 1,
-		"expires" => "2022-10-31T16:00:00UTC"
+		"token" => "XF12jka8hbyHIofu6dSauioCHUIsfui754g",
 	];
+
+	private const ExpiresTimestamp = 1667232000;
+	private const ExpiresDateTime = "2022-10-31T16:00:00UTC";
 
 	private UriSigner $m_signer;
 
 	public function setUp(): void
 	{
-		$this->m_signer = (new UriSigner())->usingSecret(self::Secret)->withParameters(self::Parameters);
+		$this->m_signer = (new UriSigner())->usingSecret(self::Secret);
 	}
 
 	public function tearDown(): void
@@ -31,8 +36,6 @@ class UriSignerTest extends TestCase
 		$signer = new UriSigner();
 		$this->assertEquals(UriSigner::DefaultAlgorithm, $signer->algorithm());
 		$this->assertEquals("", $signer->secret());
-		$this->assertIsArray($signer->parameters());
-		$this->assertEmpty($signer->parameters());
 	}
 
 	public function testConstructorWithAlgorithm(): void
@@ -40,8 +43,6 @@ class UriSignerTest extends TestCase
 		$signer = new UriSigner("md5");
 		$this->assertEquals("md5", $signer->algorithm());
 		$this->assertEquals("", $signer->secret());
-		$this->assertIsArray($signer->parameters());
-		$this->assertEmpty($signer->parameters());
 	}
 
 	public function testConstructorWithUnsupportedAlgorithm(): void
@@ -52,8 +53,12 @@ class UriSignerTest extends TestCase
 
 	public function testSign(): void
 	{
-		$expected = "https://bead.framework/protected/uri?id=1&expires=2022-10-31T16%3A00%3A00UTC&signature=88d42152ae89e49bfda93917f983e5abfd24bafe";
-		$actual = $this->m_signer->sign("https://bead.framework/protected/uri");
+		$expected = "https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf";
+		$actual = $this->m_signer->sign("https://bead.framework/protected/uri", self::Parameters, self::ExpiresTimestamp);
+		$this->assertEquals($expected, $actual);
+		$actual = $this->m_signer->sign("https://bead.framework/protected/uri", self::Parameters, new DateTime(self::ExpiresDateTime));
+		$this->assertEquals($expected, $actual);
+		$actual = $this->m_signer->sign("https://bead.framework/protected/uri", self::Parameters, new DateTimeImmutable(self::ExpiresDateTime));
 		$this->assertEquals($expected, $actual);
 	}
 
@@ -86,22 +91,8 @@ class UriSignerTest extends TestCase
 	public function testSecret(): void
 	{
 		$this->assertEquals(self::Secret, $this->m_signer->secret());
-	}
-
-	public function testWithParameters(): void
-	{
-		$parameters = [
-			"id" => 2,
-			"expires" => "2022-11-30T18:01:01UTC",
-		];
-
-		$this->assertNotEqualsCanonicalizing($parameters, $this->m_signer->parameters());
-		$this->assertEqualsCanonicalizing(self::Parameters, $this->m_signer->parameters());
-		$actual = $this->m_signer->withParameters($parameters);
-		$this->assertInstanceOf(UriSigner::class, $actual);
-		$this->assertNotSame($this->m_signer, $actual);
-		$this->assertEqualsCanonicalizing(self::Parameters, $this->m_signer->parameters());
-		$this->assertEqualsCanonicalizing($parameters, $actual->parameters());
+		$signer = $this->m_signer->usingSecret("some-other-secret");
+		$this->assertEquals("some-other-secret", $signer->secret());
 	}
 
 	public function testAlgorithm(): void
@@ -114,59 +105,28 @@ class UriSignerTest extends TestCase
 		}
 	}
 
-	/**
-	 * Data provider for testParameters.
-	 *
-	 * @return iterable The test data.
-	 */
-	public function dataForTestParameters(): iterable
-	{
-		yield from [
-			"typical" => [
-				[
-					"id" => 2,
-					"expires" => "2022-11-30T18:01:01UTC",
-				],
-			],
-			"empty" => [
-				[],
-			],
-		];
-	}
-
-	/**
-	 * @dataProvider dataForTestParameters
-	 *
-	 * @param array $parameters The test parameters.
-	 */
-	public function testParameters(array $parameters): void
-	{
-		$this->assertEquals(self::Parameters, $this->m_signer->parameters());
-		$signer = $this->m_signer->withParameters($parameters);
-		$this->assertEqualsCanonicalizing($parameters, $signer->parameters());
-	}
-
 	public function testVerify(): void
 	{
-		$signed = $this->m_signer->sign("http://bead.framework/protected/uri");
+		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp);
 		$this->assertTrue($this->m_signer->verify($signed));
 	}
 
 	public function testVerifyRejects(): void
 	{
-		$signed = $this->m_signer->sign("http://bead.framework/protected/uri");
+		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp);
 		$this->assertFalse($this->m_signer->verify("{$signed}x"));
 		$this->assertFalse($this->m_signer->verify(substr($signed, 0, -1)));
 	}
 
 	public function testVerifyRejectsWitReorderedParameters(): void
 	{
-		$signed = $this->m_signer->sign("http://bead.framework/protected/uri");
+		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", self::Parameters, self::ExpiresTimestamp);
 		$signature = substr($signed, strpos($signed, "&signature=") + 11);
 
-		$actual = "http://bead.framework/protected/uri?expires=" .
-			urlencode(self::Parameters["expires"]) .
+		$actual = "http://bead.framework/protected/uri?token=" .
+			urlencode(self::Parameters["token"]) .
 			"&id=" . urlencode(self::Parameters["id"]) .
+			"&expires=" . self::ExpiresTimestamp .
 			"&signature={$signature}";
 
 		// prove that the signed and the actual URIs are the same, bar the order of parameters
