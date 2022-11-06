@@ -10,15 +10,22 @@ use PHPUnit\Framework\TestCase;
 
 class UriSignerTest extends TestCase
 {
+    /** @var string The secret to use in the test signer. */
 	private const Secret = "yhkja7hbvlkajsdu6fb";
+
+    /** @var array The test parameters to use for URIs to be signed. */
 	private const Parameters = [
 		"id" => 1,
 		"token" => "XF12jka8hbyHIofu6dSauioCHUIsfui754g",
 	];
 
+    /** @var array The expiry timestamp to use for testing. */
 	private const ExpiresTimestamp = 1667232000;
+
+    /** @var array The expiry DateTime to use for testing - tests require this to be the same as the timestamp above. */
 	private const ExpiresDateTime = "2022-10-31T16:00:00UTC";
 
+    /** @var UriSigner The test signer. */
 	private UriSigner $m_signer;
 
 	public function setUp(): void
@@ -31,6 +38,9 @@ class UriSignerTest extends TestCase
 		unset($this->m_signer);
 	}
 
+    /**
+     * Ensure the default constructor initialises the signer with the expected state.
+     */
 	public function testDefaultConstructor(): void
 	{
 		$signer = new UriSigner();
@@ -38,6 +48,9 @@ class UriSignerTest extends TestCase
 		$this->assertEquals("", $signer->secret());
 	}
 
+    /**
+     * Ensure we can set a hashing algorithm in the constructor.
+     */
 	public function testConstructorWithAlgorithm(): void
 	{
 		$signer = new UriSigner("md5");
@@ -45,12 +58,18 @@ class UriSignerTest extends TestCase
 		$this->assertEquals("", $signer->secret());
 	}
 
+    /**
+     * Ensure setting an unsupported algorithm in the constructor throws.
+     */
 	public function testConstructorWithUnsupportedAlgorithm(): void
 	{
 		$this->expectException(UriSignerException::class);
 		new UriSigner("_0987fads089yhn 2q37&^%&*%^&");
 	}
 
+    /**
+     * Ensure we can set the hashing algorithm.
+     */
 	public function testSetAlgorithm(): void
 	{
 		$algos = hash_hmac_algos();
@@ -66,6 +85,9 @@ class UriSignerTest extends TestCase
 		}
 	}
 
+    /**
+     * Ensure we can retrieve the hashing algorithm.
+     */
     public function testAlgorithm(): void
     {
         $this->assertEquals(UriSigner::DefaultAlgorithm, $this->m_signer->algorithm());
@@ -76,6 +98,9 @@ class UriSignerTest extends TestCase
         }
     }
 
+    /**
+     * Ensure setting the secret is immutable.
+     */
 	public function testUsingSecret(): void
 	{
 		$this->assertNotEquals("some-other-secret", $this->m_signer->secret());
@@ -87,6 +112,9 @@ class UriSignerTest extends TestCase
 		$this->assertEquals("some-other-secret", $actual->secret());
 	}
 
+    /**
+     * Ensure secret() returns the expected secret.
+     */
 	public function testSecret(): void
 	{
 		$this->assertEquals(self::Secret, $this->m_signer->secret());
@@ -94,6 +122,9 @@ class UriSignerTest extends TestCase
 		$this->assertEquals("some-other-secret", $signer->secret());
 	}
 
+    /**
+     * Ensure sign() produces the expected URIs when given timestamps and DateTime objects as expiry times.
+     */
     public function testSign(): void
     {
         $expected = "https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf";
@@ -105,24 +136,36 @@ class UriSignerTest extends TestCase
         $this->assertEquals($expected, $actual);
     }
 
+    /**
+     * Ensure verify() can correctly verify a signature.
+     */
 	public function testVerify(): void
 	{
 		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], PHP_INT_MAX);
 		$this->assertTrue($this->m_signer->verify($signed));
 	}
 
+    /**
+     * Ensure specifying a verification time with a timestamp verifies as expected.
+     */
 	public function testVerifyWithTimestamp(): void
 	{
 		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp);
 		$this->assertTrue($this->m_signer->verify($signed, self::ExpiresTimestamp - 1));
 	}
 
+    /**
+     * Ensure specifying a verification time with a DateTime object verifies as expected.
+     */
 	public function testVerifyWithDateTime(): void
 	{
 		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp + (60 * 60 * 24 * 7));
 		$this->assertTrue($this->m_signer->verify($signed, new DateTime(self::ExpiresDateTime)));
 	}
 
+    /**
+     * Ensure mismatching signatures result in verification failure.
+     */
 	public function testVerifyRejectsBadSignature(): void
 	{
 		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], PHP_INT_MAX);
@@ -130,18 +173,27 @@ class UriSignerTest extends TestCase
 		$this->assertFalse($this->m_signer->verify(substr($signed, 0, -1)));
 	}
 
+    /**
+     * Ensure we can specify a verification test time using a timestamp and get a verification fail when expected.
+     */
 	public function testVerifyRejectsExpiredTimestamp(): void
 	{
 		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp);
 		$this->assertFalse($this->m_signer->verify($signed, self::ExpiresTimestamp + 1));
 	}
 
+    /**
+     * Ensure we can specify a verification test time using a DateTime object and get a verification fail when expected.
+     */
 	public function testVerifyRejectsExpiredDateTime(): void
 	{
 		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp - 1);
 		$this->assertFalse($this->m_signer->verify($signed, new DateTime(self::ExpiresDateTime)));
 	}
 
+    /**
+     * Ensure expired signed URIs are rejected when the time to verify at is now.
+     */
 	public function testVerifyRejectsExpiredNow(): void
 	{
 		$now = time() - 1;
@@ -165,6 +217,9 @@ class UriSignerTest extends TestCase
         $this->assertFalse($this->m_signer->verify($signed, self::ExpiresTimestamp));
     }
 
+    /**
+     * Ensure signed URIs aren't verified when the order of the URI parameters has been changed.
+     */
 	public function testVerifyRejectsWitReorderedParameters(): void
 	{
 		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", self::Parameters, self::ExpiresTimestamp);
