@@ -31,7 +31,7 @@ class UriSigner implements UriSignerContract
 	/** @var string The secret to use when signing URIs. */
 	private string $m_secret;
 
-	/**
+  /**
 	 * Initialise a new signer.
 	 *
 	 * @param string $algorithm The optional algorithm
