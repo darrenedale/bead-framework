@@ -107,15 +107,34 @@ class UriSignerTest extends TestCase
 
 	public function testVerify(): void
 	{
-		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp);
+		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], PHP_INT_MAX);
 		$this->assertTrue($this->m_signer->verify($signed));
 	}
 
-	public function testVerifyRejects(): void
+	public function testVerifyWithTimestamp(): void
 	{
 		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp);
+		$this->assertTrue($this->m_signer->verify($signed, self::ExpiresTimestamp - 1));
+	}
+
+	public function testVerifyRejectsBadSignature(): void
+	{
+		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], PHP_INT_MAX);
 		$this->assertFalse($this->m_signer->verify("{$signed}x"));
 		$this->assertFalse($this->m_signer->verify(substr($signed, 0, -1)));
+	}
+
+	public function testVerifyRejectsExpired(): void
+	{
+		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], self::ExpiresTimestamp);
+		$this->assertFalse($this->m_signer->verify($signed, self::ExpiresTimestamp + 1));
+	}
+
+	public function testVerifyRejectsExpiredNow(): void
+	{
+		$now = time() - 1;
+		$signed = $this->m_signer->sign("http://bead.framework/protected/uri", [], $now);
+		$this->assertFalse($this->m_signer->verify($signed));
 	}
 
 	public function testVerifyRejectsWitReorderedParameters(): void

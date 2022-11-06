@@ -33,7 +33,7 @@ interface UriSigner
 	 *
 	 * @param string $uri The URI to sign.
 	 * @param array<string,string> $parameters The parameters for the URI.
-	 * @param int|DateTimeInterface $expires The point in time at which the signed URI expires = null.
+	 * @param int|DateTimeInterface $expires The point in time at which the signed URI expires.
 	 *
 	 * @return string The signed URI.
 	 */
@@ -43,8 +43,10 @@ interface UriSigner
 	 * Verify a signed URI.
 	 *
 	 * @param string $uri The signed URI
+	 * @param int|DateTimeInterface|null $at The point in time at which to verify the URI. Defaults to `null`, which
+	 * means verify at the current time.
 	 *
 	 * @return bool `true` if it's verified, `false` if not.
 	 */
-	public function verify(string $signedUri): bool;
+	public function verify(string $signedUri, $at = null): bool;
 }
