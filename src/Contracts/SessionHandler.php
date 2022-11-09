@@ -1,11 +1,11 @@
 <?php
 
-namespace Equit\Session;
+namespace Equit\Contracts;
 
 /**
  * Interface for session storage backends.
  */
-interface Handler
+interface SessionHandler
 {
     /**
      * Initialise a new handler.

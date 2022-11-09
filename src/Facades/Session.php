@@ -7,7 +7,7 @@ use Equit\Exceptions\ExpiredSessionIdUsedException;
 use Equit\Exceptions\SessionExpiredException;
 use Equit\Exceptions\SessionNotFoundException;
 use Equit\Session\PrefixedAccessor;
-use Equit\Session\Handler;
+use Equit\Session\SessionHandler;
 use Exception;
 use LogicException;
 use Equit\Session\Session as BeadSession;
@@ -19,7 +19,7 @@ use Equit\Session\Session as BeadSession;
  * @method static int sessionIdRegenerationPeriod()
  * @method static int expiredSessionGracePeriod()
  * @method static string id()
- * @method static Handler handler()
+ * @method static SessionHandler handler()
  * @method static int createdAt()
  * @method static int lastUsedAt()
  * @method static bool has(string $key)

@@ -2,10 +2,13 @@
 
 namespace Equit\Session;
 
+use Equit\Contracts\SessionHandler;
 use Equit\Exceptions\ExpiredSessionIdUsedException;
 use Equit\Exceptions\InvalidSessionHandlerException;
 use Equit\Exceptions\SessionExpiredException;
 use Equit\Exceptions\SessionNotFoundException;
+use Equit\Session\Handlers\File as FileSessionHandler;
+use Equit\Session\Handlers\Php as PhpSessionHandler;
 use Equit\WebApplication;
 use Exception;
 use InvalidArgumentException;
@@ -38,8 +41,8 @@ class Session implements DataAccessor
     /** @var int The default number of seconds after which an unused session is considered dead. */
     public const DefaultSessionIdleTimeoutPeriod = 1800;
 
-    /** @var Handler The session handler. */
-    private Handler $m_handler;
+    /** @var SessionHandler The session handler. */
+    private SessionHandler $m_handler;
 
     /** @var array<string, int> Stores the keys in the session that are transient, and how many more requests they will
      * last before being removed. */
@@ -47,8 +50,8 @@ class Session implements DataAccessor
 
     /** @var array<string,class-string> The known session handler types. */
     private static array $m_handlerClasses = [
-        "file" => FileHandler::class,
-        "php" => PhpHandler::class,
+        "file" => FileSessionHandler::class,
+        "php" => PhpSessionHandler::class,
     ];
 
     /**
@@ -150,9 +153,9 @@ class Session implements DataAccessor
     /**
      * Fetch the session handler.
      *
-     * @return Handler The handler.
+     * @return SessionHandler The handler.
      */
-    public function handler(): Handler
+    public function handler(): SessionHandler
     {
         return $this->m_handler;
     }
@@ -201,9 +204,15 @@ class Session implements DataAccessor
         return $this->handler()->get($key) ?? $default;
     }
 
-    /**
-     * @inheritDoc
-     */
+	/**
+	 * Extract the data for one or more keys from the session.
+	 *
+	 * The keys extracted will be removed from the session data.
+	 *
+	 * @param $keys string|array<string> The key(s) to extract.
+	 *
+	 * @return mixed|array<string,mixed> The extracted data.
+	 */
     public function extract($keys)
     {
         if (is_string($keys)) {
@@ -236,9 +245,11 @@ class Session implements DataAccessor
         return $data;
     }
 
-    /**
-     * @inheritDoc
-     */
+	/**
+	 * Fetch all the session data.
+	 *
+	 * @return array<string, mixed> The session data.
+	 */
     public function all(): array
     {
         return $this->handler()->all();
@@ -406,7 +417,7 @@ class Session implements DataAccessor
      * @throws SessionNotFoundException if the session handler for the identified session can't be created.
      * @throws Exception if the session handler specified in the configuration file is not recognised.
      */
-    protected static function createHandler(?string $id): Handler
+    protected static function createHandler(?string $id): SessionHandler
     {
         $type = WebApplication::instance()->config("session.handler", "file");
         $class = self::$m_handlerClasses[$type] ?? null;

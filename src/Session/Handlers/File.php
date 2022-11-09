@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Session;
+namespace Equit\Session\Handlers;
 
 use DirectoryIterator;
 use SplFileInfo;
@@ -16,7 +16,7 @@ use Equit\Exceptions\SessionNotFoundException;
 /**
  * Session handler that uses files to store session data persistently.
  */
-class FileHandler implements Handler
+class File implements SessionHandler
 {
     /** @var string Default session storage location, relative to application root directory. */
     private const DefaultSessionDirectory = "data/session";

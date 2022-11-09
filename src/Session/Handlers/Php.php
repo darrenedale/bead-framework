@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Session;
+namespace Equit\Session\Handlers;
 
 /**
  * Session handler that uses PHP's built-in sessions.
@@ -9,7 +9,7 @@ namespace Equit\Session;
  * session storage backend you are advised not to access `$_SESSION` directly. Only one session using this handler can
  * be in use at any given time.
  */
-class PhpHandler implements Handler
+class Php implements SessionHandler
 {
     /** @inheritDoc */
     public function __construct(?string $id = null)

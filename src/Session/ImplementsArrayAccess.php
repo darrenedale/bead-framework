@@ -2,8 +2,8 @@
 
 namespace Equit\Session;
 
-// TODO look into whether we can support PHP8 and PHP7 without this duplication - currently PHP8 complains with an
-//  E_NOTICE if the trait is defined without a return type of mixed for offsetGet(), which PHP7.4 won't recognise.
+// currently PHP8 complains with an E_NOTICE if the trait is defined without a return type of mixed for offsetGet(),
+//  which PHP7.4 won't recognise. So we have to duplicate the code.
 if (PHP_MAJOR_VERSION >= 8) {
     /**
      * Shared implementation of ArrayAccess interface for session DataAccessors
