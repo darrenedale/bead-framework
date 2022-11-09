@@ -427,7 +427,8 @@ class WebApplication extends Application
 	/**
 	 * Load all the available plugins.
 	 *
-	 * Plugins are loaded from the configured plugins path. All valid plugins found are loaded and instantiated.
+	 * Plugins are loaded from the default plugins path. All valid plugins found are loaded and instantiated. The
+	 * error log will contain details of any plugins that failed to load.
 	 *
 	 * @return bool true if the plugins path was successfully scanned for plugins, false otherwise.
 	 * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
