@@ -28,5 +28,5 @@ spl_autoload_register(function (string $className) {
         $path = implode("/", $path) . "/";
     }
 
-    @include("{$baseDir}/{$path}{$className}.php");
+    include("{$baseDir}/{$path}{$className}.php");
 });
