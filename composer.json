@@ -18,10 +18,15 @@
     "ext-json": "*",
     "psr/container": "^1.1 || ^2.0"
   },
+  "suggest": {
+    "ext-pcntl": "*",
+    "ext-parallel": "*"
+  },
   "require-dev": {
     "mockery/mockery": "^1.5",
     "phpunit/phpunit": "^9.5",
-    "ext-uopz": "^6||^7"
+    "ext-uopz": "^6||^7",
+    "ext-shmop": "*"
   },
   "autoload": {
     "psr-4": {

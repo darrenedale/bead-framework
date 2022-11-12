@@ -9,7 +9,7 @@ use Equit\Contracts\ThreadExecutor;
  *
  * This is only for use when no other means of running the callable in parallel is available.
  */
-class SerialThreadExecutor implements ThreadExecutor
+class SerialExecutor implements ThreadExecutor
 {
 
     public function exec(callable $entryPoint, ...$args): int

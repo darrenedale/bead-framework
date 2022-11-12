@@ -2,10 +2,10 @@
 
 require_once __DIR__ . "/../../../src/autoload.php";
 
-use Equit\Threads\PcntlThreadExecutor;
+use Equit\Threads\ParallelExecutor as Executor;
 use Equit\Threads\Thread;
 
-$executor = new PcntlThreadExecutor();
+$executor = new Executor();
 $thread1 = new Thread($executor);
 $thread2 = new Thread($executor);
 

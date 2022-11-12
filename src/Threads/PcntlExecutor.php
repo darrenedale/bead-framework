@@ -6,10 +6,29 @@ use Equit\Contracts\ThreadExecutor;
 use LogicException;
 use RuntimeException;
 
-class PcntlThreadExecutor implements ThreadExecutor
+/**
+ * Execute a thread using the fork() syscall.
+ */
+class PcntlExecutor implements ThreadExecutor
 {
-    private array $m_pids = [];
+    /** @var array The PIDs of the forked threads. */
+    private array $m_pids;
 
+    /** Initialise a new executor instance. */
+    public function __construct()
+    {
+        assert(extension_loaded("pcntl"), new RuntimeException("The pcntl extension is required for the PcntlExecutor thread backend."));
+        $this->m_pids = [];
+    }
+
+    /**
+     * Fork a new process for a thread.
+     *
+     * @param callable $entryPoint The entry point for the thread.
+     * @param ...$args The arguments to pass to the entry point.
+     *
+     * @return int The PID of the spawned process.
+     */
     public function exec(callable $entryPoint, ...$args): int
     {
         $pid = pcntl_fork();
@@ -26,11 +45,17 @@ class PcntlThreadExecutor implements ThreadExecutor
             default:
                 // this is the original
                 $this->m_pids[] = $pid;
-                print_r($this->m_pids);
                 return $pid;
         }
     }
 
+    /**
+     * Check whether a thread is running.
+     *
+     * @param int $threadId The ID of the thread's PID.
+     *
+     * @return bool `true` if the thread is running, `false` otherwise.
+     */
     public function isRunning(int $threadId): bool
     {
         $idx = array_search($threadId, $this->m_pids);

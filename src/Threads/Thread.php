@@ -5,24 +5,45 @@ namespace Equit\Threads;
 use Equit\Contracts\ThreadExecutor;
 use LogicException;
 
+/**
+ * Run some PHP code asynchronously.
+ */
 class Thread
 {
+    /**
+     * @var ThreadExecutor The executor that is responsible for running the thread.
+     */
     private ThreadExecutor $m_executor;
+
+    /**
+     * @var int|null The unique ID of the thread.
+     */
     private ?int $m_threadId = null;
 
+    /**
+     * Initialise a new thread.
+     *
+     * @param ThreadExecutor|null $executor The executor that will run the thread.
+     */
     public function __construct(?ThreadExecutor $executor = null)
     {
         if (!isset($executor)) {
             if (extension_loaded("pcntl")) {
-                $executor = new PcntlThreadExecutor();
+                $executor = new PcntlExecutor();
             } else {
-                $executor = new SerialThreadExecutor();
+                $executor = new SerialExecutor();
             }
         }
 
         $this->m_executor = $executor;
     }
 
+    /**
+     * Start the thread by calling a function.
+     *
+     * @param callable $entryPoint The function to call.
+     * @param ...$args The arguments to provide to the function.
+     */
     public function start(callable $entryPoint, ...$args): void
     {
         if ($this->isRunning()) {
@@ -32,6 +53,11 @@ class Thread
         $this->m_threadId = $this->m_executor->exec($entryPoint, $args);
     }
 
+    /**
+     * Check whether the thread is running.
+     *
+     * @return bool `true` if it's running, `false` otherwise.
+     */
     public function isRunning(): bool
     {
         if (!isset($this->m_threadId)) {
