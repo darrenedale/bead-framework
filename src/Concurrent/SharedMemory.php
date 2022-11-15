@@ -466,7 +466,7 @@ class SharedMemory
     public function unserialize(int $offset = 0, ?int $size = null)
     {
         $data = $this->read($offset, $size);
-        $value = unserialize($data);
+        $value = @unserialize($data);
 
         if (false === $value && $data !== serialize(false)) {
             $end = $offset + ($size ?? $this->size() - $offset) - 1;
