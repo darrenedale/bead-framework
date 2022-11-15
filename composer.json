@@ -18,6 +18,9 @@
     "ext-json": "*",
     "psr/container": "^1.1 || ^2.0"
   },
+  "suggest": {
+    "ext-shmop": "*",
+  },
   "require-dev": {
     "mockery/mockery": "^1.5",
     "phpunit/phpunit": "^9.5",
