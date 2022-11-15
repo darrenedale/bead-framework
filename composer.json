@@ -19,7 +19,7 @@
     "psr/container": "^1.1 || ^2.0"
   },
   "suggest": {
-    "ext-shmop": "*",
+    "ext-shmop": "*"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
