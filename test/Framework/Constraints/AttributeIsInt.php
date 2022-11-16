@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Test\Framework\Constraints;
+namespace BeadTests\Framework\Constraints;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Constraint\Constraint;

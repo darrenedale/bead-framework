@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Traversable;
+namespace BeadTests\Traversable;
 
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 use TypeError;
 
 use function Equit\Traversable\map;

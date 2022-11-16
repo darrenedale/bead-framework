@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Test\Validation\Rules;
+namespace BeadTests\Validation\Rules;
 
 use Equit\Validation\Validator;
 use Equit\Validation\ValidatorAwareRule;

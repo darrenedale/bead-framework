@@ -1,10 +1,10 @@
 <?php
 
-namespace Equit\Test\Testing;
+namespace BeadTests\Testing;
 
 use BadMethodCallException;
-use Equit\Test\Framework\CallTracker;
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\CallTracker;
+use BeadTests\Framework\TestCase;
 use Equit\Testing\XRay;
 use LogicException;
 

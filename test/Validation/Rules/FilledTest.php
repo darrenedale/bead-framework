@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Validation\Rules;
+namespace BeadTests\Validation\Rules;
 
 use Equit\Validation\Rule;
 use Equit\Validation\Rules\Filled;
 use Generator;
-use Equit\Test\Framework\RuleTestCase;
+use BeadTests\Framework\RuleTestCase;
 use TypeError;
 
 /**

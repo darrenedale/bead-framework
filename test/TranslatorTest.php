@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Test;
+namespace BeadTests;
 
 use Equit\Translator;
 use PHPUnit\Framework\TestCase;

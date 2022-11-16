@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Test\Framework;
+namespace BeadTests\Framework;
 
 /**
  * Class to facilitate tracking of method calls in test doubles.

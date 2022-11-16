@@ -1,12 +1,12 @@
 <?php
 
-namespace Equit\Test\Database;
+namespace BeadTests\Database;
 
 use DateTime;
 use Equit\Database\Model;
 use Equit\Exceptions\ModelPropertyCastException;
-use Equit\Test\Framework\CallTracker;
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\CallTracker;
+use BeadTests\Framework\TestCase;
 use Generator;
 use LogicException;
 use PDO;
