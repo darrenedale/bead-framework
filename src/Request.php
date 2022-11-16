@@ -629,13 +629,7 @@ class Request
 
 			$req->setPathInfo($pathInfo);
 			$req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
-			$url = "{$req->protocol()}://{$req->host()}{$_SERVER["REQUEST_URI"]}";
-
-			if (!empty($_SERVER["QUERY_STRING"])) {
-				$url .= "?{$_SERVER["QUERY_STRING"]}";
-			}
-
-			$req->m_url = $url;
+			$req->m_url = "{$req->protocol()}://{$req->host()}{$_SERVER["REQUEST_URI"]}";
 			Request::$s_originalRequest = $req;
 		}
 
