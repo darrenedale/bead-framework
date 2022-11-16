@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Test;
+namespace BeadTests;
 
 use DateTime;
 use DateTimeImmutable;

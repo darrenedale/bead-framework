@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Util;
+namespace BeadTests\Util;
 
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 use Equit\Util\Minutes;
 use TypeError;
 

@@ -28,7 +28,8 @@
   },
   "autoload": {
     "psr-4": {
-      "Equit\\": "src"
+      "Equit\\": "src",
+      "BeadTests\\": "test"
     },
     "files": [
       "src/includes/array.php",

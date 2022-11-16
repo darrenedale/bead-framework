@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Test\Validation\Rules;
+namespace BeadTests\Validation\Rules;
 
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 use Equit\Validation\Rules\Nullable;
 use Equit\Validation\ValidatorAwareRule;
 use Equit\Validation\Validator;

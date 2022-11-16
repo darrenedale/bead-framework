@@ -11,7 +11,7 @@ use Equit\Contracts\Response;
 use Equit\Exceptions\ConflictingRouteException;
 use Equit\Exceptions\DuplicateRouteParameterNameException;
 use Equit\Exceptions\InvalidRouteParameterNameException;
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 use Equit\Exceptions\UnroutableRequestException;
 use Equit\Contracts\Router as RouterContract;
 use Equit\Router;

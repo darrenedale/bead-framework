@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Concurrent;
+namespace BeadTests\Concurrent;
 
 use Equit\Concurrent\SharedMemory;
 use Equit\Exceptions\Concurrent\SharedMemoryException;
 use Equit\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 use Equit\Testing\XRay;
 use Equit\Util\ScopeGuard;
 use InvalidArgumentException;
