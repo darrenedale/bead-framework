@@ -2,6 +2,7 @@
 
 namespace Equit\Database;
 
+use LogicException;
 use PDO;
 use PDOException;
 use PDOStatement;
@@ -25,10 +26,17 @@ trait ExecutesQueries
      *
      * @return PDOStatement The prepared statement.
      * @throws PDOException if the built query is not valid for the connection.
+     * @throws LogicException if no connection is set..
      */
     public function prepare(): PDOStatement
     {
-        return $this->connection()->prepare($this->sql());
+        $connection = $this->connection();
+
+        if (!isset($connection)) {
+            throw new LogicException("No database connection set for executing query.");
+        }
+
+        return $connection->prepare($this->sql());
     }
 
     /**

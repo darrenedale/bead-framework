@@ -5,21 +5,18 @@ namespace Equit\Database;
 
 use Closure;
 use DateTime;
-use Equit\Application;
-use Equit\Exceptions\DuplicateColumnNameException;
-use Equit\Exceptions\DuplicateTableNameException;
-use Equit\Exceptions\InvalidColumnException;
-use Equit\Exceptions\InvalidLimitException;
-use Equit\Exceptions\InvalidLimitOffsetException;
-use Equit\Exceptions\InvalidOperatorException;
-use Equit\Exceptions\InvalidOrderByDirection;
-use Equit\Exceptions\InvalidQueryExpressionException;
-use Equit\Exceptions\InvalidTableNameException;
-use Equit\Exceptions\OrphanedJoinException;
+use Equit\Exceptions\Database\DuplicateColumnNameException;
+use Equit\Exceptions\Database\DuplicateTableNameException;
+use Equit\Exceptions\Database\InvalidColumnNameException;
+use Equit\Exceptions\Database\InvalidLimitException;
+use Equit\Exceptions\Database\InvalidLimitOffsetException;
+use Equit\Exceptions\Database\InvalidOperatorException;
+use Equit\Exceptions\Database\InvalidOrderByDirectionException;
+use Equit\Exceptions\Database\InvalidQueryExpressionException;
+use Equit\Exceptions\Database\InvalidTableNameException;
+use Equit\Exceptions\Database\OrphanedJoinException;
 use InvalidArgumentException;
-use PDO;
 use TypeError;
-use function Equit\Traversable\all;
 use function Equit\Traversable\some;
 
 trait BuildsQueries
@@ -75,14 +72,14 @@ trait BuildsQueries
      * @param string $name The name.
      *
      * @return array The table and column name.
-     * @throws InvalidColumnException
+     * @throws InvalidColumnNameException
      */
     protected static function extractTableAndColumn(string $name): array
     {
         $names = explode(".", $name);
 
         if (some($names, fn(string $name): bool => empty($name))) {
-            throw new InvalidColumnException($name, "The column {$name} has an empty table and/or column name.");
+            throw new InvalidColumnNameException($name, "The column {$name} has an empty table and/or column name.");
         }
 
         switch (count($names)) {
@@ -93,7 +90,7 @@ trait BuildsQueries
                 return $names;
 
             default:
-                throw new InvalidColumnException($name, "The column {$name} cannot be extracted to an optional table and a column name.");
+                throw new InvalidColumnNameException($name, "The column {$name} cannot be extracted to an optional table and a column name.");
         }
     }
 
@@ -124,7 +121,7 @@ trait BuildsQueries
      * @param string $name The name to wrap.
      *
      * @return string The wrapped name(s).
-     * @throws InvalidColumnException
+     * @throws InvalidColumnNameException
      */
     protected static function wrapNames(string $name): string
     {
@@ -187,7 +184,7 @@ trait BuildsQueries
      *
      * @return $this The QueryBuilder instance for further method chaining.
      * @throws DuplicateColumnNameException If an array of columns contains a duplicate name or alias.
-     * @throws InvalidColumnException If any column in the selects is not a valid SQL column.
+     * @throws InvalidColumnNameException If any column in the selects is not a valid SQL column.
      */
     public function select($columns): self
     {
@@ -201,7 +198,7 @@ trait BuildsQueries
      *
      * @return $this The QueryBuilder instance for further method chaining.
      * @throws DuplicateColumnNameException
-     * @throws InvalidColumnException
+     * @throws InvalidColumnNameException
      */
     public function addSelect($columns): self
     {
@@ -238,7 +235,7 @@ trait BuildsQueries
      *
      * @return $this The QueryBuilder instance for further method chaining.
      * @throws DuplicateColumnNameException
-     * @throws InvalidColumnException
+     * @throws InvalidColumnNameException
      */
     public function addRawSelect(string $expression, string $alias): self
     {
@@ -259,7 +256,7 @@ trait BuildsQueries
      *
      * @return $this The QueryBuilder instance for further method chaining.
      * @throws DuplicateTableNameException
-     * @throws InvalidColumnException
+     * @throws InvalidColumnNameException
      * @throws InvalidTableNameException
      */
     public function from($table, ?string $alias = null): self
@@ -305,7 +302,7 @@ trait BuildsQueries
      *
      * @return $this The QueryBuilder instance for further method chaining.
      * @throws DuplicateTableNameException if the alias is already used in the query.
-     * @throws InvalidColumnException
+     * @throws InvalidColumnNameException
      * @throws InvalidTableNameException
      */
     public function rawFrom($expression, ?string $alias = null): self
@@ -381,7 +378,7 @@ trait BuildsQueries
      * @param string|null $expr2
      *
      * @return void
-     * @throws InvalidColumnException
+     * @throws InvalidColumnNameException
      * @throws InvalidTableNameException if either table or the alias is not a valid SQL table name.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
      */
@@ -490,7 +487,7 @@ trait BuildsQueries
      * @param string|null $expr2
      *
      * @return void
-     * @throws InvalidColumnException
+     * @throws InvalidColumnNameException
      * @throws InvalidTableNameException if either table or the alias is not a valid SQL table name.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
      * @throws InvalidQueryExpressionException if the expression to join is empty.
@@ -856,7 +853,7 @@ trait BuildsQueries
      * @param string|int|float|DateTime|null $value The value. Ignored if `$field` is an array.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      * @throws InvalidOperatorException If the operator is provided and is empty.
      */
     public function where($column, $operatorOrValue = null, $value = null): self
@@ -893,7 +890,7 @@ trait BuildsQueries
      * @param string|int|float|DateTime|null $value The value. Ignored if `$field` is an array.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhere($column, $operatorOrValue = null, $value = null): self
     {
@@ -924,7 +921,7 @@ trait BuildsQueries
      * @param array<string>|string $columns The column(s) to check are not null.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If one of the columns provided is not a valid SQL column name.
+     * @throws InvalidColumnNameException If one of the columns provided is not a valid SQL column name.
      */
     public function whereNotNull($columns): self
     {
@@ -948,7 +945,7 @@ trait BuildsQueries
      * @param array<string>|string $columns The column(s) to check are not null.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If one of the columns provided is not a valid SQL column name.
+     * @throws InvalidColumnNameException If one of the columns provided is not a valid SQL column name.
      */
     public function orWhereNotNull($columns): self
     {
@@ -972,7 +969,7 @@ trait BuildsQueries
      * @param array<string>|string $columns The column(s) to check are null.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereNull($columns): self
     {
@@ -996,7 +993,7 @@ trait BuildsQueries
      * @param array<string>|string $columns The columns(s) to check are null.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereNull($columns): self
     {
@@ -1028,7 +1025,7 @@ trait BuildsQueries
      * @param string|null $value The contained text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereContains($columns, ?string $value = null): self
     {
@@ -1064,7 +1061,7 @@ trait BuildsQueries
      * @param string|null $value The contained text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereContains($columns, ?string $value = null): self
     {
@@ -1100,7 +1097,7 @@ trait BuildsQueries
      * @param string|null $value The contained text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereNotContains($columns, ?string $value = null): self
     {
@@ -1136,7 +1133,7 @@ trait BuildsQueries
      * @param string|null $value The contained text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereNotContains($columns, ?string $value = null): self
     {
@@ -1172,7 +1169,7 @@ trait BuildsQueries
      * @param string|null $value The leading text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereStartsWith($columns, ?string $value = null): self
     {
@@ -1208,7 +1205,7 @@ trait BuildsQueries
      * @param string|null $value The leading text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereStartsWith($columns, ?string $value = null): self
     {
@@ -1244,7 +1241,7 @@ trait BuildsQueries
      * @param string|null $value The leading text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereNotStartsWith($columns, ?string $value = null): self
     {
@@ -1280,7 +1277,7 @@ trait BuildsQueries
      * @param string|null $value The leading text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereNotStartsWith($columns, ?string $value = null): self
     {
@@ -1316,7 +1313,7 @@ trait BuildsQueries
      * @param string|null $value The trailing text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereEndsWith($columns, ?string $value = null): self
     {
@@ -1352,7 +1349,7 @@ trait BuildsQueries
      * @param string|null $value The trailing text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereEndsWith($columns, ?string $value = null): self
     {
@@ -1388,7 +1385,7 @@ trait BuildsQueries
      * @param string|null $value The trailing text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereNotEndsWith($columns, ?string $value = null): self
     {
@@ -1424,7 +1421,7 @@ trait BuildsQueries
      * @param string|null $value The trailing text, if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereNotEndsWith($columns, ?string $value = null): self
     {
@@ -1460,7 +1457,7 @@ trait BuildsQueries
      * @param array|null $value The array of values for the column, if `$column` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereIn($columns, ?array $value = null): self
     {
@@ -1508,7 +1505,7 @@ trait BuildsQueries
      * @param array|null $value The array of values for the column, if `$column` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereIn($columns, ?array $value = null): self
     {
@@ -1556,7 +1553,7 @@ trait BuildsQueries
      * @param array|null $value The array of values for the column, if `$column` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereNotIn($columns, ?array $value = null): self
     {
@@ -1604,7 +1601,7 @@ trait BuildsQueries
      * @param array|null $value The array of values for the column, if `$column` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereNotIn($columns, ?array $value = null): self
     {
@@ -1649,7 +1646,7 @@ trait BuildsQueries
      * @param int|null $value The length if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function whereLength($columns, $operatorOrValue = null, $value = null): self
     {
@@ -1695,7 +1692,7 @@ trait BuildsQueries
      * @param int|null $value The length if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
      */
     public function orWhereLength($columns, $operatorOrValue = null, $value = null): self
     {
@@ -1737,8 +1734,8 @@ trait BuildsQueries
      * @param string|null $direction The direction. Must be "ASC" or "DESC". Ignored if `$columns` is an array.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnException If any field is not valid.
-     * @throws InvalidOrderByDirection If any field's ORDER BY direction is not valid.
+     * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidOrderByDirectionException If any field's ORDER BY direction is not valid.
      */
     public function orderBy($columns, ?string $direction = null): self
     {
@@ -1759,7 +1756,7 @@ trait BuildsQueries
         // validate first, we don't want to end up with half the order bys applied if there's an invalid one in the set
         foreach ($columns as $direction) {
             if (!in_array(strtoupper($direction), $validDirections)) {
-                throw new InvalidOrderByDirection($direction, "The direction {$direction} is not valid for an SQL ORDER BY clause.");
+                throw new InvalidOrderByDirectionException($direction, "The direction {$direction} is not valid for an SQL ORDER BY clause.");
             }
         }
 
@@ -1781,7 +1778,7 @@ trait BuildsQueries
      * @param string|null $direction The direction. Must be "ASC" or "DESC". Ignored if `$columns` is an array.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidOrderByDirection if any expression is paired with an invalid ORDER BY direction.
+     * @throws InvalidOrderByDirectionException if any expression is paired with an invalid ORDER BY direction.
      */
     public function rawOrderBy($expressions, ?string $direction = "ASC"): self
     {
@@ -1802,7 +1799,7 @@ trait BuildsQueries
         // validate first, we don't want to end up with half the order bys applied if there's an invalid one in the set
         foreach ($expressions as $direction) {
             if (!in_array(strtoupper($direction), $validDirections)) {
-                throw new InvalidOrderByDirection($direction, "The direction {$direction} is not valid for an SQL ORDER BY clause.");
+                throw new InvalidOrderByDirectionException($direction, "The direction {$direction} is not valid for an SQL ORDER BY clause.");
             }
         }
 
@@ -2000,7 +1997,7 @@ trait BuildsQueries
      * compiled clause will be returned.
      *
      * @return string The compiled WHERE clause.
-     * @throws InvalidOrderByDirection if any of the ORDER BY clauses contains a direction that is neither ASC nor DESC.
+     * @throws InvalidOrderByDirectionException if any of the ORDER BY clauses contains a direction that is neither ASC nor DESC.
      */
     protected function compileOrderBys(): string
     {
@@ -2045,7 +2042,7 @@ trait BuildsQueries
      * Fetch the SQL for the query.
      *
      * @return string The SQL.
-     * @throws InvalidOrderByDirection
+     * @throws InvalidOrderByDirectionException
      * @throws OrphanedJoinException
      */
     public function sql(): string

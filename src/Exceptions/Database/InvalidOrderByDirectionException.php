@@ -1,13 +1,13 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Equit\Exceptions\Database;
 
 use Throwable;
 
 /**
  * Exception thrown when an ORDER BY clause in a QueryBuilder has been given an invalid direction.
  */
-class InvalidOrderByDirection extends QueryBuilderException
+class InvalidOrderByDirectionException extends QueryBuilderException
 {
     /** @var string The invalid direction. */
     private string $m_direction;

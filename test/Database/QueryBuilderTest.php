@@ -4,28 +4,27 @@
 
 declare(strict_types=1);
 
-namespace Database;
+namespace BeadTests\Database;
 
+use BeadTests\Framework\TestCase;
 use DateTime;
 use Equit\Application;
 use Equit\Database\Connection;
 use Equit\Database\QueryBuilder;
-use Equit\Exceptions\DuplicateColumnNameException;
-use Equit\Exceptions\DuplicateTableNameException;
-use Equit\Exceptions\InvalidColumnException;
-use Equit\Exceptions\InvalidLimitException;
-use Equit\Exceptions\InvalidLimitOffsetException;
-use Equit\Exceptions\InvalidOperatorException;
-use Equit\Exceptions\InvalidOrderByDirection;
-use Equit\Exceptions\InvalidQueryExpressionException;
-use Equit\Exceptions\InvalidTableNameException;
-use Equit\Exceptions\OrphanedJoinException;
-use Equit\Test\Framework\TestCase;
+use Equit\Exceptions\Database\DuplicateColumnNameException;
+use Equit\Exceptions\Database\DuplicateTableNameException;
+use Equit\Exceptions\Database\InvalidColumnNameException;
+use Equit\Exceptions\Database\InvalidLimitException;
+use Equit\Exceptions\Database\InvalidLimitOffsetException;
+use Equit\Exceptions\Database\InvalidOperatorException;
+use Equit\Exceptions\Database\InvalidOrderByDirectionException;
+use Equit\Exceptions\Database\InvalidQueryExpressionException;
+use Equit\Exceptions\Database\InvalidTableNameException;
+use Equit\Exceptions\Database\OrphanedJoinException;
 use InvalidArgumentException;
 use Mockery;
 use PDO;
 use TypeError;
-
 use function uopz_set_return;
 use function uopz_unset_return;
 
@@ -78,9 +77,9 @@ class QueryBuilderTest extends TestCase
      * QueryBuilder::orderBy()
      *
      * @return QueryBuilder
-     * @throws \Equit\Exceptions\DuplicateColumnNameException
-     * @throws \Equit\Exceptions\DuplicateTableNameException
-     * @throws \Equit\Exceptions\InvalidColumnException
+     * @throws \Equit\Exceptions\Database\DuplicateColumnNameException
+     * @throws \Equit\Exceptions\Database\DuplicateTableNameException
+     * @throws \Equit\Exceptions\Database\InvalidColumnNameException
      */
     private static function createBuilder($selects = null, $tables = null, $wheres = null, $orderBys = null): QueryBuilder
     {
@@ -105,6 +104,9 @@ class QueryBuilderTest extends TestCase
         return $builder;
     }
 
+    /**
+     * Ensure default constructor sets expected state.
+     */
     public function testDefaultConstructor(): void
     {
         $builder = new QueryBuilder();
@@ -381,9 +383,9 @@ class QueryBuilderTest extends TestCase
      * @param string|null $exceptionClass
      *
      * @return void
-     * @throws \Equit\Exceptions\DuplicateColumnNameException
-     * @throws \Equit\Exceptions\DuplicateTableNameException
-     * @throws \Equit\Exceptions\InvalidColumnException
+     * @throws \Equit\Exceptions\Database\DuplicateColumnNameException
+     * @throws \Equit\Exceptions\Database\DuplicateTableNameException
+     * @throws \Equit\Exceptions\Database\InvalidColumnNameException
      */
     public function testFromWithDuplicates(string $table, ?string $alias, string $otherTable, ?string $otherAlias, ?string $exceptionClass = null): void
     {
@@ -1205,8 +1207,8 @@ class QueryBuilderTest extends TestCase
             "typicalSingleFieldWithNOT LIKEOperator" => ["foo", "NOT LIKE", "value", "WHERE (`foo` NOT LIKE 'value')"],
             "typicalSingleFieldWithTableAndNOT LIKEOperator" => ["foobar.foo", "NOT LIKE", "value", "WHERE (`foobar`.`foo` NOT LIKE 'value')"],
 
-            "invalidEmptyField" => ["", "NOT LIKE", "value", "", InvalidColumnException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "NOT LIKE", "value", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "NOT LIKE", "value", "", InvalidColumnNameException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "NOT LIKE", "value", "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1363,9 +1365,9 @@ class QueryBuilderTest extends TestCase
                 "`flan` IS NULL AND `ban` IS NULL AND `flub` IS NULL AND `bax` IS NULL AND `flip` IS NULL AND " .
                 "`blip` IS NULL",
             ],
-            "invalidEmptyField" => ["", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1418,9 +1420,9 @@ class QueryBuilderTest extends TestCase
                 "`flan` IS NOT NULL AND `ban` IS NOT NULL AND `flub` IS NOT NULL AND `bax` IS NOT NULL AND `flip` IS NOT NULL AND " .
                 "`blip` IS NOT NULL",
             ],
-            "invalidEmptyField" => ["", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1483,10 +1485,10 @@ class QueryBuilderTest extends TestCase
                 "`fit` LIKE '%bot%' AND `for` LIKE '%bur%' AND `fell` LIKE '%bill%' AND `flag` LIKE '%blug%' AND `frux` LIKE '%brax%' AND " .
                 "`fig` LIKE '%bag%' AND `fey` LIKE '%buy%' AND `flap` LIKE '%bilk%' AND `frop` LIKE '%blap%' AND `fum` LIKE '%bom%'",
             ],
-            "invalidEmptyField" => ["", "bar", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1550,10 +1552,10 @@ class QueryBuilderTest extends TestCase
                 "`fit` NOT LIKE '%bot%' AND `for` NOT LIKE '%bur%' AND `fell` NOT LIKE '%bill%' AND `flag` NOT LIKE '%blug%' AND `frux` NOT LIKE '%brax%' AND " .
                 "`fig` NOT LIKE '%bag%' AND `fey` NOT LIKE '%buy%' AND `flap` NOT LIKE '%bilk%' AND `frop` NOT LIKE '%blap%' AND `fum` NOT LIKE '%bom%'",
             ],
-            "invalidEmptyField" => ["", "bar", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1617,10 +1619,10 @@ class QueryBuilderTest extends TestCase
                 "`fit` LIKE 'bot%' AND `for` LIKE 'bur%' AND `fell` LIKE 'bill%' AND `flag` LIKE 'blug%' AND `frux` LIKE 'brax%' AND " .
                 "`fig` LIKE 'bag%' AND `fey` LIKE 'buy%' AND `flap` LIKE 'bilk%' AND `frop` LIKE 'blap%' AND `fum` LIKE 'bom%'",
             ],
-            "invalidEmptyField" => ["", "bar", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1684,10 +1686,10 @@ class QueryBuilderTest extends TestCase
                 "`fit` NOT LIKE 'bot%' AND `for` NOT LIKE 'bur%' AND `fell` NOT LIKE 'bill%' AND `flag` NOT LIKE 'blug%' AND `frux` NOT LIKE 'brax%' AND " .
                 "`fig` NOT LIKE 'bag%' AND `fey` NOT LIKE 'buy%' AND `flap` NOT LIKE 'bilk%' AND `frop` NOT LIKE 'blap%' AND `fum` NOT LIKE 'bom%'",
             ],
-            "invalidEmptyField" => ["", "bar", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1751,10 +1753,10 @@ class QueryBuilderTest extends TestCase
                 "`fit` LIKE '%bot' AND `for` LIKE '%bur' AND `fell` LIKE '%bill' AND `flag` LIKE '%blug' AND `frux` LIKE '%brax' AND " .
                 "`fig` LIKE '%bag' AND `fey` LIKE '%buy' AND `flap` LIKE '%bilk' AND `frop` LIKE '%blap' AND `fum` LIKE '%bom'",
             ],
-            "invalidEmptyField" => ["", "bar", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1818,10 +1820,10 @@ class QueryBuilderTest extends TestCase
                 "`fit` NOT LIKE '%bot' AND `for` NOT LIKE '%bur' AND `fell` NOT LIKE '%bill' AND `flag` NOT LIKE '%blug' AND `frux` NOT LIKE '%brax' AND " .
                 "`fig` NOT LIKE '%bag' AND `fey` NOT LIKE '%buy' AND `flap` NOT LIKE '%bilk' AND `frop` NOT LIKE '%blap' AND `fum` NOT LIKE '%bom'",
             ],
-            "invalidEmptyField" => ["", "bar", "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1898,10 +1900,10 @@ class QueryBuilderTest extends TestCase
             "invalidNonArray" => [["foo" => ""], null, "", InvalidArgumentException::class,],
             "invalidMultipleOneNonArray" => [["foo" => ["foo", "bar",], "bar" => "", "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
 
-            "invalidEmptyField" => ["", ["bar", "baz",], "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", ["bar", "baz",], "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -1975,10 +1977,10 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyInArrayAsArray" => [["foo" => [],], null, "", InvalidArgumentException::class,],
             "invalidMultipleOneEmptyInArray" => [["foo" => ["foo", "bar",], "bar" => [], "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
 
-            "invalidEmptyField" => ["", ["bar", "baz",], "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", ["bar", "baz",], "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -2033,10 +2035,10 @@ class QueryBuilderTest extends TestCase
             "extremeNegativeLengthAsArray" => [["foobar.foo" => -1,], null, "LENGTH(`foobar`.`foo`) = -1",],
             "extremeLargeNegativeLengthAsArray" => [["foobar.foo" => -999999999,], null, "LENGTH(`foobar`.`foo`) = -999999999",],
 
-            "invalidEmptyField" => ["", 42, "", InvalidColumnException::class,],
+            "invalidEmptyField" => ["", 42, "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], 42, "", InvalidArgumentException::class,],
-            "invalidMalformedField" => ["foo.bar.baz", 42, "", InvalidColumnException::class,],
-            "invalidMalformedFieldArray" => [["foo.bar.baz" => 42,], null, "", InvalidColumnException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", 42, "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => 42,], null, "", InvalidColumnNameException::class,],
             "invalidStringableField" => [new class() {
                 public function __toString(): string {
                     return "foobar.foo";
@@ -2138,12 +2140,12 @@ class QueryBuilderTest extends TestCase
 
             "extremeEmptyArrayColumn" => [[], null, "",],
 
-            "invalidBadColumnName" => ["foobar.foo.bar", null, "`foo` ASC,`bar` DESC", InvalidColumnException::class,],
-            "invalidEmptyStringColumn" => ["", null, "", InvalidColumnException::class,],
+            "invalidBadColumnName" => ["foobar.foo.bar", null, "`foo` ASC,`bar` DESC", InvalidColumnNameException::class,],
+            "invalidEmptyStringColumn" => ["", null, "", InvalidColumnNameException::class,],
 
-            "invalidSingleColumnBadDirection" => ["foo", "foo", "", InvalidOrderByDirection::class,],
-            "invalidMultipleColumnsBadDirection" => [["foo", "bar",], "foo", "", InvalidOrderByDirection::class,],
-            "invalidMultipleColumnsCustomDirectionsOneBad" => [["foo" => "desc", "bar" => "foo",], null, "", InvalidOrderByDirection::class,],
+            "invalidSingleColumnBadDirection" => ["foo", "foo", "", InvalidOrderByDirectionException::class,],
+            "invalidMultipleColumnsBadDirection" => [["foo", "bar",], "foo", "", InvalidOrderByDirectionException::class,],
+            "invalidMultipleColumnsCustomDirectionsOneBad" => [["foo" => "desc", "bar" => "foo",], null, "", InvalidOrderByDirectionException::class,],
 
             "invalidIntColumn" => [42, null, "", TypeError::class,],
             "invalidStringableColumn" => [new class() {
@@ -2156,8 +2158,8 @@ class QueryBuilderTest extends TestCase
             "invalidNullColumn" => [null, null, "", TypeError::class,],
             "invalidBoolColumn" => [true, null, "", TypeError::class,],
 
-            "invalidArrayBadColumnName" => [["foobar.foo.bar" => "asc",], null, "`foo` ASC,`bar` DESC", InvalidColumnException::class,],
-            "invalidArrayEmptyStringColumn" => [["" => "asc",], null, "", InvalidColumnException::class,],
+            "invalidArrayBadColumnName" => [["foobar.foo.bar" => "asc",], null, "`foo` ASC,`bar` DESC", InvalidColumnNameException::class,],
+            "invalidArrayEmptyStringColumn" => [["" => "asc",], null, "", InvalidColumnNameException::class,],
 
             "invalidArrayIntColumn" => [[42 => "asc",], null, "", TypeError::class,],
             "invalidArrayStringableColumn" => [new class() {
@@ -2206,7 +2208,7 @@ class QueryBuilderTest extends TestCase
 
         try {
             $builder->orderBy(["bar" => "asc", "baz" => "no-direction",]);
-        } catch (InvalidOrderByDirection $err) {
+        } catch (InvalidOrderByDirectionException $err) {
         }
 
         $this->assertEquals("SELECT `foo`,`bar`,`baz` FROM `foobar` WHERE (`foo` = 'foo') ORDER BY `foo` DESC", $builder->sql());

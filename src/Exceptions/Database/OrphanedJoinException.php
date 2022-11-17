@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Equit\Exceptions\Database;
 
 use Throwable;
 
@@ -28,7 +28,7 @@ class OrphanedJoinException extends QueryBuilderException
      * Fetch the table missing from the query that the join depends on.
      * @return string The table or alias.
      */
-    public function getTable(): string
+    public function getTableName(): string
     {
         return $this->m_table;
     }

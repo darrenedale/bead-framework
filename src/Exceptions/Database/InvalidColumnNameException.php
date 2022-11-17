@@ -1,15 +1,15 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Equit\Exceptions\Database;
 
 use Throwable;
 
 /**
  * Exception thrown when a query builder encounters an invalid column.
  */
-class InvalidColumnException extends QueryBuilderException
+class InvalidColumnNameException extends QueryBuilderException
 {
-    private string $m_column;
+    private string $m_name;
 
     /**
      * Initialise a new instance of the exception.
@@ -22,7 +22,7 @@ class InvalidColumnException extends QueryBuilderException
     public function __construct(string $column, string $message = "", int $code = 0, Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
-        $this->m_column = $column;
+        $this->m_name = $column;
     }
 
     /**
@@ -30,8 +30,8 @@ class InvalidColumnException extends QueryBuilderException
      *
      * @return string The column.
      */
-    public function getColumn(): string
+    public function getColumnName(): string
     {
-        return $this->m_column;
+        return $this->m_name;
     }
 }

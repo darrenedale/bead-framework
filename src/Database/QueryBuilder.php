@@ -12,14 +12,14 @@ class QueryBuilder implements QueryBuilderContract
     use ExecutesQueries;
 
     /** @var PDO|null The connection to use to execute the query. */
-    private PDO $connection;
+    private ?PDO $connection;
 
     /**
      * Initialise a new QueryBuilder instance.
      */
     public function __construct(?PDO $connection = null)
     {
-        $this->connection = $connection ?? Application::instance()->dataController();
+        $this->connection = $connection ?? Application::instance()->database();
     }
 
     /**
