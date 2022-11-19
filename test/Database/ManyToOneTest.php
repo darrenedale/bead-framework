@@ -7,6 +7,7 @@ use Equit\Application;
 use Equit\Database\Connection;
 use Equit\Database\ManyToOne;
 use Equit\Database\Model;
+use Mockery;
 
 class ManyToOneTest extends TestCase
 {

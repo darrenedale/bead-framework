@@ -7,13 +7,14 @@ use Equit\Database\Connection;
 use Equit\Database\Model;
 use Equit\Database\OneToMany;
 use BeadTests\Framework\TestCase;
+use Mockery;
 
 class OneToManyTest extends TestCase
 {
     private Application $m_app;
     private Connection $m_db;
     private Model $m_local;
-    private ManyToOne $m_relation;
+    private OneToMany $m_relation;
 
     public function setUp(): void
     {
