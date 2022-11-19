@@ -49,7 +49,7 @@ class QueryBuilderTest extends TestCase
 
         uopz_set_return(Application::class, "instance", $this->m_application);
 
-        $this->m_application->shouldReceive("dataController")
+        $this->m_application->shouldReceive("database")
             ->andReturn($this->m_defaultConnection);
     }
 
@@ -111,7 +111,7 @@ class QueryBuilderTest extends TestCase
     public function testDefaultConstructor(): void
     {
         $builder = new QueryBuilder();
-        $this->m_application->shouldHaveReceived("dataController")->once();
+        $this->m_application->shouldHaveReceived("database")->once();
         $this->assertSame($this->m_defaultConnection, $builder->connection());
     }
 
@@ -119,7 +119,7 @@ class QueryBuilderTest extends TestCase
     {
         $connection = Mockery::mock(Connection::class);
         $builder = new QueryBuilder($connection);
-        $this->m_application->shouldNotHaveReceived("dataController");
+        $this->m_application->shouldNotHaveReceived("database");
         $this->assertSame($connection, $builder->connection());
     }
 
