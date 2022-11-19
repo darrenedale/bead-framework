@@ -2,6 +2,8 @@
 
 namespace Equit\Session\Handlers;
 
+use Equit\Contracts\SessionHandler;
+
 /**
  * Session handler that uses PHP's built-in sessions.
  *
