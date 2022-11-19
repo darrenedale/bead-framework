@@ -35,7 +35,7 @@ class ManyToMany extends Relation
      */
     public function __construct(Model $model, string $relatedModel, string $pivotModel, string $pivotLocalKey, string $pivotRelatedKey, ?string $localKey = null, ?string $relatedKey = null)
     {
-        parent::__construct($model, $relatedModel, $relatedKey, $localKey);
+        parent::__construct($model, $relatedModel, $relatedKey ?? "id", $localKey ?? "id");
         $this->pivotModel = $pivotModel;
         $this->pivotLocalKey = $pivotLocalKey;
         $this->pivotRelatedKey = $pivotRelatedKey;

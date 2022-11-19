@@ -282,6 +282,7 @@ class QueryBuilderTest extends TestCase
             }, null, "", TypeError::class,],
             "invalidObjectAlias" => [[], "IF(`explode` = 1, 'BOOM', 'pfft')", (object)["foo" => "bar"], null, "", TypeError::class,],
             "invalidBoolAlias" => [[], "`c` - `d` + `e` / `f`", true, null, "", TypeError::class,],
+            "invalidDuplicateAlias" => [["foo" => "bar",], "fix", "foo", "foobar", "", DuplicateColumnNameException::class,]
         ];
     }
 
@@ -467,7 +468,54 @@ class QueryBuilderTest extends TestCase
         $this->assertSame($builder, $actual, "QueryBuilder::rawFrom() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
-    
+
+    /**
+     * Data provider for `testRawFromWithDuplicates()`
+     * @return iterable The test data.
+     */
+    public function dataForTestRawFromWithDuplicates(): iterable
+    {
+        yield from [
+            "duplicateAlias" => ["(SELECT foo, bar FROM foo)", "foo", "foo", "foo", DuplicateTableNameException::class,],
+            "duplicateAliasArray" => [["foo" => "(SELECT foo, bar FROM foo)",], null, "foo", "foo", DuplicateTableNameException::class,],
+            "duplicateAliasArrays" => [["foo" => "(SELECT foo, bar FROM foo)",], null, ["foo" => "(SELECT foo, bar FROM foo)",], null, DuplicateTableNameException::class,],
+        ];
+    }
+
+    /**
+     * Test from() method detects duplicate tables/aliases.
+     *
+     * @dataProvider dataForTestRawFromWithDuplicates
+     *
+     * @param string|array<string,string> $expression
+     * @param string $alias
+     * @param string|array<string,string> $otherExpression
+     * @param string $otherAlias
+     * @param string|null $exceptionClass
+     *
+     * @return void
+     * @throws \Equit\Exceptions\Database\DuplicateColumnNameException
+     * @throws \Equit\Exceptions\Database\DuplicateTableNameException
+     * @throws \Equit\Exceptions\Database\InvalidColumnNameException
+     */
+    public function testRawFromWithDuplicates($expression, ?string $alias, $otherExpression, ?string $otherAlias, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        $builder = self::createBuilder(["foo", "bar"]);
+        $actual = $builder->rawFrom($expression, $alias);
+        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        $actual = $builder->rawFrom($otherExpression, $otherAlias);
+        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        $this->assertEquals(
+            "SELECT `foo`,`bar` FROM {$expression}" . (isset($alias) ? " AS `{$alias}`" : "") . ",`{$otherExpression}`" . (isset($otherAlias) ? " AS `{$otherAlias}`" : ""),
+            $builder->sql(),
+            "The QueryBuilder did not generate the expected SQL."
+        );
+    }
+
     /**
      * Data provider for testLeftJoin()
      *
@@ -1003,6 +1051,16 @@ class QueryBuilderTest extends TestCase
     }
 
     /**
+     * Ensure adding a raw left join with an alias that's already in use throws.
+     */
+    public function testRawLeftJoinWithDuplicateAlias(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(DuplicateTableNameException::class);
+        $builder->rawLeftJoin("(SELECT * FROM fizz)", "foobar", "id", "fizz_id");
+    }
+
+    /**
      * Data provider for testRightJoinAs()
      *
      * @return array The test data.
@@ -1084,6 +1142,16 @@ class QueryBuilderTest extends TestCase
     }
 
     /**
+     * Ensure adding a raw right join with an alias that's already in use throws.
+     */
+    public function testRawRightJoinWithDuplicateAlias(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(DuplicateTableNameException::class);
+        $builder->rawRightJoin("(SELECT * FROM fizz)", "foobar", "id", "fizz_id");
+    }
+
+    /**
      * Data provider for testRightJoinAs()
      *
      * @return array The test data.
@@ -1162,6 +1230,16 @@ class QueryBuilderTest extends TestCase
         $builder = self::createBuilder(["foo", "bar"], "foobar");
         $this->expectException(InvalidTableNameException::class);
         $builder->rawInnerJoin("(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`))", "f", "", "id", "fizz_id");
+    }
+
+    /**
+     * Ensure adding a raw inner join with an alias that's already in use throws.
+     */
+    public function testRawInnerJoinWithDuplicateAlias(): void
+    {
+        $builder = self::createBuilder(["foo", "bar"], "foobar");
+        $this->expectException(DuplicateTableNameException::class);
+        $builder->rawInnerJoin("(SELECT * FROM fizz)", "foobar", "id", "fizz_id");
     }
 
     /**
@@ -1977,6 +2055,7 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyInArray" => ["foo", [], "", InvalidArgumentException::class,],
             "invalidEmptyInArrayAsArray" => [["foo" => [],], null, "", InvalidArgumentException::class,],
             "invalidMultipleOneEmptyInArray" => [["foo" => ["foo", "bar",], "bar" => [], "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
+            "invalidMultipleNonArrayIn" => [["foo" => ["foo", "bar",], "bar" => 42, "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
 
             "invalidEmptyField" => ["", ["bar", "baz",], "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
@@ -2110,17 +2189,827 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
-    // TODO test orWhereNull()
-    // TODO test orWhereNotNull()
-    // TODO test orWhereContains()
-    // TODO test orWhereNotContains()
-    // TODO test orWhereStartsWith()
-    // TODO test orWhereNotStartsWith()
-    // TODO test orWhereEndsWith()
-    // TODO test orWhereNotEndsWith()
-    // TODO test orWhereIn()
-    // TODO test orWhereNotIn()
-    // TODO test orWhereLength()
+    /**
+     * Ensure a single condition using equality by default can be added using orWhere().
+     */
+    public function testOrWhere(): void
+    {
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->where("foo", "foo");
+        $this->assertSame($builder, $actual);
+        $actual = $builder->orWhere("foo", "bar");
+        $this->assertSame($builder, $actual);
+        $actual = $builder->sql();
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar')", $actual);
+    }
+
+    /**
+     * Ensure a single condition with an operator can be added using orWhere().
+     */
+    public function testOrWhereWithOperator(): void
+    {
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->where("foo", 3);
+        $this->assertSame($builder, $actual);
+        $actual = $builder->orWhere("foo", ">", 42);
+        $this->assertSame($builder, $actual);
+        $actual = $builder->sql();
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 3 OR `foo` > 42)", $actual);
+    }
+
+    /**
+     * Ensure a single condition with an emmpty operator throws.
+     */
+    public function testOrWhereWithEmptyOperator(): void
+    {
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->where("foo", 3);
+        $this->assertSame($builder, $actual);
+        $this->expectException(InvalidOperatorException::class);
+        $actual = $builder->orWhere("foo", "", 42);
+    }
+
+    /**
+     * Ensure multiple conditions can be added using orWhere().
+     */
+    public function testOrWhereWithMultiple(): void
+    {
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->where("foo", "foo");
+        $this->assertSame($builder, $actual);
+        $actual = $builder->orWhere(["foo" => "bar", "bar" => "fizz", "fizz" => "buzz",]);
+        $this->assertSame($builder, $actual);
+        $actual = $builder->sql();
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar' OR `bar` = 'fizz' OR `fizz` = 'buzz')", $actual);
+    }
+
+    /**
+     * Provider of test data for testOrWhereNull.
+     *
+     * @return array[] The test data.
+     */
+    public function dataForTestOrWhereNull(): array
+    {
+        return [
+            "typicalSingleField" =>["foo", "`foo` IS NULL",],
+            "typicalMultipleFields" =>[["foo", "bar",], "`foo` IS NULL OR `bar` IS NULL",],
+            "typicalLargeNumberOfFields" => [
+                [
+                    "foo", "bar", "fizz", "buzz", "flex", "box", "fen", "bun", "fin", "bin", "flan", "ban", "flub",
+                    "bax", "flip", "blip",
+                ],
+                "`foo` IS NULL OR `bar` IS NULL OR `fizz` IS NULL OR `buzz` IS NULL OR `flex` IS NULL OR " .
+                "`box` IS NULL OR `fen` IS NULL OR `bun` IS NULL OR `fin` IS NULL OR `bin` IS NULL OR " .
+                "`flan` IS NULL OR `ban` IS NULL OR `flub` IS NULL OR `bax` IS NULL OR `flip` IS NULL OR " .
+                "`blip` IS NULL",
+            ],
+            "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, "", TypeError::class,],
+            "invalidIntField" => [42, "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, "", TypeError::class,],
+            "invalidNullField" => [null, "", TypeError::class,],
+            "invalidBoolField" => [true, "", TypeError::class,],
+        ];
+    }
+    
+    /**
+     * @dataProvider dataForTestOrWhereNull
+     *
+     * @param mixed $columns The test field(s) to provide to the orWhereNull() method.
+     * @param string $sqlWhere The expected SQL WHERE clause.
+     * @param string|null $exceptionClass The expected exception, if any.
+     */
+    public function testOrWhereNull($columns, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereNull($columns);
+        $this->assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Provider of test data for testOrWhereNotNull.
+     *
+     * @return array[] The test data.
+     */
+    public function dataForTestOrWhereNotNull(): array
+    {
+        return [
+            "typicalSingleField" =>["foo", "`foo` IS NOT NULL",],
+            "typicalMultipleFields" =>[["foo", "bar",], "`foo` IS NOT NULL OR `bar` IS NOT NULL",],
+            "typicalLargeNumberOfFields" => [
+                [
+                    "foo", "bar", "fizz", "buzz", "flex", "box", "fen", "bun", "fin", "bin", "flan", "ban", "flub",
+                    "bax", "flip", "blip",
+                ],
+                "`foo` IS NOT NULL OR `bar` IS NOT NULL OR `fizz` IS NOT NULL OR `buzz` IS NOT NULL OR `flex` IS NOT NULL OR " .
+                "`box` IS NOT NULL OR `fen` IS NOT NULL OR `bun` IS NOT NULL OR `fin` IS NOT NULL OR `bin` IS NOT NULL OR " .
+                "`flan` IS NOT NULL OR `ban` IS NOT NULL OR `flub` IS NOT NULL OR `bax` IS NOT NULL OR `flip` IS NOT NULL OR " .
+                "`blip` IS NOT NULL",
+            ],
+            "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, "", TypeError::class,],
+            "invalidIntField" => [42, "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, "", TypeError::class,],
+            "invalidNullField" => [null, "", TypeError::class,],
+            "invalidBoolField" => [true, "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereNotNull
+     *
+     * @param mixed $columns The test field(s) to provide to the orWhereNull() method.
+     * @param string $sqlWhere The expected SQL WHERE clause.
+     * @param string|null $exceptionClass The expected exception, if any.
+     */
+    public function testOrWhereNotNull($columns, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereNotNull($columns);
+        $this->assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Data for testOrWhereContains()
+     *
+     * @return array The test data.
+     */
+    public function dataForTestOrWhereContains(): array
+    {
+        return  [
+            "typicalSingleField" => ["foo", "bar", "`foo` LIKE '%bar%'",],
+            "typicalFullyQualifiedSingleField" => ["foobar.foo", "bar", "`foobar`.`foo` LIKE '%bar%'",],
+            "typicalSingleFieldInArray" => [["foo" => "bar",], null, "`foo` LIKE '%bar%'",],
+            "typicalSingleFullyQualifiedFieldInArray" => [["foobar.foo" => "bar",], null, "`foobar`.`foo` LIKE '%bar%'",],
+            "typicalMultipleFields" => [["foo" => "bar", "fizz" => "buzz",], null, "`foo` LIKE '%bar%' OR `fizz` LIKE '%buzz%'",],
+            "typicalMultipleMixedFields" => [["foobar.foo" => "bar", "fizz" => "buzz",], null, "`foobar`.`foo` LIKE '%bar%' OR `fizz` LIKE '%buzz%'",],
+            "typicalMultipleFullyQualifiedFields" => [["foobar.foo" => "bar", "fizzbuzz.fizz" => "buzz",], null, "`foobar`.`foo` LIKE '%bar%' OR `fizzbuzz`.`fizz` LIKE '%buzz%'",],
+            "typicalLargeNumberOfFields" => [
+                [
+                    "foo" => "bar", "fizz" => "buzz", "flux" => "blox", "flim" => "blam", "flub" => "blib",
+                    "frag" => "brag", "fing" => "bing", "fong" => "bong", "fish" => "bash", "frew" => "brow",
+                    "fop" => "bip", "fad" => "bid", "fort" => "burt", "funk" => "benk", "flip" => "blop",
+                    "fit" => "bot", "for" => "bur", "fell" => "bill", "flag" => "blug", "frux" => "brax",
+                    "fig" => "bag", "fey" => "buy", "flap" => "bilk", "frop" => "blap", "fum" => "bom",
+                ],
+                null,
+                "`foo` LIKE '%bar%' OR `fizz` LIKE '%buzz%' OR `flux` LIKE '%blox%' OR `flim` LIKE '%blam%' OR `flub` LIKE '%blib%' OR " .
+                "`frag` LIKE '%brag%' OR `fing` LIKE '%bing%' OR `fong` LIKE '%bong%' OR `fish` LIKE '%bash%' OR `frew` LIKE '%brow%' OR " .
+                "`fop` LIKE '%bip%' OR `fad` LIKE '%bid%' OR `fort` LIKE '%burt%' OR `funk` LIKE '%benk%' OR `flip` LIKE '%blop%' OR " .
+                "`fit` LIKE '%bot%' OR `for` LIKE '%bur%' OR `fell` LIKE '%bill%' OR `flag` LIKE '%blug%' OR `frux` LIKE '%brax%' OR " .
+                "`fig` LIKE '%bag%' OR `fey` LIKE '%buy%' OR `flap` LIKE '%bilk%' OR `frop` LIKE '%blap%' OR `fum` LIKE '%bom%'",
+            ],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, "bar", "", TypeError::class,],
+            "invalidIntField" => [42, "bar", "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
+            "invalidNullField" => [null, "bar", "", TypeError::class,],
+            "invalidBoolField" => [true, "bar", "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereContains
+     *
+     * @param array<string,string>|string $columnOrPairs
+     * @param string|null $value
+     * @param string $sqlWhere
+     * @param string|null $exceptionClass
+     */
+    public function testOrWhereContains($columnOrPairs, $value, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereContains($columnOrPairs, $value);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+
+    /**
+     * Data for testOrWhereNotContains()
+     *
+     * @return array The test data.
+     */
+    public function dataForTestOrWhereNotContains(): array
+    {
+        return  [
+            "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE '%bar%'",],
+            "typicalFullyQualifiedSingleField" => ["foobar.foo", "bar", "`foobar`.`foo` NOT LIKE '%bar%'",],
+            "typicalSingleFieldInArray" => [["foo" => "bar",], null, "`foo` NOT LIKE '%bar%'",],
+            "typicalSingleFullyQualifiedFieldInArray" => [["foobar.foo" => "bar",], null, "`foobar`.`foo` NOT LIKE '%bar%'",],
+            "typicalMultipleFields" => [["foo" => "bar", "fizz" => "buzz",], null, "`foo` NOT LIKE '%bar%' OR `fizz` NOT LIKE '%buzz%'",],
+            "typicalMultipleMixedFields" => [["foobar.foo" => "bar", "fizz" => "buzz",], null, "`foobar`.`foo` NOT LIKE '%bar%' OR `fizz` NOT LIKE '%buzz%'",],
+            "typicalMultipleFullyQualifiedFields" => [["foobar.foo" => "bar", "fizzbuzz.fizz" => "buzz",], null, "`foobar`.`foo` NOT LIKE '%bar%' OR `fizzbuzz`.`fizz` NOT LIKE '%buzz%'",],
+            "typicalLargeNumberOfFields" => [
+                [
+                    "foo" => "bar", "fizz" => "buzz", "flux" => "blox", "flim" => "blam", "flub" => "blib",
+                    "frag" => "brag", "fing" => "bing", "fong" => "bong", "fish" => "bash", "frew" => "brow",
+                    "fop" => "bip", "fad" => "bid", "fort" => "burt", "funk" => "benk", "flip" => "blop",
+                    "fit" => "bot", "for" => "bur", "fell" => "bill", "flag" => "blug", "frux" => "brax",
+                    "fig" => "bag", "fey" => "buy", "flap" => "bilk", "frop" => "blap", "fum" => "bom",
+                ],
+                null,
+                "`foo` NOT LIKE '%bar%' OR `fizz` NOT LIKE '%buzz%' OR `flux` NOT LIKE '%blox%' OR `flim` NOT LIKE '%blam%' OR `flub` NOT LIKE '%blib%' OR " .
+                "`frag` NOT LIKE '%brag%' OR `fing` NOT LIKE '%bing%' OR `fong` NOT LIKE '%bong%' OR `fish` NOT LIKE '%bash%' OR `frew` NOT LIKE '%brow%' OR " .
+                "`fop` NOT LIKE '%bip%' OR `fad` NOT LIKE '%bid%' OR `fort` NOT LIKE '%burt%' OR `funk` NOT LIKE '%benk%' OR `flip` NOT LIKE '%blop%' OR " .
+                "`fit` NOT LIKE '%bot%' OR `for` NOT LIKE '%bur%' OR `fell` NOT LIKE '%bill%' OR `flag` NOT LIKE '%blug%' OR `frux` NOT LIKE '%brax%' OR " .
+                "`fig` NOT LIKE '%bag%' OR `fey` NOT LIKE '%buy%' OR `flap` NOT LIKE '%bilk%' OR `frop` NOT LIKE '%blap%' OR `fum` NOT LIKE '%bom%'",
+            ],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, "bar", "", TypeError::class,],
+            "invalidIntField" => [42, "bar", "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
+            "invalidNullField" => [null, "bar", "", TypeError::class,],
+            "invalidBoolField" => [true, "bar", "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereNotContains
+     *
+     * @param array<string,string>|string $columnOrPairs
+     * @param string|null $value
+     * @param string $sqlWhere
+     * @param string|null $exceptionClass
+     */
+    public function testOrWhereNotContains($columnOrPairs, $value, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereNotContains($columnOrPairs, $value);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Data for testOrWhereStartsWith()
+     *
+     * @return array The test data.
+     */
+    public function dataForTestOrWhereStartsWith(): array
+    {
+        return  [
+            "typicalSingleField" => ["foo", "bar", "`foo` LIKE 'bar%'",],
+            "typicalFullyQualifiedSingleField" => ["foobar.foo", "bar", "`foobar`.`foo` LIKE 'bar%'",],
+            "typicalSingleFieldInArray" => [["foo" => "bar",], null, "`foo` LIKE 'bar%'",],
+            "typicalSingleFullyQualifiedFieldInArray" => [["foobar.foo" => "bar",], null, "`foobar`.`foo` LIKE 'bar%'",],
+            "typicalMultipleFields" => [["foo" => "bar", "fizz" => "buzz",], null, "`foo` LIKE 'bar%' OR `fizz` LIKE 'buzz%'",],
+            "typicalMultipleMixedFields" => [["foobar.foo" => "bar", "fizz" => "buzz",], null, "`foobar`.`foo` LIKE 'bar%' OR `fizz` LIKE 'buzz%'",],
+            "typicalMultipleFullyQualifiedFields" => [["foobar.foo" => "bar", "fizzbuzz.fizz" => "buzz",], null, "`foobar`.`foo` LIKE 'bar%' OR `fizzbuzz`.`fizz` LIKE 'buzz%'",],
+            "typicalLargeNumberOfFields" => [
+                [
+                    "foo" => "bar", "fizz" => "buzz", "flux" => "blox", "flim" => "blam", "flub" => "blib",
+                    "frag" => "brag", "fing" => "bing", "fong" => "bong", "fish" => "bash", "frew" => "brow",
+                    "fop" => "bip", "fad" => "bid", "fort" => "burt", "funk" => "benk", "flip" => "blop",
+                    "fit" => "bot", "for" => "bur", "fell" => "bill", "flag" => "blug", "frux" => "brax",
+                    "fig" => "bag", "fey" => "buy", "flap" => "bilk", "frop" => "blap", "fum" => "bom",
+                ],
+                null,
+                "`foo` LIKE 'bar%' OR `fizz` LIKE 'buzz%' OR `flux` LIKE 'blox%' OR `flim` LIKE 'blam%' OR `flub` LIKE 'blib%' OR " .
+                "`frag` LIKE 'brag%' OR `fing` LIKE 'bing%' OR `fong` LIKE 'bong%' OR `fish` LIKE 'bash%' OR `frew` LIKE 'brow%' OR " .
+                "`fop` LIKE 'bip%' OR `fad` LIKE 'bid%' OR `fort` LIKE 'burt%' OR `funk` LIKE 'benk%' OR `flip` LIKE 'blop%' OR " .
+                "`fit` LIKE 'bot%' OR `for` LIKE 'bur%' OR `fell` LIKE 'bill%' OR `flag` LIKE 'blug%' OR `frux` LIKE 'brax%' OR " .
+                "`fig` LIKE 'bag%' OR `fey` LIKE 'buy%' OR `flap` LIKE 'bilk%' OR `frop` LIKE 'blap%' OR `fum` LIKE 'bom%'",
+            ],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, "bar", "", TypeError::class,],
+            "invalidIntField" => [42, "bar", "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
+            "invalidNullField" => [null, "bar", "", TypeError::class,],
+            "invalidBoolField" => [true, "bar", "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereStartsWith
+     *
+     * @param array<string,string>|string $columnOrPairs
+     * @param string|null $value
+     * @param string $sqlWhere
+     * @param string|null $exceptionClass
+     */
+    public function testOrWhereStartsWith($columnOrPairs, $value, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereStartsWith($columnOrPairs, $value);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Data for testOrWhereNotStartsWith()
+     *
+     * @return array The test data.
+     */
+    public function dataForTestOrWhereNotStartsWith(): array
+    {
+        return  [
+            "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE 'bar%'",],
+            "typicalFullyQualifiedSingleField" => ["foobar.foo", "bar", "`foobar`.`foo` NOT LIKE 'bar%'",],
+            "typicalSingleFieldInArray" => [["foo" => "bar",], null, "`foo` NOT LIKE 'bar%'",],
+            "typicalSingleFullyQualifiedFieldInArray" => [["foobar.foo" => "bar",], null, "`foobar`.`foo` NOT LIKE 'bar%'",],
+            "typicalMultipleFields" => [["foo" => "bar", "fizz" => "buzz",], null, "`foo` NOT LIKE 'bar%' OR `fizz` NOT LIKE 'buzz%'",],
+            "typicalMultipleMixedFields" => [["foobar.foo" => "bar", "fizz" => "buzz",], null, "`foobar`.`foo` NOT LIKE 'bar%' OR `fizz` NOT LIKE 'buzz%'",],
+            "typicalMultipleFullyQualifiedFields" => [["foobar.foo" => "bar", "fizzbuzz.fizz" => "buzz",], null, "`foobar`.`foo` NOT LIKE 'bar%' OR `fizzbuzz`.`fizz` NOT LIKE 'buzz%'",],
+            "typicalLargeNumberOfFields" => [
+                [
+                    "foo" => "bar", "fizz" => "buzz", "flux" => "blox", "flim" => "blam", "flub" => "blib",
+                    "frag" => "brag", "fing" => "bing", "fong" => "bong", "fish" => "bash", "frew" => "brow",
+                    "fop" => "bip", "fad" => "bid", "fort" => "burt", "funk" => "benk", "flip" => "blop",
+                    "fit" => "bot", "for" => "bur", "fell" => "bill", "flag" => "blug", "frux" => "brax",
+                    "fig" => "bag", "fey" => "buy", "flap" => "bilk", "frop" => "blap", "fum" => "bom",
+                ],
+                null,
+                "`foo` NOT LIKE 'bar%' OR `fizz` NOT LIKE 'buzz%' OR `flux` NOT LIKE 'blox%' OR `flim` NOT LIKE 'blam%' OR `flub` NOT LIKE 'blib%' OR " .
+                "`frag` NOT LIKE 'brag%' OR `fing` NOT LIKE 'bing%' OR `fong` NOT LIKE 'bong%' OR `fish` NOT LIKE 'bash%' OR `frew` NOT LIKE 'brow%' OR " .
+                "`fop` NOT LIKE 'bip%' OR `fad` NOT LIKE 'bid%' OR `fort` NOT LIKE 'burt%' OR `funk` NOT LIKE 'benk%' OR `flip` NOT LIKE 'blop%' OR " .
+                "`fit` NOT LIKE 'bot%' OR `for` NOT LIKE 'bur%' OR `fell` NOT LIKE 'bill%' OR `flag` NOT LIKE 'blug%' OR `frux` NOT LIKE 'brax%' OR " .
+                "`fig` NOT LIKE 'bag%' OR `fey` NOT LIKE 'buy%' OR `flap` NOT LIKE 'bilk%' OR `frop` NOT LIKE 'blap%' OR `fum` NOT LIKE 'bom%'",
+            ],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, "bar", "", TypeError::class,],
+            "invalidIntField" => [42, "bar", "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
+            "invalidNullField" => [null, "bar", "", TypeError::class,],
+            "invalidBoolField" => [true, "bar", "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereNotStartsWith
+     *
+     * @param array<string,string>|string $columnOrPairs
+     * @param string|null $value
+     * @param string $sqlWhere
+     * @param string|null $exceptionClass
+     */
+    public function testOrWhereNotStartsWith($columnOrPairs, $value, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereNotStartsWith($columnOrPairs, $value);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Data for testOrWhereEndsWith()
+     *
+     * @return array The test data.
+     */
+    public function dataForTestOrWhereEndsWith(): array
+    {
+        return  [
+            "typicalSingleField" => ["foo", "bar", "`foo` LIKE '%bar'",],
+            "typicalFullyQualifiedSingleField" => ["foobar.foo", "bar", "`foobar`.`foo` LIKE '%bar'",],
+            "typicalSingleFieldInArray" => [["foo" => "bar",], null, "`foo` LIKE '%bar'",],
+            "typicalSingleFullyQualifiedFieldInArray" => [["foobar.foo" => "bar",], null, "`foobar`.`foo` LIKE '%bar'",],
+            "typicalMultipleFields" => [["foo" => "bar", "fizz" => "buzz",], null, "`foo` LIKE '%bar' OR `fizz` LIKE '%buzz'",],
+            "typicalMultipleMixedFields" => [["foobar.foo" => "bar", "fizz" => "buzz",], null, "`foobar`.`foo` LIKE '%bar' OR `fizz` LIKE '%buzz'",],
+            "typicalMultipleFullyQualifiedFields" => [["foobar.foo" => "bar", "fizzbuzz.fizz" => "buzz",], null, "`foobar`.`foo` LIKE '%bar' OR `fizzbuzz`.`fizz` LIKE '%buzz'",],
+            "typicalLargeNumberOfFields" => [
+                [
+                    "foo" => "bar", "fizz" => "buzz", "flux" => "blox", "flim" => "blam", "flub" => "blib",
+                    "frag" => "brag", "fing" => "bing", "fong" => "bong", "fish" => "bash", "frew" => "brow",
+                    "fop" => "bip", "fad" => "bid", "fort" => "burt", "funk" => "benk", "flip" => "blop",
+                    "fit" => "bot", "for" => "bur", "fell" => "bill", "flag" => "blug", "frux" => "brax",
+                    "fig" => "bag", "fey" => "buy", "flap" => "bilk", "frop" => "blap", "fum" => "bom",
+                ],
+                null,
+                "`foo` LIKE '%bar' OR `fizz` LIKE '%buzz' OR `flux` LIKE '%blox' OR `flim` LIKE '%blam' OR `flub` LIKE '%blib' OR " .
+                "`frag` LIKE '%brag' OR `fing` LIKE '%bing' OR `fong` LIKE '%bong' OR `fish` LIKE '%bash' OR `frew` LIKE '%brow' OR " .
+                "`fop` LIKE '%bip' OR `fad` LIKE '%bid' OR `fort` LIKE '%burt' OR `funk` LIKE '%benk' OR `flip` LIKE '%blop' OR " .
+                "`fit` LIKE '%bot' OR `for` LIKE '%bur' OR `fell` LIKE '%bill' OR `flag` LIKE '%blug' OR `frux` LIKE '%brax' OR " .
+                "`fig` LIKE '%bag' OR `fey` LIKE '%buy' OR `flap` LIKE '%bilk' OR `frop` LIKE '%blap' OR `fum` LIKE '%bom'",
+            ],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, "bar", "", TypeError::class,],
+            "invalidIntField" => [42, "bar", "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
+            "invalidNullField" => [null, "bar", "", TypeError::class,],
+            "invalidBoolField" => [true, "bar", "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereEndsWith
+     *
+     * @param array<string,string>|string $columnOrPairs
+     * @param string|null $value
+     * @param string $sqlWhere
+     * @param string|null $exceptionClass
+     */
+    public function testOrWhereEndsWith($columnOrPairs, $value, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereEndsWith($columnOrPairs, $value);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Data for testOrWhereNotEndsWith()
+     *
+     * @return array The test data.
+     */
+    public function dataForTestOrWhereNotEndsWith(): array
+    {
+        return  [
+            "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE '%bar'",],
+            "typicalFullyQualifiedSingleField" => ["foobar.foo", "bar", "`foobar`.`foo` NOT LIKE '%bar'",],
+            "typicalSingleFieldInArray" => [["foo" => "bar",], null, "`foo` NOT LIKE '%bar'",],
+            "typicalSingleFullyQualifiedFieldInArray" => [["foobar.foo" => "bar",], null, "`foobar`.`foo` NOT LIKE '%bar'",],
+            "typicalMultipleFields" => [["foo" => "bar", "fizz" => "buzz",], null, "`foo` NOT LIKE '%bar' OR `fizz` NOT LIKE '%buzz'",],
+            "typicalMultipleMixedFields" => [["foobar.foo" => "bar", "fizz" => "buzz",], null, "`foobar`.`foo` NOT LIKE '%bar' OR `fizz` NOT LIKE '%buzz'",],
+            "typicalMultipleFullyQualifiedFields" => [["foobar.foo" => "bar", "fizzbuzz.fizz" => "buzz",], null, "`foobar`.`foo` NOT LIKE '%bar' OR `fizzbuzz`.`fizz` NOT LIKE '%buzz'",],
+            "typicalLargeNumberOfFields" => [
+                [
+                    "foo" => "bar", "fizz" => "buzz", "flux" => "blox", "flim" => "blam", "flub" => "blib",
+                    "frag" => "brag", "fing" => "bing", "fong" => "bong", "fish" => "bash", "frew" => "brow",
+                    "fop" => "bip", "fad" => "bid", "fort" => "burt", "funk" => "benk", "flip" => "blop",
+                    "fit" => "bot", "for" => "bur", "fell" => "bill", "flag" => "blug", "frux" => "brax",
+                    "fig" => "bag", "fey" => "buy", "flap" => "bilk", "frop" => "blap", "fum" => "bom",
+                ],
+                null,
+                "`foo` NOT LIKE '%bar' OR `fizz` NOT LIKE '%buzz' OR `flux` NOT LIKE '%blox' OR `flim` NOT LIKE '%blam' OR `flub` NOT LIKE '%blib' OR " .
+                "`frag` NOT LIKE '%brag' OR `fing` NOT LIKE '%bing' OR `fong` NOT LIKE '%bong' OR `fish` NOT LIKE '%bash' OR `frew` NOT LIKE '%brow' OR " .
+                "`fop` NOT LIKE '%bip' OR `fad` NOT LIKE '%bid' OR `fort` NOT LIKE '%burt' OR `funk` NOT LIKE '%benk' OR `flip` NOT LIKE '%blop' OR " .
+                "`fit` NOT LIKE '%bot' OR `for` NOT LIKE '%bur' OR `fell` NOT LIKE '%bill' OR `flag` NOT LIKE '%blug' OR `frux` NOT LIKE '%brax' OR " .
+                "`fig` NOT LIKE '%bag' OR `fey` NOT LIKE '%buy' OR `flap` NOT LIKE '%bilk' OR `frop` NOT LIKE '%blap' OR `fum` NOT LIKE '%bom'",
+            ],
+            "invalidEmptyField" => ["", "bar", "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, "bar", "", TypeError::class,],
+            "invalidIntField" => [42, "bar", "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
+            "invalidNullField" => [null, "bar", "", TypeError::class,],
+            "invalidBoolField" => [true, "bar", "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereNotEndsWith
+     *
+     * @param array<string,string>|string $columnOrPairs
+     * @param string|null $value
+     * @param string $sqlWhere
+     * @param string|null $exceptionClass
+     */
+    public function testOrWhereNotEndsWith($columnOrPairs, $value, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereNotEndsWith($columnOrPairs, $value);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+    
+    /**
+     * Test data for testOrWhereIn()
+     *
+     * @return array[] The test data.
+     */
+    public function dataForTestOrWhereIn(): array
+    {
+        return [
+            "typicalSingleFieldSingleValue" => ["foo", ["foo",], "`foo` IN ('foo')",],
+            "typicalSingleFieldMultipleValues" => ["foo", ["foo", "bar", "baz",], "`foo` IN ('foo','bar','baz')",],
+            "typicalSingleFieldSingleValueAsArray" => [["foo" => ["foo",],], null, "`foo` IN ('foo')",],
+            "typicalSingleFieldMultipleValuesAsArray" => [["foo" => ["foo", "bar", "baz",],], null, "`foo` IN ('foo','bar','baz')",],
+            "typicalMultipleFieldsMultipleValues" => [["foo" => ["foo", "bar", "baz",], "bar" => ["boo", "far", "faz",], "baz" => ["foz", "baz", "bar",],], null, "`foo` IN ('foo','bar','baz') OR `bar` IN ('boo','far','faz') OR `baz` IN ('foz','baz','bar')",],
+            "typicalSingleFieldSingleIntValue" => ["foo", [42,], "`foo` IN (42)",],
+            "typicalSingleFieldMultipleAsIntValues" => ["foo", [42, 43, 44,], "`foo` IN (42,43,44)",],
+            "typicalSingleFieldSingleIntValueAsArray" => [["foo" => [42,],], null, "`foo` IN (42)",],
+            "typicalSingleFieldMultipleIntValuesAsArray" => [["foo" => [42, 43, 44,],], null, "`foo` IN (42,43,44)",],
+            "typicalSingleFieldSingleFloatValue" => ["foo", [3.14159,], "`foo` IN (3.14159)",],
+            "typicalSingleFieldMultipleAsFloatValues" => ["foo", [3.14159, 4.2526, 5.36371,], "`foo` IN (3.14159,4.2526,5.36371)",],
+            "typicalSingleFieldSingleFloatValueAsArray" => [["foo" => [3.14159,],], null, "`foo` IN (3.14159)",],
+            "typicalSingleFieldMultipleFloatValuesAsArray" => [["foo" => [3.14159, 4.2526, 5.36371,],], null, "`foo` IN (3.14159,4.2526,5.36371)",],
+            "typicalSingleFieldSingleBoolValue" => ["foo", [true,], "`foo` IN (1)",],
+            "typicalSingleFieldMultipleAsBoolValues" => ["foo", [true, false, true,], "`foo` IN (1,0,1)",],
+            "typicalSingleFieldSingleBoolValueAsArray" => [["foo" => [true,],], null, "`foo` IN (1)",],
+            "typicalSingleFieldMultipleBoolValuesAsArray" => [["foo" => [true, false, true,],], null, "`foo` IN (1,0,1)",],
+            "typicalSingleFieldSingleNullValue" => ["foo", [null,], "`foo` IN (NULL)",],
+            "typicalSingleFieldMultipleIntAndNullValues" => ["foo", [null, 43, 44,], "`foo` IN (NULL,43,44)",],
+            "typicalSingleFieldSingleNullValueAsArray" => [["foo" => [null,],], null, "`foo` IN (NULL)",],
+            "typicalSingleFieldMultipleIntAndNullValuesAsArray" => [["foo" => [null, 43, 44,],], null, "`foo` IN (NULL,43,44)",],
+            "typicalSingleFieldSingleDateTimeValue" => ["foo", [new DateTime("2022-07-01"),], "`foo` IN ('2022-07-01 00:00:00')",],
+            "typicalSingleFieldMultipleDateTimeValues" => ["foo", [new DateTime("2022-07-01"), new DateTime("2024-01-08"), new DateTime("2020-04-23"),], "`foo` IN ('2022-07-01 00:00:00','2024-01-08 00:00:00','2020-04-23 00:00:00')",],
+            "typicalSingleFieldSingleDateTimeValueAsArray" => [["foo" => [new DateTime("2022-07-01"),],], null, "`foo` IN ('2022-07-01 00:00:00')",],
+            "typicalSingleFieldMultipleDateTimeValuesAsArray" => [["foo" => [new DateTime("2022-07-01"), new DateTime("2024-01-08"), new DateTime("2020-04-23"),],], null, "`foo` IN ('2022-07-01 00:00:00','2024-01-08 00:00:00','2020-04-23 00:00:00')",],
+
+            "typicalMultipleFieldsMultipleMixedValues" => [["foo" => [42, 43, 44,], "bar" => ["boo", "far", "faz",], "baz" => [3.14159, 4.28208, 5.39319,],], null, "`foo` IN (42,43,44) OR `bar` IN ('boo','far','faz') OR `baz` IN (3.14159,4.28208,5.39319)",],
+
+            "invalidEmptyInArray" => ["foo", [], "", InvalidArgumentException::class,],
+            "invalidEmptyInArrayAsArray" => [["foo" => [],], null, "", InvalidArgumentException::class,],
+            "invalidMultipleOneEmptyInArray" => [["foo" => ["foo", "bar",], "bar" => [], "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
+
+            "invalidNonArray" => [["foo" => ""], null, "", InvalidArgumentException::class,],
+            "invalidMultipleOneNonArray" => [["foo" => ["foo", "bar",], "bar" => "", "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
+
+            "invalidEmptyField" => ["", ["bar", "baz",], "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, ["bar", "baz",], "", TypeError::class,],
+            "invalidIntField" => [42, ["bar", "baz",], "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, ["bar", "baz",], "", TypeError::class,],
+            "invalidNullField" => [null, ["bar", "baz",], "", TypeError::class,],
+            "invalidBoolField" => [true, ["bar", "baz",], "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereIn
+     *
+     * @param array<string,array>|string $columnOrPairs
+     * @param array|null $value
+     * @param string $sqlWhere
+     * @param string|null $exceptionClass
+     */
+    public function testOrWhereIn($columnOrPairs, $value, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereIn($columnOrPairs, $value);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    
+    /**
+     * Test data for testOrWhereNotIn()
+     *
+     * @return array[] The test data.
+     */
+    public function dataForTestOrWhereNotIn(): array
+    {
+        return [
+            "typicalSingleFieldSingleValue" => ["foo", ["foo",], "`foo` NOT IN ('foo')",],
+            "typicalSingleFieldMultipleValues" => ["foo", ["foo", "bar", "baz",], "`foo` NOT IN ('foo','bar','baz')",],
+            "typicalSingleFieldSingleValueAsArray" => [["foo" => ["foo",],], null, "`foo` NOT IN ('foo')",],
+            "typicalSingleFieldMultipleValuesAsArray" => [["foo" => ["foo", "bar", "baz",],], null, "`foo` NOT IN ('foo','bar','baz')",],
+            "typicalMultipleFieldsMultipleValues" => [["foo" => ["foo", "bar", "baz",], "bar" => ["boo", "far", "faz",], "baz" => ["foz", "baz", "bar",],], null, "`foo` NOT IN ('foo','bar','baz') OR `bar` NOT IN ('boo','far','faz') OR `baz` NOT IN ('foz','baz','bar')",],
+            "typicalSingleFieldSingleIntValue" => ["foo", [42,], "`foo` NOT IN (42)",],
+            "typicalSingleFieldMultipleAsIntValues" => ["foo", [42, 43, 44,], "`foo` NOT IN (42,43,44)",],
+            "typicalSingleFieldSingleIntValueAsArray" => [["foo" => [42,],], null, "`foo` NOT IN (42)",],
+            "typicalSingleFieldMultipleIntValuesAsArray" => [["foo" => [42, 43, 44,],], null, "`foo` NOT IN (42,43,44)",],
+            "typicalSingleFieldSingleFloatValue" => ["foo", [3.14159,], "`foo` NOT IN (3.14159)",],
+            "typicalSingleFieldMultipleAsFloatValues" => ["foo", [3.14159, 4.2526, 5.36371,], "`foo` NOT IN (3.14159,4.2526,5.36371)",],
+            "typicalSingleFieldSingleFloatValueAsArray" => [["foo" => [3.14159,],], null, "`foo` NOT IN (3.14159)",],
+            "typicalSingleFieldMultipleFloatValuesAsArray" => [["foo" => [3.14159, 4.2526, 5.36371,],], null, "`foo` NOT IN (3.14159,4.2526,5.36371)",],
+            "typicalSingleFieldSingleBoolValue" => ["foo", [true,], "`foo` NOT IN (1)",],
+            "typicalSingleFieldMultipleAsBoolValues" => ["foo", [true, false, true,], "`foo` NOT IN (1,0,1)",],
+            "typicalSingleFieldSingleBoolValueAsArray" => [["foo" => [true,],], null, "`foo` NOT IN (1)",],
+            "typicalSingleFieldMultipleBoolValuesAsArray" => [["foo" => [true, false, true,],], null, "`foo` NOT IN (1,0,1)",],
+            "typicalSingleFieldSingleNullValue" => ["foo", [null,], "`foo` NOT IN (NULL)",],
+            "typicalSingleFieldMultipleIntAndNullValues" => ["foo", [null, 43, 44,], "`foo` NOT IN (NULL,43,44)",],
+            "typicalSingleFieldSingleNullValueAsArray" => [["foo" => [null,],], null, "`foo` NOT IN (NULL)",],
+            "typicalSingleFieldMultipleIntAndNullValuesAsArray" => [["foo" => [null, 43, 44,],], null, "`foo` NOT IN (NULL,43,44)",],
+            "typicalSingleFieldSingleDateTimeValue" => ["foo", [new DateTime("2022-07-01"),], "`foo` NOT IN ('2022-07-01 00:00:00')",],
+            "typicalSingleFieldMultipleDateTimeValues" => ["foo", [new DateTime("2022-07-01"), new DateTime("2024-01-08"), new DateTime("2020-04-23"),], "`foo` NOT IN ('2022-07-01 00:00:00','2024-01-08 00:00:00','2020-04-23 00:00:00')",],
+            "typicalSingleFieldSingleDateTimeValueAsArray" => [["foo" => [new DateTime("2022-07-01"),],], null, "`foo` NOT IN ('2022-07-01 00:00:00')",],
+            "typicalSingleFieldMultipleDateTimeValuesAsArray" => [["foo" => [new DateTime("2022-07-01"), new DateTime("2024-01-08"), new DateTime("2020-04-23"),],], null, "`foo` NOT IN ('2022-07-01 00:00:00','2024-01-08 00:00:00','2020-04-23 00:00:00')",],
+
+            "typicalMultipleFieldsMultipleMixedValues" => [["foo" => [42, 43, 44,], "bar" => ["boo", "far", "faz",], "baz" => [3.14159, 4.28208, 5.39319,],], null, "`foo` NOT IN (42,43,44) OR `bar` NOT IN ('boo','far','faz') OR `baz` NOT IN (3.14159,4.28208,5.39319)",],
+
+            "invalidEmptyInArray" => ["foo", [], "", InvalidArgumentException::class,],
+            "invalidEmptyInArrayAsArray" => [["foo" => [],], null, "", InvalidArgumentException::class,],
+            "invalidMultipleOneEmptyInArray" => [["foo" => ["foo", "bar",], "bar" => [], "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
+            "invalidMultipleNonArrayIn" => [["foo" => ["foo", "bar",], "bar" => 42, "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
+
+            "invalidNonArray" => [["foo" => ""], null, "", InvalidArgumentException::class,],
+            "invalidMultipleOneNonArray" => [["foo" => ["foo", "bar",], "bar" => "", "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
+
+            "invalidEmptyField" => ["", ["bar", "baz",], "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, ["bar", "baz",], "", TypeError::class,],
+            "invalidIntField" => [42, ["bar", "baz",], "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, ["bar", "baz",], "", TypeError::class,],
+            "invalidNullField" => [null, ["bar", "baz",], "", TypeError::class,],
+            "invalidBoolField" => [true, ["bar", "baz",], "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereNotIn
+     *
+     * @param array<string,array>|string $columnOrPairs
+     * @param array|null $value
+     * @param string $sqlWhere
+     * @param string|null $exceptionClass
+     */
+    public function testOrWhereNotIn($columnOrPairs, $value, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereNotIn($columnOrPairs, $value);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
+
+    /**
+     * Test data provider for testOrWhereLength.
+     * @return array[] The test data.
+     */
+    public function dataForTestOrWhereLength(): array
+    {
+        return  [
+            "typicalSingleField" => ["foo", 7, "LENGTH(`foo`) = 7",],
+            "typicalSingleFullyQualifiedField" => ["foobar.foo", 19, "LENGTH(`foobar`.`foo`) = 19",],
+            "typicalSingleFieldAsArray" => [["foo" => 37,], null, "LENGTH(`foo`) = 37",],
+            "typicalSingleFullyQualifiedFieldAsArray" => [["foobar.foo" => 98,], null, "LENGTH(`foobar`.`foo`) = 98",],
+            "typicalMultipleFields" => [["foo" => 21, "bar" => 14,], null, "LENGTH(`foo`) = 21 OR LENGTH(`bar`) = 14",],
+            "typicalMultipleFullyQualifiedFields" => [["foobar.foo" => 58, "foobar.bar" => 3,], null, "LENGTH(`foobar`.`foo`) = 58 OR LENGTH(`foobar`.`bar`) = 3",],
+            "typicalMultipleMixedQualificationFields" => [["foobar.foo" => 36, "bar" => 41, "foobar.fizz" => 103, "buzz" => 88,], null, "LENGTH(`foobar`.`foo`) = 36 OR LENGTH(`bar`) = 41 OR LENGTH(`foobar`.`fizz`) = 103 OR LENGTH(`buzz`) = 88",],
+            "extremeZeroLength" => ["foobar.foo", 0, "LENGTH(`foobar`.`foo`) = 0",],
+            "extremeNegativeLength" => ["foobar.foo", -1, "LENGTH(`foobar`.`foo`) = -1",],
+            "extremeLargeNegativeLength" => ["foobar.foo", -999999999, "LENGTH(`foobar`.`foo`) = -999999999",],
+            "extremeZeroLengthAsArray" => [["foobar.foo" => 0,], null, "LENGTH(`foobar`.`foo`) = 0",],
+            "extremeNegativeLengthAsArray" => [["foobar.foo" => -1,], null, "LENGTH(`foobar`.`foo`) = -1",],
+            "extremeLargeNegativeLengthAsArray" => [["foobar.foo" => -999999999,], null, "LENGTH(`foobar`.`foo`) = -999999999",],
+
+            "invalidEmptyField" => ["", 42, "", InvalidColumnNameException::class,],
+            "invalidEmptyFieldArray" => [[], 42, "", InvalidArgumentException::class,],
+            "invalidMalformedField" => ["foo.bar.baz", 42, "", InvalidColumnNameException::class,],
+            "invalidMalformedFieldArray" => [["foo.bar.baz" => 42,], null, "", InvalidColumnNameException::class,],
+            "invalidStringableField" => [new class() {
+                public function __toString(): string {
+                    return "foobar.foo";
+                }
+            }, 42, "", TypeError::class,],
+            "invalidIntField" => [42, 42, "", TypeError::class,],
+            "invalidFloatField" => [3.1415927, 42, "", TypeError::class,],
+            "invalidNullField" => [null, 42, "", TypeError::class,],
+            "invalidBoolField" => [true, 42, "", TypeError::class,],
+
+            "invalidStringLength" => ["foo", "42", "", TypeError::class,],
+            "invalidEmptyStringLength" => ["foo", "", "", TypeError::class,],
+            "invalidIntArrayLength" => ["foo", [42,], "", TypeError::class,],
+            "invalidEmptyArrayLength" => ["foo", [], "", TypeError::class,],
+            "invalidStringableLength" => ["foo", new class() {
+                public function __toString(): string {
+                    return "42";
+                }
+            }, "", TypeError::class,],
+            "invalidClosureLength" => ["foo", fn(): int => 42, "", TypeError::class,],
+            "invalidFloatLength" => ["foo", 3.1415927, "", TypeError::class,],
+            "invalidNullLength" => ["foo", null, "", TypeError::class,],
+            "invalidBoolLength" => ["foo", true, "", TypeError::class,],
+
+            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", TypeError::class,],
+            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", TypeError::class,],
+            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", TypeError::class,],
+            "invalidArrayOneStringableLength" => [
+                [
+                    "foo" => 42,
+                    "bar" => new class
+                    {
+                        public function __string(): string
+                        {
+                            return "42";
+                        }
+                    },
+                ],
+                null,
+                "",
+                TypeError::class,
+            ],
+            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn(): int => 42,], null, "", TypeError::class,],
+            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", TypeError::class,],
+            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", TypeError::class,],
+            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", TypeError::class,],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestOrWhereLength
+     *
+     * @param string|array<string,int> $columnOrPairs The column to test or a map of columns to lengths.
+     * @param int|null $length The length for the field, or null if the columns are pairs of columns => length.
+     * @param string $sqlWhere The expected WHERE clause.
+     * @param string|null $exceptionClass The expected exception, if any.
+     */
+    public function testOrWhereLength($columnOrPairs, $length, string $sqlWhere, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        // test with where() method
+        $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
+        $actual = $builder->orWhereLength($columnOrPairs, $length);
+        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+    }
 
     public function dataForTestOrderBy(): iterable
     {
@@ -2190,6 +3079,79 @@ class QueryBuilderTest extends TestCase
 
         $builder = $this->createBuilder(["foo", "bar", "buzz",], "foobar");
         $builder->orderBy($columns, $direction);
+
+        if (empty($sqlOrderBy)) {
+            $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar`";
+        } else {
+            $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar` ORDER BY {$sqlOrderBy}";
+        }
+
+        $this->assertEquals($expectedSql, $builder->sql());
+    }
+
+    public function dataForTestRawOrderBy(): iterable
+    {
+        yield from [
+            "typicalExpressionDefaultDirection" => ["`foo` IS NOT NULL", null, "`foo` IS NOT NULL ASC",],
+            "typicalMultipleExpressions" => [["`foo` IS NOT NULL", "`bar` IS NULL",], null, "`foo` IS NOT NULL ASC,`bar` IS NULL ASC",],
+            "typicalMultipleExpressionsWithDirections" => [["`foo` IS NOT NULL" => "ASC", "`bar` IS NULL" => "DESC",], null, "`foo` IS NOT NULL ASC,`bar` IS NULL DESC",],
+
+            "invalidBadDirection" => ["foo", "RANDOM", "", InvalidOrderByDirectionException::class,],
+            "invalidIntExpression" => [42, null, "", TypeError::class,],
+            "invalidFloatExpression" => [3.1415927, null, "", TypeError::class,],
+            "invalidNullExpression" => [null, null, "", TypeError::class,],
+            "invalidBoolExpression" => [true, null, "", TypeError::class,],
+            "invalidObjectExpression" => [
+                (object) [
+                    "__toString" => function(): string
+                    {
+                        return "foo";
+                    },
+                ],
+                null,
+                "",
+                TypeError::class,
+            ],
+            "invalidClosureExpression" => [
+                function(): string
+                {
+                    return "foo";
+                },
+                null,
+                "",
+                TypeError::class,
+            ],
+            "invalidStringableExpression" => [
+                new class
+                {
+                    public function __toString(): string
+                    {
+                        return "foo";
+                    }
+                },
+                null,
+                "",
+                TypeError::class,
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestRawOrderBy
+     *
+     * @param mixed $expressions The ORDER BY expression(s)
+     * @param mixed $direction The direction for the order by, if `$expressions` is a string.
+     * @param string $sqlOrderBy The expects SQL ORDER BY clause that the builder will generate.
+     * @param class-string|null $exceptionClass The class of exception expected, if any.
+     */
+    public function testRawOrderBy($expressions, $direction, string $sqlOrderBy, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        $builder = $this->createBuilder(["foo", "bar", "buzz",], "foobar");
+        $builder->rawOrderBy($expressions, $direction);
 
         if (empty($sqlOrderBy)) {
             $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar`";

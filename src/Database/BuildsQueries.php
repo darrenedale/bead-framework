@@ -1698,6 +1698,10 @@ trait BuildsQueries
     public function orWhereLength($columns, $operatorOrValue = null, $value = null): self
     {
         if (is_array($columns)) {
+            if (empty($columns)) {
+                throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
+            }
+
             foreach ($columns as $column => $length) {
                 if (!is_int($length)) {
                     throw new TypeError("Constraints for LENGTH-based WHERE clauses must be ints.");
