@@ -7,6 +7,7 @@ use SplFileInfo;
 use Exception;
 use Equit\Application;
 use Equit\AppLog;
+use Equit\Contracts\SessionHandler;
 use Equit\Exceptions\InvalidSessionDirectoryException;
 use Equit\Exceptions\InvalidSessionFileException;
 use Equit\Exceptions\SessionDestroyedException;
