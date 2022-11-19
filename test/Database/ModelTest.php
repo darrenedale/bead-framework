@@ -2,11 +2,11 @@
 
 namespace BeadTests\Database;
 
-use DateTime;
-use Equit\Database\Model;
-use Equit\Exceptions\ModelPropertyCastException;
 use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
+use DateTime;
+use Equit\Database\Model;
+use Equit\Exceptions\Database\ModelPropertyCastException;
 use Generator;
 use LogicException;
 use PDO;

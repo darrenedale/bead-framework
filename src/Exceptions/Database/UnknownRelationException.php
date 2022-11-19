@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Equit\Exceptions\Database;
 
 use Throwable;
 
