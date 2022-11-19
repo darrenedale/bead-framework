@@ -2277,7 +2277,7 @@ class QueryBuilderTest extends TestCase
             "invalidBoolField" => [true, "", TypeError::class,],
         ];
     }
-    
+
     /**
      * @dataProvider dataForTestOrWhereNull
      *
@@ -2753,7 +2753,7 @@ class QueryBuilderTest extends TestCase
         $this->assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
         $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
-    
+
     /**
      * Test data for testOrWhereIn()
      *
@@ -2834,7 +2834,7 @@ class QueryBuilderTest extends TestCase
         $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
-    
+
     /**
      * Test data for testOrWhereNotIn()
      *
