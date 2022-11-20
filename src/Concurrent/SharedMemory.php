@@ -9,6 +9,13 @@ use Bead\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
 use InvalidArgumentException;
 use JsonException;
 
+use function shmop_close;
+use function shmop_delete;
+use function shmop_open;
+use function shmop_read;
+use function shmop_size;
+use function shmop_write;
+
 /**
  * Encapsulation of a block of memory that can be shared between processes.
  */
@@ -47,6 +54,7 @@ class SharedMemory
      */
     private function __construct($handle, int $id, int $size, int $mode)
     {
+		assert(extension_loaded("shmop"), new RuntimeException("SharedMemory requires the 'shmop' extension to be loaded."));
         $this->m_id = $id;
         $this->m_size = $size;
         $this->m_handle = $handle;
