@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Util;
+namespace Bead\Util;
 
 /**
  * An immutable number of minutes to express as seconds.

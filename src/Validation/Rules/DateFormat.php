@@ -8,10 +8,10 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
 use DateTime;
-use Equit\Validation\Rule;
+use Bead\Validation\Rule;
 
 /**
  * Validator rule to ensure that some data is a date string in a specified format.

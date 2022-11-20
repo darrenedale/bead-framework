@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database;
 
-use Equit\Database\Connection;
+use Bead\Database\Connection;
 use PHPUnit\Framework\TestCase;
 
 class ConnectionTest extends TestCase

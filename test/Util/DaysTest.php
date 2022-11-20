@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BeadTests\Util;
 
 use BeadTests\Framework\TestCase;
-use Equit\Util\Days;
+use Bead\Util\Days;
 use TypeError;
 
 class DaysTest extends TestCase

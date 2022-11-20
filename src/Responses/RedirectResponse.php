@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Responses;
+namespace Bead\Responses;
 
-use Equit\Contracts\Response;
+use Bead\Contracts\Response;
 
 /**
  * A response to redirect the user agent to a different URL.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Responses;
+namespace Bead\Responses;
 
 /**
  * Trait to endow a response with a method to send the HTTP headers.

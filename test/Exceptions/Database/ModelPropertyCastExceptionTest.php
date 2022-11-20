@@ -3,8 +3,8 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Database\Model;
-use Equit\Exceptions\Database\UnknownRelationException;
+use Bead\Database\Model;
+use Bead\Exceptions\Database\UnknownRelationException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

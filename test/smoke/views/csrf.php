@@ -1,9 +1,9 @@
 <?php
 
 /** @var array<string, mixed> $data */
-/** @var \Equit\WebApplication $app */
+/** @var \Bead\WebApplication $app */
 
-use Equit\View;
+use Bead\View;
 
 ?>
 

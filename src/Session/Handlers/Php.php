@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Session\Handlers;
+namespace Bead\Session\Handlers;
 
-use Equit\Contracts\SessionHandler;
+use Bead\Contracts\SessionHandler;
 
 /**
  * Session handler that uses PHP's built-in sessions.

@@ -1,23 +1,21 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 use DirectoryIterator;
-use Equit\Contracts\Response;
-use Equit\Contracts\Router as RouterContract;
-use Equit\Database\Connection;
-use Equit\Exceptions\CsrfTokenVerificationException;
-use Equit\Exceptions\ExpiredSessionIdUsedException;
-use Equit\Exceptions\InvalidPluginException;
-use Equit\Exceptions\InvalidPluginsDirectoryException;
-use Equit\Exceptions\InvalidRoutesDirectoryException;
-use Equit\Exceptions\InvalidRoutesFileException;
-use Equit\Exceptions\NotFoundException;
-use Equit\Exceptions\UnroutableRequestException;
-use Equit\Responses\DownloadResponse;
-use Equit\Session\DataAccessor as SessionDataAccessor;
+use Bead\Contracts\Response;
+use Bead\Contracts\Router as RouterContract;
+use Bead\Database\Connection;
+use Bead\Exceptions\CsrfTokenVerificationException;
+use Bead\Exceptions\InvalidPluginException;
+use Bead\Exceptions\InvalidPluginsDirectoryException;
+use Bead\Exceptions\InvalidRoutesDirectoryException;
+use Bead\Exceptions\InvalidRoutesFileException;
+use Bead\Exceptions\NotFoundException;
+use Bead\Exceptions\UnroutableRequestException;
+use Bead\Session\DataAccessor as SessionDataAccessor;
 use Exception;
-use Equit\Facades\Session as SessionFacade;
+use Bead\Facades\Session as SessionFacade;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
@@ -349,7 +347,7 @@ class WebApplication extends Application
 	 *
 	 * Plugins are required to meet the following conditions:
 	 * - defined in a file named exactly as the plugin class is named, with the extension ".php"
-	 * - define a class that inherits the `Equit\Plugin` base class
+	 * - define a class that inherits the `Bead\Plugin` base class
 	 * - provide a valid instance of the appropriate class from the `instance()` method of the main plugin class
 	 *   defined in the file
 	 *
@@ -572,7 +570,7 @@ class WebApplication extends Application
 	/** Fetch the request submitted by the user.
 	 *
 	 * This method fetches the original request received from the user. It is just a convenience synonym for
-	 * LibEquit\Request::originalRequest().
+	 * Bead\Request::originalRequest().
 	 *
 	 * @see-also currentRequest()
 	 *

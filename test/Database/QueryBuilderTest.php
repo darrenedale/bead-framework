@@ -8,19 +8,19 @@ namespace BeadTests\Database;
 
 use BeadTests\Framework\TestCase;
 use DateTime;
-use Equit\Application;
-use Equit\Database\Connection;
-use Equit\Database\QueryBuilder;
-use Equit\Exceptions\Database\DuplicateColumnNameException;
-use Equit\Exceptions\Database\DuplicateTableNameException;
-use Equit\Exceptions\Database\InvalidColumnNameException;
-use Equit\Exceptions\Database\InvalidLimitException;
-use Equit\Exceptions\Database\InvalidLimitOffsetException;
-use Equit\Exceptions\Database\InvalidOperatorException;
-use Equit\Exceptions\Database\InvalidOrderByDirectionException;
-use Equit\Exceptions\Database\InvalidQueryExpressionException;
-use Equit\Exceptions\Database\InvalidTableNameException;
-use Equit\Exceptions\Database\OrphanedJoinException;
+use Bead\Application;
+use Bead\Database\Connection;
+use Bead\Database\QueryBuilder;
+use Bead\Exceptions\Database\DuplicateColumnNameException;
+use Bead\Exceptions\Database\DuplicateTableNameException;
+use Bead\Exceptions\Database\InvalidColumnNameException;
+use Bead\Exceptions\Database\InvalidLimitException;
+use Bead\Exceptions\Database\InvalidLimitOffsetException;
+use Bead\Exceptions\Database\InvalidOperatorException;
+use Bead\Exceptions\Database\InvalidOrderByDirectionException;
+use Bead\Exceptions\Database\InvalidQueryExpressionException;
+use Bead\Exceptions\Database\InvalidTableNameException;
+use Bead\Exceptions\Database\OrphanedJoinException;
 use InvalidArgumentException;
 use Mockery;
 use PDO;
@@ -78,9 +78,9 @@ class QueryBuilderTest extends TestCase
      * QueryBuilder::orderBy()
      *
      * @return QueryBuilder
-     * @throws \Equit\Exceptions\Database\DuplicateColumnNameException
-     * @throws \Equit\Exceptions\Database\DuplicateTableNameException
-     * @throws \Equit\Exceptions\Database\InvalidColumnNameException
+     * @throws \Bead\Exceptions\Database\DuplicateColumnNameException
+     * @throws \Bead\Exceptions\Database\DuplicateTableNameException
+     * @throws \Bead\Exceptions\Database\InvalidColumnNameException
      */
     private static function createBuilder($selects = null, $tables = null, $wheres = null, $orderBys = null): QueryBuilder
     {
@@ -385,9 +385,9 @@ class QueryBuilderTest extends TestCase
      * @param string|null $exceptionClass
      *
      * @return void
-     * @throws \Equit\Exceptions\Database\DuplicateColumnNameException
-     * @throws \Equit\Exceptions\Database\DuplicateTableNameException
-     * @throws \Equit\Exceptions\Database\InvalidColumnNameException
+     * @throws \Bead\Exceptions\Database\DuplicateColumnNameException
+     * @throws \Bead\Exceptions\Database\DuplicateTableNameException
+     * @throws \Bead\Exceptions\Database\InvalidColumnNameException
      */
     public function testFromWithDuplicates(string $table, ?string $alias, string $otherTable, ?string $otherAlias, ?string $exceptionClass = null): void
     {
@@ -494,9 +494,9 @@ class QueryBuilderTest extends TestCase
      * @param string|null $exceptionClass
      *
      * @return void
-     * @throws \Equit\Exceptions\Database\DuplicateColumnNameException
-     * @throws \Equit\Exceptions\Database\DuplicateTableNameException
-     * @throws \Equit\Exceptions\Database\InvalidColumnNameException
+     * @throws \Bead\Exceptions\Database\DuplicateColumnNameException
+     * @throws \Bead\Exceptions\Database\DuplicateTableNameException
+     * @throws \Bead\Exceptions\Database\InvalidColumnNameException
      */
     public function testRawFromWithDuplicates($expression, ?string $alias, $otherExpression, ?string $otherAlias, ?string $exceptionClass = null): void
     {

@@ -1,10 +1,10 @@
 <?php
 
-namespace Equit\Session;
+namespace Bead\Session;
 
 use InvalidArgumentException;
 use TypeError;
-use function Equit\Traversable\all;
+use function Bead\Traversable\all;
 
 /**
  * Data accessor for session data that delegates to a parent accessor with all keys prefixed.

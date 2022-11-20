@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\InvalidOrderByDirectionException;
+use Bead\Exceptions\Database\InvalidOrderByDirectionException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

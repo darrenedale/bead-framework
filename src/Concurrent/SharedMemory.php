@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Equit\Concurrent;
+namespace Bead\Concurrent;
 
-use Equit\Exceptions\Concurrent\SharedMemoryException;
-use Equit\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
+use Bead\Exceptions\Concurrent\SharedMemoryException;
+use Bead\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
 use InvalidArgumentException;
 use JsonException;
 

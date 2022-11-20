@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Testing;
+namespace Bead\Testing;
 
 use BadMethodCallException;
 use LogicException;

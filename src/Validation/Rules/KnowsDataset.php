@@ -6,7 +6,7 @@
  * @date May 2022
  */
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
 /**
  * Trait for validation rules that are aware of the full dataset the validator they belong to is validating.

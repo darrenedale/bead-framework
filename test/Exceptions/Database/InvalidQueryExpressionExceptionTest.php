@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\InvalidQueryExpressionException;
+use Bead\Exceptions\Database\InvalidQueryExpressionException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

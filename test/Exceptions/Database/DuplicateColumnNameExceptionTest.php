@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\DuplicateColumnNameException;
+use Bead\Exceptions\Database\DuplicateColumnNameException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

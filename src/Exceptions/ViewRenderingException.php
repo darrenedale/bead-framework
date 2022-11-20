@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
-use Equit\View;
+use Bead\View;
 use Exception;
 use Throwable;
 
@@ -11,13 +11,13 @@ use Throwable;
  */
 class ViewRenderingException extends Exception
 {
-	/** @var \Equit\View The view that could not be rendered. */
+	/** @var \Bead\View The view that could not be rendered. */
 	private View $m_view;
 
 	/**
 	 * Intialise a new instance of the exception.
 	 *
-	 * @param \Equit\View $view The view that could not be rendered.
+	 * @param \Bead\View $view The view that could not be rendered.
 	 * @param string $message The optional error messgae. Defaults to an empty string.
 	 * @param int $code The optional error code. Defaults to 0.
 	 * @param \Throwable|null $previous The optional previous Throwable, if any. Defaults to null.
@@ -30,7 +30,7 @@ class ViewRenderingException extends Exception
 
 	/**
 	 * Fetch the view that could not be rendered.
-	 * @return \Equit\View The view.
+	 * @return \Bead\View The view.
 	 */
 	public function getView(): View
 	{

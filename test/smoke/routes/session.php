@@ -2,10 +2,10 @@
 
 /** @var Router $router */
 
-use Equit\Contracts\Router;
-use Equit\Request;
-use Equit\Facades\Session;
-use Equit\View;
+use Bead\Contracts\Router;
+use Bead\Request;
+use Bead\Facades\Session;
+use Bead\View;
 
 $router->registerGet("/session", function(Request $request): View {
     function formatTime($time): string

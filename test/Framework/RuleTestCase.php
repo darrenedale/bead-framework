@@ -6,8 +6,8 @@ namespace Framework;
 
 namespace BeadTests\Framework;
 
-use Equit\Validation\Rule;
-use Equit\Validation\Rules\Integer;
+use Bead\Validation\Rule;
+use Bead\Validation\Rules\Integer;
 use TypeError;
 
 /**

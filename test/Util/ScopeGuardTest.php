@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Util;
 
-use Equit\Util\ScopeGuard;
+use Bead\Util\ScopeGuard;
 
 /**
  * ScopeGuard test case.

@@ -3,10 +3,10 @@
 namespace Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Application;
-use Equit\Database\Connection;
-use Equit\Database\ManyToOne;
-use Equit\Database\Model;
+use Bead\Application;
+use Bead\Database\Connection;
+use Bead\Database\ManyToOne;
+use Bead\Database\Model;
 use Mockery;
 
 class ManyToOneTest extends TestCase

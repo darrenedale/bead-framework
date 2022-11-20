@@ -1,6 +1,6 @@
 <?php
-use Equit\Facades\Session;
-use Equit\View;
+use Bead\Facades\Session;
+use Bead\View;
 ?>
 
 <?php View::layout("layouts.layout"); ?>

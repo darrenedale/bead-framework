@@ -5,7 +5,7 @@ namespace BeadTests\Testing;
 use BadMethodCallException;
 use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
-use Equit\Testing\StaticXRay;
+use Bead\Testing\StaticXRay;
 use LogicException;
 
 class StaticXRayTest extends TestCase

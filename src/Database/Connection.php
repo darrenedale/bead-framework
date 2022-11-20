@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Database;
+namespace Bead\Database;
 
 use PDO;
 

@@ -6,3 +6,5 @@
 <div class="separator"></div>
 <div><a href="/csrf">CSRF test</a></div>
 <div><a href="/csrf/regenerate">Regenerate CSRF</a></div>
+<div class="separator"></div>
+<div><a href="/uri-signer">UriSigner test</a></div>

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace BeadTests;
 
-use Equit\AppLog;
+use Bead\AppLog;
 use BeadTests\Framework\TestCase;
-use Equit\UploadedFile;
+use Bead\UploadedFile;
 use ReflectionClass;
 use SplFileInfo;
 

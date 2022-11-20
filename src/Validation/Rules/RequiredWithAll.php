@@ -8,11 +8,11 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
-use Equit\Validation\DatasetAwareRule;
+use Bead\Validation\DatasetAwareRule;
 use InvalidArgumentException;
-use function Equit\Traversable\all;
+use function Bead\Traversable\all;
 
 /**
  * Validator rule to ensure that some data is non-empty if all of another set of fields are non-empty.

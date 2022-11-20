@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BeadTests\Util;
 
 use BeadTests\Framework\TestCase;
-use Equit\Util\Retry;
+use Bead\Util\Retry;
 use InvalidArgumentException;
 use TypeError;
 

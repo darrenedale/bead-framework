@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\InvalidOperatorException;
+use Bead\Exceptions\Database\InvalidOperatorException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

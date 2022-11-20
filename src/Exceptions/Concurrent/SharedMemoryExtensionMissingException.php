@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Exceptions\Concurrent;
+namespace Bead\Exceptions\Concurrent;
 
 use RuntimeException;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Responses;
+namespace Bead\Responses;
 
 /**
  * Trait for responses that don't have any headers (other than content-type.

@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\InvalidColumnNameException;
+use Bead\Exceptions\Database\InvalidColumnNameException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

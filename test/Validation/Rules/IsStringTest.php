@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BeadTests\Validation\Rules;
 
-use Equit\Validation\Rule;
-use Equit\Validation\Rules\IsString;
+use Bead\Validation\Rule;
+use Bead\Validation\Rules\IsString;
 use Generator;
 use BeadTests\Framework\RuleTestCase;
 use TypeError;

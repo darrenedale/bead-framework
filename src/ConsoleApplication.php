@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 class ConsoleApplication extends Application
 {

@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\InvalidLimitException;
+use Bead\Exceptions\Database\InvalidLimitException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

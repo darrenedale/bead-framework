@@ -1,17 +1,17 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
-use Equit\Contracts\Response;
-use Equit\Exceptions\ViewNotFoundException;
-use Equit\Exceptions\ViewRenderingException;
-use Equit\Responses\DoesntHaveHeaders;
-use Equit\Responses\NaivelySendsContent;
+use Bead\Contracts\Response;
+use Bead\Exceptions\ViewNotFoundException;
+use Bead\Exceptions\ViewRenderingException;
+use Bead\Responses\DoesntHaveHeaders;
+use Bead\Responses\NaivelySendsContent;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
 use TypeError;
-use function Equit\Traversable\some;
+use function Bead\Traversable\some;
 
 /**
  * Encapsulates a Bead view in your app.

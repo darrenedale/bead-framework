@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\InvalidTableNameException;
+use Bead\Exceptions\Database\InvalidTableNameException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

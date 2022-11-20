@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Responses;
+namespace Bead\Responses;
 
 /**
  * Response to stream a file to the client.

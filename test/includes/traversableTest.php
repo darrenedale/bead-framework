@@ -7,7 +7,7 @@ namespace BeadTests\Traversable;
 use BeadTests\Framework\TestCase;
 use TypeError;
 
-use function Equit\Traversable\map;
+use function Bead\Traversable\map;
 
 final class TraversableTest extends TestCase
 {

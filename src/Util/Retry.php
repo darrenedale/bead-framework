@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Util;
+namespace Bead\Util;
 
 use InvalidArgumentException;
 

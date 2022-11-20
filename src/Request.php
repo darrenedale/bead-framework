@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 use TypeError;
 
@@ -20,7 +20,7 @@ class Request
 	/** @var string The HTTPS protocol. */
 	public const HttpsProtocol = "https";
 
-	/** @var \Equit\Request|null The request parsed from the superglobals. */
+	/** @var \Bead\Request|null The request parsed from the superglobals. */
 	private static ?Request $s_originalRequest = null;
 
 	/** @var array<string, string> The request's URL parameters. */
