@@ -1,7 +1,7 @@
 <?php
 
-use Equit\Contracts\Router;
-use Equit\View;
+use Bead\Contracts\Router;
+use Bead\View;
 
 /** @var Router $router */
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Framework;
 
-namespace Equit\Test\Framework;
+namespace BeadTests\Framework;
 
-use Equit\Validation\Rule;
-use Equit\Validation\Rules\Integer;
+use Bead\Validation\Rule;
+use Bead\Validation\Rules\Integer;
 use TypeError;
 
 /**

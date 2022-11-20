@@ -8,11 +8,11 @@
 
 declare(strict_types = 1);
 
-namespace Equit\Test\Framework;
+namespace BeadTests\Framework;
 
 use Closure;
-use Equit\Test\Framework\Constraints\AttributeIsInt;
-use Equit\Test\Framework\Constraints\FlatArrayIsEquivalent;
+use BeadTests\Framework\Constraints\AttributeIsInt;
+use BeadTests\Framework\Constraints\FlatArrayIsEquivalent;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
 use ReflectionException;
 use ReflectionMethod;

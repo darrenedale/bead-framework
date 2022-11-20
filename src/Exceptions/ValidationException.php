@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
-use Equit\Validation\Validator;
+use Bead\Validation\Validator;
 use Exception;
 use Throwable;
 
@@ -16,7 +16,7 @@ class ValidationException extends Exception
     /**
      * Initialise a new ValidationException.
      *
-     * @param \Equit\Validation\Validator $validator The validator that threw the exception.
+     * @param \Bead\Validation\Validator $validator The validator that threw the exception.
      * @param string $message The optional error message. Defaults to an empty string.
      * @param int $code The optional error code. Defaults to 0.
      * @param \Throwable|null $previous An optional previous Throwable. Defaults to null.
@@ -30,7 +30,7 @@ class ValidationException extends Exception
     /**
      * Fetch the validator that triggered the validation exception.
      *
-     * @return \Equit\Validation\Validator The validator.
+     * @return \Bead\Validation\Validator The validator.
      */
     public function validator(): Validator
     {

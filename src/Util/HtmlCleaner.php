@@ -9,7 +9,7 @@
 
 declare(strict_types = 1);
 
-namespace Equit\Util;
+namespace Bead\Util;
 
 use DOMDocument;
 use DOMNode;
@@ -17,8 +17,8 @@ use Exception;
 use InvalidArgumentException;
 use StdClass;
 
-use function Equit\Helpers\Iterable\all;
-use function Equit\Helpers\String\toCodePoints;
+use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\String\toCodePoints;
 
 /**
  * Sanitise HTML according to configurable rules.
@@ -38,7 +38,7 @@ use function Equit\Helpers\String\toCodePoints;
  * is set using allowTags() and denyTags(). Use allowClasses() and denyClasses() for classes and allowIds() and
  * denyIds() for IDs.
  *
- * @package Equit
+ * @package Bead
  */
 class HtmlCleaner
 {

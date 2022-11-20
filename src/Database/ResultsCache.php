@@ -10,13 +10,13 @@
  * @version 0.9.2
  */
 
-namespace Equit\Database;
+namespace Bead\Database;
 
 use ArrayAccess;
 use Countable;
 use DirectoryIterator;
-use Equit\Application;
-use Equit\AppLog;
+use Bead\Application;
+use Bead\AppLog;
 use Exception;
 use Iterator;
 use JsonException;

@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Responses;
+namespace Bead\Responses;
 
-use Equit\Contracts\Response;
+use Bead\Contracts\Response;
 
 /**
  * Base class for responses with default boilerplate implementations.

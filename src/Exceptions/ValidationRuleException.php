@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
-use Equit\Validation\Rule;
+use Bead\Validation\Rule;
 use Throwable;
 
 /**

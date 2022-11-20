@@ -1,11 +1,11 @@
 <?php
 
-namespace Equit\Test\Validation\Rules;
+namespace BeadTests\Validation\Rules;
 
-use Equit\Test\Framework\TestCase;
-use Equit\Validation\Rules\Nullable;
-use Equit\Validation\ValidatorAwareRule;
-use Equit\Validation\Validator;
+use BeadTests\Framework\TestCase;
+use Bead\Validation\Rules\Nullable;
+use Bead\Validation\ValidatorAwareRule;
+use Bead\Validation\Validator;
 use Mockery;
 
 class NullableTest extends TestCase

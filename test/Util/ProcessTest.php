@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Equit\Test\Util;
+namespace BeadTests\Util;
 
 use InvalidArgumentException;
 use TypeError;
-use Equit\Process;
-use Equit\Test\Framework\TestCase;
+use Bead\Process;
+use BeadTests\Framework\TestCase;
 
 /**
  * Unit test for the Process class.

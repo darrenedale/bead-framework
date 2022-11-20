@@ -1,39 +1,16 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 use TypeError;
 
 /**
- * Abstract representation of a request made to the application.
- *
- * This class is the basis for everything done by the application. When the application runs, its main loop fetches the
- * user's original request from this class and passes it to WebApplication::handleRequest(), which passes it to the
- * installed Router for routing to a handler.
+ * Abstract representation of an incoming HTTP request.
  *
  * The original request submitted by the user agent is always available using the static method `originalRequest()`. The
  * data submitted with the request can be retrieved using `urlParameter()`, `postData()` and `uploadedFile()` for,
  * respectively, URL parameters, POST data and uploaded files. For a subset of URL parameters or POST data use
  * `onlyUrlParameters()` and `onlyPostData()`, giving an array of keys to retrieve.
- *
- * ### Events
- * This module does not emit any events.
- *
- * @noconnections
- * ### Connections
- * This module does not connect to any events.
- *
- * @nosettings
- * ### Settings
- * This module does not read any settings.
- *
- * @nosession
- * ### Session Data
- * This module does not create a session context.
- *
- * @author Darren Edale
- * @package bead-framework
- * @see UploadedFile, WebApplication
  */
 class Request
 {
@@ -43,7 +20,7 @@ class Request
 	/** @var string The HTTPS protocol. */
 	public const HttpsProtocol = "https";
 
-	/** @var \Equit\Request|null The request parsed from the superglobals. */
+	/** @var \Bead\Request|null The request parsed from the superglobals. */
 	private static ?Request $s_originalRequest = null;
 
 	/** @var array<string, string> The request's URL parameters. */
@@ -57,6 +34,9 @@ class Request
 
 	/** @var array<string, string> The request's HTTP headers. */
 	private array $m_headers = [];
+
+	/** @var string The full request URL. */
+	private string $m_url;
 
 	/** @var string The request's protocol. */
 	private string $m_protocol;
@@ -77,19 +57,19 @@ class Request
 	 * Create a new Request.
 	 *
 	 * @param $action string|null The action the request is for.
-	 *
-	 * All requests contain one special URL parameter, the action, which is the core "thing" that the request is asking 
-	 * the application to do. It is matched by the Equit\Application object against the actions supported by plugins
-	 * when choosing what to do with the request. The action can be `null` (or omitted from the constructor) to create a
-	 * request with no action. Such a request will not be handled by any plugins.
 	 */
-	public function __construct()
+	private function __construct()
 	{
-		$this->setProtocol(!empty($_SERVER["HTTPS"]) ? self::HttpsProtocol : self::HttpProtocol);
-		$this->setHost($_SERVER["SERVER_NAME"] ?? "");
+		$scheme = (!empty($_SERVER["HTTPS"]) ? self::HttpsProtocol : self::HttpProtocol);
+		$host = $_SERVER["HTTP_HOST"] ?? $_SERVER["SERVER_NAME"] ?? "";
+
+		$this->setProtocol($scheme);
+		$this->setHost($host);
 		$this->setPath("/");
 		$this->setPathInfo("/");
 		$this->setMethod("GET");
+
+		$this->m_url = "{$scheme}://{$host}/";
 	}
 
 	/**
@@ -108,37 +88,15 @@ class Request
 	/**
 	 * Fetch the request URL.
 	 *
-	 * The URL provided will be %-encoded.
+	 * The URL provided will be as it is in the incoming request. It is constructed from the HTTP headers and server
+	 * variables. It is therefore not 100% guaranteed to match the address in the user's browser - it's dependent on
+	 * the web server providing the information.
 	 *
 	 * @return string The request URL.
 	 */
 	public function url(): string
 	{
-		$pathInfo = $this->pathInfo();
-
-		if ("/" === $pathInfo) {
-			$pathInfo = "";
-		}
-
-		return "{$this->protocol()}://{$this->host()}{$this->path()}{$pathInfo}{$this->encodedQueryString()}";
-	}
-
-	/**
-	 * Fetch the request's raw URL.
-	 *
-	 * The URL provided will not be encoded in any way.
-	 *
-	 * @return string The request URL.
-	 */
-	public function rawUrl(): string
-	{
-		$pathInfo = $this->pathInfo();
-
-		if ("/" === $pathInfo) {
-			$pathInfo = "";
-		}
-
-		return "{$this->protocol()}://{$this->host()}{$this->path()}{$pathInfo}{$this->queryString()}";
+		return $this->m_url;
 	}
 
 	/**
@@ -671,6 +629,7 @@ class Request
 
 			$req->setPathInfo($pathInfo);
 			$req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
+			$req->m_url = "{$req->protocol()}://{$req->host()}{$_SERVER["REQUEST_URI"]}";
 			Request::$s_originalRequest = $req;
 		}
 

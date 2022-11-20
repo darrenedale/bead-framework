@@ -1,19 +1,20 @@
 <?php
 
-namespace Equit\Test\Database;
+namespace BeadTests\Database;
 
+use BeadTests\Framework\CallTracker;
+use BeadTests\Framework\TestCase;
 use DateTime;
-use Equit\Database\Model;
-use Equit\Exceptions\ModelPropertyCastException;
-use Equit\Test\Framework\CallTracker;
-use Equit\Test\Framework\TestCase;
+use Bead\Database\Model;
+use Bead\Exceptions\Database\ModelPropertyCastException;
 use Generator;
 use LogicException;
 use PDO;
 use Prophecy\Call\Call;
 use ReflectionProperty;
 use TypeError;
-use function Equit\Helpers\Iterable\all;
+
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Test case for the database Model class.

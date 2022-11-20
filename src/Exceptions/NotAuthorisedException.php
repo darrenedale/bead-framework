@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
 /**
  * Exception-response to use when a user has attempted something they're not authorised to do.

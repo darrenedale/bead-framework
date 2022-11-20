@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Test\Framework\Constraints;
+namespace BeadTests\Framework\Constraints;
 
 use PHPUnit\Framework\Constraint\Constraint;
 
@@ -13,7 +13,7 @@ use PHPUnit\Framework\Constraint\Constraint;
  *
  * Only scalar values are supported and multi-dimensional arrays are also not supported.
  *
- * @package Equit\Test\Constraints
+ * @package BeadTests\Constraints
  */
 class FlatArrayIsEquivalent extends Constraint {
 	/**

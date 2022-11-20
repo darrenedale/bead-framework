@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Util;
+namespace BeadTests\Util;
 
-use Equit\Test\Framework\TestCase;
-use Equit\Util\Hours;
+use BeadTests\Framework\TestCase;
+use Bead\Util\Hours;
 use TypeError;
 
 class HoursTest extends TestCase

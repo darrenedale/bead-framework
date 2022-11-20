@@ -1,13 +1,13 @@
 <?php
 
-namespace Equit\Database;
+namespace Bead\Database;
 
 use DateTime;
-use Equit\Application;
-use Equit\Contracts\SoftDeletableModel;
-use Equit\Exceptions\ModelPropertyCastException;
-use Equit\Exceptions\UnknownRelationException;
-use Equit\Exceptions\UnrecognisedQueryOperatorException;
+use Bead\Application;
+use Bead\Contracts\SoftDeletableModel;
+use Bead\Exceptions\Database\ModelPropertyCastException;
+use Bead\Exceptions\Database\UnknownRelationException;
+use Bead\Exceptions\Database\UnrecognisedQueryOperatorException;
 use Exception;
 use JsonException;
 use LogicException;
@@ -18,8 +18,8 @@ use ReflectionException;
 use ReflectionMethod;
 use TypeError;
 
-use function Equit\Helpers\Iterable\all;
-use function Equit\Helpers\String\snakeToCamel;
+use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\String\snakeToCamel;
 
 /**
  * Base class for database model classes.
@@ -336,7 +336,11 @@ abstract class Model
         if ($this->connection()
             ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([$primaryKeyProperty])}) VALUES ({$this->buildPropertyPlaceholderList([$primaryKeyProperty])})")
             ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== $primaryKeyProperty), ARRAY_FILTER_USE_KEY)))) {
-            $this->data[$primaryKeyProperty] = static::castInsertedKeyToPrimaryKey($this->connection()->lastInsertId());
+
+			if (isset(static::$properties[$primaryKeyProperty])) {
+				$this->data[$primaryKeyProperty] = static::castInsertedKeyToPrimaryKey($this->connection()->lastInsertId());
+			}
+
             return true;
         }
 
@@ -1209,6 +1213,44 @@ abstract class Model
     }
 
     /**
+     * Helper to prepare values for a WHERE clause involving field => value equality pairs.
+     *
+     * The provided array is treated as a map of field => value pairs to be used as a set of `field` = value expressions
+     * in a WHERE clause. It returns a typle of two, containing the SQL expressions to use in a PDO prepared statement's
+     * WHERE clause in the first member, and an array of values to bind to the prepared statement in the second member.
+     * It guarantees that the number of items in the values array matches the number of placeholders in the expressions
+     * array.
+     *
+     * For example, given the array ["name" => "Darren", "deleted_at" => null,]
+     *
+     * The returned tuple will be
+     * [
+     *   ["`name` = ?", "`deleted_at` IS NULL",],
+     *   ["Darren",],
+     * ]
+     *
+     * @param array $terms The pairs of fields and values.
+     *
+     * @return array[] A tuple of the WHERE expressions and values to bind.
+     */
+    protected static function prepareEqualityWheres(array $terms): array
+    {
+        $values = [];
+        $where = [];
+
+        foreach ($terms as $property => $value) {
+            if (is_null($value)) {
+                $where[] = "`{$property}` IS NULL";
+            } else {
+                $where[] = "`{$property}` = ?";
+                $values[] = $value;
+            }
+        }
+
+        return [$where, $values];
+    }
+
+    /**
      * Helper to provide WHERE expressions that should be applied to all queries.
      *
      * This is useful as a customisation point to inject fixed conditions into queries, for example to exclude soft-
@@ -1254,22 +1296,14 @@ abstract class Model
      */
     protected static function queryAll(array $terms): array
     {
+        [$where, $values] = self::prepareEqualityWheres($terms);
+
         $stmt = static::defaultConnection()->prepare(
-            "SELECT " .
-            static::buildSelectList() . " FROM `" . static::table() . "` WHERE " .
-            implode(
-                " AND ",
-                array_map(
-                    function(string $property): string {
-                        return "`{$property}` = ?";
-                    },
-                    array_keys($terms)
-                )
-            ) .
-            static::fixedWhereExpressionsSql()
+            "SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (" .
+            implode(" AND ", $where) . ")" . static::fixedWhereExpressionsSql()
         );
 
-        $stmt->execute(array_values($terms));
+        $stmt->execute($values);
         return static::makeModelsFromQuery($stmt);
     }
 
@@ -1285,22 +1319,14 @@ abstract class Model
      */
     protected static function queryAny(array $terms): array
     {
+        [$where, $values] = self::prepareEqualityWheres($terms);
+
         $stmt = static::defaultConnection()->prepare(
-            "SELECT " .
-            static::buildSelectList() . " FROM `" . static::table() . "` WHERE (" .
-            implode(
-                " OR ",
-                array_map(
-                    function(string $property): string {
-                        return "`{$property}` = ?";
-                    },
-                    array_keys($terms)
-                )
-            ) .
-            ")" . static::fixedWhereExpressionsSql()
+            "SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (" .
+            implode(" OR ", $where) . ")" . static::fixedWhereExpressionsSql()
         );
 
-        $stmt->execute(array_values($terms));
+        $stmt->execute($values);
         return static::makeModelsFromQuery($stmt);
     }
 
@@ -1330,6 +1356,11 @@ abstract class Model
      */
     public static function queryEquals(string $property, $value): array
     {
+        if (is_null($value)) {
+            $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `{$property}` IS NULL");
+            return $stmt->execute();
+        }
+
         return self::querySimpleComparison($property, "=", $value);
     }
 
@@ -1344,6 +1375,58 @@ abstract class Model
     public static function queryNotEquals(string $property, $value): array
     {
         return self::querySimpleComparison($property, "<>", $value);
+    }
+
+    /**
+     * Query for models where a property is greater than a given value.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return array The matching models.
+     */
+    public static function queryGreaterThan(string $property, $value): array
+    {
+        return self::querySimpleComparison($property, ">", $value);
+    }
+
+    /**
+     * Query for models where a property is greater than or equal to  a given value.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return array The matching models.
+     */
+    public static function queryGreaterThanEquals(string $property, $value): array
+    {
+        return self::querySimpleComparison($property, ">=", $value);
+    }
+
+    /**
+     * Query for models where a property is less than a given value.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return array The matching models.
+     */
+    public static function queryLessThan(string $property, $value): array
+    {
+        return self::querySimpleComparison($property, "<", $value);
+    }
+
+    /**
+     * Query for models where a property is less than or equal to  a given value.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return array The matching models.
+     */
+    public static function queryLessThanEquals(string $property, $value): array
+    {
+        return self::querySimpleComparison($property, "<=", $value);
     }
 
     /**
@@ -1442,6 +1525,18 @@ abstract class Model
             case "<>":
                 return static::queryNotEquals($properties, $value);
 
+            case ">":
+                return static::queryGreaterThan($properties, $value);
+
+            case ">=":
+                return static::queryGreaterThanEquals($properties, $value);
+
+            case "<":
+                return static::queryLessThan($properties, $value);
+
+            case "<=":
+                return static::queryLessThanEquals($properties, $value);
+
             case "like":
                 return static::queryLike($properties, $value);
 
@@ -1472,20 +1567,10 @@ abstract class Model
 	 */
 	protected static function removeWhereAll(array $terms): bool
 	{
-		$stmt = static::defaultConnection()->prepare(
-			"DELETE FROM `" . static::$table . "` WHERE " .
-			implode(
-				" AND ",
-				array_map(
-					function(string $property): string {
-						return "`{$property}` = ?";
-					},
-					array_keys($terms)
-				)
-			)
-		);
-
-		return $stmt->execute(array_values($terms));
+        [$values, $where] = self::prepareEqualityWheres($terms);
+		$stmt = static::defaultConnection()
+            ->prepare("DELETE FROM `" . static::table() . "` WHERE " . implode(" AND ", $where));
+		return $stmt->execute($values);
 	}
 
 	/**
@@ -1501,7 +1586,7 @@ abstract class Model
 	 */
 	protected static final function removeSimpleComparison(string $property, string $operator, $value): bool
 	{
-		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` {$operator} ?)");
+		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)");
 		return $stmt->execute([$value]);
 	}
 
@@ -1517,6 +1602,11 @@ abstract class Model
 	 */
 	public static function removeEquals(string $property, $value): bool
 	{
+        if (is_null($value)) {
+            $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NULL");
+            return $stmt->execute();
+        }
+
 		return self::removeSimpleComparison($property, "=", $value);
 	}
 
@@ -1532,7 +1622,72 @@ abstract class Model
 	 */
 	public static function removeNotEquals(string $property, $value): bool
 	{
-		return self::removeSimpleComparison($property, "<>", $value);
+        if (is_null($value)) {
+            $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NOT NULL");
+            return $stmt->execute();
+        }
+
+        return self::removeSimpleComparison($property, "<>", $value);
+	}
+
+	/**
+	 * Remove models where a property is greater than a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeGreaterThan(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, ">", $value);
+	}
+
+	/**
+	 * Remove models where a property is greater than or equal to a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeGreaterThanEquals(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, ">=", $value);
+	}
+
+	/**
+	 * Remove models where a property is less than a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeLessThan(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, "<", $value);
+	}
+
+	/**
+	 * Remove models where a property is less than or equal to a given value.
+	 *
+	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+	 *
+	 * @param string $property The property to query on.
+	 * @param mixed $value The value to query for.
+	 *
+	 * @return bool `true` if the removal was successful, `false` otherwise.
+	 */
+	public static function removeLessThanEquals(string $property, $value): bool
+	{
+		return self::removeSimpleComparison($property, "<=", $value);
 	}
 
 	/**
@@ -1638,6 +1793,18 @@ abstract class Model
 			case "!=":
 			case "<>":
 				return static::removeNotEquals($properties, $value);
+
+			case ">":
+				return static::removeGreaterThan($properties, $value);
+
+			case ">=":
+				return static::removeGreaterThanEquals($properties, $value);
+
+			case "<":
+				return static::removeLessThan($properties, $value);
+
+			case "<=":
+				return static::removeLessThanEquals($properties, $value);
 
 			case "like":
 				return static::removeLike($properties, $value);

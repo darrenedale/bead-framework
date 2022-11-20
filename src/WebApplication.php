@@ -1,19 +1,21 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 use DirectoryIterator;
-use Equit\Contracts\Response;
-use Equit\Contracts\Router as RouterContract;
-use Equit\Database\Connection;
-use Equit\Exceptions\CsrfTokenVerificationException;
-use Equit\Exceptions\InvalidPluginException;
-use Equit\Exceptions\InvalidPluginsDirectoryException;
-use Equit\Exceptions\InvalidRoutesDirectoryException;
-use Equit\Exceptions\InvalidRoutesFileException;
-use Equit\Exceptions\NotFoundException;
-use Equit\Exceptions\UnroutableRequestException;
+use Bead\Contracts\Response;
+use Bead\Contracts\Router as RouterContract;
+use Bead\Database\Connection;
+use Bead\Exceptions\CsrfTokenVerificationException;
+use Bead\Exceptions\InvalidPluginException;
+use Bead\Exceptions\InvalidPluginsDirectoryException;
+use Bead\Exceptions\InvalidRoutesDirectoryException;
+use Bead\Exceptions\InvalidRoutesFileException;
+use Bead\Exceptions\NotFoundException;
+use Bead\Exceptions\UnroutableRequestException;
+use Bead\Session\DataAccessor as SessionDataAccessor;
 use Exception;
+use Bead\Facades\Session as SessionFacade;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
@@ -149,8 +151,8 @@ class WebApplication extends Application
 	/** @var string The namespace where plugins are located. */
 	private string $m_pluginsNamespace = self::DefaultPluginsNamespace;
 
-	/** WebApplication class's session data array. */
-	protected ?array $m_session = null;
+	/** Application class's session data array. */
+	protected ?SessionDataAccessor $m_session = null;
 
 	/** Loaded plugin storage.*/
 	private array $m_pluginsByName = [];
@@ -175,7 +177,7 @@ class WebApplication extends Application
 	{
 		parent::__construct($appRoot, $db);
 		$this->initialiseSession();
-		$this->m_session = &$this->sessionData(self::SessionDataContext);
+		$this->m_session = $this->sessionData(self::SessionDataContext);
 		$this->setRouter(new Router());
 
 		if (!empty($this->config("app.plugins.path"))) {
@@ -185,23 +187,6 @@ class WebApplication extends Application
 		if (!empty($this->config("app.plugins.namespace"))) {
 			$this->setPluginsNamespace($this->config("app.plugins.namespace"));
 		}
-	}
-
-	/**
-	 * Initialise the bead-framework application's session data.
-	 */
-	private function initialiseSession(): void
-	{
-		session_start();
-
-		if (!array_key_exists("bead-app", $_SESSION) || !is_array($_SESSION["bead-app"])) {
-			$_SESSION["bead-app"] = [];
-		}
-
-		// forces the CSRF token to be generated if there isn't one
-		$this->csrf();
-		$this->sessionData(self::SessionDataContext)["_transient"] = [];
-		$this->sessionData(self::SessionDataContext)["_transient.flush"] = [];
 	}
 
 	/**
@@ -286,81 +271,39 @@ class WebApplication extends Application
 		return $this->m_pluginsNamespace;
 	}
 
-	/**
-	 * Fetch the application's session data.
-	 *
-	 * This method should be used to access the session data rather than using `$_SESSION` directly as it ensures
-	 * that the bead framework application's session data is kept separate from any other session code's session data.
-	 * Use of the context parameter ensures that different parts of the application can keep their session data separate
-	 * from other parts and therefore avoid namespace clashes and so on.
-	 *
-	 * The session data for the context is returned as an array reference, which calling code will need to assign by
-	 * reference in order to use successfully. If it is not assigned by reference, any changes made to the provided
-	 * session array will not persist between requests. To do this, do something like the following in your code:
-	 *
-	 *     $session = & Equit\WebApplication::instance()->sessionData("context");
-	 *
-	 * Once you have done this, you can use `$session` just like you would use `$_SESSION` to store your session data.
-	 *
-	 * There is nothing special that needs to be done to create a new session context. If a request is made for a
-	 * context that does not already exist, a new one is automatically initialised and returned.
-	 *
-	 * @param $context string A unique context identifier for the session data.
-	 *
-	 * @return array<mixed,mixed> A reference to the session data for the given context.
-	 * @throws InvalidArgumentException If an empty context is given.
-	 */
-	public function & sessionData(string $context): array
-	{
-		if (empty($context)) {
-			throw new InvalidArgumentException("Session context must not be empty.");
-		}
+    /**
+     * Initialise the application session data.
+     */
+    private function initialiseSession(): void
+    {
+        SessionFacade::start();
+        // ensure the CSRF token is generated as soon as the session is started
+        $this->csrf();
+    }
 
-		// ensure context is not numeric (avoids issues when un-serialising session data)
-		$context = "ctx-$context";
+    /**
+     * Fetch the application's session data.
+     *
+     * The context parameter ensures that different parts of the application can keep their session data separate from
+     * other parts and therefore avoid namespace clashes and so on.
+     *
+     * The session data for the context is returned as a PrefixedAccessor, a view on a subset of the session data whose
+     * keys all share a prefix. Changes made to the returned object will show up in the session data, all prefixed with
+     * the given context (i.e. you don't need to keep using the context when setting session data).
+     *
+     * @param $context string A unique context identifier for the session data.
+     *
+     * @return SessionDataAccessor The session data for the given context.
+     * @throws InvalidArgumentException If an empty context is given.
+     */
+    public function sessionData(string $context): SessionDataAccessor
+    {
+        if (empty($context)) {
+            throw new InvalidArgumentException("Session context must not be empty.");
+        }
 
-		if (!isset($_SESSION["bead-app"][$context])) {
-			$_SESSION["bead-app"][$context] = [];
-		}
-
-		$session = &$_SESSION["bead-app"][$context];
-		return $session;
-	}
-
-	/**
-	 * Store some session data for just the next request.
-	 *
-	 * The data persists for a given number of extra requests. If the age is 0 or less, the data only persists for the
-	 * current request (i.e. it's not all that different from a normal variable). The default is 1 to persist the data
-	 * for the next request only.
-	 *
-	 * @param string $context The session context.
-	 * @param string $key The session data key.
-	 * @param mixed $value The data.
-	 * @param int $age How many requests the data should persist for. Default is 1.
-	 */
-	public function storeTransientSessionData(string $context, string $key, $value, int $age = 1)
-	{
-		$this->sessionData($context)[$key] = $value;
-		$this->sessionData(self::SessionDataContext)["_transient"]["{$context}::{$key}"] = $age;
-	}
-
-	/**
-	 * Empty the expired transient session data.
-	 */
-	protected function flushTransientSessionData(): void
-	{
-		// destroy the transient data that's been around for more than one request
-		foreach ($this->sessionData(self::SessionDataContext)["_transient"] as $key => $age) {
-			--$age;
-
-			if (0 >= $age) {
-				[$context, $transientKey] = explode("::", $key, 2);
-				unset($this->sessionData($context)[$transientKey]);
-				unset($this->sessionData(self::SessionDataContext)["_transient"][$key]);
-			}
-		}
-	}
+        return SessionFacade::prefixed("{$context}.");
+    }
 
 	/**
 	 * Set the application's Request router.
@@ -406,7 +349,7 @@ class WebApplication extends Application
 	 *
 	 * Plugins are required to meet the following conditions:
 	 * - defined in a file named exactly as the plugin class is named, with the extension ".php"
-	 * - define a class that inherits the `Equit\Plugin` base class
+	 * - define a class that inherits the `Bead\Plugin` base class
 	 * - provide a valid instance of the appropriate class from the `instance()` method of the main plugin class
 	 *   defined in the file
 	 *
@@ -484,7 +427,8 @@ class WebApplication extends Application
 	/**
 	 * Load all the available plugins.
 	 *
-	 * Plugins are loaded from the configured plugins path. All valid plugins found are loaded and instantiated.
+	 * Plugins are loaded from the default plugins path. All valid plugins found are loaded and instantiated. The
+	 * error log will contain details of any plugins that failed to load.
 	 *
 	 * @return bool true if the plugins path was successfully scanned for plugins, false otherwise.
 	 * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
@@ -595,16 +539,16 @@ class WebApplication extends Application
 		return array_keys($this->m_pluginsByName);
 	}
 
-	/**
-	 * Fetch a plugin by its name.
-	 *
+    /**
+     * Fetch a plugin by its name.
+     *
 	 * If the plugin has been loaded, the created instance of that plugin will be returned. The provided class name must
 	 * be fully-qualified with its namespace.
-	 *
-	 * @param $name string The class name of the plugin.
-	 *
+     *
+     * @param $name string The class name of the plugin.
+     *
 	 * @return Plugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
-	 */
+     */
 	public function pluginByName(string $name): ?Plugin
 	{
 		$this->loadPlugins();
@@ -628,7 +572,7 @@ class WebApplication extends Application
 	/** Fetch the request submitted by the user.
 	 *
 	 * This method fetches the original request received from the user. It is just a convenience synonym for
-	 * LibEquit\Request::originalRequest().
+	 * Bead\Request::originalRequest().
 	 *
 	 * @see-also currentRequest()
 	 *
@@ -646,11 +590,11 @@ class WebApplication extends Application
 	 */
 	public function csrf(): string
 	{
-		if (!isset($this->m_session["csrf-token"])) {
+		if (!SessionFacade::has("csrf-token")) {
 			$this->regenerateCsrf();
 		}
 
-		return $this->m_session["csrf-token"];
+		return SessionFacade::get("csrf-token");
 	}
 
 	/**
@@ -660,7 +604,7 @@ class WebApplication extends Application
 	 */
 	public function regenerateCsrf(): void
 	{
-		$this->m_session["csrf-token"] = randomString(64);
+		SessionFacade::set("csrf-token", randomString(64));
 	}
 
 	/**
@@ -798,7 +742,6 @@ class WebApplication extends Application
 			$this->m_session["current_user"]["last_activity_time"] = time();
 		}
 
-		$this->flushTransientSessionData();
 		$this->m_isRunning = false;
         return self::ExitOk;
 	}

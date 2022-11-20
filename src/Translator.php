@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
-use Equit\Contracts\Translator as TranslatorContract;
+use Bead\Contracts\Translator as TranslatorContract;
 
 /**
  * Class to handle translation of UI strings into alternate languages.
@@ -18,17 +18,17 @@ use Equit\Contracts\Translator as TranslatorContract;
  * <http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry>
  *
  * Translatable strings are identified by their content, their source file and their line within that file. The file
- * and
- * line help to disambiguate the contexts for identical strings in case they need different translations on different
- * occasions. In all cases, if a specific translation for the file and line of a string is not found, one is sought for
- * just the file, and then for just the string. If no translation is found, the original string is returned unmodified.
+ * and line help to disambiguate the contexts for identical strings in case they need different translations on
+ * different occasions. In all cases, if a specific translation for the file and line of a string is not found, one is
+ * sought for just the file, and then for just the string. If no translation is found, the original string is returned
+ * unmodified.
  *
  * Translation files are simple CSV files. One file contains all the translations into a single language. Each row in
  * each file contains a translation of a single string in context. The first cell contains the file, the second the
  * line, the third the original string and the fourth the translated string. The file and line cells can be empty to
  * provide a "generic" translation that is not tied to a specific context.
  *
- * The _extract_translatable_strings_ tool is available to help provide the source translation files for translators to
+ * The `extract_translatable_strings` tool is available to help provide the source translation files for translators to
  * work with. Given a set of paths to source files it will output the discovered translatable strings in each source
  * file in CSV format. The translator then simply adds his/her translated strings in the appropriate column using a
  * spreadsheet application. The tool always places file and line context information for every string in the generated
@@ -36,17 +36,16 @@ use Equit\Contracts\Translator as TranslatorContract;
  * suitable.
  *
  * Translation files should only be generated after the source code for a release is frozen. This is because any
- * changes
- * to the source code after the translation files have been generated are likely to break the translation files due to
- * changes in the lines on which translatable strings occur. This problem can be lessened somewhat if the majority of
- * the strings in your UI can be serviced by generic translations, but it is good practice nonetheless to ensure that
- * your code is stable before having its UI translated.
+ * changes to the source code after the translation files have been generated are likely to break the translation files
+ * due to changes in the lines on which translatable strings occur. This problem can be lessened somewhat if the
+ * majority of the strings in your UI can be serviced by generic translations, but it is good practice nonetheless to
+ * ensure that your code is stable before having its UI translated.
  *
- * In order to use translations, an application must create an instance of the LibEquit\Translator class, provide it
- * with the language to use and one or more search paths in which to attempt to locate translation files, then use the
- * _translate()_ method with any string that it wishes to have translated. For example:
+ * In order to use translations, an application must create an instance of the `Bead\Translator` class, provide it with
+ * the language to use and one or more search paths in which to attempt to locate translation files, then use the
+ * `translate()` method with any string that it wishes to have translated. For example:
  *
- *     $t = new LibEquit\Translator('pt-BR');
+ *     $t = new Bead\Translator('pt-BR');
  *     $t->addSearchPath('i18n/myapp/');
  *     $msg = $t->translate('Hello there %1', basename(__FILE__), __LINE__);
  *     echo str_replace('%1', $argv[1]);
@@ -55,8 +54,7 @@ use Equit\Contracts\Translator as TranslatorContract;
  * the above example, _%1_ is used as a placeholder to represent the content of a command-line argument. It is
  * recommended also that whatever scheme you use is capable of supporting reordering of the arguments by translators so
  * that they can be inserted into the translated string in the correct positions for the target language. Numbering
- * your
- * placeholders in sequence is a useful approach.
+ * your placeholders in sequence is a useful approach.
  *
  * This can be wrapped into small functions in your apps, using PHPs varargs and dynamic function-calling features to
  * reduce the amount of typing you need to do to translate each string. For example, with:
@@ -64,7 +62,7 @@ use Equit\Contracts\Translator as TranslatorContract;
  *     function tr( $s, $file = '', $line = '' ) {
  *        global $translator;
  *
- *        if($translator instanceof LibEquit\Translator) {
+ *        if($translator instanceof Bead\Translator) {
  *            $s = $translator->translate($s, basename($file), $line);
  *        }
  *
@@ -99,7 +97,7 @@ use Equit\Contracts\Translator as TranslatorContract;
  *
  * translating a string becomes:
  *
- *     $translator = new LibEquit\Translator('pt-BR');
+ *     $translator = new Bead\Translator('pt-BR');
  *     $translator->addSearchPath('i18n/myapp/');
  *     echo tr('Hello there %1', __FILE__, __LINE__, $argv[1]);
  *
@@ -109,7 +107,7 @@ use Equit\Contracts\Translator as TranslatorContract;
  *     function tr( $s, $file = '', $line = '' ) {
  *        global $translator;
  *
- *        if($translator instanceof LibEquit\Translator) {
+ *        if($translator instanceof Bead\Translator) {
  *            $s = $translator->translate($s, basename($file), $line);
  *        }
  *

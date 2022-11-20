@@ -1,11 +1,10 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
-use Equit\Contracts\ErrorHandler as ErrorHandlerContract;
-use Equit\Contracts\Response;
-use Equit\Exceptions\HttpException;
-use Equit\Responses\AbstractResponse;
+use Bead\Contracts\ErrorHandler as ErrorHandlerContract;
+use Bead\Contracts\Response;
+use Bead\Responses\AbstractResponse;
 use Error;
 use Throwable;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test;
+namespace BeadTests;
 
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 use Generator;
 use TypeError;
 

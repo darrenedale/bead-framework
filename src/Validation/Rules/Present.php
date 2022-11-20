@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
-use Equit\Validation\DatasetAwareRule;
+use Bead\Validation\DatasetAwareRule;
 
 /**
  * Validator rule to ensure that a key is present in the data.

@@ -10,13 +10,17 @@
     }
   ],
   "require": {
-    "php": "^7.4 || ^8",
+    "php": "^8",
     "ext-mbstring": "*",
     "ext-dom": "*",
     "ext-pdo": "*",
     "ext-iconv": "*",
     "ext-json": "*",
-    "psr/container": "^1.1 || ^2.0"
+    "psr/container": "^2.0",
+    "psr/http-message": "^1"
+  },
+  "suggest": {
+    "ext-shmop": "*"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
@@ -25,7 +29,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Equit\\": "src"
+      "Bead\\": "src"
     },
     "files": [
       "src/Helpers/String.php",
@@ -37,7 +41,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Equit\\Test\\": "test"
+      "BeadTests\\": "test"
     }
   }
 }

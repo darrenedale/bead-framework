@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
 /**
  * Trait for rules that implement validation logic that compares to another field in the dataset in some way.

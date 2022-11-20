@@ -1,14 +1,14 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
-use Equit\Contracts\Response;
-use Equit\Request;
-use Equit\Responses\DoesntHaveHeaders;
-use Equit\Responses\NaivelySendsContent;
-use Equit\Responses\SendsHeaders;
-use Equit\View;
-use Equit\WebApplication;
+use Bead\Contracts\Response;
+use Bead\Request;
+use Bead\Responses\DoesntHaveHeaders;
+use Bead\Responses\NaivelySendsContent;
+use Bead\Responses\SendsHeaders;
+use Bead\View;
+use Bead\WebApplication;
 use \Exception;
 use \Throwable;
 
