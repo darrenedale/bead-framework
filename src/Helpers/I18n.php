@@ -1,10 +1,10 @@
 <?php
 
-namespace Equit\Helpers\I18n;
+namespace Bead\Helpers\I18n;
 
-use Equit\Application;
+use Bead\Application;
 
-use function Equit\Helpers\String\buildString;
+use function Bead\Helpers\Str\build;
 
 /**
  * Convenience function to ease UI string translation.
@@ -43,5 +43,5 @@ function tr(string $str, string $file = null, int $line = null, ... $args): stri
 		}
 	}
 
-	return (0 === count($args) ? $str : buildString($string, ... $args));
+	return (0 === count($args) ? $str : build($str, ... $args));
 }

@@ -26,7 +26,7 @@ use PDO;
 use PDOStatement;
 use RuntimeException;
 
-use function Equit\Helpers\String\randomString;
+use function Bead\Helpers\Str\random;
 
 /**
  * Cache a set of database results.
@@ -247,7 +247,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 */
 	protected static function generateUid(): string
 	{
-		return randomString(32);
+		return random(32);
 	}
 
 	/**

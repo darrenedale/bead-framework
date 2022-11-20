@@ -4,6 +4,8 @@ namespace Bead\Validation\Rules;
 
 use Bead\Validation\DatasetAwareRule;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validator rule to ensure that a key is present in the data.
  *

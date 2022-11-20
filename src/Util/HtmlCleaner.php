@@ -18,7 +18,7 @@ use InvalidArgumentException;
 use StdClass;
 
 use function Bead\Helpers\Iterable\all;
-use function Bead\Helpers\String\toCodePoints;
+use function Bead\Helpers\Str\toCodePoints;
 
 /**
  * Sanitise HTML according to configurable rules.

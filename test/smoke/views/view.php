@@ -24,7 +24,7 @@ use Bead\View;
 <?php View::endPush(); ?>
 
 <?php View::section("main"); ?>
-    <p>This is the section content. The view was given &ldquo;<?= Equit\Helpers\String\html($foo) ?>&rdquo; as its data.</p>
+    <p>This is the section content. The view was given &ldquo;<?= html($foo) ?>&rdquo; as its data.</p>
 
     <?php View::component("components.details") ?>
         <?php View::slot("summary"); ?>
@@ -41,7 +41,7 @@ use Bead\View;
     <h1>View data:</h1>
     <div>
         <pre>
-            <?= Equit\Helpers\String\html(trim(print_r($data, true))) ?>
+            <?= html(trim(print_r($data, true))) ?>
         </pre>
     </div>
 <?php View::endSection(); ?>

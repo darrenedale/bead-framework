@@ -13,6 +13,8 @@ namespace Bead\Validation\Rules;
 use Bead\Validation\Rule;
 use function Bead\Helpers\Iterable\all;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validator rule to ensure that some data is in a given set of values.
  *

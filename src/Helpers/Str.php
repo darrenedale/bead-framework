@@ -1,77 +1,37 @@
 <?php
 
-/**
- * @file string.php
- * @author Darren Edale
- * @version 0.9.2
- * @version 0.9.2 *
- * @brief Definitions of stand-alone string-processing functions.
- *
- * These functions complement the string processing functions PHP provides.
- *
- * @package bead-framework
- */
+declare(strict_types=1);
 
-namespace Equit\Helpers\String;
+namespace Bead\Helpers\Str;
 
-/**
- * @param mixed $var Value/object to stringify
- *
- * @return string The string representation of the provided value or object.
- *
- * @deprecated use PHP built-in print_r() or var_dump()
- */
-function stringify($var): string
-{
-	if (is_string($var)) {
-		return $var;
-	}
+use DateTimeInterface;
+use InvalidArgumentException;
+use SplFixedArray;
 
-	if (is_numeric($var)) {
-		return "$var";
-	}
-
-	if (is_null($var)) {
-		return "NULL";
-	}
-
-	if (is_bool($var)) {
-		return ($var ? "TRUE" : "FALSE");
-	}
-
-	if (is_array($var)) {
-		$ret = [];
-
-		foreach ($var as $k => $o) {
-			$ret[] = stringify($k) . "=>" . stringify($o);
-		}
-
-		return "ARRAY[" . implode(",", $ret) . "]";
-	}
-
-	if (is_resource($var)) {
-		return "RESOURCE<" . get_resource_type($var) . ">";
-	}
-
-	if (is_object($var)) {
-		if ($var instanceof DateTime) {
-			return $var->format("Y-m-d H:i:s");
-		}
-
-		if (is_callable([$var, "__toString"], false)) {
-			return $var->__toString();
-		}
-
-		return "OBJECT<" . get_class($var) . ">";
-	}
-
-	return "<unknown object>";
-}
+use function array_map;
+use function base64_encode;
+use function count;
+use function htmlentities;
+use function mb_convert_encoding;
+use function mb_ereg_replace;
+use function mb_ereg_replace_callback;
+use function mb_regex_encoding;
+use function mb_strtolower;
+use function mb_strtoupper;
+use function mb_substr;
+use function min;
+use function random_bytes;
+use function sprintf;
+use function str_replace;
+use function str_split;
+use function substr;
+use function unpack;
 
 /**
  * Convert a camelCase string to snake_case.
  *
- * The conversion is multibyte-safe.
+ * The conversion is multibyte-safe. It is the caller's responsibility to be sure that the provided string is camel
+ * cased. If it isn't, GIGO.
  *
  * @param string $str The string to convert.
  * @param string|null $encoding The encoding to use.
@@ -117,9 +77,16 @@ function snakeToCamel(string $str, ?string $encoding = null): string
 		mb_regex_encoding($encoding);
 	}
 
+	// ignore all leading _ chars (to avoid upper-casing the first non-underscore)
+	$trim = 0;
+
+	while ($trim < (strlen($str) - $trim) && "_" === $str[$trim]) {
+		++$trim;
+	}
+
 	$ret = mb_ereg_replace_callback("_+(.)", function (array $matches) use ($encoding): string {
 		return mb_strtoupper($matches[1], $encoding ?? "UTF-8");
-	}, $str);
+	}, mb_substr($str, $trim));
 
 	if (isset($oldEncoding)) {
 		mb_regex_encoding($oldEncoding);
@@ -139,19 +106,9 @@ function snakeToCamel(string $str, ?string $encoding = null): string
  *
  * @return string The escaped content.
  */
-function html(string $str) {
+function html(string $str)
+{
 	return htmlentities($str, ENT_COMPAT, "UTF-8");
-}
-
-/**
- * Escape content for use as the data in a CSV cell.
- *
- * @param $content string The content to escape.
- *
- * @return string The escaped content.
- */
-function escapeCsvCell(string $content): string {
-	return str_replace("\"", "\\\"", $content);
 }
 
 /**
@@ -166,16 +123,17 @@ function escapeCsvCell(string $content): string {
  *
  * This method is used by the translation function tr() to automatically insert data into translated strings.
  *
- * @param $template string The template to process.
- * @param $args ...string The values to insert into the template.
+ * @param string $template The template to process.
+ * @param mixed[] ...$args The values to insert into the template.
  *
  * @return string The populated string.
  */
-function buildString(string $template, ... $args): string {
+function build(string $template, mixed ... $args): string
+{
 	$argc = count($args);
 
 	if (0 == $argc) {
-		/* avoid pointlessly executing the rest ... */
+		/* avoid pointlessly executing the rest */
 		return $template;
 	}
 
@@ -232,8 +190,9 @@ function toCodePoints(string $str, string $encoding): array
  * @return string
  * @throws Exception if a cryptographically-secure source of randomness is not available.
  */
-function randomString(int $length): string
+function random(int $length): string
 {
+	assert (0 <= $length, new InvalidArgumentException("Can't produce a random string of < 0 characters in lenngth."));
 	$str = "";
 
 	while (0 < $length) {

@@ -13,6 +13,8 @@ namespace Bead\Validation\Rules;
 use Bead\Validation\Rule;
 use Countable;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validator rule to ensure that some data is of a given length.
  */

@@ -14,6 +14,8 @@ use DateTime;
 use Bead\Validation\Rule;
 use Throwable;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validator rule to ensure that a date is after a given date.
  */

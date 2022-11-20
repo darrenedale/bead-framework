@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Helpers\Iterable;
+namespace Bead\Helpers\Iterable;
 
 /**
  * Flatten an array to a single dimension.

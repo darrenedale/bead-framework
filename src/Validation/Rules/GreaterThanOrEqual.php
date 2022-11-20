@@ -13,6 +13,8 @@ namespace Bead\Validation\Rules;
 use DateTime;
 use Bead\Exceptions\ValidationRuleException;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validation rule that ensures a value is greater than or equal to the value in another field in the dataset.
  *

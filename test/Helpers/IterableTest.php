@@ -2,28 +2,29 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Helpers;
+namespace BeadTests\Helpers;
 
 use ArrayIterator;
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 use Error;
 use Generator;
 use Iterator;
 use Traversable;
 use TypeError;
 
-use function Equit\Helpers\Iterable\accumulate;
-use function Equit\Helpers\Iterable\all;
-use function Equit\Helpers\Iterable\flatten;
-use function Equit\Helpers\Iterable\grammaticalImplode;
-use function Equit\Helpers\Iterable\implode;
-use function Equit\Helpers\Iterable\isSubsetOf;
-use function Equit\Helpers\Iterable\map;
-use function Equit\Helpers\Iterable\none;
-use function Equit\Helpers\Iterable\reduce;
-use function Equit\Helpers\Iterable\some;
-use function Equit\Helpers\Iterable\toArray;
-use function Equit\Helpers\Iterable\transform;
+use function Bead\Helpers\Iterable\accumulate;
+use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\Iterable\flatten;
+use function Bead\Helpers\Iterable\grammaticalImplode;
+use function Bead\Helpers\Iterable\implode;
+use function Bead\Helpers\Iterable\isSubsetOf;
+use function Bead\Helpers\Iterable\map;
+use function Bead\Helpers\Iterable\none;
+use function Bead\Helpers\Iterable\recursiveCount;
+use function Bead\Helpers\Iterable\reduce;
+use function Bead\Helpers\Iterable\some;
+use function Bead\Helpers\Iterable\toArray;
+use function Bead\Helpers\Iterable\transform;
 
 final class IterableTest extends TestCase
 {
@@ -569,6 +570,12 @@ final class IterableTest extends TestCase
 				" and ",
 				"1 - 2 and 3",
 			],
+			"typicalSingleItemTraversable" => [
+				$this->createIterator(["foo",]),
+				" - ",
+				" and ",
+				"foo",
+			],
 			"extremeTraversableWithLongString" => [
 				$this->createIterator([1, 2, 3,]),
 				"RIDICULOUSLY-LONG-GLUE",
@@ -610,6 +617,12 @@ final class IterableTest extends TestCase
 				"; ",
 				" or ",
 				"1; 2 or 3",
+			],
+			"typicalSingleItemGenerator" => [
+				$this->createGenerator(["foo",]),
+				" - ",
+				" and ",
+				"foo",
 			],
 			"extremeGeneratorWithLongString" => [
 				$this->createGenerator([1, 2, 3,]),
@@ -658,6 +671,12 @@ final class IterableTest extends TestCase
 				"; ",
 				" or ",
 				"1; 2 or 3",
+			],
+			"typicalSingleItemArray" => [
+				["foo",],
+				" - ",
+				" and ",
+				"foo",
 			],
 			"extremeArrayWithLongString" => [
 				[1, 2, 3,],
@@ -1009,23 +1028,23 @@ final class IterableTest extends TestCase
 			"extremeEmptyGenerator" => [self::createGenerator([]), $product, null, 0,],
 
 			// ensure invalid args are rejected
-			"invalidIterableNull" => [null, $max, 1, 1, TypeError::class,],
-			"invalidIterableString" => ["string", $max, 1, 1, TypeError::class,],
-			"invalidIterableEmptyString" => ["", $max, 1, 1, TypeError::class,],
-			"invalidIterableInt" => [42, $max, 1, 1, TypeError::class,],
-			"invalidIterableFloat" => [3.1415926, $max, 1, 1, TypeError::class,],
-			"invalidIterableTrue" => [true, $max, 1, 1, TypeError::class,],
-			"invalidIterableFalse" => [false, $max, 1, 1, TypeError::class,],
+			"invalidIterableNull" => [null, $product, 1, 1, TypeError::class,],
+			"invalidIterableString" => ["string", $product, 1, 1, TypeError::class,],
+			"invalidIterableEmptyString" => ["", $product, 1, 1, TypeError::class,],
+			"invalidIterableInt" => [42, $product, 1, 1, TypeError::class,],
+			"invalidIterableFloat" => [3.1415926, $product, 1, 1, TypeError::class,],
+			"invalidIterableTrue" => [true, $product, 1, 1, TypeError::class,],
+			"invalidIterableFalse" => [false, $product, 1, 1, TypeError::class,],
 			"invalidIterableAnonymousClass" => [
 				new class
 				{
 				},
-				$max,
+				$product,
 				1,
 				1,
 				TypeError::class,
 			],
-			"invalidIterableObject" => [(object) [], $max, 1, 1, TypeError::class,],
+			"invalidIterableObject" => [(object) [], $product, 1, 1, TypeError::class,],
 
 			"invalidCallableString" => [[1, 2, 3,], "this_function_does_not_exist", 1, 1, TypeError::class,],
 			"invalidCallableEmptyString" => [[1, 2, 3,], "", 1, 1, TypeError::class,],
@@ -1638,8 +1657,63 @@ final class IterableTest extends TestCase
 		$this->assertEquals($expected, $actual);
 	}
 
-	public function testRecursiveCount(): void
+	/**
+	 * Test data for testRecursiveCount.
+	 *
+	 * @return iterable The test data.
+	 */
+	public function dataForTestRecursiveCount(): iterable
 	{
-		// TODO implement
+		yield from [
+			"typicalFlatArray" => [[1, 2, 3,], 3,],
+			"typicalNestedArrays" => [[[1, 2, 3,], [4, 5, 6,],], 6,],
+			"typicalMixed" => [[[1, 2, 3,], 4, 5,], 5,],
+
+			"typicalGenerator" => [self::createGenerator([1, 2, 3,]), 3,],
+			"typicalArrayWithNestedGenerator" => [[4, [5, 6,], self::createGenerator([1, 2, 3,]),], 6,],
+
+			"typicalIterator" => [self::createIterator([1, 2, 3,]), 3,],
+			"typicalArrayWithNestedIterator" => [[4, [5, 6,], self::createIterator([1, 2, 3,]),], 6,],
+
+			"extremeNestedwithOneEmptyArray" => [[[1, 2, 3,], 4, 5, [],], 5,],
+			"extremeEmpty" => [[], 0,],
+			"extremeNestedEmptyArrays" => [[[], [], [],], 0,],
+			"extremeDeeplyNestedEmptyArrays" => [[[[[[],],],[[[],],],],[],], 0,],
+
+			"invalidString" => ["foo", 0, TypeError::class,],
+			"invalidInt" => [42, 0, TypeError::class,],
+			"invalidFloat" => [3.1415927, 0, TypeError::class,],
+			"invalidBoolean" => [true, 0, TypeError::class,],
+			"invalidClosure" => [fn(): int  => 0, 0, TypeError::class,],
+			"invalidObject" => [(object) [1, 2, 3,], 0, TypeError::class,],
+			"invalidCountable" => [
+				new class
+				{
+					public function count(): int
+					{
+						return 0;
+					}
+				},
+				0,
+				TypeError::class,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider dataForTestRecursiveCount
+	 *
+	 * @param mixed $iterable The iterable to count.
+	 * @param int $expected The expected recursive count.
+	 * @param string|null $exceptionClass The type exception expected to be throw, if any.
+	 */
+	public function testRecursiveCount(mixed $iterable, int $expected, ?string $exceptionClass = null): void
+	{
+		if (isset($exceptionClass)) {
+			$this->expectException($exceptionClass);
+		}
+
+		$actual = recursiveCount($iterable);
+		$this->assertEquals($expected, $actual);
 	}
 }

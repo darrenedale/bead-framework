@@ -15,6 +15,8 @@ use InvalidArgumentException;
 
 use function Bead\Helpers\Iterable\all;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validator rule to ensure that some data is non-empty if all of another set of fields are non-empty.
  */

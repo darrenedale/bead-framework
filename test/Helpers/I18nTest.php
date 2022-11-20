@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Helpers;
+namespace BeadTests\Helpers;
 
-use Equit\Test\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 use TypeError;
 
 final class I18nTest extends TestCase

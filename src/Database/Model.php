@@ -19,7 +19,7 @@ use ReflectionMethod;
 use TypeError;
 
 use function Bead\Helpers\Iterable\all;
-use function Bead\Helpers\String\snakeToCamel;
+use function Bead\Helpers\Str\snakeToCamel;
 
 /**
  * Base class for database model classes.

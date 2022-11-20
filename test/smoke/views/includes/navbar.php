@@ -1,4 +1,4 @@
-<div><a href="/"><?= Equit\Helpers\String\html(tr("Home")) ?></a></div>
+<div><a href="/"><?= html(tr("Home")) ?></a></div>
 <div><a href="/foo">Foo</a></div>
 <div><a href="/bar">Bar</a></div>
 <div class="separator"></div>
