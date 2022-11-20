@@ -1,9 +1,9 @@
 <?php
 
-namespace Equit\Database;
+namespace Bead\Database;
 
-use Equit\Contracts\QueryBuilder as QueryBuilderContract;
-use Equit\Application;
+use Bead\Contracts\QueryBuilder as QueryBuilderContract;
+use Bead\Application;
 use PDO;
 
 class QueryBuilder implements QueryBuilderContract

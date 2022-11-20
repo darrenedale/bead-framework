@@ -10,8 +10,8 @@ spl_autoload_register(function (string $className) {
     $path = explode("\\", $className);
     $className = array_pop($path);
 
-    // only autoload from Equit namespace
-    if (empty($path) || "Equit" !== $path[0]) {
+    // only autoload from Bead namespace
+    if (empty($path) || "Bead" !== $path[0]) {
         return;
     }
 
@@ -19,7 +19,7 @@ spl_autoload_register(function (string $className) {
         $baseDir = realpath(__DIR__);
     }
 
-    // trim Equit namespace from the path - baseDir is where Equit root namespace is located
+    // trim Bead namespace from the path - baseDir is where Bead root namespace is located
     array_shift($path);
 
     if (empty($path)) {

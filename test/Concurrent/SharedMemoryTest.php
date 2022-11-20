@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace BeadTests\Concurrent;
 
-use Equit\Concurrent\SharedMemory;
-use Equit\Exceptions\Concurrent\SharedMemoryException;
-use Equit\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
+use Bead\Concurrent\SharedMemory;
+use Bead\Exceptions\Concurrent\SharedMemoryException;
+use Bead\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
 use BeadTests\Framework\TestCase;
-use Equit\Testing\XRay;
-use Equit\Util\ScopeGuard;
+use Bead\Testing\XRay;
+use Bead\Util\ScopeGuard;
 use InvalidArgumentException;
 use JsonException;
 

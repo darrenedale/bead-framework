@@ -2,7 +2,7 @@
 
 namespace {
 
-	use Equit\Application;
+	use Bead\Application;
 
 	/**
 	 * Convenience function to ease UI string translation.

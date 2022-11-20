@@ -1,15 +1,15 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
-use Equit\Contracts\ErrorHandler;
-use Equit\Contracts\ServiceContainer;
-use Equit\Contracts\Translator as TranslatorContract;
-use Equit\Database\Connection;
+use Bead\Contracts\ErrorHandler;
+use Bead\Contracts\ServiceContainer;
+use Bead\Contracts\Translator as TranslatorContract;
+use Bead\Database\Connection;
+use Bead\ErrorHandler as BeadErrorHandler;
+use Bead\Exceptions\ServiceAlreadyBoundException;
+use Bead\Exceptions\ServiceNotFoundException;
 use DirectoryIterator;
-use Equit\ErrorHandler as EquitErrorHandler;
-use Equit\Exceptions\ServiceAlreadyBoundException;
-use Equit\Exceptions\ServiceNotFoundException;
 use Exception;
 use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
@@ -49,10 +49,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
     /** The minimum PHP version the app requires to run. */
     private string $m_minimumPhpVersion = "0.0.0";
 
-    /** @var null|\Equit\Translator The currently installed translator */
+    /** @var null|\Bead\Translator The currently installed translator */
     private ?Translator $m_translator = null;
 
-    /** @var \Equit\Contracts\ErrorHandler|null The currently installed error handler. */
+    /** @var \Bead\Contracts\ErrorHandler|null The currently installed error handler. */
     private ?ErrorHandler $m_errorHandler = null;
 
     /** @var Connection|null The data controller. */
@@ -72,7 +72,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function __construct(string $appRoot, ?Connection $db = null)
     {
-        $this->setErrorHandler(new EquitErrorHandler());
+        $this->setErrorHandler(new BeadErrorHandler());
 
         if (isset(self::$s_instance)) {
             throw new Exception("Application instance already created.");
@@ -92,7 +92,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
-     * Fetch the single instance of the Equit\Application class.
+     * Fetch the single instance of the Bead\Application class.
      *
      * The instance is only returned if it is an instance of the class on which the method was invoked - for example, if
      * WebApplication::instance() is called but the instance was constructed as an Application object, null will be
@@ -362,7 +362,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Fetch the current error handler.
      *
      * Applications must always have an installed error handler. The constructor for this base class installs the
-     * default Equit error handler. If you find you're receiving a RuntimeException indicating you don't have an error
+     * default Bead error handler. If you find you're receiving a RuntimeException indicating you don't have an error
      * handler, it's likely you've created an Application subclass that doesn't call the base class constructor.
      *
      * @return ErrorHandler
@@ -376,7 +376,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
     /**
      * Set the error handler for the application.
      *
-     * @param \Equit\Contracts\ErrorHandler $handler
+     * @param \Bead\Contracts\ErrorHandler $handler
      *
      * @return void
      */
@@ -499,10 +499,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * All callbacks are given two parameters before any parameters that are defined by the event provider. The
      * first is the event that occurred (a `string`) and the second is the request that gave rise to the event (a
-     * LibEquit\Request object). In the case of some application events and possibly some plugin events, the
-     * LibEquit\Request can be _null_ (it is up to the plugin to provide the appropriate request when it emits the
+     * Bead\Request object). In the case of some application events and possibly some plugin events, the
+     * Bead\Request can be _null_ (it is up to the plugin to provide the appropriate request when it emits the
      * event, it is not automatically provided by emitEvent()). Plugins that emit events are very strongly
-     * recommended to provide a LibEquit\Request object wherever possible.
+     * recommended to provide a Bead\Request object wherever possible.
      *
      * Callbacks stack up, so if you add the same callback more than once, it will be called more than once every
      * time the event occurs.

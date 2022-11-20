@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BeadTests\Util;
 
 use BeadTests\Framework\TestCase;
-use Equit\Util\Hours;
+use Bead\Util\Hours;
 use TypeError;
 
 class HoursTest extends TestCase

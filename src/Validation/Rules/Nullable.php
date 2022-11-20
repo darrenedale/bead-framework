@@ -8,10 +8,10 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
-use Equit\Validation\TypeConvertingRule;
-use Equit\Validation\ValidatorAwareRule;
+use Bead\Validation\TypeConvertingRule;
+use Bead\Validation\ValidatorAwareRule;
 
 /**
  * Validator rule to make a field nullable.

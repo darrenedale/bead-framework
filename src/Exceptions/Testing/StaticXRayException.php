@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Exceptions\Testing;
+namespace Bead\Exceptions\Testing;
 
 use RuntimeException;
 use Throwable;

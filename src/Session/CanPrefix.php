@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Session;
+namespace Bead\Session;
 
 /**
  * Default implementation of session prefix handling.

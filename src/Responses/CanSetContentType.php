@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Responses;
+namespace Bead\Responses;
 
 /**
  * Trait for responses that can have their content-type set.

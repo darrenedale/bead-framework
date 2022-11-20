@@ -3,9 +3,9 @@
 namespace BeadTests\Validation\Rules;
 
 use BeadTests\Framework\TestCase;
-use Equit\Validation\Rules\Nullable;
-use Equit\Validation\ValidatorAwareRule;
-use Equit\Validation\Validator;
+use Bead\Validation\Rules\Nullable;
+use Bead\Validation\ValidatorAwareRule;
+use Bead\Validation\Validator;
 use Mockery;
 
 class NullableTest extends TestCase

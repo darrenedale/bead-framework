@@ -2,8 +2,8 @@
 
 namespace BeadTests\Validation\Rules;
 
-use Equit\Validation\Validator;
-use Equit\Validation\ValidatorAwareRule;
+use Bead\Validation\Validator;
+use Bead\Validation\ValidatorAwareRule;
 use Mockery;
 
 trait TestsKnowsValidatorTrait

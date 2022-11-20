@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Contracts;
+namespace Bead\Contracts;
 
 /**
  * Interface for imlementations of signed URI generators.

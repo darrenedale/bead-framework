@@ -14,7 +14,7 @@ namespace BeadTests;
 use BeadTests\Framework\TestCase;
 use Exception;
 use InvalidArgumentException;
-use Equit\Util\HtmlCleaner;
+use Bead\Util\HtmlCleaner;
 use StdClass;
 use TypeError;
 

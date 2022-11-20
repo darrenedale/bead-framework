@@ -2,7 +2,7 @@
 
 namespace BeadTests;
 
-use Equit\Translator;
+use Bead\Translator;
 use PHPUnit\Framework\TestCase;
 use ReflectionClassConstant;
 

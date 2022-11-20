@@ -1,9 +1,9 @@
 <?php
 
-namespace Equit\Testing;
+namespace Bead\Testing;
 
 use BadMethodCallException;
-use Equit\Exceptions\Testing\StaticXRayException;
+use Bead\Exceptions\Testing\StaticXRayException;
 use LogicException;
 use ReflectionClass;
 use ReflectionException;

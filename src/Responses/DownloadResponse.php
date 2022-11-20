@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Responses;
+namespace Bead\Responses;
 
 /**
  * Send a response to be downloaded as a file.

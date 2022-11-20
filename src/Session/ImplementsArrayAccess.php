@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Session;
+namespace Bead\Session;
 
 // currently PHP8 complains with an E_NOTICE if the trait is defined without a return type of mixed for offsetGet(),
 //  which PHP7.4 won't recognise. So we have to duplicate the code.

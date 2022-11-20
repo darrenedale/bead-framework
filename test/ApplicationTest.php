@@ -2,8 +2,8 @@
 
 namespace BeadTests;
 
-use Equit\Application;
-use Equit\Exceptions\ServiceAlreadyBoundException;
+use Bead\Application;
+use Bead\Exceptions\ServiceAlreadyBoundException;
 use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase

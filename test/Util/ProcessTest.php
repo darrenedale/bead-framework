@@ -5,7 +5,7 @@ namespace BeadTests\Util;
 
 use InvalidArgumentException;
 use TypeError;
-use Equit\Process;
+use Bead\Process;
 use BeadTests\Framework\TestCase;
 
 /**

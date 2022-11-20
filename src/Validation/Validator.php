@@ -8,54 +8,54 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation;
+namespace Bead\Validation;
 
 use ArgumentCountError;
 use DateTime;
-use Equit\Exceptions\ValidationException;
-use Equit\Validation\Rules\After;
-use Equit\Validation\Rules\Alpha;
-use Equit\Validation\Rules\Alphanumeric;
-use Equit\Validation\Rules\Before;
-use Equit\Validation\Rules\Between;
-use Equit\Validation\Rules\Date;
-use Equit\Validation\Rules\DateFormat;
-use Equit\Validation\Rules\Different;
-use Equit\Validation\Rules\Email;
-use Equit\Validation\Rules\EqualTo;
-use Equit\Validation\Rules\Filled;
-use Equit\Validation\Rules\GreaterThan;
-use Equit\Validation\Rules\GreaterThanOrEqual;
-use Equit\Validation\Rules\In;
-use Equit\Validation\Rules\Integer;
-use Equit\Validation\Rules\Ip;
-use Equit\Validation\Rules\IsArray;
-use Equit\Validation\Rules\IsBoolean;
-use Equit\Validation\Rules\IsFalse;
-use Equit\Validation\Rules\IsString;
-use Equit\Validation\Rules\IsTrue;
-use Equit\Validation\Rules\Json;
-use Equit\Validation\Rules\Length;
-use Equit\Validation\Rules\LessThan;
-use Equit\Validation\Rules\LessThanOrEqual;
-use Equit\Validation\Rules\Max;
-use Equit\Validation\Rules\MaxLength;
-use Equit\Validation\Rules\Min;
-use Equit\Validation\Rules\MinLength;
-use Equit\Validation\Rules\NotEqualTo;
-use Equit\Validation\Rules\NotIn;
-use Equit\Validation\Rules\Number;
-use Equit\Validation\Rules\Optional;
-use Equit\Validation\Rules\Present;
-use Equit\Validation\Rules\RegEx;
-use Equit\Validation\Rules\RequiredIf;
-use Equit\Validation\Rules\RequiredUnless;
-use Equit\Validation\Rules\RequiredWith;
-use Equit\Validation\Rules\RequiredWithAll;
-use Equit\Validation\Rules\RequiredWithout;
-use Equit\Validation\Rules\RequiredWithoutAll;
-use Equit\Validation\Rules\Same;
-use Equit\Validation\Rules\Url;
+use Bead\Exceptions\ValidationException;
+use Bead\Validation\Rules\After;
+use Bead\Validation\Rules\Alpha;
+use Bead\Validation\Rules\Alphanumeric;
+use Bead\Validation\Rules\Before;
+use Bead\Validation\Rules\Between;
+use Bead\Validation\Rules\Date;
+use Bead\Validation\Rules\DateFormat;
+use Bead\Validation\Rules\Different;
+use Bead\Validation\Rules\Email;
+use Bead\Validation\Rules\EqualTo;
+use Bead\Validation\Rules\Filled;
+use Bead\Validation\Rules\GreaterThan;
+use Bead\Validation\Rules\GreaterThanOrEqual;
+use Bead\Validation\Rules\In;
+use Bead\Validation\Rules\Integer;
+use Bead\Validation\Rules\Ip;
+use Bead\Validation\Rules\IsArray;
+use Bead\Validation\Rules\IsBoolean;
+use Bead\Validation\Rules\IsFalse;
+use Bead\Validation\Rules\IsString;
+use Bead\Validation\Rules\IsTrue;
+use Bead\Validation\Rules\Json;
+use Bead\Validation\Rules\Length;
+use Bead\Validation\Rules\LessThan;
+use Bead\Validation\Rules\LessThanOrEqual;
+use Bead\Validation\Rules\Max;
+use Bead\Validation\Rules\MaxLength;
+use Bead\Validation\Rules\Min;
+use Bead\Validation\Rules\MinLength;
+use Bead\Validation\Rules\NotEqualTo;
+use Bead\Validation\Rules\NotIn;
+use Bead\Validation\Rules\Number;
+use Bead\Validation\Rules\Optional;
+use Bead\Validation\Rules\Present;
+use Bead\Validation\Rules\RegEx;
+use Bead\Validation\Rules\RequiredIf;
+use Bead\Validation\Rules\RequiredUnless;
+use Bead\Validation\Rules\RequiredWith;
+use Bead\Validation\Rules\RequiredWithAll;
+use Bead\Validation\Rules\RequiredWithout;
+use Bead\Validation\Rules\RequiredWithoutAll;
+use Bead\Validation\Rules\Same;
+use Bead\Validation\Rules\Url;
 use Exception;
 use InvalidArgumentException;
 use LogicException;
@@ -669,7 +669,7 @@ class Validator
      * instead of
      *
      * ```php
-     * use Equit\Validation\Rules\Integer;
+     * use Bead\Validation\Rules\Integer;
      * new Validator(["quantity" => [new Integer(), new Min(1), new Max(10)],]);
      * ```
      *

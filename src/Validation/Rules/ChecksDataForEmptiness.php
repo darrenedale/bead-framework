@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
 trait ChecksDataForEmptiness
 {

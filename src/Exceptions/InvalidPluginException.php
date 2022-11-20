@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
-use Equit\Plugin;
+use Bead\Plugin;
 use Exception;
 use Throwable;
 
@@ -14,12 +14,12 @@ class InvalidPluginException extends Exception
 	/** @var string The plugin file. */
 	private string $m_path;
 
-	/** @var \Equit\Plugin|null The plugin instance, if available. */
+	/** @var \Bead\Plugin|null The plugin instance, if available. */
 	private ?Plugin $m_plugin;
 
 	/**
 	 * @param string $path The path from which the plugin was attempted to be loaded.
-	 * @param \Equit\Plugin|null $plugin The plugin instance, if available.
+	 * @param \Bead\Plugin|null $plugin The plugin instance, if available.
 	 * @param string $message The optional error message. Defaults to an empty string.
 	 * @param int $code The optional error code. Defaults to 0.
 	 * @param \Throwable|null $previous The optional previous Throwable. Defaults to null.
@@ -53,7 +53,7 @@ class InvalidPluginException extends Exception
 	/**
 	 * Fetch the invalid plugin, if available.
 	 *
-	 * @return \Equit\Plugin|null The plugin.
+	 * @return \Bead\Plugin|null The plugin.
 	 */
 	public function getPlugin(): ?Plugin
 	{

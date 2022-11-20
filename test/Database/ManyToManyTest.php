@@ -2,11 +2,11 @@
 
 namespace Database;
 
-use Equit\Application;
-use Equit\Database\Connection;
-use Equit\Database\ManyToMany;
+use Bead\Application;
+use Bead\Database\Connection;
+use Bead\Database\ManyToMany;
 use BeadTests\Framework\TestCase;
-use Equit\Database\Model;
+use Bead\Database\Model;
 use Mockery;
 
 use function uopz_set_return;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Util;
+namespace Bead\Util;
 
 interface TimestampInterval {
     /** Representation of the interval in seconds. */

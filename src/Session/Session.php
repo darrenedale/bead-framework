@@ -1,20 +1,20 @@
 <?php
 
-namespace Equit\Session;
+namespace Bead\Session;
 
-use Equit\Contracts\SessionHandler;
-use Equit\Exceptions\ExpiredSessionIdUsedException;
-use Equit\Exceptions\InvalidSessionHandlerException;
-use Equit\Exceptions\SessionExpiredException;
-use Equit\Exceptions\SessionNotFoundException;
-use Equit\Session\Handlers\File as FileSessionHandler;
-use Equit\Session\Handlers\Php as PhpSessionHandler;
-use Equit\WebApplication;
+use Bead\Contracts\SessionHandler;
+use Bead\Exceptions\ExpiredSessionIdUsedException;
+use Bead\Exceptions\InvalidSessionHandlerException;
+use Bead\Exceptions\SessionExpiredException;
+use Bead\Exceptions\SessionNotFoundException;
+use Bead\Session\Handlers\File as FileSessionHandler;
+use Bead\Session\Handlers\Php as PhpSessionHandler;
+use Bead\WebApplication;
 use Exception;
 use InvalidArgumentException;
 use RuntimeException;
 use TypeError;
-use function Equit\Traversable\all;
+use function Bead\Traversable\all;
 
 /**
  * Class encapsulating session data.

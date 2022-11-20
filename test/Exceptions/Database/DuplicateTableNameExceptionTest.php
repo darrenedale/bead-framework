@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\DuplicateTableNameException;
+use Bead\Exceptions\Database\DuplicateTableNameException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 

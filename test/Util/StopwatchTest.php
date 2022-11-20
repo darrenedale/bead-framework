@@ -4,7 +4,7 @@ declare(strict_types = 1);
 namespace BeadTests\Util;
 
 use BeadTests\Framework\TestCase;
-use Equit\Util\Stopwatch;
+use Bead\Util\Stopwatch;
 use Generator;
 use LogicException;
 use ReflectionProperty;

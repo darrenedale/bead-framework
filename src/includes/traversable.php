@@ -9,7 +9,7 @@
  * @version 0.9.2
  */
 
-namespace Equit\Traversable;
+namespace Bead\Traversable;
 
 use Traversable;
 use TypeError;

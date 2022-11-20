@@ -4,8 +4,8 @@ namespace BeadTests;
 
 use DateTime;
 use DateTimeImmutable;
-use Equit\Exceptions\UriSignerException;
-use Equit\UriSigner;
+use Bead\Exceptions\UriSignerException;
+use Bead\UriSigner;
 use PHPUnit\Framework\TestCase;
 
 class UriSignerTest extends TestCase

@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Contracts;
+namespace Bead\Contracts;
 
 /**
  * Contract for models that can be force-deleted.

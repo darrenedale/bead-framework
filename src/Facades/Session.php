@@ -1,16 +1,16 @@
 <?php
 
-namespace Equit\Facades;
+namespace Bead\Facades;
 
 use BadMethodCallException;
-use Equit\Exceptions\ExpiredSessionIdUsedException;
-use Equit\Exceptions\SessionExpiredException;
-use Equit\Exceptions\SessionNotFoundException;
-use Equit\Session\PrefixedAccessor;
-use Equit\Session\SessionHandler;
+use Bead\Exceptions\ExpiredSessionIdUsedException;
+use Bead\Exceptions\SessionExpiredException;
+use Bead\Exceptions\SessionNotFoundException;
+use Bead\Session\PrefixedAccessor;
+use Bead\Session\SessionHandler;
 use Exception;
 use LogicException;
-use Equit\Session\Session as BeadSession;
+use Bead\Session\Session as BeadSession;
 
 /**
  * Facade for easy access to the current session.

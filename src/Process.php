@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Equit;
+namespace Bead;
 
 use Closure;
 use RuntimeException;
 use InvalidArgumentException;
-use function Equit\Traversable\all;
+use function Bead\Traversable\all;
 
 /**
  * Encapsulation of an external process.

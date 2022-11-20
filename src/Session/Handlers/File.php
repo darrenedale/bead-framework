@@ -1,18 +1,18 @@
 <?php
 
-namespace Equit\Session\Handlers;
+namespace Bead\Session\Handlers;
 
 use DirectoryIterator;
 use SplFileInfo;
 use Exception;
-use Equit\Application;
-use Equit\AppLog;
-use Equit\Contracts\SessionHandler;
-use Equit\Exceptions\InvalidSessionDirectoryException;
-use Equit\Exceptions\InvalidSessionFileException;
-use Equit\Exceptions\SessionDestroyedException;
-use Equit\Exceptions\SessionFileSaveException;
-use Equit\Exceptions\SessionNotFoundException;
+use Bead\Application;
+use Bead\AppLog;
+use Bead\Contracts\SessionHandler;
+use Bead\Exceptions\InvalidSessionDirectoryException;
+use Bead\Exceptions\InvalidSessionFileException;
+use Bead\Exceptions\SessionDestroyedException;
+use Bead\Exceptions\SessionFileSaveException;
+use Bead\Exceptions\SessionNotFoundException;
 
 /**
  * Session handler that uses files to store session data persistently.

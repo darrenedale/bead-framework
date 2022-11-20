@@ -2,10 +2,10 @@
 
 namespace Database;
 
-use Equit\Application;
-use Equit\Database\Connection;
-use Equit\Database\Model;
-use Equit\Database\OneToMany;
+use Bead\Application;
+use Bead\Database\Connection;
+use Bead\Database\Model;
+use Bead\Database\OneToMany;
 use BeadTests\Framework\TestCase;
 use Mockery;
 

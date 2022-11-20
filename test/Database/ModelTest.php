@@ -5,15 +5,15 @@ namespace BeadTests\Database;
 use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
 use DateTime;
-use Equit\Database\Model;
-use Equit\Exceptions\Database\ModelPropertyCastException;
+use Bead\Database\Model;
+use Bead\Exceptions\Database\ModelPropertyCastException;
 use Generator;
 use LogicException;
 use PDO;
 use Prophecy\Call\Call;
 use ReflectionProperty;
 use TypeError;
-use function Equit\Traversable\all;
+use function Bead\Traversable\all;
 
 /**
  * Test case for the database Model class.

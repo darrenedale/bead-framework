@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation;
+namespace Bead\Validation;
 
 /**
  * Interface for rules that are aware of the validator they belong to.

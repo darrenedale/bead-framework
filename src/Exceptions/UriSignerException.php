@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
 use RuntimeException;
 

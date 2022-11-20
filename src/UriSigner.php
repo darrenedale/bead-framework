@@ -1,10 +1,10 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 use DateTimeInterface;
-use Equit\Contracts\UriSigner as UriSignerContract;
-use Equit\Exceptions\UriSignerException;
+use Bead\Contracts\UriSigner as UriSignerContract;
+use Bead\Exceptions\UriSignerException;
 use InvalidArgumentException;
 use TypeError;
 

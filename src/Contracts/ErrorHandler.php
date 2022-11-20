@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Contracts;
+namespace Bead\Contracts;
 
 use Throwable;
 

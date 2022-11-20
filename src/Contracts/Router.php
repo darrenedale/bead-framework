@@ -5,10 +5,10 @@
  * @version 0.9.2
  */
 
-namespace Equit\Contracts;
+namespace Bead\Contracts;
 
-use Equit\Exceptions\UnroutableRequestException;
-use Equit\Request;
+use Bead\Exceptions\UnroutableRequestException;
+use Bead\Request;
 
 /**
  * Contract for classes that want to route requests for a WebApplication.
@@ -63,7 +63,7 @@ interface Router
 	 * @param string|array<string> $methods The HTTP method(s) to accept on the route.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function register(string $route, $methods, $handler): void;
 
@@ -73,7 +73,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerGet(string $route, $handler): void;
 
@@ -83,7 +83,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerHead(string $route, $handler): void;
 
@@ -93,7 +93,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerPost(string $route, $handler): void;
 
@@ -103,7 +103,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerPut(string $route, $handler): void;
 
@@ -113,7 +113,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerDelete(string $route, $handler): void;
 
@@ -123,7 +123,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerConnect(string $route, $handler): void;
 
@@ -133,7 +133,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerOptions(string $route, $handler): void;
 
@@ -143,7 +143,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerPatch(string $route, $handler): void;
 
@@ -153,7 +153,7 @@ interface Router
 	 * @param string $route The route to register.
 	 * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException if a matching route is already registered.
+	 * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
 	 */
 	public function registerAny(string $route, $handler): void;
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 /**
  * Base class for application plugins.

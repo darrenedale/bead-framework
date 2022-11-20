@@ -1,9 +1,9 @@
 <?php
 
-namespace Equit\Contracts;
+namespace Bead\Contracts;
 
-use Equit\Exceptions\ServieAlreadyBoundException;
-use Equit\Exceptions\ServiceNotFoundException;
+use Bead\Exceptions\ServieAlreadyBoundException;
+use Bead\Exceptions\ServiceNotFoundException;
 
 interface ServiceContainer
 {

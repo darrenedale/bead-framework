@@ -8,9 +8,9 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
-use Equit\Validation\ValidatorAwareRule;
+use Bead\Validation\ValidatorAwareRule;
 
 /**
  * Validator rule to make a field optional.

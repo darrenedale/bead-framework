@@ -1,13 +1,13 @@
 <?php
 
-namespace Equit\Database;
+namespace Bead\Database;
 
 use DateTime;
-use Equit\Application;
-use Equit\Contracts\SoftDeletableModel;
-use Equit\Exceptions\Database\ModelPropertyCastException;
-use Equit\Exceptions\Database\UnknownRelationException;
-use Equit\Exceptions\Database\UnrecognisedQueryOperatorException;
+use Bead\Application;
+use Bead\Contracts\SoftDeletableModel;
+use Bead\Exceptions\Database\ModelPropertyCastException;
+use Bead\Exceptions\Database\UnknownRelationException;
+use Bead\Exceptions\Database\UnrecognisedQueryOperatorException;
 use Exception;
 use JsonException;
 use LogicException;
@@ -17,7 +17,7 @@ use PDOStatement;
 use ReflectionException;
 use ReflectionMethod;
 use TypeError;
-use function Equit\Traversable\all;
+use function Bead\Traversable\all;
 
 /**
  * Base class for database model classes.

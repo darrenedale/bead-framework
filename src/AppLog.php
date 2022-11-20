@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 /**
  * Debug logging class.

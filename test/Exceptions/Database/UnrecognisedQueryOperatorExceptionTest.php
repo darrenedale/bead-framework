@@ -3,7 +3,7 @@
 namespace Exceptions\Database;
 
 use BeadTests\Framework\TestCase;
-use Equit\Exceptions\Database\UnrecognisedQueryOperatorException;
+use Bead\Exceptions\Database\UnrecognisedQueryOperatorException;
 use Exception;
 use BeadTests\Exceptions\AssertsCommonExceptionProperties;
 
