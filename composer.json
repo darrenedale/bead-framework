@@ -10,13 +10,14 @@
     }
   ],
   "require": {
-    "php": "^7.4 || ^8",
+    "php": "^8",
     "ext-mbstring": "*",
     "ext-dom": "*",
     "ext-pdo": "*",
     "ext-iconv": "*",
     "ext-json": "*",
-    "psr/container": "^1.1 || ^2.0"
+    "psr/container": "^2.0",
+    "psr/http-message": "^1"
   },
   "suggest": {
     "ext-shmop": "*"
@@ -28,8 +29,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Equit\\": "src",
-      "BeadTests\\": "test"
+      "Equit\\": "src"
     },
     "files": [
       "src/includes/array.php",
@@ -40,7 +40,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Equit\\Test\\": "test"
+      "BeadTests\\": "test"
     }
   }
 }
