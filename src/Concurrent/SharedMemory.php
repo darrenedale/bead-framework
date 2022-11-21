@@ -8,6 +8,7 @@ use Bead\Exceptions\Concurrent\SharedMemoryException;
 use Bead\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
 use InvalidArgumentException;
 use JsonException;
+use RuntimeException;
 
 use function shmop_close;
 use function shmop_delete;
