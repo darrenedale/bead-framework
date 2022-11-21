@@ -2,17 +2,17 @@
 
 namespace Bead\Session\Handlers;
 
-use DirectoryIterator;
-use SplFileInfo;
-use Exception;
 use Bead\Application;
 use Bead\AppLog;
 use Bead\Contracts\SessionHandler;
-use Bead\Exceptions\InvalidSessionDirectoryException;
-use Bead\Exceptions\InvalidSessionFileException;
-use Bead\Exceptions\SessionDestroyedException;
-use Bead\Exceptions\SessionFileSaveException;
-use Bead\Exceptions\SessionNotFoundException;
+use Bead\Exceptions\Session\InvalidSessionDirectoryException;
+use Bead\Exceptions\Session\InvalidSessionFileException;
+use Bead\Exceptions\Session\SessionDestroyedException;
+use Bead\Exceptions\Session\SessionFileSaveException;
+use Bead\Exceptions\Session\SessionNotFoundException;
+use DirectoryIterator;
+use Exception;
+use SplFileInfo;
 
 /**
  * Session handler that uses files to store session data persistently.

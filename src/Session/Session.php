@@ -3,10 +3,10 @@
 namespace Bead\Session;
 
 use Bead\Contracts\SessionHandler;
-use Bead\Exceptions\ExpiredSessionIdUsedException;
-use Bead\Exceptions\InvalidSessionHandlerException;
-use Bead\Exceptions\SessionExpiredException;
-use Bead\Exceptions\SessionNotFoundException;
+use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
+use Bead\Exceptions\Session\InvalidSessionHandlerException;
+use Bead\Exceptions\Session\SessionExpiredException;
+use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\Handlers\File as FileSessionHandler;
 use Bead\Session\Handlers\Php as PhpSessionHandler;
 use Bead\WebApplication;
