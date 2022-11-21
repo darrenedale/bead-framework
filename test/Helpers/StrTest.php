@@ -35,19 +35,25 @@ final class StrTest extends TestCase
 	public function dataForTestCamelToSnake(): iterable
 	{
 		yield from [
-			"typicalNoChange" => ["foo", "foo",],
-			"typicalSingleTransformation" => ["fooBar", "foo_bar",],
-			"typicalMultipleComponents" => ["fooBarBazFizzBuzz", "foo_bar_baz_fizz_buzz",],
-			"extremeEmpty" => ["", "",],
-			"extremeWhitespace" => [" fooBar ", " foo_bar ",],
-			"extremeConsecutiveUpperCase" => ["PickNMix", "pick_n_mix",],
+			"typicalNoChange" => ["foo", null, "foo",],
+			"typicalSingleTransformation" => ["fooBar", null, "foo_bar",],
+			"typicalMultipleComponents" => ["fooBarBazFizzBuzz", null, "foo_bar_baz_fizz_buzz",],
+			"extremeEmpty" => ["", null, "",],
+			"extremeWhitespace" => [" fooBar ", null, " foo_bar ",],
+			"extremeConsecutiveUpperCase" => ["PickNMix", null, "pick_n_mix",],
 
-			// TODO different charsets
-			
-			"invalidInt" => [42, "", TypeError::class,],
-			"invalidFloat" => [3.1415927, "", TypeError::class,],
-			"invalidBoolean" => [true, "", TypeError::class,],
-			"invalidNull" => [null, "", TypeError::class,],
+			"typicalMultipleComponentsUtf16" => [
+				// fooBarBazFizzBuzz
+				"\x00\x66\x00\x6f\x00\x6f\x00\x42\x00\x61\x00\x72\x00\x42\x00\x61\x00\x7a\x00\x46\x00\x69\x00\x7a\x00\x7a\x00\x42\x00\x75\x00\x7a\x00\x7a",
+				"UTF-16",
+				// foo_bar_baz_fizz_buzz
+				"\x00\x66\x00\x6f\x00\x6f\x00\x5f\x00\x62\x00\x61\x00\x72\x00\x5f\x00\x62\x00\x61\x00\x7a\x00\x5f\x00\x66\x00\x69\x00\x7a\x00\x7a\x00\x5f\x00\x62\x00\x75\x00\x7a\x00\x7a",
+			],
+
+			"invalidInt" => [42, null, "", TypeError::class,],
+			"invalidFloat" => [3.1415927, null, "", TypeError::class,],
+			"invalidBoolean" => [true, null, "", TypeError::class,],
+			"invalidNull" => [null, null, "", TypeError::class,],
 			"invalidStringable" => [
 				new class
 				{
@@ -56,10 +62,11 @@ final class StrTest extends TestCase
 						return "fooBar";
 					}
 				},
+				null,
 				"",
 				TypeError::class,
 			],
-			"invalidArray" => [["fooBar",], "", TypeError::class,],
+			"invalidArray" => [["fooBar",], null, "", TypeError::class,],
 		];
 	}
 
@@ -67,36 +74,43 @@ final class StrTest extends TestCase
 	 * @dataProvider dataForTestCamelToSnake
 	 *
 	 * @param mixed $str The string to convert.
+	 * @param mixed $encoding The character encoding of the string to convert.
 	 * @param string $expected The expected snake_case string.
 	 * @param string|null $exceptionClass The type of exception expected, if any.
 	 */
-	public function testCamelToSnake(mixed $str, string $expected, ?string $exceptionClass = null): void
+	public function testCamelToSnake(mixed $str, mixed $encoding, string $expected, ?string $exceptionClass = null): void
 	{
 		if (isset($exceptionClass)) {
 			$this->expectException($exceptionClass);
 		}
 
-		$actual = camelToSnake($str);
+		$actual = camelToSnake($str, $encoding);
 		$this->assertEquals($expected, $actual);
 	}
 	
 	public function dataForTestSnakeToCamel(): iterable
 	{
 		yield from [
-			"typicalNoChange" => ["foo", "foo",],
-			"typicalSingleTransformation" => ["foo_bar", "fooBar",],
-			"typicalMultipleComponents" => ["foo_bar_baz_fizz_buzz", "fooBarBazFizzBuzz",],
-			"extremeEmpty" => ["", "",],
-			"extremeWhitespace" => [" foo_bar ", " fooBar ",],
-			"extremeConsecutiveUnderscores" => ["foo__bar", "fooBar",],
-			"extremeLeadingUnderscores" => ["__foo_bar", "fooBar",],
+			"typicalNoChange" => ["foo", null, "foo",],
+			"typicalSingleTransformation" => ["foo_bar", null, "fooBar",],
+			"typicalMultipleComponents" => ["foo_bar_baz_fizz_buzz", null, "fooBarBazFizzBuzz",],
+			"extremeEmpty" => ["", null, "",],
+			"extremeWhitespace" => [" foo_bar ", null, " fooBar ",],
+			"extremeConsecutiveUnderscores" => ["foo__bar", null, "fooBar",],
+			"extremeLeadingUnderscores" => ["__foo_bar", null, "fooBar",],
 
-			// TODO different charsets
-			
-			"invalidInt" => [42, "", TypeError::class,],
-			"invalidFloat" => [3.1415927, "", TypeError::class,],
-			"invalidBoolean" => [true, "", TypeError::class,],
-			"invalidNull" => [null, "", TypeError::class,],
+			"typicalMultipleComponentsUtf16" => [
+				// foo_bar_baz_fizz_buzz
+				"\x00\x66\x00\x6f\x00\x6f\x00\x5f\x00\x62\x00\x61\x00\x72\x00\x5f\x00\x62\x00\x61\x00\x7a\x00\x5f\x00\x66\x00\x69\x00\x7a\x00\x7a\x00\x5f\x00\x62\x00\x75\x00\x7a\x00\x7a",
+				"UTF-16",
+				// fooBarBazFizzBuzz
+				"\x00\x66\x00\x6f\x00\x6f\x00\x42\x00\x61\x00\x72\x00\x42\x00\x61\x00\x7a\x00\x46\x00\x69\x00\x7a\x00\x7a\x00\x42\x00\x75\x00\x7a\x00\x7a",
+			],
+
+			"invalidInt" => [42, null, "", TypeError::class,],
+			"invalidFloat" => [3.1415927, null, "", TypeError::class,],
+			"invalidBoolean" => [true, null, "", TypeError::class,],
+			"invalidNull" => [null, null, "", TypeError::class,],
 			"invalidStringable" => [
 				new class
 				{
@@ -105,10 +119,11 @@ final class StrTest extends TestCase
 						return "foo_bar";
 					}
 				},
+				null,
 				"",
 				TypeError::class,
 			],
-			"invalidArray" => [["foo_bar",], "", TypeError::class,],
+			"invalidArray" => [["foo_bar",], null, "", TypeError::class,],
 		];
 	}
 
@@ -116,16 +131,17 @@ final class StrTest extends TestCase
 	 * @dataProvider dataForTestSnakeToCamel
 	 *
 	 * @param mixed $str The string to convert.
+	 * @param mixed $encoding The character encoding of the string to convert.
 	 * @param string $expected The expected camelCase string.
 	 * @param string|null $exceptionClass The type of exception expected, if any.
 	 */
-	public function testSnakeToCamel(mixed $str, string $expected, ?string $exceptionClass = null): void
+	public function testSnakeToCamel(mixed $str, mixed $encoding, string $expected, ?string $exceptionClass = null): void
 	{
 		if (isset($exceptionClass)) {
 			$this->expectException($exceptionClass);
 		}
 
-		$actual = snakeToCamel($str);
+		$actual = snakeToCamel($str, $encoding);
 		$this->assertEquals($expected, $actual);
 	}
 

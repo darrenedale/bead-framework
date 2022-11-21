@@ -49,8 +49,28 @@ function camelToSnake(string $str, ?string $encoding = null): string
 		mb_regex_encoding($encoding);
 	}
 
+	$pattern = "([[:upper:]])";
+	$replacement = "_";
+
+	if (isset($encoding) && "UTF-8" !== $encoding) {
+		$pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
+		$replacement = mb_convert_encoding($replacement, $encoding, "UTF-8");
+	}
+
 	# use mb_substr to get first char as it could be multibyte
-	$ret = mb_strtolower(mb_substr($str[0], 0, 1), $encoding) . mb_strtolower(mb_ereg_replace("([[:upper:]])", "_\\1", mb_substr($str, 1)), $encoding);
+	$ret =
+		mb_strtolower(
+			mb_substr($str, 0, 1, $encoding),
+			$encoding
+		) .
+		mb_strtolower(mb_ereg_replace_callback(
+			$pattern,
+			function(array $matches) use ($replacement): string
+			{
+				return "{$replacement}{$matches[1]}";
+			},
+			mb_substr($str, 1, null, $encoding),
+		), $encoding);
 
 	if (isset($oldEncoding)) {
 		mb_regex_encoding($oldEncoding);
@@ -84,7 +104,13 @@ function snakeToCamel(string $str, ?string $encoding = null): string
 		++$trim;
 	}
 
-	$ret = mb_ereg_replace_callback("_+(.)", function (array $matches) use ($encoding): string {
+	$pattern = "_+(.)";
+
+	if (isset($encoding) && "UTF-8" !== $encoding) {
+		$pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
+	}
+
+	$ret = mb_ereg_replace_callback($pattern, function (array $matches) use ($encoding): string {
 		return mb_strtoupper($matches[1], $encoding ?? "UTF-8");
 	}, mb_substr($str, $trim));
 
