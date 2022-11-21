@@ -22,29 +22,6 @@ use ReflectionMethod;
  */
 abstract class TestCase extends PhpUnitTestCase
 {
-	/**
-	 * Make a given private/protected (static) method on an object/class accessible.
-	 *
-	 * For non-static methods the object must be given; for static methods it must be the class name.
-	 *
-	 * @param object|string $objOrClass The object or class.
-	 * @param string $method The name of the protected or private method.
-	 *
-	 * @return Closure A closure that can be called to invoke the method on the object.
-	 * @throws ReflectionException if the method does not exist.
-	 */
-	protected static function accessibleMethod($objOrClass, string $method): Closure
-	{
-		$reflector = new ReflectionMethod($objOrClass, $method);
-		$reflector->setAccessible(true);
-
-		if (is_string($objOrClass)) {
-			return $reflector->getClosure();
-		}
-
-		return $reflector->getClosure($objOrClass);
-	}
-
     /**
      * Fetch a randomly-generated string.
      *

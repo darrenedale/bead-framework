@@ -16,6 +16,7 @@ use Bead\Exceptions\UnroutableRequestException;
 use Bead\Contracts\Router as RouterContract;
 use Bead\Router;
 use Bead\Request;
+use Bead\Testing\XRay;
 use function Bead\Traversable\accumulate;
 
 /**
@@ -182,12 +183,10 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerGet($route, $handler);
-		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
-		$this->assertSame($route, $match(self::makeRequest($route)));
+		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route)));
 	}
 
 	/**
@@ -199,12 +198,11 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerPost($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
-		$this->assertSame($route, $match(self::makeRequest($route, RouterContract::PostMethod)));
+		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PostMethod)));
 	}
 
 	/**
@@ -216,12 +214,11 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerPut($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
-		$this->assertSame($route, $match(self::makeRequest($route, RouterContract::PutMethod)));
+		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PutMethod)));
 	}
 
 	/**
@@ -233,12 +230,11 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerDelete($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
-		$this->assertSame($route, $match(self::makeRequest($route, RouterContract::DeleteMethod)));
+		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::DeleteMethod)));
 	}
 
 	/**
@@ -250,12 +246,11 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerOptions($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
-		$this->assertSame($route, $match(self::makeRequest($route, RouterContract::OptionsMethod)));
+		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::OptionsMethod)));
 	}
 
 	/**
@@ -267,12 +262,11 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerHead($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
-		$this->assertSame($route, $match(self::makeRequest($route, RouterContract::HeadMethod)));
+		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::HeadMethod)));
 	}
 
 	/**
@@ -284,12 +278,11 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerConnect($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
-		$this->assertSame($route, $match(self::makeRequest($route, RouterContract::ConnectMethod)));
+		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::ConnectMethod)));
 	}
 
 	/**
@@ -301,12 +294,11 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerPatch($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
-		$this->assertSame($route, $match(self::makeRequest($route, RouterContract::PatchMethod)));
+		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PatchMethod)));
 	}
 
 	/**
@@ -1495,11 +1487,9 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection register() should not throw with test data. */
 		$router->register($route, $methods, $handler);
-		/** @noinspection PhpUnhandledExceptionInspection guaranteed not to throw with these arguments. */
-		$match = self::accessibleMethod($router, "matchedRoute");
 
 		if (is_string($methods)) {
 			$methods = [$methods,];
@@ -1508,10 +1498,10 @@ class RouterTest extends TestCase
 		foreach ($methods as $method) {
 			if (RouterContract::AnyMethod === $method) {
 				foreach (self::allHttpMethods() as $anyMethod) {
-					$this->assertSame($route, $match(self::makeRequest($route, $anyMethod)));
+					$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, $anyMethod)));
 				}
 			} else {
-				$this->assertSame($route, $match(self::makeRequest($route, $method)));
+				$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, $method)));
 			}
 		}
 	}
@@ -2607,7 +2597,7 @@ class RouterTest extends TestCase
 			$this->expectException($exceptionClass);
 		}
 
-		$router = new Router();
+		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should never throw with test data. */
 		$router->register($route, $routeMethods, $handler);
 		$request = self::makeRequest($requestPath, $requestMethod);
