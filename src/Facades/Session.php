@@ -3,14 +3,14 @@
 namespace Bead\Facades;
 
 use BadMethodCallException;
-use Bead\Exceptions\ExpiredSessionIdUsedException;
-use Bead\Exceptions\SessionExpiredException;
-use Bead\Exceptions\SessionNotFoundException;
+use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
+use Bead\Exceptions\Session\SessionExpiredException;
+use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\PrefixedAccessor;
+use Bead\Session\Session as BeadSession;
 use Bead\Session\SessionHandler;
 use Exception;
 use LogicException;
-use Bead\Session\Session as BeadSession;
 
 /**
  * Facade for easy access to the current session.
