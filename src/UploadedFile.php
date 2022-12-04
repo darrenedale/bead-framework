@@ -2,6 +2,9 @@
 
 namespace Bead;
 
+use Bead\Exceptions\UploadedFileException;
+use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\UploadedFileInterface;
 use SplFileInfo;
 
 /**
@@ -12,10 +15,8 @@ use SplFileInfo;
  *
  * This is a read-only class - instances can only be retrieved from the Request object that has read them from the
  * incoming HTTP request.
- *
- * @package bead-framework
  */
-final class UploadedFile
+final class UploadedFile implements UploadedFileInterface
 {
 	/** The original name of the file uploaded by the user. */
 	private string $m_name;
@@ -23,17 +24,32 @@ final class UploadedFile
 	/** The full original path of the file uploaded by the user. Only available after PHP 8.1 and not trustworthy. */
 	private string $m_clientPath;
 
-	/** The path to the file's content. */
+	/**
+     * The path to the file's content.
+     *
+     * `null` once the uploaded file has been moved or discarded.
+     */
 	private ?string $m_tempFile;
 
-	/** The file data, if loaded. */
+	/**
+     * The file data, if loaded.
+     *
+     * `null` until first required.
+     */
 	private ?string $m_fileData;
 
 	/** The MIME type of the file reported by the user agent. */
-	private string $m_mimeType;
+	private string $m_mediaType;
 
 	/** The size in bytes of the file reported by the user agent. */
 	private int $m_size;
+
+	/**
+     * The actual size, in bytes, of the file uploaded.
+     *
+     * `null` until first required.
+     */
+	private ?int $m_actualSize;
 
     /** @var int The error code for the upload. */
     private int $m_errorCode;
@@ -41,7 +57,7 @@ final class UploadedFile
 	/**
 	 * Create a new UploadedFile object.
 	 *
-	 * @param array $uploadedFile The entry from $_FILES from which to initialise the object..
+	 * @param array $uploadedFile The entry in `$_FILES` from which to initialise the object.
 	 */
 	private function __construct(array $uploadedFile)
 	{
@@ -50,7 +66,8 @@ final class UploadedFile
         $this->m_clientPath = $uploadedFile["full_path"] ?? "";
         $this->m_size = $uploadedFile["size"];
         $this->m_errorCode = $uploadedFile["error"] ?? 0;
-        $this->m_mimeType = $uploadedFile["type"] ?? "";
+        $this->m_mediaType = $uploadedFile["type"] ?? "";
+        $this->m_actualSize = null;
         $this->m_fileData = null;
 	}
 
@@ -82,7 +99,25 @@ final class UploadedFile
     private function invalidate(): void
     {
         $this->m_tempFile = null;
+        $this->m_name = "";
+        $this->m_clientPath = "";
+        $this->m_size = 0;
+        $this->m_errorCode = 0;
+        $this->m_mediaType = "";
+        $this->m_actualSize = null;
         $this->m_fileData = null;
+    }
+
+    /**
+     * Helper to throw if the uploaded file is not valid (i.e. has been moved).
+     *
+     * Throws UploadedFileException if the UploadedFile is not valid.
+     */
+    private function checkValid(): void
+    {
+        if (!isset($this->m_tempFile)) {
+            throw new UploadedFileException("The uploaded file is no longer valid.");
+        }
     }
 
 	/**
@@ -92,6 +127,7 @@ final class UploadedFile
 	 */
 	public function name(): string
 	{
+        $this->checkValid();
 		return $this->m_name;
 	}
 
@@ -105,16 +141,18 @@ final class UploadedFile
      */
     public function clientPath(): string
     {
+        $this->checkValid();
         return $this->m_clientPath;
     }
 
 	/**
 	 * Fetch the path for the uploaded file's temporary file.
 	 *
-	 * @return string The path to the temporary file, or `null` if the file has been discarded or moved.
+	 * @return string The path to the temporary file.
 	 */
 	public function tempFile(): string
 	{
+        $this->checkValid();
 		return $this->m_tempFile;
 	}
 
@@ -125,33 +163,32 @@ final class UploadedFile
      *
      * @param string $path The destination for the file.
      *
-     * @return SplFileInfo The moved file, or null if the file could not be moved.
+     * @throws UploadedFileException if the UploadedFile has already been moved or discarded or if the move fails for
+     * any reason.
      */
-    public function moveTo(string $path): ?SplFileInfo
+    public function moveTo($path)
     {
-        if (isset($this->m_tempFile) && move_uploaded_file($this->m_tempFile, $path)) {
-            $this->invalidate();
-            return new SplFileInfo($path);
-        }
+        $this->checkValid();
+        $res = @move_uploaded_file($this->m_tempFile, $path);
+        $this->invalidate();
 
-        return null;
+        if (!$res) {
+            throw new UploadedFileException("The uploaded file {$this->name()} could not be moved to '{$path}'.");
+        }
     }
 
     /**
      * Discard the uploaded file.
      *
-     * If this is successful, the `UploadedFile` object will become invalid.
+     * After calling this method, the `UploadedFile` object will become invalid.
      *
-     * @return bool `true` if the file was discarded, `false` if not or if the uploaded file is not valid.
+     * @throws UploadedFileException if the UploadedFile has already been moved or discarded.
      */
-    public function discard(): bool
+    public function discard(): void
     {
-        if (isset($this->m_tempFile) && @unlink($this->m_tempFile)) {
-            $this->invalidate();
-            return true;
-        }
-
-        return false;
+        $this->checkValid();
+        @unlink($this->m_tempFile);
+        $this->invalidate();
     }
 
 	/**
@@ -162,9 +199,10 @@ final class UploadedFile
 	 *
 	 * @return string The MIME type.
 	 */
-	public function mimeType(): ?string
+	public function mediaType(): ?string
 	{
-		return $this->m_mimeType;
+        $this->checkValid();
+		return $this->m_mediaType;
 	}
 
     /**
@@ -174,26 +212,35 @@ final class UploadedFile
      */
     public function reportedSize(): int
     {
+        $this->checkValid();
         return $this->m_size;
     }
 
     /**
      * Fetch the actual size, in bytes, of the uploaded file.
      *
-     * @return int|null The size if the file is valid, `null` if it is not.
+     * @return int The size if the file.
+     * @throws UploadedFileException if the uploaded file has been moved or discarded.
      */
     public function actualSize(): ?int
     {
-        if (!$this->isValid()) {
-            return null;
+        $this->checkValid();
+
+        if (!isset($this->m_actualSize)) {
+            if (isset($this->m_fileData)) {
+                $this->m_actualSize = strlen($this->m_fileData);
+            } else {
+                $size = @filesize($this->m_tempFile);
+
+                if (false === $size) {
+                    throw new UploadedFileException("Could not determine the size of the uploaded file.");
+                }
+
+                $this->m_actualSize = $size;
+            }
         }
 
-        if (isset($this->m_fileData)) {
-            return strlen($this->m_fileData);
-        }
-
-        $size = (new SplFileInfo($this->m_tempFile))->getSize();
-        return (false === $size ? null : $size);
+        return $this->m_actualSize;
     }
 
 	/**
@@ -206,14 +253,16 @@ final class UploadedFile
 	 */
 	public function data(): ?string
 	{
-		if (!isset($this->m_fileData) && $this->isValid()) {
-			if (!is_file($this->m_tempFile)) {
-				AppLog::error("file \"{$this->m_tempFile}\" is not a file");
-			} else if (!is_readable($this->m_tempFile)) {
-				AppLog::error("file \"{$this->m_tempFile}\" is not readable");
-			} else {
-				$this->m_fileData = file_get_contents($this->m_tempFile);
-			}
+        $this->checkValid();
+
+		if (!isset($this->m_fileData)) {
+            $data = @file_get_contents($this->m_tempFile);
+
+            if (false === $data) {
+                throw new UploadedFileException("Unable to read the uploaded file.");
+            }
+
+            $this->m_fileData = $data;
 		}
 
 		return $this->m_fileData;
@@ -226,16 +275,8 @@ final class UploadedFile
      */
     public function errorCode(): int
     {
+        $this->checkValid();
         return $this->m_errorCode;
-    }
-
-    /**
-     * @return bool
-     * @deprecated Use !isValid() instead.
-     */
-    public function isNull(): bool
-    {
-        return !$this->isValid();
     }
 
     /**
@@ -245,8 +286,58 @@ final class UploadedFile
      *
      * @return bool
      */
-    public function isValid(): bool
+    public function wasSuccessful(): bool
     {
-        return isset($this->m_tempFile) && (0 === $this->m_errorCode) && (file_exists($this->m_tempFile) || isset($this->m_fileData));
+        return UPLOAD_ERR_OK === $this->errorCode();
+    }
+
+    // UploadedFileInterface methods
+
+    /**
+     * Fetch a stream of the uploaded file.
+     */
+    public function getStream(): StreamInterface
+    {
+        return new FileStream($this->tempFile());
+    }
+
+    /**
+     * Fetch the size of the uploaded file.
+     */
+    public function getSize(): ?int
+    {
+        return $this->reportedSize();
+    }
+
+    /**
+     * Fetch the upload error code associated with this uploaded file.
+     *
+     * @return int The error code.
+     */
+    public function getError(): int
+    {
+        return $this->errorCode();
+    }
+
+    /**
+     * Fetch the client-provided original path for the file.
+     *
+     * This value should be treated as untrustworthy.
+     *
+     * @return string|null The path.
+     */
+    public function getClientFilename(): ?string
+    {
+        return $this->clientPath();
+    }
+
+    /**
+     * Fetch the media type of the uploaded file.
+     *
+     * @return string|null
+     */
+    public function getClientMediaType(): ?string
+    {
+        return $this->mediaType();
     }
 }
