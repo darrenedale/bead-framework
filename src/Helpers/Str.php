@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Helpers\Str;
 
+use Exception;
 use InvalidArgumentException;
 use SplFixedArray;
 
@@ -216,7 +217,7 @@ function toCodePoints(string $str, string $encoding): array
  */
 function random(int $length): string
 {
-	assert (0 <= $length, new InvalidArgumentException("Can't produce a random string of < 0 characters in lenngth."));
+	assert (0 <= $length, new InvalidArgumentException("Can't produce a random string of < 0 characters in length."));
 	$str = "";
 
 	while (0 < $length) {

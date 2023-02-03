@@ -20,10 +20,13 @@ jobs:
           sudo apt-get -y upgrade
           sudo apt-get -y install php8.0 php8.0-dom php8.0-mbstring php8.0-uopz
 
-      - name: Install composer dependencies and run unit tests for PHP8.0
-        run: |
-          sudo update-alternatives --set php /usr/bin/php8.0
+      - name: Select PHP 8.0
+        run: sudo update-alternatives --set php /usr/bin/php8.0
+
+      - name: Install composer dependencies
           rm composer.lock
           rm -rf vendor
           composer install
+
+      - name: Run unit tests
           ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test

@@ -12,7 +12,6 @@ use TypeError;
 use function Bead\Helpers\Str\camelToSnake;
 use function Bead\Helpers\Str\snakeToCamel;
 use function Bead\Helpers\Str\html;
-use function Bead\Helpers\Str\escapeCsvCell;
 use function Bead\Helpers\Str\build;
 use function Bead\Helpers\Str\toCodePoints;
 use function Bead\Helpers\Str\random;
@@ -335,7 +334,7 @@ final class StrTest extends TestCase
 	public function testRandomThrowsWithInvalidLength(): void
 	{
 		$this->expectException(InvalidArgumentException::class);
-		$this->expectExceptionMessage("Can't produce a random string of < 0 characters in lenngth.");
+		$this->expectExceptionMessage("Can't produce a random string of < 0 characters in length.");
 		random(-1);
 	}
 
