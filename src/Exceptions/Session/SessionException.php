@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Exceptions;
+namespace Bead\Exceptions\Session;
 
 use Exception;
 

@@ -22,29 +22,6 @@ use ReflectionMethod;
  */
 abstract class TestCase extends PhpUnitTestCase
 {
-	/**
-	 * Make a given private/protected (static) method on an object/class accessible.
-	 *
-	 * For non-static methods the object must be given; for static methods it must be the class name.
-	 *
-	 * @param object|string $objOrClass The object or class.
-	 * @param string $method The name of the protected or private method.
-	 *
-	 * @return Closure A closure that can be called to invoke the method on the object.
-	 * @throws ReflectionException if the method does not exist.
-	 */
-	protected static function accessibleMethod($objOrClass, string $method): Closure
-	{
-		$reflector = new ReflectionMethod($objOrClass, $method);
-		$reflector->setAccessible(true);
-
-		if (is_string($objOrClass)) {
-			return $reflector->getClosure();
-		}
-
-		return $reflector->getClosure($objOrClass);
-	}
-
     /**
      * Fetch a randomly-generated string.
      *
@@ -74,23 +51,6 @@ abstract class TestCase extends PhpUnitTestCase
     public static function randomFloat(float $min = 0.0, float $max = 100.0): float
     {
         return $min + (lcg_value() * ($max - $min));
-    }
-
-    /**
-     * Assert that two flat arrays are equivalent.
-     *
-     * A flat array is one where all elements are scalar. Two of them are equivalent if neither contains an element that
-     * is not present in the other and they are the same length. The items need not be in the same order.
-     *
-     * @param array $expected The expected array.
-     * @param array $actual The actual array.
-     * @param string $msg The message if the constraint fails.
-     *
-     * @deprecated Use assertEqualsCanonicalizing() instead.
-     */
-    public static function assertFlatArraysAreEquivalent(array $expected, array $actual, string $msg = ""): void
-    {
-        self::assertThat($actual, new FlatArrayIsEquivalent($expected), $msg);
     }
 
     /**
