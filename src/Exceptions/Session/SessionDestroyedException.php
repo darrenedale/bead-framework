@@ -1,22 +1,21 @@
 <?php
 
-namespace Bead\Exceptions;
+namespace Bead\Exceptions\Session;
 
-use Exception;
 use Throwable;
 
 /**
- * Exception thrown when an attempt is made to initialise a session with an ID that does not exist.
+ * Exception thrown when an attempt is made to use a session after it has been destroyed.
  */
-class SessionNotFoundException extends SessionException
+class SessionDestroyedException extends SessionException
 {
-    /** @var string The ID of the session that was not found. */
+    /** @var string The ID of the session that has been destroyed. */
     private string $m_id;
 
     /**
      * Initialise a new instance of the exception.
      *
-     * @param string $id The ID of the session that could not be found.
+     * @param string $id The ID of the session that has been destroyed.
      * @param string $message The optional error message. Defaults to an empty string.
      * @param int $code The optional error code. Defaults to 0.
      * @param Throwable|null $previous The optional Throwable that was previously thrown. Defaults to null.
@@ -28,7 +27,7 @@ class SessionNotFoundException extends SessionException
     }
 
     /**
-     * Fetch the ID of the missing session.
+     * Fetch the ID of the destroyed session.
      * @return string The ID.
      */
     public function getId(): string
