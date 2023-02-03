@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Bead\Helpers\Str;
 
-use DateTimeInterface;
 use InvalidArgumentException;
 use SplFixedArray;
 
@@ -13,7 +12,6 @@ use function base64_encode;
 use function count;
 use function htmlentities;
 use function mb_convert_encoding;
-use function mb_ereg_replace;
 use function mb_ereg_replace_callback;
 use function mb_regex_encoding;
 use function mb_strtolower;
