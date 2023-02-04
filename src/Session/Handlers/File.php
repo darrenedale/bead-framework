@@ -14,6 +14,8 @@ use DirectoryIterator;
 use Exception;
 use SplFileInfo;
 
+use function Bead\Helpers\Str\random;
+
 /**
  * Session handler that uses files to store session data persistently.
  */
@@ -145,7 +147,7 @@ class File implements SessionHandler
         $dir = self::sessionDirectory();
 
         do {
-            $id = randomString(64);
+            $id = random(64);
         } while (file_exists("{$dir}/{$id}"));
 
         touch("{$dir}/{$id}");

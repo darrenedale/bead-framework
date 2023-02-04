@@ -16,7 +16,9 @@ use DOMNode;
 use Exception;
 use InvalidArgumentException;
 use StdClass;
-use function Bead\Traversable\all;
+
+use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\Str\toCodePoints;
 
 /**
  * Sanitise HTML according to configurable rules.

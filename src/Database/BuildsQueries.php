@@ -18,7 +18,8 @@ use Bead\Exceptions\Database\OrphanedJoinException;
 use InvalidArgumentException;
 use PDO;
 use TypeError;
-use function Bead\Traversable\some;
+
+use function Bead\Helpers\Iterable\some;
 
 trait BuildsQueries
 {

@@ -2,7 +2,6 @@
 
 namespace Bead;
 
-use DirectoryIterator;
 use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
 use Bead\Database\Connection;
@@ -13,15 +12,18 @@ use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
 use Bead\Exceptions\NotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
-use Bead\Session\DataAccessor as SessionDataAccessor;
-use Exception;
 use Bead\Facades\Session as SessionFacade;
+use Bead\Session\DataAccessor as SessionDataAccessor;
+use DirectoryIterator;
+use Exception;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
 use RuntimeException;
 use SplFileInfo;
 use UnexpectedValueException;
+
+use function Bead\Helpers\Str\random;
 
 /**
  * Core Application class for sites/applications using the framework.
@@ -602,7 +604,7 @@ class WebApplication extends Application
 	 */
 	public function regenerateCsrf(): void
 	{
-		SessionFacade::set("csrf-token", randomString(64));
+		SessionFacade::set("csrf-token", random(64));
 	}
 
 	/**

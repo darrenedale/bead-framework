@@ -1,9 +1,8 @@
 <?php
 
-include_once __DIR__ . "/includes/string.php";
-include_once __DIR__ . "/includes/i18n.php";
-include_once __DIR__ . "/includes/array.php";
-include_once __DIR__ . "/includes/traversable.php";
+include_once __DIR__ . "/Helpers/I18n.php";
+include_once __DIR__ . "/Helpers/Iterable.php.php";
+include_once __DIR__ . "/Helpers/Str.php";
 
 spl_autoload_register(function (string $className) {
     static $baseDir = null;

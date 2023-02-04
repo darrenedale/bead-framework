@@ -17,7 +17,9 @@ use PDOStatement;
 use ReflectionException;
 use ReflectionMethod;
 use TypeError;
-use function Bead\Traversable\all;
+
+use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\Str\snakeToCamel;
 
 /**
  * Base class for database model classes.
