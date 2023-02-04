@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Testing;
+namespace BeadTests\Testing;
 
 use ArrayObject;
 use DateTime;
-use Equit\Test\Framework\TestCase;
-use Equit\Testing\MockFunction;
+use BeadTests\Framework\TestCase;
+use Bead\Testing\MockFunction;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
@@ -680,7 +680,7 @@ class MockFunctionTest extends TestCase
         self::assertTrue($mock->willCheckArguments(), "withArgumentChecks() failed to set parameter checks to true.");
     }
 
-    private static final function strlenReplacement(): callable
+    private static function strlenReplacement(): callable
     {
         // returns actual length less 1
         return function(string $str): int
@@ -691,7 +691,7 @@ class MockFunctionTest extends TestCase
         };
     }
 
-    private static final function splFileInfoGetSizeReplacement(): callable
+    private static function splFileInfoGetSizeReplacement(): callable
     {
         return function(): int
         {

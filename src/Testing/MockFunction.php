@@ -1,7 +1,8 @@
 <?php
 
-namespace Equit\Testing;
+namespace Bead\Testing;
 
+// NOTE use of ReflectionIntersectionType is guarded by PHP version check
 use Closure;
 use Error;
 use InvalidArgumentException;
