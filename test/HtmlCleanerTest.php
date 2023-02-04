@@ -52,11 +52,11 @@ class HtmlCleanerTest extends TestCase
      */
     private function checkAllowOrDenyList($list, string $name): void
     {
-        $this->assertIsArray($list, "{$name} is not an array");
+        self::assertIsArray($list, "{$name} is not an array");
 
         foreach ($list as $item) {
-            $this->assertIsString($item, "{$name} contains an non-string");
-            $this->assertNotEmpty($item, "{$name} contains an empty tag");
+            self::assertIsString($item, "{$name} contains an non-string");
+            self::assertNotEmpty($item, "{$name} contains an empty tag");
         }
     }
 
@@ -96,9 +96,9 @@ class HtmlCleanerTest extends TestCase
     public function testDefaultConstructor()
     {
         $this->checkAllAllowOrDenyLists($this->m_cleaner, "default");
-        $this->assertAttributeIsInt([$this->m_cleaner, "m_tagMode"], "tag filter mode of default cleaner is not an int");
-        $this->assertAttributeIsInt([$this->m_cleaner, "m_idMode"], "id filter mode of default cleaner is not an int");
-        $this->assertAttributeIsInt([$this->m_cleaner, "m_classMode"], "class filter mode of default cleaner is not an int");
+        self::assertAttributeIsInt([$this->m_cleaner, "m_tagMode"], "tag filter mode of default cleaner is not an int");
+        self::assertAttributeIsInt([$this->m_cleaner, "m_idMode"], "id filter mode of default cleaner is not an int");
+        self::assertAttributeIsInt([$this->m_cleaner, "m_classMode"], "class filter mode of default cleaner is not an int");
     }
 
     public function dataForTestConstructor(): array
@@ -163,31 +163,31 @@ class HtmlCleanerTest extends TestCase
 
         $cleaner = new HtmlCleaner(...$constructorArgs);
         $this->checkAllAllowOrDenyLists($cleaner);
-        $this->assertAttributeIsInt([$cleaner, "m_tagMode"], "tag filter mode of constructed cleaner is not an int");
-        $this->assertAttributeIsInt([$cleaner, "m_idMode"], "id filter mode of constructed cleaner is not an int");
-        $this->assertAttributeIsInt([$cleaner, "m_classMode"], "class filter mode of constructed cleaner is not an int");
+        self::assertAttributeIsInt([$cleaner, "m_tagMode"], "tag filter mode of constructed cleaner is not an int");
+        self::assertAttributeIsInt([$cleaner, "m_idMode"], "id filter mode of constructed cleaner is not an int");
+        self::assertAttributeIsInt([$cleaner, "m_classMode"], "class filter mode of constructed cleaner is not an int");
 
         if (isset($tagMode)) {
             if (self::isValidFilterMode($tagMode)) {
-                $this->assertSame($tagMode, $cleaner->tagMode(), "the tag filter mode {$cleaner->tagMode()} in the constructed object does not match the provided, valid mode {$tagMode}");
+                self::assertSame($tagMode, $cleaner->tagMode(), "the tag filter mode {$cleaner->tagMode()} in the constructed object does not match the provided, valid mode {$tagMode}");
             } else {
-                $this->assertNotSame($tagMode, $cleaner->tagMode(), "the tag filter mode {$cleaner->tagMode()} in the constructed object matches the provided, invalid mode {$tagMode}");
+                self::assertNotSame($tagMode, $cleaner->tagMode(), "the tag filter mode {$cleaner->tagMode()} in the constructed object matches the provided, invalid mode {$tagMode}");
             }
         }
 
         if (isset($idMode)) {
             if (self::isValidFilterMode($idMode)) {
-                $this->assertSame($idMode, $cleaner->idMode(), "the id filter mode {$cleaner->idMode()} in the constructed object does not match the provided, valid mode {$idMode}");
+                self::assertSame($idMode, $cleaner->idMode(), "the id filter mode {$cleaner->idMode()} in the constructed object does not match the provided, valid mode {$idMode}");
             } else {
-                $this->assertNotSame($idMode, $cleaner->idMode(), "the id filter mode {$cleaner->idMode()} in the constructed object matches the provided, invalid mode {$idMode}");
+                self::assertNotSame($idMode, $cleaner->idMode(), "the id filter mode {$cleaner->idMode()} in the constructed object matches the provided, invalid mode {$idMode}");
             }
         }
 
         if (isset($classMode)) {
             if (self::isValidFilterMode($classMode)) {
-                $this->assertSame($classMode, $cleaner->classMode(), "the class filter mode {$cleaner->classMode()} in the constructed object does not match the provided, valid mode {$classMode}");
+                self::assertSame($classMode, $cleaner->classMode(), "the class filter mode {$cleaner->classMode()} in the constructed object does not match the provided, valid mode {$classMode}");
             } else {
-                $this->assertNotSame($classMode, $cleaner->classMode(), "the class filter {$cleaner->classMode()} mode in the constructed object matches the provided, invalid mode {$classMode}");
+                self::assertNotSame($classMode, $cleaner->classMode(), "the class filter {$cleaner->classMode()} mode in the constructed object matches the provided, invalid mode {$classMode}");
             }
         }
     }
@@ -237,8 +237,8 @@ class HtmlCleanerTest extends TestCase
     public function testTagMode($mode, StdClass $expectation)
     {
         $oldMode = $this->m_cleaner->tagMode();
-        $this->assertIsInt($oldMode, "default tag name mode is not an integer");
-        $this->assertContains($oldMode, self::ValidModes);
+        self::assertIsInt($oldMode, "default tag name mode is not an integer");
+        self::assertContains($oldMode, self::ValidModes);
 
         if (!is_int($mode)) {
             $this->expectException("TypeError");
@@ -250,12 +250,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->setTagMode($mode);
         $actual = $this->m_cleaner->tagMode();
-        $this->assertIsInt($actual, "actual tag name mode is not an integer");
+        self::assertIsInt($actual, "actual tag name mode is not an integer");
 
         if (isset($expectation->value)) {
-            $this->assertSame($expectation->value, $actual, "actual tag name mode is not as expected after call to setTagMode({$mode})");
+            self::assertSame($expectation->value, $actual, "actual tag name mode is not as expected after call to setTagMode({$mode})");
         } else {
-            $this->assertSame($oldMode, $actual, "actual tag name mode is not unchanged after failed call to setTagMode({$mode})");
+            self::assertSame($oldMode, $actual, "actual tag name mode is not unchanged after failed call to setTagMode({$mode})");
         }
     }
 
@@ -273,8 +273,8 @@ class HtmlCleanerTest extends TestCase
     public function testIdMode($mode, StdClass $expectation)
     {
         $oldMode = $this->m_cleaner->idMode();
-        $this->assertIsInt($oldMode, "default ID mode is not an integer");
-        $this->assertContains($oldMode, self::ValidModes);
+        self::assertIsInt($oldMode, "default ID mode is not an integer");
+        self::assertContains($oldMode, self::ValidModes);
 
         if (!is_int($mode)) {
             $this->expectException("TypeError");
@@ -286,12 +286,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->setIdMode($mode);
         $actual = $this->m_cleaner->idMode();
-        $this->assertIsInt($actual, "actual ID mode is not an integer");
+        self::assertIsInt($actual, "actual ID mode is not an integer");
 
         if (isset($expectation->value)) {
-            $this->assertSame($expectation->value, $actual, "actual ID mode is not as expected after call to setIdMode({$mode})");
+            self::assertSame($expectation->value, $actual, "actual ID mode is not as expected after call to setIdMode({$mode})");
         } else {
-            $this->assertSame($oldMode, $actual, "actual ID mode is not unchanged after failed call to setIdMode({$mode})");
+            self::assertSame($oldMode, $actual, "actual ID mode is not unchanged after failed call to setIdMode({$mode})");
         }
     }
 
@@ -309,8 +309,8 @@ class HtmlCleanerTest extends TestCase
     public function testClassMode($mode, StdClass $expectation)
     {
         $oldMode = $this->m_cleaner->classMode();
-        $this->assertIsInt($oldMode, "default class mode is not an integer");
-        $this->assertContains($oldMode, self::ValidModes);
+        self::assertIsInt($oldMode, "default class mode is not an integer");
+        self::assertContains($oldMode, self::ValidModes);
 
         if (!is_int($mode)) {
             $this->expectException("TypeError");
@@ -322,12 +322,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->setClassMode($mode);
         $actual = $this->m_cleaner->classMode();
-        $this->assertIsInt($actual, "actual class mode is not an integer");
+        self::assertIsInt($actual, "actual class mode is not an integer");
 
         if (isset($expectation->value)) {
-            $this->assertSame($expectation->value, $actual, "actual class mode is not as expected after call to setClassMode({$mode})");
+            self::assertSame($expectation->value, $actual, "actual class mode is not as expected after call to setClassMode({$mode})");
         } else {
-            $this->assertSame($oldMode, $actual, "actual class mode is not unchanged after failed call to setClassMode({$mode})");
+            self::assertSame($oldMode, $actual, "actual class mode is not unchanged after failed call to setClassMode({$mode})");
         }
     }
 
@@ -409,12 +409,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->denyTags($denyList);
         $actualBlacklist = $this->m_cleaner->deniedTags();
-        $this->assertIsArray($actualBlacklist, "actual tags denylist is not an array");
+        self::assertIsArray($actualBlacklist, "actual tags denylist is not an array");
 
         if (isset($expectation->value)) {
-            $this->assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual tags denylist is not as expected after call to denyTags()");
+            self::assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual tags denylist is not as expected after call to denyTags()");
         } else {
-            $this->assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual tags denylist is not unchanged after failed call to denyTags()");
+            self::assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual tags denylist is not unchanged after failed call to denyTags()");
         }
     }
 
@@ -443,12 +443,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->allowTags($allowList);
         $actualAllowlist = $this->m_cleaner->allowedTags();
-        $this->assertIsArray($actualAllowlist, "actual tags allowlist is not an array");
+        self::assertIsArray($actualAllowlist, "actual tags allowlist is not an array");
 
         if (isset($expectation->value)) {
-            $this->assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual tags allowlist is not as expected after call to allowTags()");
+            self::assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual tags allowlist is not as expected after call to allowTags()");
         } else {
-            $this->assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual tags allowlist is not unchanged after failed call to allowTags()");
+            self::assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual tags allowlist is not unchanged after failed call to allowTags()");
         }
     }
 
@@ -530,12 +530,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->denyIds($denyList);
         $actualBlacklist = $this->m_cleaner->deniedIds();
-        $this->assertIsArray($actualBlacklist, "actual ids denylist is not an array");
+        self::assertIsArray($actualBlacklist, "actual ids denylist is not an array");
 
         if (isset($expectation->value)) {
-            $this->assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual ids denylist is not as expected after call to denyIds()");
+            self::assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual ids denylist is not as expected after call to denyIds()");
         } else {
-            $this->assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual ids denylist is not unchanged after failed call to denyIds()");
+            self::assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual ids denylist is not unchanged after failed call to denyIds()");
         }
     }
 
@@ -564,12 +564,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->allowIds($allowList);
         $actualAllowlist = $this->m_cleaner->allowedIds();
-        $this->assertIsArray($actualAllowlist, "actual ids allowlist is not an array");
+        self::assertIsArray($actualAllowlist, "actual ids allowlist is not an array");
 
         if (isset($expectation->value)) {
-            $this->assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual ids allowlist is not as expected after call to allowIds()");
+            self::assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual ids allowlist is not as expected after call to allowIds()");
         } else {
-            $this->assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual ids allowlist is not unchanged after failed call to allowIds()");
+            self::assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual ids allowlist is not unchanged after failed call to allowIds()");
         }
     }
 
@@ -651,12 +651,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->denyClasses($denyList);
         $actualBlacklist = $this->m_cleaner->deniedClasses();
-        $this->assertIsArray($actualBlacklist, "actual classes denylist is not an array");
+        self::assertIsArray($actualBlacklist, "actual classes denylist is not an array");
 
         if (isset($expectation->value)) {
-            $this->assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual classes denylist is not as expected after call to denyClasses()");
+            self::assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual classes denylist is not as expected after call to denyClasses()");
         } else {
-            $this->assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual classes denylist is not unchanged after failed call to denyClasses()");
+            self::assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual classes denylist is not unchanged after failed call to denyClasses()");
         }
     }
 
@@ -685,12 +685,12 @@ class HtmlCleanerTest extends TestCase
 
         $this->m_cleaner->allowClasses($allowList);
         $actualAllowlist = $this->m_cleaner->allowedClasses();
-        $this->assertIsArray($actualAllowlist, "actual classes allowlist is not an array");
+        self::assertIsArray($actualAllowlist, "actual classes allowlist is not an array");
 
         if (isset($expectation->value)) {
-            $this->assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual classes allowlist is not as expected after call to allowClasses()");
+            self::assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual classes allowlist is not as expected after call to allowClasses()");
         } else {
-            $this->assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual classes allowlist is not unchanged after failed call to allowClasses()");
+            self::assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual classes allowlist is not unchanged after failed call to allowClasses()");
         }
     }
 
@@ -751,7 +751,7 @@ class HtmlCleanerTest extends TestCase
             $this->m_cleaner->allowTags($allowedTags);
         }
         
-        $this->assertSame($allowed, $this->m_cleaner->isAllowedTag($tag));
+        self::assertSame($allowed, $this->m_cleaner->isAllowedTag($tag));
     }
 
 //    public function testIsAllowedNode()
@@ -1226,6 +1226,6 @@ class HtmlCleanerTest extends TestCase
         }
 
         $actualHtml = $this->m_cleaner->clean($testHtml);
-        $this->assertSame($expectedHtml, $actualHtml);
+        self::assertSame($expectedHtml, $actualHtml);
     }
 }

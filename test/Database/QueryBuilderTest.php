@@ -112,7 +112,7 @@ class QueryBuilderTest extends TestCase
     {
         $builder = new QueryBuilder();
         $this->m_application->shouldHaveReceived("database")->once();
-        $this->assertSame($this->m_defaultConnection, $builder->connection());
+        self::assertSame($this->m_defaultConnection, $builder->connection());
     }
 
     public function testConstructorWithConnection(): void
@@ -120,7 +120,7 @@ class QueryBuilderTest extends TestCase
         $connection = Mockery::mock(Connection::class);
         $builder = new QueryBuilder($connection);
         $this->m_application->shouldNotHaveReceived("database");
-        $this->assertSame($connection, $builder->connection());
+        self::assertSame($connection, $builder->connection());
     }
 
     public function dataForTestSetConnection(): iterable
@@ -151,7 +151,7 @@ class QueryBuilderTest extends TestCase
 
         $builder = new QueryBuilder();
         $builder->setConnection($connection);
-        $this->assertSame($connection, $builder->connection());
+        self::assertSame($connection, $builder->connection());
     }
 
     /**
@@ -161,9 +161,9 @@ class QueryBuilderTest extends TestCase
     {
         $builder = new QueryBuilder();
         $connection = Mockery::mock(PDO::class);
-        $this->assertSame($this->m_defaultConnection, $builder->connection());
+        self::assertSame($this->m_defaultConnection, $builder->connection());
         $builder->setConnection($connection);
-        $this->assertSame($connection, $builder->connection());
+        self::assertSame($connection, $builder->connection());
     }
 
     /**
@@ -196,8 +196,8 @@ class QueryBuilderTest extends TestCase
     {
         $builder = self::createBuilder($initialSelects, $tables);
         $actual = $builder->select($select);
-        $this->assertSame($builder, $actual, "QueryBuilder::select() did not return the same QueryBuilder instance.");
-        $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::select() did not return the same QueryBuilder instance.");
+        self::assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -244,8 +244,8 @@ class QueryBuilderTest extends TestCase
         }
 
         $actual = $builder->addSelect($addSelects);
-        $this->assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
-        $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
+        self::assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -303,8 +303,8 @@ class QueryBuilderTest extends TestCase
         
         $builder = self::createBuilder($initialSelects, $tables);
         $actual = $builder->addRawSelect($expression, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
-        $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
+        self::assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -356,8 +356,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"]);
         $actual = $builder->from($tables, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -397,10 +397,10 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"]);
         $actual = $builder->from($table, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
         $actual = $builder->from($otherTable, $otherAlias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
-        $this->assertEquals(
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertEquals(
             "SELECT `foo`,`bar` FROM `{$table}`" . (isset($alias) ? " AS `{$alias}`" : "") . ",`{$otherTable}`" . (isset($otherAlias) ? " AS `{$otherAlias}`" : ""),
             $builder->sql(),
             "The QueryBuilder did not generate the expected SQL."
@@ -465,8 +465,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"]);
         $actual = $builder->rawFrom($expression, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::rawFrom() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::rawFrom() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -506,10 +506,10 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"]);
         $actual = $builder->rawFrom($expression, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
         $actual = $builder->rawFrom($otherExpression, $otherAlias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
-        $this->assertEquals(
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertEquals(
             "SELECT `foo`,`bar` FROM {$expression}" . (isset($alias) ? " AS `{$alias}`" : "") . ",`{$otherExpression}`" . (isset($otherAlias) ? " AS `{$otherAlias}`" : ""),
             $builder->sql(),
             "The QueryBuilder did not generate the expected SQL."
@@ -572,8 +572,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->leftJoin($joinTable, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -642,8 +642,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->innerJoin($joinTable, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -712,8 +712,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rightJoin($joinTable, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -793,8 +793,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->leftJoinAs($joinTable, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -874,8 +874,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->innerJoinAs($joinTable, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -955,8 +955,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rightJoinAs($joinTable, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1036,8 +1036,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rawLeftJoin($joinExpression, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1127,8 +1127,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rawRightJoin($joinExpression, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1218,8 +1218,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rawInnerJoin($joinExpression, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1336,8 +1336,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = $this->createBuilder(["foo", "bar"], "foobar");
         $actual = $builder->where($field, $operatorOrValue, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::where() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlWhere}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::where() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlWhere}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1414,14 +1414,14 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where($closure);
-        $this->assertSame($builder, $actual, "QueryBuilder::orWhere() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::orWhere() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
 
         // test with orWhere() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar")->where("foo", "foo");
         $actual = $builder->orWhere($closure);
-        $this->assertSame($builder, $actual, "QueryBuilder::orWhere() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR {$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::orWhere() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR {$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1475,8 +1475,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNull($columns);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNull() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNull() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1530,8 +1530,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotNull($columns);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotNull() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotNull() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1597,8 +1597,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereContains($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1664,8 +1664,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotContains($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotContains() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotContains() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1731,8 +1731,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereStartsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1798,8 +1798,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotStartsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotStartsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotStartsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1865,8 +1865,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereEndsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1932,8 +1932,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotEndsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2012,8 +2012,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereIn($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2090,8 +2090,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotIn($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2185,8 +2185,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereLength($columnOrPairs, $length);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2196,11 +2196,11 @@ class QueryBuilderTest extends TestCase
     {
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where("foo", "foo");
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->orWhere("foo", "bar");
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->sql();
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar')", $actual);
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar')", $actual);
     }
 
     /**
@@ -2210,11 +2210,11 @@ class QueryBuilderTest extends TestCase
     {
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where("foo", 3);
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->orWhere("foo", ">", 42);
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->sql();
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 3 OR `foo` > 42)", $actual);
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 3 OR `foo` > 42)", $actual);
     }
 
     /**
@@ -2224,7 +2224,7 @@ class QueryBuilderTest extends TestCase
     {
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where("foo", 3);
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $this->expectException(InvalidOperatorException::class);
         $actual = $builder->orWhere("foo", "", 42);
     }
@@ -2236,11 +2236,11 @@ class QueryBuilderTest extends TestCase
     {
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where("foo", "foo");
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->orWhere(["foo" => "bar", "bar" => "fizz", "fizz" => "buzz",]);
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->sql();
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar' OR `bar` = 'fizz' OR `fizz` = 'buzz')", $actual);
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar' OR `bar` = 'fizz' OR `fizz` = 'buzz')", $actual);
     }
 
     /**
@@ -2293,8 +2293,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNull($columns);
-        $this->assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2347,8 +2347,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotNull($columns);
-        $this->assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2414,8 +2414,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereContains($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
 
@@ -2482,8 +2482,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotContains($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2549,8 +2549,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereStartsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2616,8 +2616,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotStartsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2683,8 +2683,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereEndsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2750,8 +2750,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotEndsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2830,8 +2830,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereIn($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
 
@@ -2912,8 +2912,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotIn($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -3007,8 +3007,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereLength($columnOrPairs, $length);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     public function dataForTestOrderBy(): iterable
@@ -3086,7 +3086,7 @@ class QueryBuilderTest extends TestCase
             $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar` ORDER BY {$sqlOrderBy}";
         }
 
-        $this->assertEquals($expectedSql, $builder->sql());
+        self::assertEquals($expectedSql, $builder->sql());
     }
 
     public function dataForTestRawOrderBy(): iterable
@@ -3159,7 +3159,7 @@ class QueryBuilderTest extends TestCase
             $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar` ORDER BY {$sqlOrderBy}";
         }
 
-        $this->assertEquals($expectedSql, $builder->sql());
+        self::assertEquals($expectedSql, $builder->sql());
     }
 
     /**
@@ -3174,7 +3174,7 @@ class QueryBuilderTest extends TestCase
         } catch (InvalidOrderByDirectionException $err) {
         }
 
-        $this->assertEquals("SELECT `foo`,`bar`,`baz` FROM `foobar` WHERE (`foo` = 'foo') ORDER BY `foo` DESC", $builder->sql());
+        self::assertEquals("SELECT `foo`,`bar`,`baz` FROM `foobar` WHERE (`foo` = 'foo') ORDER BY `foo` DESC", $builder->sql());
     }
 
     /**
@@ -3212,7 +3212,7 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder($columns, $tables);
         $actual = $builder->limit($limit, $offset);
-        $this->assertSame($builder, $actual, "QueryBuilder::limit() did not return the same QueryBuilder instance.");
-        $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::limit() did not return the same QueryBuilder instance.");
+        self::assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 }

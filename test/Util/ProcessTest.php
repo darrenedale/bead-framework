@@ -66,11 +66,11 @@ class ProcessTest extends TestCase
 		if (!isset($timeout)) {
 			// set it to something we can reset from
 			Process::setCleanupTimeout(Process::DefaultCleanupTimeout + rand(1, 30));
-			$this->assertNotEquals(Process::DefaultCleanupTimeout, Process::cleanupTimeout(), "The cleanup timeout was not be set to a random non-default value.");
+			self::assertNotEquals(Process::DefaultCleanupTimeout, Process::cleanupTimeout(), "The cleanup timeout was not be set to a random non-default value.");
 		}
 
 		Process::setCleanupTimeout($timeout);
-		$this->assertEquals($timeout ?? Process::DefaultCleanupTimeout, Process::cleanupTimeout(), "The cleanup timeout was not (re)set successfully.");
+		self::assertEquals($timeout ?? Process::DefaultCleanupTimeout, Process::cleanupTimeout(), "The cleanup timeout was not (re)set successfully.");
 	}
 
 	/**
@@ -143,17 +143,17 @@ class ProcessTest extends TestCase
 		}
 
 		$process = new Process($command, $arguments, $workingDirectory, $outputNotifier, $errorNotifier);
-		$this->assertEquals($command, $process->command(), "Process was not constructed with correct command.");
-		$this->assertEquals($arguments, $process->arguments(), "Process was not constructed with correct arguments.");
-		$this->assertEquals($workingDirectory ?? getcwd(), $process->workingDirectory(), "Process was not constructed with correct working directory.");
+		self::assertEquals($command, $process->command(), "Process was not constructed with correct command.");
+		self::assertEquals($arguments, $process->arguments(), "Process was not constructed with correct arguments.");
+		self::assertEquals($workingDirectory ?? getcwd(), $process->workingDirectory(), "Process was not constructed with correct working directory.");
 
 		$property = new \ReflectionProperty($process, "m_outputNotifier");
 		$property->setAccessible(true);
-		$this->assertEquals($outputNotifier, $property->getValue($process), "Output notifier was not set correctly by constructor.");
+		self::assertEquals($outputNotifier, $property->getValue($process), "Output notifier was not set correctly by constructor.");
 
 		$property = new \ReflectionProperty($process, "m_errorNotifier");
 		$property->setAccessible(true);
-		$this->assertEquals($errorNotifier, $property->getValue($process), "Error notifier was not set correctly by constructor.");
+		self::assertEquals($errorNotifier, $property->getValue($process), "Error notifier was not set correctly by constructor.");
 	}
 
 	/**
@@ -190,7 +190,7 @@ class ProcessTest extends TestCase
 		
 		$process = new Process("");
 		$process->setCommand($command);
-		$this->assertEquals($command, $process->command(), "Command was not set successfully.");
+		self::assertEquals($command, $process->command(), "Command was not set successfully.");
 	}
 
 	/**
@@ -242,7 +242,7 @@ class ProcessTest extends TestCase
 
 		$process = new Process("");
 		$process->setArguments($args);
-		$this->assertEquals($args, $process->arguments(), "Arguments were not set successfully.");
+		self::assertEquals($args, $process->arguments(), "Arguments were not set successfully.");
 	}
 
 	/**
@@ -292,7 +292,7 @@ class ProcessTest extends TestCase
 
 		$process = new Process("");
 		$process->setWorkingDirectory($workingDirectory);
-		$this->assertEquals($workingDirectory ?? getcwd(), $process->workingDirectory(), "Working directory was not set successfully.");
+		self::assertEquals($workingDirectory ?? getcwd(), $process->workingDirectory(), "Working directory was not set successfully.");
 	}
 
 	/**
@@ -350,7 +350,7 @@ class ProcessTest extends TestCase
 
 		$process = new Process("");
 		$process->setEnvironment($env);
-		$this->assertEquals($env, $process->environment(), "Process environment was not set successfully.");
+		self::assertEquals($env, $process->environment(), "Process environment was not set successfully.");
 
 	}
 
@@ -417,12 +417,12 @@ class ProcessTest extends TestCase
 			}
 		);
 
-		$this->assertEquals($shouldStart, $process->start(), "The process did not start.");
-		$this->assertEquals($shouldStart, $process->isRunning(), "Process is not running.");
+		self::assertEquals($shouldStart, $process->start(), "The process did not start.");
+		self::assertEquals($shouldStart, $process->isRunning(), "Process is not running.");
 		$process->wait();
-		$this->assertEquals($expectedExitCode, $process->exitCode(), "The expected exit code was not produced.");
-		$this->assertEquals($expectedStdOut, $stdOut, "Process did not produce the expected output.");
-		$this->assertEquals($expectedStdErr, $stdErr, "Process did not produce the expected error output.");
+		self::assertEquals($expectedExitCode, $process->exitCode(), "The expected exit code was not produced.");
+		self::assertEquals($expectedStdOut, $stdOut, "Process did not produce the expected output.");
+		self::assertEquals($expectedStdErr, $stdErr, "Process did not produce the expected error output.");
 	}
 
 	/**
@@ -433,13 +433,13 @@ class ProcessTest extends TestCase
 		$process = new Process("php", ["-r", "'sleep(20);'",]);
 		$process->start();
 		usleep(500000);
-		$this->assertTrue($process->isRunning(), "Test process could not be started.");
+		self::assertTrue($process->isRunning(), "Test process could not be started.");
 		$stoppedAt = microtime(true);
 		$process->stop();
 		$process->wait(20);
-		$this->assertFalse($process->isRunning(), "Process was not stopped successfully.");
-		$this->assertLessThan(20, microtime(true) - $stoppedAt, "Process was not stopped successfully within the 20s it was expected to run.");
-		$this->assertNotEquals(0, $process->exitCode(), "Process should not have exited with exit code 0.");
+		self::assertFalse($process->isRunning(), "Process was not stopped successfully.");
+		self::assertLessThan(20, microtime(true) - $stoppedAt, "Process was not stopped successfully within the 20s it was expected to run.");
+		self::assertNotEquals(0, $process->exitCode(), "Process should not have exited with exit code 0.");
 	}
 
 	/**
@@ -464,9 +464,9 @@ class ProcessTest extends TestCase
 	{
 		$process = new Process($command, $args);
 		$process->start();
-		$this->assertIsInt($process->pid(), "Pid is not valid.");
+		self::assertIsInt($process->pid(), "Pid is not valid.");
 		$process->stop();
 		$process->wait();
-		$this->assertNull($process->pid(), "PID for terminated process is not null.");
+		self::assertNull($process->pid(), "PID for terminated process is not null.");
 	}
 }

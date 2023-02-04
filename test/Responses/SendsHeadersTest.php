@@ -65,6 +65,6 @@ final class SendsHeadersTest extends TestCase
 
         $instance = new XRay($this->createInstance());
         $instance->sendHeaders();
-        $this->assertEmpty($expectedHeaders, "Not all expected headers were generated.");
+        self::assertEmpty($expectedHeaders, "Not all expected headers were generated.");
     }
 }

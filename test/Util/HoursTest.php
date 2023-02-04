@@ -58,7 +58,7 @@ class HoursTest extends TestCase
 		}
 
 		$testObject = new Hours($hours);
-		$this->assertEquals($hours, $testObject->hours());
+		self::assertEquals($hours, $testObject->hours());
 	}
 
 	/**
@@ -86,7 +86,7 @@ class HoursTest extends TestCase
 	public function testHours(int $hours): void
 	{
 		$testObject = new Hours($hours);
-		$this->assertEquals($hours, $testObject->hours());
+		self::assertEquals($hours, $testObject->hours());
 	}
 
 	/**
@@ -147,9 +147,9 @@ class HoursTest extends TestCase
 
 		$hours = new Hours($initial);
 		$actual = $hours->plus($add);
-		$this->assertNotSame($hours, $actual);
-		$this->assertEquals($initial, $hours->hours());
-		$this->assertEquals($expected, $actual->hours());
+		self::assertNotSame($hours, $actual);
+		self::assertEquals($initial, $hours->hours());
+		self::assertEquals($expected, $actual->hours());
 	}
 
 	/**
@@ -210,9 +210,9 @@ class HoursTest extends TestCase
 
 		$hours = new Hours($initial);
 		$actual = $hours->minus($sub);
-		$this->assertNotSame($hours, $actual);
-		$this->assertEquals($initial, $hours->hours());
-		$this->assertEquals($expected, $actual->hours());
+		self::assertNotSame($hours, $actual);
+		self::assertEquals($initial, $hours->hours());
+		self::assertEquals($expected, $actual->hours());
 	}
 
 	/**
@@ -233,6 +233,6 @@ class HoursTest extends TestCase
 	 */
 	public function testInSeconds(int $hours, int $expectedSeconds): void
 	{
-		$this->assertEquals($expectedSeconds, (new Hours($hours))->inSeconds());
+		self::assertEquals($expectedSeconds, (new Hours($hours))->inSeconds());
 	}
 }

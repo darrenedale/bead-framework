@@ -14,37 +14,37 @@ class DuplicateTableNameExceptionTest extends TestCase
     public function testWithTableName(): void
     {
         $err = new DuplicateTableNameException("table");
-        $this->assertEquals("table", $err->getTableName());
-        $this->assertMessage($err, "");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("table", $err->getTableName());
+        self::assertMessage($err, "");
+        self::assertCode($err, 0);
+        self::assertPrevious($err, null);
     }
 
     public function testWithTableNameAndMessage(): void
     {
         $err = new DuplicateTableNameException("table", "Message.");
-        $this->assertEquals("table", $err->getTableName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("table", $err->getTableName());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 0);
+        self::assertPrevious($err, null);
     }
 
     public function testWithTableNameMessageAndCode(): void
     {
         $err = new DuplicateTableNameException("table", "Message.", 42);
-        $this->assertEquals("table", $err->getTableName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, null);
+        self::assertEquals("table", $err->getTableName());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 42);
+        self::assertPrevious($err, null);
     }
 
     public function testWithTableNameMessageCodeAndPrevious(): void
     {
         $previous = new Exception();
         $err = new DuplicateTableNameException("table", "Message.", 42, $previous);
-        $this->assertEquals("table", $err->getTableName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, $previous);
+        self::assertEquals("table", $err->getTableName());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 42);
+        self::assertPrevious($err, $previous);
     }
 }

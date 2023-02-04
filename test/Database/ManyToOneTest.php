@@ -40,29 +40,29 @@ class ManyToOneTest extends TestCase
     public function testConstructor(): void
     {
         $relation = new ManyToOne($this->m_local, "Bar", "id", "bar_id");
-        $this->assertSame($this->m_local, $relation->localModel());
-        $this->assertEquals("Bar", $this->m_relation->relatedModel());
-        $this->assertEquals("bar_id", $relation->localKey());
-        $this->assertEquals("id", $relation->relatedKey());
+        self::assertSame($this->m_local, $relation->localModel());
+        self::assertEquals("Bar", $this->m_relation->relatedModel());
+        self::assertEquals("bar_id", $relation->localKey());
+        self::assertEquals("id", $relation->relatedKey());
     }
 
     public function testLocalKey(): void
     {
-        $this->assertSame("bar_id", $this->m_relation->localKey());
+        self::assertSame("bar_id", $this->m_relation->localKey());
     }
 
     public function testLocalModel(): void
     {
-        $this->assertSame($this->m_local, $this->m_relation->localModel());
+        self::assertSame($this->m_local, $this->m_relation->localModel());
     }
 
     public function testRelatedKey(): void
     {
-        $this->assertEquals("id", $this->m_relation->relatedKey());
+        self::assertEquals("id", $this->m_relation->relatedKey());
     }
 
     public function testRelatedModel(): void
     {
-        $this->assertEquals("Bar", $this->m_relation->relatedModel());
+        self::assertEquals("Bar", $this->m_relation->relatedModel());
     }
 }

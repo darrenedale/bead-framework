@@ -85,7 +85,7 @@ final class StrTest extends TestCase
 		}
 
 		$actual = camelToSnake($str, $encoding);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 	
 	public function dataForTestSnakeToCamel(): iterable
@@ -142,7 +142,7 @@ final class StrTest extends TestCase
 		}
 
 		$actual = snakeToCamel($str, $encoding);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	/**
@@ -196,7 +196,7 @@ final class StrTest extends TestCase
 		}
 
 		$actual = html($raw);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	/**
@@ -262,7 +262,7 @@ final class StrTest extends TestCase
 		}
 
 		$actual = build($template, ...$args);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	public function dataForTestToCodePoints(): iterable
@@ -292,7 +292,7 @@ final class StrTest extends TestCase
 		}
 
 		$actual = toCodePoints($str, $encoding);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	/**
@@ -316,7 +316,7 @@ final class StrTest extends TestCase
 	public function testRandomLength(int $length): void
 	{
 		$actual = random($length);
-		$this->assertEquals($length, strlen($actual));
+		self::assertEquals($length, strlen($actual));
 	}
 
 
@@ -329,7 +329,7 @@ final class StrTest extends TestCase
 	public function testRandomContent(int $length): void
 	{
 		$actual = random($length);
-		$this->assertEquals($length, strspn($actual, "abcdefghijklmnopqrstuvwxyz-_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"));
+		self::assertEquals($length, strspn($actual, "abcdefghijklmnopqrstuvwxyz-_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"));
 	}
 
 	public function testRandomThrowsWithInvalidLength(): void

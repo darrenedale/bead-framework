@@ -23,7 +23,7 @@ final class CanSetContentTypeTest extends TestCase
     /** Ensure we can fetch the content-type. */
     public function testStatusCode(): void
     {
-        $this->assertEquals("application/octet-stream", $this->createInstance()->contentType());
+        self::assertEquals("application/octet-stream", $this->createInstance()->contentType());
     }
 
     /** Ensure we can set the content-type. */
@@ -31,6 +31,6 @@ final class CanSetContentTypeTest extends TestCase
     {
         $instance = $this->createInstance();
         $instance->setContentType("application/json");
-        $this->assertEquals("application/json", $instance->contentType());
+        self::assertEquals("application/json", $instance->contentType());
     }
 }
