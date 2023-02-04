@@ -23,6 +23,12 @@ trait NaivelySendsContent
 
     /**
      * Constrain the trait to classes that implement this method.
+     * @return array<string,string> The HTTP headers.
+     */
+	abstract public function headers(): array;
+
+    /**
+     * Constrain the trait to classes that implement this method.
      * @return string The HTTP response body.
      */
 	abstract public function content(): string;
@@ -33,7 +39,7 @@ trait NaivelySendsContent
 	public function send(): void
 	{
 		http_response_code($this->statusCode());
-		header("content-type: {$this->contentType()}");
+		header("content-type: {$this->contentType()}", true);
 
 		foreach ($this->headers() as $header => $value) {
 			header("{$header}: {$value}", true);
