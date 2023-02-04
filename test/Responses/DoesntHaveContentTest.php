@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Responses;
+namespace BeadTests\Responses;
 
 use Bead\Responses\DoesntHaveContent;
 use PHPUnit\Framework\TestCase;
