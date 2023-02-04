@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Bead\Responses;
+namespace BeadTests\Responses;
 
+use Bead\Responses\NaivelySendsContent;
 use PHPUnit\Framework\TestCase;
 
 final class NaivelySendsContentTest extends TestCase
