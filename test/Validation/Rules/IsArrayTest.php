@@ -113,6 +113,6 @@ class IsArrayTest extends RuleTestCase
         }
 
         $rule = $this->ruleInstance();
-        $this->assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
+        self::assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
     }
 }

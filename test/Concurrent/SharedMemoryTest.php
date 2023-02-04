@@ -65,7 +65,7 @@ class SharedMemoryTest extends TestCase
     {
         $memory = SharedMemory::create(10, 0x80808080);
         $this->m_memories[] = $memory;
-        $this->assertEquals(0x80808080, $memory->id());
+        self::assertEquals(0x80808080, $memory->id());
     }
 
     public function testCreateThrows(): void
@@ -93,15 +93,15 @@ class SharedMemoryTest extends TestCase
 
         $memory = SharedMemory::create(10);
         $this->m_memories[] = $memory;
-        $this->assertIsInt($memory->id());
-        $this->assertEquals($newId, $memory->id());
+        self::assertIsInt($memory->id());
+        self::assertEquals($newId, $memory->id());
     }
 
     public function testOpen(): void
     {
         $memory = SharedMemory::open(self::SharedMemoryTestId);
-        $this->assertInstanceOf(SharedMemory::class, $memory);
-        $this->assertEquals(self::SharedMemoryTestId, $memory->id());
+        self::assertInstanceOf(SharedMemory::class, $memory);
+        self::assertEquals(self::SharedMemoryTestId, $memory->id());
     }
 
     public function testOpenThrows(): void
@@ -114,7 +114,7 @@ class SharedMemoryTest extends TestCase
 
     public function testId(): void
     {
-        $this->assertEquals(self::SharedMemoryTestId, $this->m_memory->id());
+        self::assertEquals(self::SharedMemoryTestId, $this->m_memory->id());
     }
 
     public function testIdWithClosed(): void
@@ -131,19 +131,19 @@ class SharedMemoryTest extends TestCase
         });
 
         $memory->close();
-        $this->assertEquals(0, $memory->id());
+        self::assertEquals(0, $memory->id());
     }
 
     public function testIdWithDeleted(): void
     {
         $memory = SharedMemory::create(100, 0x80808080);
         $memory->delete();
-        $this->assertEquals(0, $memory->id());
+        self::assertEquals(0, $memory->id());
     }
 
     public function testSize(): void
     {
-        $this->assertEquals(self::SharedMemoryTestSize, $this->m_memory->size());
+        self::assertEquals(self::SharedMemoryTestSize, $this->m_memory->size());
     }
 
     public function testSizeWithClosed(): void
@@ -160,19 +160,19 @@ class SharedMemoryTest extends TestCase
         });
 
         $memory->close();
-        $this->assertEquals(0, $memory->size());
+        self::assertEquals(0, $memory->size());
     }
 
     public function testSizeWithDeleted(): void
     {
         $memory = SharedMemory::create(100, 0x80808080);
         $memory->delete();
-        $this->assertEquals(0, $memory->size());
+        self::assertEquals(0, $memory->size());
     }
 
     public function testIsOpen(): void
     {
-        $this->assertTrue($this->m_memory->isOpen());
+        self::assertTrue($this->m_memory->isOpen());
     }
 
     public function testIsOpenWithClosed(): void
@@ -189,19 +189,19 @@ class SharedMemoryTest extends TestCase
         });
 
         $memory->close();
-        $this->assertFalse($memory->isOpen());
+        self::assertFalse($memory->isOpen());
     }
 
     public function tesIsOpenWithDeleted(): void
     {
         $memory = SharedMemory::create(100, 0x80808080);
         $memory->delete();
-        $this->assertFalse($memory->isOpen());
+        self::assertFalse($memory->isOpen());
     }
 
     public function testIsReadable(): void
     {
-        $this->assertTrue($this->m_memory->isReadable());
+        self::assertTrue($this->m_memory->isReadable());
     }
 
     public function testIsReadableWithClosed(): void
@@ -218,20 +218,20 @@ class SharedMemoryTest extends TestCase
         });
 
         $memory->close();
-        $this->assertFalse($memory->isReadable());
+        self::assertFalse($memory->isReadable());
     }
 
     public function tesIsReadableWithDeleted(): void
     {
         $memory = SharedMemory::create(100, 0x80808080);
         $memory->delete();
-        $this->assertFalse($memory->isReadable());
+        self::assertFalse($memory->isReadable());
     }
 
     public function testIsWritable(): void
     {
         $memory = SharedMemory::open(self::SharedMemoryTestId, SharedMemory::ModeReadWrite);
-        $this->assertTrue($memory->isWritable());
+        self::assertTrue($memory->isWritable());
     }
 
     public function testIsWritableWithClosed(): void
@@ -248,14 +248,14 @@ class SharedMemoryTest extends TestCase
         });
 
         $memory->close();
-        $this->assertFalse($memory->isWritable());
+        self::assertFalse($memory->isWritable());
     }
 
     public function tesIsWritableWithDeleted(): void
     {
         $memory = SharedMemory::create(100, 0x80808080);
         $memory->delete();
-        $this->assertFalse($memory->isWritable());
+        self::assertFalse($memory->isWritable());
     }
 
     public function testClose(): void
@@ -272,7 +272,7 @@ class SharedMemoryTest extends TestCase
         });
 
         $memory->close();
-        $this->assertFalse($memory->isOpen());
+        self::assertFalse($memory->isOpen());
     }
 
     public function testDelete(): void
@@ -281,7 +281,7 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(10, $id);
         $this->m_memories[] = $memory;
         $memory->delete();
-        $this->assertFalse($memory->isOpen());
+        self::assertFalse($memory->isOpen());
 
         // prove that the shared memory has actually been deleted, not just closed
         $this->expectException(SharedMemoryException::class);
@@ -295,10 +295,10 @@ class SharedMemoryTest extends TestCase
         $handle = $memory->m_handle;
         $memory->nullify();
         shmop_delete($handle);
-        $this->assertNull($memory->m_handle);
-        $this->assertEquals(0, $memory->id());
-        $this->assertEquals(0, $memory->size());
-        $this->assertEquals(SharedMemory::ModeRead, $memory->m_mode);
+        self::assertNull($memory->m_handle);
+        self::assertEquals(0, $memory->id());
+        self::assertEquals(0, $memory->size());
+        self::assertEquals(SharedMemory::ModeRead, $memory->m_mode);
     }
 
     public function testReadInt64(): void
@@ -307,7 +307,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("q", $value), 0);
         $actual = $this->m_memory->readInt64();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadInt64WithOffset(): void
@@ -317,7 +317,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("q", $value), $offset);
         $actual = $this->m_memory->readInt64($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadInt64ThrowsWithClosed(): void
@@ -371,7 +371,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("Q", $value), 0);
         $actual = $this->m_memory->readUInt64();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadUInt64WithOffset(): void
@@ -381,7 +381,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("Q", $value), $offset);
         $actual = $this->m_memory->readUInt64($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadUInt64ThrowsWithClosed(): void
@@ -438,7 +438,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("i", $value), 0);
         $actual = $this->m_memory->readInt32();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadInt32WithOffset(): void
@@ -448,7 +448,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("i", $value), $offset);
         $actual = $this->m_memory->readInt32($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadInt32ThrowsWithClosed(): void
@@ -505,7 +505,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("I", $value), 0);
         $actual = $this->m_memory->readUInt32();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadUInt32WithOffset(): void
@@ -515,7 +515,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("I", $value), $offset);
         $actual = $this->m_memory->readUInt32($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadUInt32ThrowsWithClosed(): void
@@ -572,7 +572,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("s", $value), 0);
         $actual = $this->m_memory->readInt16();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadInt16WithOffset(): void
@@ -582,7 +582,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("s", $value), $offset);
         $actual = $this->m_memory->readInt16($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadInt16ThrowsWithClosed(): void
@@ -639,7 +639,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("S", $value), 0);
         $actual = $this->m_memory->readUInt16();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadUInt16WithOffset(): void
@@ -649,7 +649,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("S", $value), $offset);
         $actual = $this->m_memory->readUInt16($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadUInt16ThrowsWithClosed(): void
@@ -706,7 +706,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("c", $value), 0);
         $actual = $this->m_memory->readInt8();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadInt8WithOffset(): void
@@ -716,7 +716,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("c", $value), $offset);
         $actual = $this->m_memory->readInt8($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadInt8ThrowsWithClosed(): void
@@ -766,7 +766,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("C", $value), 0);
         $actual = $this->m_memory->readUInt8();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadUInt8WithOffset(): void
@@ -776,7 +776,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, pack("C", $value), $offset);
         $actual = $this->m_memory->readUInt8($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadUInt8ThrowsWithClosed(): void
@@ -826,7 +826,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, $value, 0);
         $actual = $this->m_memory->readString(0, strlen($value));
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadStringWithOffset(): void
@@ -836,7 +836,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, $value, $offset);
         $actual = $this->m_memory->readString($offset, strlen($value));
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadStringWholeBlock(): void
@@ -845,7 +845,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, $value, 0);
         $actual = $this->m_memory->readString();
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadStringWithNegativeOffset(): void
@@ -882,7 +882,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, $value, 0);
         $actual = $this->m_memory->readCString(0);
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
     }
 
     public function testReadCStringWithManyNulls(): void
@@ -891,9 +891,9 @@ class SharedMemoryTest extends TestCase
         $expected = "bead-framework";
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, $value, 0);
-        $this->assertEquals($value, $this->m_memory->readString(0, strlen($value)));
+        self::assertEquals($value, $this->m_memory->readString(0, strlen($value)));
         $actual = $this->m_memory->readCString(0);
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
     }
 
     public function testReadCStringWithOffset(): void
@@ -904,7 +904,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, $value, 0);
         $actual = $this->m_memory->readCString($offset);
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
     }
 
     public function testReadCStringWithNegativeOffset(): void
@@ -941,7 +941,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, $json, 0);
         $actual = $this->m_memory->readJson(0, strlen($json));
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadJsonWithOffset(): void
@@ -952,7 +952,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, $json, $offset);
         $actual = $this->m_memory->readJson($offset, strlen($json));
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testReadJsonWithTruncatedSize(): void
@@ -998,7 +998,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, serialize($value), 0);
         $actual = $this->m_memory->unserialize(0);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testUnserializeWithOffset(): void
@@ -1008,7 +1008,7 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay($this->m_memory);
         shmop_write($memory->m_handle, serialize($value), $offset);
         $actual = $this->m_memory->unserialize($offset);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testUnserializeWithTruncatedSize(): void
@@ -1054,7 +1054,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeInt64($value);
         $memory = new XRay($this->m_memory);
         $actual = unpack("q", shmop_read($memory->m_handle, 0,8))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteInt64WithOffset(): void
@@ -1064,7 +1064,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeInt64($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = unpack("q", shmop_read($memory->m_handle, $offset,8))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteInt64ThrowsWithClosed(): void
@@ -1120,7 +1120,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeUInt64($value);
         $memory = new XRay($this->m_memory);
         $actual = unpack("Q", shmop_read($memory->m_handle, 0,8))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteUInt64WithOffset(): void
@@ -1130,7 +1130,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeUInt64($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = unpack("Q", shmop_read($memory->m_handle, $offset,8))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteUInt64ThrowsWithClosed(): void
@@ -1186,7 +1186,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeInt32($value);
         $memory = new XRay($this->m_memory);
         $actual = unpack("i", shmop_read($memory->m_handle, 0,4))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteInt32WithOffset(): void
@@ -1196,7 +1196,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeInt32($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = unpack("i", shmop_read($memory->m_handle, $offset,4))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteInt32ThrowsWithClosed(): void
@@ -1252,7 +1252,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeUInt32($value);
         $memory = new XRay($this->m_memory);
         $actual = unpack("I", shmop_read($memory->m_handle, 0,4))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteUInt32WithOffset(): void
@@ -1262,7 +1262,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeUInt32($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = unpack("I", shmop_read($memory->m_handle, $offset,4))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteUInt32ThrowsWithClosed(): void
@@ -1318,7 +1318,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeInt16($value);
         $memory = new XRay($this->m_memory);
         $actual = unpack("s", shmop_read($memory->m_handle, 0,2))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteInt16WithOffset(): void
@@ -1328,7 +1328,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeInt16($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = unpack("s", shmop_read($memory->m_handle, $offset,2))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteInt16ThrowsWithClosed(): void
@@ -1384,7 +1384,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeUInt16($value);
         $memory = new XRay($this->m_memory);
         $actual = unpack("S", shmop_read($memory->m_handle, 0,4))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteUInt16WithOffset(): void
@@ -1394,7 +1394,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeUInt16($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = unpack("S", shmop_read($memory->m_handle, $offset,4))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteUInt16ThrowsWithClosed(): void
@@ -1450,7 +1450,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeInt8($value);
         $memory = new XRay($this->m_memory);
         $actual = unpack("c", shmop_read($memory->m_handle, 0,2))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteInt8WithOffset(): void
@@ -1460,7 +1460,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeInt8($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = unpack("c", shmop_read($memory->m_handle, $offset,2))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteInt8ThrowsWithClosed(): void
@@ -1516,7 +1516,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeUInt8($value);
         $memory = new XRay($this->m_memory);
         $actual = unpack("C", shmop_read($memory->m_handle, 0,4))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteUInt8WithOffset(): void
@@ -1526,7 +1526,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeUInt8($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = unpack("C", shmop_read($memory->m_handle, $offset,4))[1];
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteUInt8ThrowsWithClosed(): void
@@ -1582,7 +1582,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeString($value);
         $memory = new XRay($this->m_memory);
         $actual = shmop_read($memory->m_handle, 0, strlen($value));
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteStringWithOffset(): void
@@ -1592,7 +1592,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeString($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = shmop_read($memory->m_handle, $offset, strlen($value));
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteStringWholeBlock(): void
@@ -1601,7 +1601,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeString($value);
         $memory = new XRay($this->m_memory);
         $actual = shmop_read($memory->m_handle, 0, self::SharedMemoryTestSize);
-        $this->assertEquals($value, $actual);
+        self::assertEquals($value, $actual);
     }
 
     public function testWriteStringWithNegativeOffset(): void
@@ -1638,7 +1638,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeCString($value);
         $memory = new XRay($this->m_memory);
         $actual = shmop_read($memory->m_handle, 0, strlen($expected));
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
     }
 
     public function testWriteCStringWithOffset(): void
@@ -1649,7 +1649,7 @@ class SharedMemoryTest extends TestCase
         $this->m_memory->writeCString($value, $offset);
         $memory = new XRay($this->m_memory);
         $actual = shmop_read($memory->m_handle, $offset, strlen($expected));
-        $this->assertEquals($expected, $actual);
+        self::assertEquals($expected, $actual);
     }
 
     public function testWriteCStringWithNegativeOffset(): void
@@ -1684,8 +1684,8 @@ class SharedMemoryTest extends TestCase
         $value = ["bead" => "framework",];
         $actual = $this->m_memory->writeJson($value);
         $expected = json_encode($value);
-        $this->assertEquals(strlen($expected), $actual);
-        $this->assertEquals($expected, $this->m_memory->readString(0, strlen($expected)));
+        self::assertEquals(strlen($expected), $actual);
+        self::assertEquals($expected, $this->m_memory->readString(0, strlen($expected)));
     }
 
     public function testWriteJsonWithOffset(): void
@@ -1694,8 +1694,8 @@ class SharedMemoryTest extends TestCase
         $offset = 5;
         $actual = $this->m_memory->writeJson($value, $offset);
         $expected = json_encode($value);
-        $this->assertEquals(strlen($expected), $actual);
-        $this->assertEquals($expected, $this->m_memory->readString($offset, strlen($expected)));
+        self::assertEquals(strlen($expected), $actual);
+        self::assertEquals($expected, $this->m_memory->readString($offset, strlen($expected)));
     }
 
     public function testWriteJsonWithNegativeOffset(): void
@@ -1730,8 +1730,8 @@ class SharedMemoryTest extends TestCase
         $value = [1, 2, 3,];
         $actual = $this->m_memory->serialize($value);
         $expected = serialize($value);
-        $this->assertEquals(strlen($expected), $actual);
-        $this->assertEquals($expected, $this->m_memory->readString(0, strlen($expected)));
+        self::assertEquals(strlen($expected), $actual);
+        self::assertEquals($expected, $this->m_memory->readString(0, strlen($expected)));
     }
 
     public function testSerializeWithOffset(): void
@@ -1740,8 +1740,8 @@ class SharedMemoryTest extends TestCase
         $offset = 5;
         $actual = $this->m_memory->serialize($value, $offset);
         $expected = serialize($value);
-        $this->assertEquals(strlen($expected), $actual);
-        $this->assertEquals($expected, $this->m_memory->readString($offset, strlen($expected)));
+        self::assertEquals(strlen($expected), $actual);
+        self::assertEquals($expected, $this->m_memory->readString($offset, strlen($expected)));
     }
 
     public function testSerializeWithNegativeOffset(): void

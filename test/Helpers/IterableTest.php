@@ -122,27 +122,27 @@ final class IterableTest extends TestCase
 				$this->index = 0;
 			}
 
-			public function current()
+			public function current(): mixed
 			{
 				return $this->data[$this->index] ?? null;
 			}
 
-			public function next()
+			public function next(): void
 			{
 				++$this->index;
 			}
 
-			public function rewind()
+			public function rewind(): void
 			{
 				$this->index = 0;
 			}
 
-			public function valid()
+			public function valid(): bool
 			{
 				return count($this->data) > $this->index;
 			}
 
-			public function key()
+			public function key(): mixed
 			{
 				return $this->valid() ? $this->index : null;
 			}
@@ -230,8 +230,8 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = map($data, $fn);
-		$this->assertIsIterable($actual);
-		$this->assertEquals(toArray($expected), toArray($actual));
+		self::assertIsIterable($actual);
+		self::assertEquals(toArray($expected), toArray($actual));
 	}
 
 	/**
@@ -295,8 +295,8 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = flatten($data);
-		$this->assertIsIterable($actual);
-		$this->assertEquals(toArray($expected), toArray($actual));
+		self::assertIsIterable($actual);
+		self::assertEquals(toArray($expected), toArray($actual));
 	}
 
 	/**
@@ -363,8 +363,8 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = toArray($data);
-		$this->assertIsArray($actual);
-		$this->assertEquals($expected, $actual);
+		self::assertIsArray($actual);
+		self::assertEquals($expected, $actual);
 	}
 
 
@@ -539,8 +539,8 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = implode($glue, $iterable);
-		$this->assertIsString($actual);
-		$this->assertEquals($expected, $actual);
+		self::assertIsString($actual);
+		self::assertEquals($expected, $actual);
 	}
 
 
@@ -781,8 +781,8 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = grammaticalImplode($iterable, $glue, $lastGlue);
-		$this->assertIsString($actual);
-		$this->assertEquals($expected, $actual);
+		self::assertIsString($actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	/**
@@ -791,8 +791,8 @@ final class IterableTest extends TestCase
 	public function testGrammaticalImplodeWithDefaultGlue(): void
 	{
 		$actual = grammaticalImplode(["red", "green", "blue"]);
-		$this->assertIsString($actual);
-		$this->assertEquals("red, green and blue", $actual);
+		self::assertIsString($actual);
+		self::assertEquals("red, green and blue", $actual);
 	}
 
 	/**
@@ -801,8 +801,8 @@ final class IterableTest extends TestCase
 	public function testGrammaticalImplodeWithDefaultLastGlue(): void
 	{
 		$actual = grammaticalImplode(["red", "green", "blue"], "; ");
-		$this->assertIsString($actual);
-		$this->assertEquals("red; green and blue", $actual);
+		self::assertIsString($actual);
+		self::assertEquals("red; green and blue", $actual);
 	}
 
 	/**
@@ -856,13 +856,13 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = transform($data, $fn);
-		$this->assertSame($data, $actual);
+		self::assertSame($data, $actual);
 
 		$expected = toArray($expected);
 		$actual = toArray($actual);
 
 		for ($idx = 0; $idx < count($expected); ++$idx) {
-			$this->assertEquals($expected[$idx], $actual[$idx]);
+			self::assertEquals($expected[$idx], $actual[$idx]);
 		}
 	}
 
@@ -880,7 +880,7 @@ final class IterableTest extends TestCase
 		})();
 
 		$actual = transform($data, fn($value) => $value);
-		$this->assertSame($data, $actual);
+		self::assertSame($data, $actual);
 	}
 
 	/**
@@ -978,7 +978,7 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = reduce($data, $fn, $init);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	/**
@@ -1090,7 +1090,7 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = accumulate(...$args);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	/**
@@ -1237,7 +1237,7 @@ final class IterableTest extends TestCase
 		}
 		
 		$actual = all($collection, $predicate);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 	
 	/**
@@ -1384,7 +1384,7 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = none($collection, $predicate);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 
@@ -1532,7 +1532,7 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = some($collection, $predicate);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	/**
@@ -1654,7 +1654,7 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = isSubsetOf($subset, $set);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	/**
@@ -1714,6 +1714,6 @@ final class IterableTest extends TestCase
 		}
 
 		$actual = recursiveCount($iterable);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 }

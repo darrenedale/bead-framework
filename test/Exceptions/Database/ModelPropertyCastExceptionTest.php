@@ -15,41 +15,41 @@ class UnknownRelationExceptionTest extends TestCase
     public function testWithModelAndRelation(): void
     {
         $err = new UnknownRelationException(Model::class, "foo");
-        $this->assertEquals(Model::class, $err->getModel());
-        $this->assertEquals("foo", $err->getRelation());
-        $this->assertMessage($err, "");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals(Model::class, $err->getModel());
+        self::assertEquals("foo", $err->getRelation());
+        self::assertMessage($err, "");
+        self::assertCode($err, 0);
+        self::assertPrevious($err, null);
     }
 
     public function testWithModelRelationAndMessage(): void
     {
         $err = new UnknownRelationException(Model::class, "foo", "Message.");
-        $this->assertEquals(Model::class, $err->getModel());
-        $this->assertEquals("foo", $err->getRelation());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals(Model::class, $err->getModel());
+        self::assertEquals("foo", $err->getRelation());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 0);
+        self::assertPrevious($err, null);
     }
 
     public function testWithOperatorMessageAndCode(): void
     {
         $err = new UnknownRelationException(Model::class, "foo", "Message.", 42);
-        $this->assertEquals(Model::class, $err->getModel());
-        $this->assertEquals("foo", $err->getRelation());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, null);
+        self::assertEquals(Model::class, $err->getModel());
+        self::assertEquals("foo", $err->getRelation());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 42);
+        self::assertPrevious($err, null);
     }
 
     public function testWithOperatorMessageCodeAndPrevious(): void
     {
         $previous = new Exception();
         $err = new UnknownRelationException(Model::class, "foo", "Message.", 42, $previous);
-        $this->assertEquals(Model::class, $err->getModel());
-        $this->assertEquals("foo", $err->getRelation());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, $previous);
+        self::assertEquals(Model::class, $err->getModel());
+        self::assertEquals("foo", $err->getRelation());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 42);
+        self::assertPrevious($err, $previous);
     }
 }

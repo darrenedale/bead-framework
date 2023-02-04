@@ -187,7 +187,7 @@ class RouterTest extends TestCase
 		$router = new XRay(new Router());
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerGet($route, $handler);
-		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route)));
+		self::assertSame($route, $router->matchedRoute(self::makeRequest($route)));
 	}
 
 	/**
@@ -203,7 +203,7 @@ class RouterTest extends TestCase
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerPost($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PostMethod)));
+		self::assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PostMethod)));
 	}
 
 	/**
@@ -219,7 +219,7 @@ class RouterTest extends TestCase
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerPut($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PutMethod)));
+		self::assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PutMethod)));
 	}
 
 	/**
@@ -235,7 +235,7 @@ class RouterTest extends TestCase
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerDelete($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::DeleteMethod)));
+		self::assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::DeleteMethod)));
 	}
 
 	/**
@@ -251,7 +251,7 @@ class RouterTest extends TestCase
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerOptions($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::OptionsMethod)));
+		self::assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::OptionsMethod)));
 	}
 
 	/**
@@ -267,7 +267,7 @@ class RouterTest extends TestCase
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerHead($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::HeadMethod)));
+		self::assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::HeadMethod)));
 	}
 
 	/**
@@ -283,7 +283,7 @@ class RouterTest extends TestCase
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerConnect($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::ConnectMethod)));
+		self::assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::ConnectMethod)));
 	}
 
 	/**
@@ -299,7 +299,7 @@ class RouterTest extends TestCase
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exception. */
 		$router->registerPatch($route, $handler);
 		/** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-		$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PatchMethod)));
+		self::assertSame($route, $router->matchedRoute(self::makeRequest($route, RouterContract::PatchMethod)));
 	}
 
 	/**
@@ -1499,10 +1499,10 @@ class RouterTest extends TestCase
 		foreach ($methods as $method) {
 			if (RouterContract::AnyMethod === $method) {
 				foreach (self::allHttpMethods() as $anyMethod) {
-					$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, $anyMethod)));
+					self::assertSame($route, $router->matchedRoute(self::makeRequest($route, $anyMethod)));
 				}
 			} else {
-				$this->assertSame($route, $router->matchedRoute(self::makeRequest($route, $method)));
+				self::assertSame($route, $router->matchedRoute(self::makeRequest($route, $method)));
 			}
 		}
 	}
@@ -1516,8 +1516,8 @@ class RouterTest extends TestCase
 	{
 		return [
 			"typicalGetWithNoParameters" => [RouterContract::GetMethod, "/home", RouterContract::GetMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1526,8 +1526,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithLongerPathAndNoParameters" => [RouterContract::GetMethod, "/admin/users/home", RouterContract::GetMethod, "/admin/users/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/admin/users/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/admin/users/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1536,8 +1536,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyGetWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::GetMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1546,8 +1546,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPostWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PostMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1556,8 +1556,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPutWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PutMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1566,8 +1566,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyDeleteWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::DeleteMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1576,8 +1576,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyHeadWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::HeadMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1586,8 +1586,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyOptionsWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::OptionsMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1596,8 +1596,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyConnectWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::ConnectMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1606,8 +1606,8 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPatchWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PatchMethod, "/home", function(Request $request): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/home", $request->pathInfo());
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/home", $request->pathInfo());
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1616,9 +1616,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithParameterInt" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1627,9 +1627,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithParameterString" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1638,9 +1638,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithParameterFloat" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1649,9 +1649,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithParameterBoolTrueInt" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1660,9 +1660,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithParameterBoolTrueString" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1671,9 +1671,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithParameterBoolFalseInt" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1682,9 +1682,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithParameterBoolFalseString" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1693,9 +1693,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyGetWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1704,9 +1704,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyGetWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1715,9 +1715,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyGetWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1726,9 +1726,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyGetWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1737,9 +1737,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyGetWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1748,9 +1748,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyGetWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1759,9 +1759,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyGetWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1770,9 +1770,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPostWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1781,9 +1781,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPostWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1792,9 +1792,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPostWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1803,9 +1803,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPostWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1814,9 +1814,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPostWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1825,9 +1825,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPostWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1836,9 +1836,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPostWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1847,9 +1847,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPutWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1858,9 +1858,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPutWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1869,9 +1869,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPutWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1880,9 +1880,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPutWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1891,9 +1891,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPutWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1902,9 +1902,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPutWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1913,9 +1913,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPutWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1924,9 +1924,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyHeadWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1935,9 +1935,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyHeadWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1946,9 +1946,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyHeadWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1957,9 +1957,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyHeadWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1968,9 +1968,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyHeadWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1979,9 +1979,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyHeadWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -1990,9 +1990,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyHeadWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2001,9 +2001,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyConnectWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2012,9 +2012,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyConnectWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2023,9 +2023,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyConnectWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2034,9 +2034,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyConnectWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2045,9 +2045,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyConnectWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2056,9 +2056,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyConnectWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2067,9 +2067,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyConnectWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2078,9 +2078,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyDeleteWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2089,9 +2089,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyDeleteWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2100,9 +2100,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyDeleteWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2111,9 +2111,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyDeleteWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2122,9 +2122,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyDeleteWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2133,9 +2133,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyDeleteWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2144,9 +2144,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyDeleteWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2155,9 +2155,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPatchWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2166,9 +2166,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPatchWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2177,9 +2177,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPatchWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2188,9 +2188,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPatchWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2199,9 +2199,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPatchWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2210,9 +2210,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPatchWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2221,9 +2221,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyPatchWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2232,9 +2232,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyOptionsWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function(Request $request, int $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2243,9 +2243,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyOptionsWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function(Request $request, string $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame("123", $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame("123", $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2254,9 +2254,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyOptionsWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function(Request $request, float $id): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/123", $request->pathInfo());
-				$this->assertSame(123.0, $id);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/123", $request->pathInfo());
+				self::assertSame(123.0, $id);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2265,9 +2265,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyOptionsWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/1", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/1", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/1", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2276,9 +2276,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyOptionsWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/true", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/true", $request->pathInfo());
-				$this->assertSame(true, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/true", $request->pathInfo());
+				self::assertSame(true, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2287,9 +2287,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyOptionsWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/0", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/0", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/0", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2298,9 +2298,9 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalAnyOptionsWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/false", function(Request $request, bool $confirmed): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/edit/false", $request->pathInfo());
-				$this->assertSame(false, $confirmed);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/edit/false", $request->pathInfo());
+				self::assertSame(false, $confirmed);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2309,13 +2309,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithParametersDifferentOrderManyTypes" => [RouterContract::GetMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::GetMethod, "/object/article/9563/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(9563, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(9563, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2324,13 +2324,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalGetWithAllParametersDifferentOrderManyTypes" => [RouterContract::GetMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::GetMethod, "/article/123456789/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/article/123456789/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(123456789, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(123456789, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2339,13 +2339,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalPostWithParametersDifferentOrderManyTypes" => [RouterContract::PostMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PostMethod, "/object/article/9563/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(9563, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(9563, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2354,13 +2354,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalPostWithAllParametersDifferentOrderManyTypes" => [RouterContract::PostMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PostMethod, "/article/123456789/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/article/123456789/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(123456789, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(123456789, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2369,13 +2369,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalPutWithParametersDifferentOrderManyTypes" => [RouterContract::PutMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PutMethod, "/object/article/9563/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(9563, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(9563, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2384,13 +2384,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalPutWithAllParametersDifferentOrderManyTypes" => [RouterContract::PutMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PutMethod, "/article/123456789/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/article/123456789/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(123456789, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(123456789, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2399,13 +2399,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalHeadWithParametersDifferentOrderManyTypes" => [RouterContract::HeadMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::HeadMethod, "/object/article/9563/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(9563, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(9563, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2414,13 +2414,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalHeadWithAllParametersDifferentOrderManyTypes" => [RouterContract::HeadMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::HeadMethod, "/article/123456789/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/article/123456789/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(123456789, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(123456789, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2429,13 +2429,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalOptionsWithParametersDifferentOrderManyTypes" => [RouterContract::OptionsMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::OptionsMethod, "/object/article/9563/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(9563, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(9563, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2444,13 +2444,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalOptionsWithAllParametersDifferentOrderManyTypes" => [RouterContract::OptionsMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::OptionsMethod, "/article/123456789/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/article/123456789/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(123456789, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(123456789, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2459,13 +2459,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalDeleteWithParametersDifferentOrderManyTypes" => [RouterContract::DeleteMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::DeleteMethod, "/object/article/9563/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(9563, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(9563, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2474,13 +2474,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalDeleteWithAllParametersDifferentOrderManyTypes" => [RouterContract::DeleteMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::DeleteMethod, "/article/123456789/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/article/123456789/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(123456789, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(123456789, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2489,13 +2489,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalPatchWithParametersDifferentOrderManyTypes" => [RouterContract::PatchMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PatchMethod, "/object/article/9563/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(9563, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(9563, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2504,13 +2504,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalPatchWithAllParametersDifferentOrderManyTypes" => [RouterContract::PatchMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PatchMethod, "/article/123456789/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/article/123456789/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(123456789, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(123456789, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2519,13 +2519,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalConnectWithParametersDifferentOrderManyTypes" => [RouterContract::ConnectMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::ConnectMethod, "/object/article/9563/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(9563, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(9563, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2534,13 +2534,13 @@ class RouterTest extends TestCase
 				};
 			}],
 			"typicalConnectWithAllParametersDifferentOrderManyTypes" => [RouterContract::ConnectMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::ConnectMethod, "/article/123456789/set/status/draft", function(Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-				$this->assertInstanceOf(Request::class, $request);
-				$this->assertSame("/article/123456789/set/status/draft", $request->pathInfo());
-				$this->assertSame("article", $type);
-				$this->assertSame(123456789, $id);
-				$this->assertSame("set", $action);
-				$this->assertSame("status", $property);
-				$this->assertSame("draft", $value);
+				self::assertInstanceOf(Request::class, $request);
+				self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+				self::assertSame("article", $type);
+				self::assertSame(123456789, $id);
+				self::assertSame("set", $action);
+				self::assertSame("status", $property);
+				self::assertSame("draft", $value);
 				return new class extends \Bead\Responses\AbstractResponse {
 					public function content(): string
 					{
@@ -2656,6 +2656,6 @@ class RouterTest extends TestCase
 		$routeCount = accumulate($routeCollection->getValue($router), $accumulateRoutes);
 		/** @noinspection PhpUnhandledExceptionInspection Should only throw an expected test exception. */
 		$router->register($route2, $route2Methods, function() {});
-		$this->assertGreaterThan($routeCount, accumulate($routeCollection->getValue($router), $accumulateRoutes), "The registration of the second route succeeded but didn't add to the routes colleciton in the router.");
+		self::assertGreaterThan($routeCount, accumulate($routeCollection->getValue($router), $accumulateRoutes), "The registration of the second route succeeded but didn't add to the routes colleciton in the router.");
 	}
 }

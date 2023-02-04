@@ -80,7 +80,7 @@ class StopwatchTest extends TestCase
         }
 
         $this->m_testStopwatch->setProcessName($name);
-        $this->assertEquals($name, $this->m_testStopwatch->processName());
+        self::assertEquals($name, $this->m_testStopwatch->processName());
     }
 
     /**
@@ -129,7 +129,7 @@ class StopwatchTest extends TestCase
             $this->markTestSkipped("Timer failed to stop");
         }
 
-        $this->assertEqualsWithDelta($duration,$this->m_testStopwatch->duration() * 1000, self::TestDurationTolerance, "Duration outside tolerance.");
+        self::assertEqualsWithDelta($duration,$this->m_testStopwatch->duration() * 1000, self::TestDurationTolerance, "Duration outside tolerance.");
     }
 
     /**
@@ -138,20 +138,20 @@ class StopwatchTest extends TestCase
     public function testStart(): void
     {
         $res = $this->m_testStopwatch->start();
-        $this->assertTrue($res, "failed to start timer");
+        self::assertTrue($res, "failed to start timer");
         $res = $this->m_testStopwatch->start();
-        $this->assertFalse($res, "should have received false when calling start() on a running timer");
+        self::assertFalse($res, "should have received false when calling start() on a running timer");
 
         if (false === $this->m_testStopwatch->stop()) {
             $this->markTestSkipped("Timer could not be stopped");
         }
 
         $res = $this->m_testStopwatch->start();
-        $this->assertFalse($res, "should have received false when calling start() on a finished timer");
+        self::assertFalse($res, "should have received false when calling start() on a finished timer");
         $this->m_testStopwatch->reset();
 
         $res = $this->m_testStopwatch->start();
-        $this->assertTrue($res, "failed to start a timer that had been reset");
+        self::assertTrue($res, "failed to start a timer that had been reset");
     }
 
     /**
@@ -239,7 +239,7 @@ class StopwatchTest extends TestCase
         $this->m_testStopwatch->addListener($event, $listener);
         $listenersProperty = new ReflectionProperty(Stopwatch::class, "m_listeners");
         $listenersProperty->setAccessible(true);
-        $this->assertEquals($listenersProperty->getValue($this->m_testStopwatch)[$event][0], $listener, "The array of listeners for event {$event} did not consist of the test listener.");
+        self::assertEquals($listenersProperty->getValue($this->m_testStopwatch)[$event][0], $listener, "The array of listeners for event {$event} did not consist of the test listener.");
     }
 
     /**
@@ -287,10 +287,10 @@ class StopwatchTest extends TestCase
             $this->markTestSkipped("failed to start timer");
         }
 
-        $this->assertEquals(1, $started["count"]);
-        $this->assertEquals(0, $stopped["count"]);
-        $this->assertEquals(0, $reset["count"]);
-        $this->assertEquals($this->m_testStopwatch->startTime(), $started["times"][0]);
+        self::assertEquals(1, $started["count"]);
+        self::assertEquals(0, $stopped["count"]);
+        self::assertEquals(0, $reset["count"]);
+        self::assertEquals($this->m_testStopwatch->startTime(), $started["times"][0]);
 
         $res = $this->m_testStopwatch->stop();
 
@@ -298,17 +298,17 @@ class StopwatchTest extends TestCase
             $this->markTestSkipped("failed to start timer");
         }
 
-        $this->assertEquals(1, $stopped["count"]);
-        $this->assertEquals(1, $stopped["count"]);
-        $this->assertEquals(0, $reset["count"]);
-        $this->assertEquals($this->m_testStopwatch->endTime(), $stopped["times"][0]);
-        $this->assertEquals($this->m_testStopwatch->duration(), $res);
-        $this->assertEquals($this->m_testStopwatch->duration(), $stopped["durations"][0]);
+        self::assertEquals(1, $stopped["count"]);
+        self::assertEquals(1, $stopped["count"]);
+        self::assertEquals(0, $reset["count"]);
+        self::assertEquals($this->m_testStopwatch->endTime(), $stopped["times"][0]);
+        self::assertEquals($this->m_testStopwatch->duration(), $res);
+        self::assertEquals($this->m_testStopwatch->duration(), $stopped["durations"][0]);
 
         $this->m_testStopwatch->reset();
 
-        $this->assertEquals(1, $stopped["count"]);
-        $this->assertEquals(1, $stopped["count"]);
-        $this->assertEquals(1, $reset["count"]);
+        self::assertEquals(1, $stopped["count"]);
+        self::assertEquals(1, $stopped["count"]);
+        self::assertEquals(1, $reset["count"]);
     }
 }
