@@ -15,27 +15,27 @@ class InvalidTableNameExceptionTest extends TestCase
     {
         $err = new InvalidTableNameException("table");
         self::assertEquals("table", $err->getTableName());
-        self::assertMessage($err, "");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithTableNameAndMessage(): void
     {
         $err = new InvalidTableNameException("table", "Message.");
         self::assertEquals("table", $err->getTableName());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithTableNameMessageAndCode(): void
     {
         $err = new InvalidTableNameException("table", "Message.", 42);
         self::assertEquals("table", $err->getTableName());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithTableNameMessageCodeAndPrevious(): void
@@ -43,8 +43,8 @@ class InvalidTableNameExceptionTest extends TestCase
         $previous = new Exception();
         $err = new InvalidTableNameException("table", "Message.", 42, $previous);
         self::assertEquals("table", $err->getTableName());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, $previous);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }

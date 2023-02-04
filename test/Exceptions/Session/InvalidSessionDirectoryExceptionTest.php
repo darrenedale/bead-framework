@@ -21,9 +21,9 @@ class InvalidSessionDirectoryExceptionTest extends TestCase
 	{
 		$exception = new InvalidSessionDirectoryException(self::TestDirectory);
 		self::assertEquals(self::TestDirectory, $exception->getDirectory());
-		self::assertCode($exception, 0);
-		self::assertMessage($exception, "");
-		self::assertPrevious($exception, null);
+		self::assertCode(0, $exception);
+		self::assertMessage("", $exception);
+		self::assertPrevious(null, $exception);
 	}
 
 	/** Ensure we can set an exception code in the constructor. */
@@ -31,9 +31,9 @@ class InvalidSessionDirectoryExceptionTest extends TestCase
 	{
 		$exception = new InvalidSessionDirectoryException(self::TestDirectory, code: 42);
 		self::assertEquals(self::TestDirectory, $exception->getDirectory());
-		self::assertCode($exception, 42);
-		self::assertMessage($exception, "");
-		self::assertPrevious($exception, null);
+		self::assertCode(42, $exception);
+		self::assertMessage("", $exception);
+		self::assertPrevious(null, $exception);
 	}
 
 	/** Ensure we can set an message in the constructor. */
@@ -41,9 +41,9 @@ class InvalidSessionDirectoryExceptionTest extends TestCase
 	{
 		$exception = new InvalidSessionDirectoryException(self::TestDirectory, message: "The meaning of life.");
 		self::assertEquals(self::TestDirectory, $exception->getDirectory());
-		self::assertCode($exception, 0);
-		self::assertMessage($exception, "The meaning of life.");
-		self::assertPrevious($exception, null);
+		self::assertCode(0, $exception);
+		self::assertMessage("The meaning of life.", $exception);
+		self::assertPrevious(null, $exception);
 	}
 
 	/** Ensure we can set a previous exception in the constructor. */
@@ -52,8 +52,8 @@ class InvalidSessionDirectoryExceptionTest extends TestCase
 		$previous = new RuntimeException();
 		$exception = new InvalidSessionDirectoryException(self::TestDirectory, previous: $previous);
 		self::assertEquals(self::TestDirectory, $exception->getDirectory());
-		self::assertCode($exception, 0);
-		self::assertMessage($exception, "");
-		self::assertPrevious($exception, $previous);
+		self::assertCode(0, $exception);
+		self::assertMessage("", $exception);
+		self::assertPrevious($previous, $exception);
 	}
 }

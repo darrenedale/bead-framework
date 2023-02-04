@@ -15,27 +15,27 @@ class InvalidOrderByDirectionExceptionTest extends TestCase
     {
         $err = new InvalidOrderByDirectionException("random");
         self::assertEquals("random", $err->getDirection());
-        self::assertMessage($err, "");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithOrderByDirectionAndMessage(): void
     {
         $err = new InvalidOrderByDirectionException("random", "Message.");
         self::assertEquals("random", $err->getDirection());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithOrderByDirectionMessageAndCode(): void
     {
         $err = new InvalidOrderByDirectionException("random", "Message.", 42);
         self::assertEquals("random", $err->getDirection());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithOrderByDirectionMessageCodeAndPrevious(): void
@@ -43,8 +43,8 @@ class InvalidOrderByDirectionExceptionTest extends TestCase
         $previous = new Exception();
         $err = new InvalidOrderByDirectionException("random", "Message.", 42, $previous);
         self::assertEquals("random", $err->getDirection());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, $previous);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }

@@ -15,27 +15,27 @@ class InvalidColumnNameExceptionTest extends TestCase
     {
         $err = new InvalidColumnNameException("column");
         self::assertEquals("column", $err->getColumnName());
-        self::assertMessage($err, "");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithColumnNameAndMessage(): void
     {
         $err = new InvalidColumnNameException("column", "Message.");
         self::assertEquals("column", $err->getColumnName());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithColumnNameMessageAndCode(): void
     {
         $err = new InvalidColumnNameException("column", "Message.", 42);
         self::assertEquals("column", $err->getColumnName());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithColumnNameMessageCodeAndPrevious(): void
@@ -43,8 +43,8 @@ class InvalidColumnNameExceptionTest extends TestCase
         $previous = new Exception();
         $err = new InvalidColumnNameException("column", "Message.", 42, $previous);
         self::assertEquals("column", $err->getColumnName());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, $previous);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }

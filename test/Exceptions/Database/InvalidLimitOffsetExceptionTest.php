@@ -15,27 +15,27 @@ class InvalidLimitOffsetExceptionTest extends TestCase
     {
         $err = new InvalidLimitOffsetException(42);
         self::assertEquals(42, $err->getOffset());
-        self::assertMessage($err, "");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithLimitOffsetAndMessage(): void
     {
         $err = new InvalidLimitOffsetException(42, "Message.");
         self::assertEquals(42, $err->getOffset());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithLimitOffsetMessageAndCode(): void
     {
         $err = new InvalidLimitOffsetException(42, "Message.", 42);
         self::assertEquals(42, $err->getOffset());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithLimitOffsetMessageCodeAndPrevious(): void
@@ -43,8 +43,8 @@ class InvalidLimitOffsetExceptionTest extends TestCase
         $previous = new Exception();
         $err = new InvalidLimitOffsetException(42, "Message.", 42, $previous);
         self::assertEquals(42, $err->getOffset());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, $previous);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }

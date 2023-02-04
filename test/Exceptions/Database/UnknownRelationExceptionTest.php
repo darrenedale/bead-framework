@@ -18,9 +18,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(42, $err->getValue());
-        self::assertMessage($err, "");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyIntValueAndMessage(): void
@@ -29,9 +29,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(42, $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyIntValueMessageAndCode(): void
@@ -40,9 +40,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(42, $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyIntValueMessageCodeAndPrevious(): void
@@ -52,9 +52,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(42, $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, $previous);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 
     public function testWithModelPropertyAndFloatValue(): void
@@ -63,9 +63,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(3.1415927, $err->getValue());
-        self::assertMessage($err, "");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyFloatValueAndMessage(): void
@@ -74,9 +74,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(3.1415927, $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyFloatValueMessageAndCode(): void
@@ -85,9 +85,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(3.1415927, $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyFloatValueMessageCodeAndPrevious(): void
@@ -97,9 +97,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(3.1415927, $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, $previous);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 
     public function testWithModelPropertyAndStringValue(): void
@@ -108,9 +108,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals("value", $err->getValue());
-        self::assertMessage($err, "");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyStringValueAndMessage(): void
@@ -119,9 +119,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals("value", $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyStringValueMessageAndCode(): void
@@ -130,9 +130,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals("value", $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyStringValueMessageCodeAndPrevious(): void
@@ -142,9 +142,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals("value", $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, $previous);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 
     public function testWithModelPropertyAndArrayValue(): void
@@ -153,9 +153,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(["foo", "bar",], $err->getValue());
-        self::assertMessage($err, "");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyArrayValueAndMessage(): void
@@ -164,9 +164,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(["foo", "bar",], $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 0);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyArrayValueMessageAndCode(): void
@@ -175,9 +175,9 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(["foo", "bar",], $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, null);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithModelModelPropertyArrayValueMessageCodeAndPrevious(): void
@@ -187,8 +187,8 @@ class ModelPropertyCastExceptionTest extends TestCase
         self::assertEquals(Model::class, $err->getModel());
         self::assertEquals("foo", $err->getProperty());
         self::assertEquals(["foo", "bar",], $err->getValue());
-        self::assertMessage($err, "Message.");
-        self::assertCode($err, 42);
-        self::assertPrevious($err, $previous);
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }
