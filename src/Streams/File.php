@@ -44,7 +44,7 @@ class File implements StreamInterface
      * @param SplFileInfo|string $file The file to stream.
      * @param int $mode The mode to open in.
      */
-    public function __construct(SplFileInfo|string $file, int $mode = self::DefaultMode)
+    public function __construct(SplFileInfo | string $file, int $mode = self::DefaultMode)
     {
         $mode &= 0x03;
 
@@ -77,6 +77,20 @@ class File implements StreamInterface
     {
         if (isset($this->m_fh)) {
             $this->close();
+        }
+    }
+
+    /**
+     * Factory method to open a file.
+     *
+     * @return File | null The opened stream, or `null` if it can't be opened.
+     */
+    public static function open(SplFileInfo | string $file, int $mode): ?File
+    {
+        try {
+            return new static($file, $mode);
+        } catch (Throwable $err) {
+            return null;
         }
     }
 

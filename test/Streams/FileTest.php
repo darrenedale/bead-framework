@@ -86,14 +86,25 @@ class FileTest extends TestCase
         $stream = new File(self::ReadFileName, 0);
     }
 
+    /** Provides open modes for testing in testConstructorBadFile() */
+    public function dataForTestConstructorBadFile(): iterable
+    {
+        yield "read" => [File::ModeRead];
+        yield "read-write" => [File::ModeReadWrite];
+    }
+
     /**
      * Ensure the constructor throws when a non-existent file is opened for reading.
+     *
+     * @dataProvider dataForTestConstructorBadFile
+     *
+     * @param int $mode The open mode to test with.
      */
-    public function testConstructorBadFile(): void
+    public function testConstructorBadFile(int $mode): void
     {
         $this->expectException(FileStreamException::class);
         $this->expectExceptionMessage("Could not open file " . __DIR__ . "/files/filestreamtest-this-file-does-not-exist.txt.");
-        $stream = new File(__DIR__ . "/files/filestreamtest-this-file-does-not-exist.txt", File::ModeRead);
+        $stream = new File(__DIR__ . "/files/filestreamtest-this-file-does-not-exist.txt", $mode);
     }
 
     /**
@@ -660,5 +671,30 @@ class FileTest extends TestCase
     {
         $this->m_stream->close();
         self::assertEquals("", (string) $this->m_stream);
+    }
+
+    /** Ensure we get a readable File instance from open() */
+    public function testOpenRead(): void
+    {
+        $file = File::open(self::ReadFileName, File::ModeRead);
+        self::assertInstanceOf(File::class, $file);
+        self::assertTrue($file->isReadable());
+        self::assertFalse($file->isWritable());
+    }
+
+    /** Ensure we get a writable File instance from open() */
+    public function testOpenWrite(): void
+    {
+        $file = File::open(self::writeFilename(), File::ModeWrite);
+        self::assertInstanceOf(File::class, $file);
+        self::assertFalse($file->isReadable());
+        self::assertTrue($file->isWritable());
+    }
+
+    /** Ensure we get null from open() when opening a read-only file that does not exist. */
+    public function testOpenMissingFile(): void
+    {
+        $file = File::open(__DIR__ . "/files/filestreamtest-this-file-does-not-exist.txt", File::ModeRead);
+        self::assertNull($file);
     }
 }
