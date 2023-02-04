@@ -333,6 +333,12 @@ final class StrTest extends TestCase
 
 	public function testRandomThrowsWithInvalidLength(): void
 	{
+        echo "Assertions: " . ini_get("zend.assertions");
+
+        if (!ini_get("zend.assertions")) {
+            $this->markTestSkipped("Assertions are not enabled, Str\\random() must fail an assertion for this test.");
+        }
+
 		$this->expectException(InvalidArgumentException::class);
 		$this->expectExceptionMessage("Can't produce a random string of < 0 characters in length.");
 		random(-1);
