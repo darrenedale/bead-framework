@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
 /**
  * Exception-response to use when a request can't be fulfilled because it identifies a resource that does not exist.

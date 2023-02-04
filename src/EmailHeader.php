@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 /**
  * A class encapsulating a header for an email message.

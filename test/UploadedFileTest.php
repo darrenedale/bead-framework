@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test;
+namespace BeadTests;
 
-use Equit\AppLog;
-use Equit\Test\Framework\TestCase;
-use Equit\UploadedFile;
+use Bead\AppLog;
+use BeadTests\Framework\TestCase;
+use Bead\UploadedFile;
 use ReflectionClass;
 use SplFileInfo;
 

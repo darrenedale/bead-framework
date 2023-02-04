@@ -1,8 +1,8 @@
 <?php
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
-use Equit\Request;
+use Bead\Request;
 use Exception;
 use Throwable;
 

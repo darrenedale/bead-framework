@@ -8,10 +8,12 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
 use DateTime;
-use Equit\Exceptions\ValidationRuleException;
+use Bead\Exceptions\ValidationRuleException;
+
+use function Bead\Helpers\I18n\tr;
 
 /**
  * Validation rule that ensures a value is greater than the value in another field in the dataset.

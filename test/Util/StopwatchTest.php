@@ -1,10 +1,10 @@
 <?php
 declare(strict_types = 1);
 
-namespace Equit\Test\Util;
+namespace BeadTests\Util;
 
-use Equit\Test\Framework\TestCase;
-use Equit\Util\Stopwatch;
+use BeadTests\Framework\TestCase;
+use Bead\Util\Stopwatch;
 use Generator;
 use LogicException;
 use ReflectionProperty;

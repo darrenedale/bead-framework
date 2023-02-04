@@ -1,13 +1,13 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 use SplFileInfo;
 
 /**
  * Represents a file uploaded to the application.
  *
- * This class is used by the Equit\Request class to manage files uploaded to the application. Each file uploaded is
+ * This class is used by the Bead\Request class to manage files uploaded to the application. Each file uploaded is
  * represented by a single object of this class.
  *
  * This is a read-only class - instances can only be retrieved from the Request object that has read them from the

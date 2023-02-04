@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit\Responses;
+namespace Bead\Responses;
 
 /**
  * Trait to endow a response with a method to send the HTTP headers.
@@ -14,6 +14,11 @@ trait SendsHeaders
      * Constrain the trait to classes that implement the headers() method.
      */
 	public abstract function headers(): array;
+
+    /**
+     * Constrain the trait to classes that implement the contentType() method.
+     */
+	public abstract function contentType(): string;
 
     /**
      * Send the headers.

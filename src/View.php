@@ -1,17 +1,19 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
-use Equit\Contracts\Response;
-use Equit\Exceptions\ViewNotFoundException;
-use Equit\Exceptions\ViewRenderingException;
-use Equit\Responses\DoesntHaveHeaders;
-use Equit\Responses\NaivelySendsContent;
+use Bead\Contracts\Response;
+use Bead\Exceptions\ViewNotFoundException;
+use Bead\Exceptions\ViewRenderingException;
+use Bead\Responses\DoesntHaveHeaders;
+use Bead\Responses\NaivelySendsContent;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
 use TypeError;
-use function Equit\Traversable\some;
+use function Bead\Traversable\some;
+
+use function Bead\Helpers\Str\html;
 
 /**
  * Encapsulates a Bead view in your app.
@@ -717,6 +719,9 @@ class View implements Response
 			if (!(function () use ($data) {
 				$app = WebApplication::instance();
 				extract($data, EXTR_SKIP);
+
+				// make the functions html() and tr() available in the global namespace for views
+				include_once __DIR__ . "/Helpers/view-globals.php";
 				return @include $this->m_path;
 			})()) {
 				ob_end_clean();

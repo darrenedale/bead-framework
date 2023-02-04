@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Equit\Test\Util;
+namespace BeadTests\Util;
 
-use Equit\Util\ScopeGuard;
+use Bead\Util\ScopeGuard;
 
 /**
  * ScopeGuard test case.
  */
-class ScopeGuardTest extends \Equit\Test\Framework\TestCase
+class ScopeGuardTest extends \BeadTests\Framework\TestCase
 {
 	/**
 	 * Data provider for the constructor/addClosure tests.

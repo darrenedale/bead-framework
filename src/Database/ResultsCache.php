@@ -10,13 +10,13 @@
  * @version 0.9.2
  */
 
-namespace Equit\Database;
+namespace Bead\Database;
 
 use ArrayAccess;
 use Countable;
 use DirectoryIterator;
-use Equit\Application;
-use Equit\AppLog;
+use Bead\Application;
+use Bead\AppLog;
 use Exception;
 use Iterator;
 use JsonException;
@@ -25,6 +25,8 @@ use OutOfBoundsException;
 use PDO;
 use PDOStatement;
 use RuntimeException;
+
+use function Bead\Helpers\Str\random;
 
 /**
  * Cache a set of database results.
@@ -245,7 +247,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 */
 	protected static function generateUid(): string
 	{
-		return randomString(32);
+		return random(32);
 	}
 
 	/**

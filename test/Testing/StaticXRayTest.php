@@ -1,11 +1,11 @@
 <?php
 
-namespace Equit\Test\Testing;
+namespace BeadTests\Testing;
 
 use BadMethodCallException;
-use Equit\Test\Framework\CallTracker;
-use Equit\Test\Framework\TestCase;
-use Equit\Testing\StaticXRay;
+use BeadTests\Framework\CallTracker;
+use BeadTests\Framework\TestCase;
+use Bead\Testing\StaticXRay;
 use LogicException;
 
 class StaticXRayTest extends TestCase

@@ -8,11 +8,13 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
-use Equit\Validation\DatasetAwareRule;
+use Bead\Validation\DatasetAwareRule;
 use InvalidArgumentException;
 use LogicException;
+
+use function Bead\Helpers\I18n\tr;
 
 /**
  * Validator rule to ensure that some data is non-empty unless some other field is set to one of a given set of values.

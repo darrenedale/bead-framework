@@ -5,22 +5,23 @@
  * @version 0.9.2
  */
 
-namespace Equit;
+namespace Bead;
 
-use Equit\Contracts\Router as RouterContract;
-use Equit\Contracts\Response;
-use Equit\Exceptions\ConflictingRouteException;
-use Equit\Exceptions\DuplicateRouteParameterNameException;
-use Equit\Exceptions\InvalidRouteParameterNameException;
-use Equit\Exceptions\UnroutableRequestException;
+use Bead\Contracts\Router as RouterContract;
+use Bead\Contracts\Response;
+use Bead\Exceptions\ConflictingRouteException;
+use Bead\Exceptions\DuplicateRouteParameterNameException;
+use Bead\Exceptions\InvalidRouteParameterNameException;
+use Bead\Exceptions\UnroutableRequestException;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionClass;
 use ReflectionFunction;
 use Throwable;
 use TypeError;
-use function Equit\Traversable\all;
-use function Equit\Traversable\isSubsetOf;
+
+use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\Iterable\isSubsetOf;
 
 /**
  * A simple router that routes requests based on the URI path.
@@ -67,7 +68,7 @@ class Router implements RouterContract
 	/**
 	 * Fetch the route definition that matches a request, if any.
 	 *
-	 * @param \Equit\Request $request
+	 * @param \Bead\Request $request
 	 *
 	 * @return string|null
 	 */
@@ -160,7 +161,7 @@ class Router implements RouterContract
 	 * Given a route that's been matched to a request, extract the route's arguments from the request's URI.
 	 *
 	 * @param string $route The matched route definition.
-	 * @param \Equit\Request $request The request that it was matched to.
+	 * @param \Bead\Request $request The request that it was matched to.
 	 *
 	 * @return array The arguments for the route's parameters, keyed by the parameter name.
 	 */
@@ -186,7 +187,7 @@ class Router implements RouterContract
 	 *
 	 * @param callable|array<class-string, string> $handler The handler that has been matched to the request.
 	 * @param string $route The route definition that matched the request.
-	 * @param \Equit\Request $request The request.
+	 * @param \Bead\Request $request The request.
 	 *
 	 * @return array The argument list for the handle.r
 	 *
@@ -316,7 +317,7 @@ class Router implements RouterContract
 	 * @param string $route The route to check.
 	 * @param array<string> $methods The
 	 *
-	 * @throws \Equit\Exceptions\ConflictingRouteException
+	 * @throws \Bead\Exceptions\ConflictingRouteException
 	 */
 	protected function checkRouteConflicts(string $route, array $methods): void
 	{
@@ -336,8 +337,8 @@ class Router implements RouterContract
 	 *
 	 * @param string $route The route to check.
 	 *
-	 * @throws \Equit\Exceptions\InvalidRouteParameterNameException if any parameter name is found to be invalid
-	 * @throws \Equit\Exceptions\DuplicateRouteParameterNameException if any parameter name used more than once in the
+	 * @throws \Bead\Exceptions\InvalidRouteParameterNameException if any parameter name is found to be invalid
+	 * @throws \Bead\Exceptions\DuplicateRouteParameterNameException if any parameter name used more than once in the
 	 * route
 	 */
 	protected static function checkRouteParameterNames(string $route): void
@@ -357,8 +358,8 @@ class Router implements RouterContract
 
 	/**
 	 * @inheritDoc
-	 * @throws \Equit\Exceptions\InvalidRouteParameterNameException
-	 * @throws \Equit\Exceptions\DuplicateRouteParameterNameException
+	 * @throws \Bead\Exceptions\InvalidRouteParameterNameException
+	 * @throws \Bead\Exceptions\DuplicateRouteParameterNameException
 	 */
 	public function register(string $route, $methods, $handler): void
 	{

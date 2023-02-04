@@ -8,10 +8,10 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
 use InvalidArgumentException;
-use function Equit\Traversable\all;
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Trait for rules that implement validation logic that compares to multiple other fields in the dataset in some way.

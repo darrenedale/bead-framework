@@ -5,7 +5,7 @@
  * @version 0.9.2
  */
 
-namespace Equit\Exceptions;
+namespace Bead\Exceptions;
 
 use Exception;
 use Throwable;

@@ -1,15 +1,23 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
-use Equit\Contracts\ErrorHandler;
-use Equit\Database\Connection;
+use Bead\Contracts\ErrorHandler;
+use Bead\Contracts\ServiceContainer;
+use Bead\Contracts\Translator as TranslatorContract;
+use Bead\Database\Connection;
+use Bead\ErrorHandler as BeadErrorHandler;
+use Bead\Exceptions\ServiceAlreadyBoundException;
+use Bead\Exceptions\ServiceNotFoundException;
 use DirectoryIterator;
-use Equit\ErrorHandler as EquitErrorHandler;
 use Exception;
+use InvalidArgumentException;
+use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
 use Throwable;
+
+use function Bead\Helpers\Str\stringify;
 
 /**
  * Abstract base class for all applications.
@@ -17,8 +25,10 @@ use Throwable;
  * This provides a bunch of core data and functionality: loading configuration, storing the singleton, the database and
  * various metadata about the application. What you most likely want to do is use or create a subclass of
  * ConsoleApplication or WebApplication.
+ *
+ * Instances of this class implement PSR11 ContainerInterface.
  */
-abstract class Application
+abstract class Application implements ServiceContainer, ContainerInterface
 {
     /** @var int Exit status code for exec() indicating all was well. */
     public const ExitOk = 0;
@@ -41,10 +51,10 @@ abstract class Application
     /** The minimum PHP version the app requires to run. */
     private string $m_minimumPhpVersion = "0.0.0";
 
-    /** @var null|\Equit\Translator The currently installed translator */
+    /** @var null|\Bead\Translator The currently installed translator */
     private ?Translator $m_translator = null;
 
-    /** @var \Equit\Contracts\ErrorHandler|null The currently installed error handler. */
+    /** @var \Bead\Contracts\ErrorHandler|null The currently installed error handler. */
     private ?ErrorHandler $m_errorHandler = null;
 
     /** @var Connection|null The data controller. */
@@ -52,6 +62,9 @@ abstract class Application
 
     /** @var array The loaded config. */
     private array $m_config = [];
+
+    /** @var array The sesrvices bound to the container. */
+    private array $m_services = [];
 
     /**
      * @param string $appRoot
@@ -61,7 +74,7 @@ abstract class Application
      */
     public function __construct(string $appRoot, ?Connection $db = null)
     {
-        $this->setErrorHandler(new EquitErrorHandler());
+        $this->setErrorHandler(new BeadErrorHandler());
 
         if (isset(self::$s_instance)) {
             throw new Exception("Application instance already created.");
@@ -81,7 +94,7 @@ abstract class Application
     }
 
     /**
-     * Fetch the single instance of the Equit\Application class.
+     * Fetch the single instance of the Bead\Application class.
      *
      * The instance is only returned if it is an instance of the class on which the method was invoked - for example, if
      * WebApplication::instance() is called but the instance was constructed as an Application object, null will be
@@ -105,6 +118,8 @@ abstract class Application
         $this->m_translator = new Translator();
         $this->m_translator->addSearchPath("i18n");
         $this->m_translator->setLanguage($this->config("app.language", "en-GB"));
+
+        $this->bindService(TranslatorContract::class, $this->m_translator);
     }
 
     /**
@@ -216,14 +231,104 @@ abstract class Application
         return $this->m_minimumPhpVersion;
     }
 
-	/** Fetch the application's translator.
+    /**
+     * Bind an instance to an identified service.
+     *
+     * @param string $service The service identifier to bind to.
+     * @param mixed $instance The service instance.
+     *
+     * @throws ServieAlreadyBoundException if there is already a service bound to the identifier.
+     */
+    public function bindService(string $service, $instance): void
+    {
+        if ($this->serviceIsBound($service)) {
+            throw new ServiceAlreadyBoundException($service, "The service '{$service}' is already bound to the Application instance.");
+        }
+
+        $this->m_services[$service] = $instance;
+    }
+
+    /**
+     * Replace a service already bound to the Application instance.
+     *
+     * @param string $service The service identifier to bind to.
+     * @param mixed $object The service instance.
+     *
+     * @return mixed The previously-bound service.
+     * @throws ServiceNotFoundException If no instance is currently bound to the identified service.
+     */
+    public function replaceService(string $service, $object)
+    {
+        if (!$this->serviceIsBound($service)) {
+            throw new ServiceNotFoundException($service, "The service '{$service}' is not bound to the Application instance.");
+        }
+
+        $previous = $this->m_services[$service];
+        $this->m_services[$service] = $object;
+        return $previous;
+    }
+
+    /**
+     * Check whether a service is bound to an identifier.
+     *
+     * @param string $service
+     *
+     * @return bool `true` if the service is bound, `false` if not.
+     */
+    public function serviceIsBound(string $service): bool
+    {
+        return array_key_exists($service, $this->m_services);
+    }
+
+    /**
+     * Fetch the service bound to a given identifier.
+     *
+     * @param string $service The identifier of the service sought.
+     *
+     * @return mixed The service.
+     * @throws ServiceNotFoundException If no service is bound to the identifier.
+     */
+    public function service(string $service)
+    {
+        if (!array_key_exists($service, $this->m_services)) {
+            throw new ServiceNotFoundException("The service {$service} was not found in the container.");
+        }
+
+        return $this->m_services[$service];
+    }
+
+    /**
+     * Implemented for PSR11 compatibility.
+     *
+     * @param string $id The service identifier.
+     * @return bool `true` if a service is bound to the given identifier, `false` otherwise.
+     */
+    public function has(string $id): bool
+    {
+        return $this->serviceIsBound($id);
+    }
+
+    /**
+     * Implemented for PSR11 comaptibility.
+     *
+     * @param string $id The service identifier.
+     * @return mixed The service instance.
+     * @throws ServiceNotFoundException if no service is bound for the provided identifier.
+     */
+    public function get(string $id)
+    {
+        return $this->service($id);
+    }
+
+    /**
+     * Fetch the application's translator.
 	 *
 	 * The application's translator handles translation of strings into the user's chosen language. Client code
 	 * should never need to use this method: it is far simpler to use the tr() function.
 	 *
-	 * @return Translator|null The translator.
+	 * @return TranslatorContract|null The translator.
 	 */
-	public function translator(): ?Translator
+	public function translator(): ?TranslatorContract
 	{
 		return $this->m_translator;
 	}
@@ -259,7 +364,7 @@ abstract class Application
      * Fetch the current error handler.
      *
      * Applications must always have an installed error handler. The constructor for this base class installs the
-     * default Equit error handler. If you find you're receiving a RuntimeException indicating you don't have an error
+     * default Bead error handler. If you find you're receiving a RuntimeException indicating you don't have an error
      * handler, it's likely you've created an Application subclass that doesn't call the base class constructor.
      *
      * @return ErrorHandler
@@ -273,7 +378,7 @@ abstract class Application
     /**
      * Set the error handler for the application.
      *
-     * @param \Equit\Contracts\ErrorHandler $handler
+     * @param \Bead\Contracts\ErrorHandler $handler
      *
      * @return void
      */
@@ -354,7 +459,7 @@ abstract class Application
         if (isset($this->m_eventCallbacks[$event])) {
             foreach ($this->m_eventCallbacks[$event] as $callback) {
                 if (!is_callable($callback, false)) {
-                    AppLog::error("ignoring un-callable callback: " . stringify($callback), __FILE__, __LINE__, __FUNCTION__);
+                    AppLog::warning("ignoring un-callable callback: " . print_r($callback, true), __FILE__, __LINE__, __FUNCTION__);
                     continue;
                 }
 
@@ -396,10 +501,10 @@ abstract class Application
      *
      * All callbacks are given two parameters before any parameters that are defined by the event provider. The
      * first is the event that occurred (a `string`) and the second is the request that gave rise to the event (a
-     * LibEquit\Request object). In the case of some application events and possibly some plugin events, the
-     * LibEquit\Request can be _null_ (it is up to the plugin to provide the appropriate request when it emits the
+     * Bead\Request object). In the case of some application events and possibly some plugin events, the
+     * Bead\Request can be _null_ (it is up to the plugin to provide the appropriate request when it emits the
      * event, it is not automatically provided by emitEvent()). Plugins that emit events are very strongly
-     * recommended to provide a LibEquit\Request object wherever possible.
+     * recommended to provide a Bead\Request object wherever possible.
      *
      * Callbacks stack up, so if you add the same callback more than once, it will be called more than once every
      * time the event occurs.

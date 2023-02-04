@@ -1,10 +1,10 @@
 <?php
 
-use Equit\Contracts\Router;
-use Equit\Exceptions\CsrfTokenVerificationException;
-use Equit\Request;
-use Equit\View;
-use Equit\WebApplication;
+use Bead\Contracts\Router;
+use Bead\Exceptions\CsrfTokenVerificationException;
+use Bead\Request;
+use Bead\View;
+use Bead\WebApplication;
 
 /** @var Router $router */
 

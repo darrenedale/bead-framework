@@ -8,9 +8,11 @@
 
 declare(strict_types = 1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
-use Equit\Validation\DatasetAwareRule;
+use Bead\Validation\DatasetAwareRule;
+
+use function Bead\Helpers\I18n\tr;
 
 /**
  * Validator rule to ensure that some data is different from the data for another field.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Equit;
+namespace Bead;
 
 /**
  * Class representing a part of a multipart email message.

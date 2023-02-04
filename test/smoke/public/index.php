@@ -5,10 +5,10 @@
  * @version 0.9.2
  */
 
-use Equit\View;
-use Equit\WebApplication;
+use Bead\View;
+use Bead\WebApplication;
 
-require_once __DIR__ . "/../../../src/autoload.php";
+require_once __DIR__ . "/../../../vendor/autoload.php";
 
 $app = new WebApplication(__DIR__ . "/..");
 $app->setPluginsDirectory("plugins");

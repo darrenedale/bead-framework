@@ -2,9 +2,12 @@
 
 A basic MVC application framework for PHP.
 
+[![PHP 8.0 unit tests](https://github.com/darrenedale/bead-framework/actions/workflows/run-tests-php8.0.yml/badge.svg)](https://github.com/darrenedale/bead-framework/actions/workflows/run-tests-php8.0.yml)
+[![PHP 8.1 unit tests](https://github.com/darrenedale/bead-framework/actions/workflows/run-tests-php8.1.yml/badge.svg)](https://github.com/darrenedale/bead-framework/actions/workflows/run-tests-php8.1.yml)
+
 ## Introduction
 
-Bead is a simple MVC framework.
+Bead is a simple MVC framework for PHP 8.0 and later.
 
 ## WebApplication
 
@@ -15,8 +18,8 @@ subclass and reimplement the constructor and/or `exec()` methods to perform your
 The application is executed by calling the `exec()` method from your main `index.php` script.
 
 During initialisation in `exec()` the `WebApplication` loads your app's configuration, plugins and routes. Routes are
-registered with your app's router, which by default is an instance of `\Equit\Router`. You can provide your own router
-by calling `WebApplication::setRouter()` with an object that implements the `\Equit\Contracts\Router` contract either 
+registered with your app's router, which by default is an instance of `\Bead\Router`. You can provide your own router
+by calling `WebApplication::setRouter()` with an object that implements the `\Bead\Contracts\Router` contract either 
 from your custom WebApplication subclass's constructor, or from within your `index.php` file after you have created your
 `WebApplication` instance (and before you call `exec()`, obviously).
 
@@ -74,7 +77,7 @@ the route
 an incoming HTTP GET request for `/article/333/author/200/remove` will call the handler with (int) 333 for `$articleId`
 and (int) 200 as `$authorId` as its arguments.
 
-In any route handler, you can also type-hint a parameter (of any name) with the `\Equit\Request` type and the handler
+In any route handler, you can also type-hint a parameter (of any name) with the `\Bead\Request` type and the handler
 will receive the incoming Request as the argument for that parameter.
 
 ## Plugin
@@ -136,7 +139,7 @@ All `View`s fulfil the `Response` contract, so you can simply return a `View` in
 ## Database and Models
 
 The framework contains a very simple ORM to make it easy to query and update the data in your app's database in most
-cases. The `Equit\Database\Connection` class extends the built-in `PDO` class with a few static methods. The `Model`
+cases. The `Bead\Database\Connection` class extends the built-in `PDO` class with a few static methods. The `Model`
 base class makes it easy to create code representations of the data stored in your database. In the simplest cases, you
 just need to create a subclass and fill the `$properties` static member with the names and types of the columns in the
 table the model represents, and the `$table` static member with the name of the database table.
@@ -144,6 +147,6 @@ table the model represents, and the `$table` static member with the name of the 
 ## Validation
 
 Validation will feel familiar to anyone who has used Laravel's validation framework. You validate data by creating a
-`Equit\Validation\Validator` and giving it a set of rules to apply and the data to apply them to. If the data is valid,
+`Bead\Validation\Validator` and giving it a set of rules to apply and the data to apply them to. If the data is valid,
 the Validator will return `true` from `passes()`. If it returns `false` it will provide a set of error messages from
 `errors()`.

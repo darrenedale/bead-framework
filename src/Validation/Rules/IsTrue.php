@@ -8,10 +8,12 @@
 
 declare(strict_types=1);
 
-namespace Equit\Validation\Rules;
+namespace Bead\Validation\Rules;
 
-use Equit\Validation\TypeConvertingRule;
+use Bead\Validation\TypeConvertingRule;
 use LogicException;
+
+use function Bead\Helpers\I18n\tr;
 
 /**
  * Validator rule to ensure that some data is a valid boolean `true`.

@@ -1,6 +1,8 @@
 <?php
 
-namespace Equit;
+namespace Bead;
+
+use Bead\Contracts\Translator as TranslatorContract;
 
 /**
  * Class to handle translation of UI strings into alternate languages.
@@ -16,17 +18,17 @@ namespace Equit;
  * <http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry>
  *
  * Translatable strings are identified by their content, their source file and their line within that file. The file
- * and
- * line help to disambiguate the contexts for identical strings in case they need different translations on different
- * occasions. In all cases, if a specific translation for the file and line of a string is not found, one is sought for
- * just the file, and then for just the string. If no translation is found, the original string is returned unmodified.
+ * and line help to disambiguate the contexts for identical strings in case they need different translations on
+ * different occasions. In all cases, if a specific translation for the file and line of a string is not found, one is
+ * sought for just the file, and then for just the string. If no translation is found, the original string is returned
+ * unmodified.
  *
  * Translation files are simple CSV files. One file contains all the translations into a single language. Each row in
  * each file contains a translation of a single string in context. The first cell contains the file, the second the
  * line, the third the original string and the fourth the translated string. The file and line cells can be empty to
  * provide a "generic" translation that is not tied to a specific context.
  *
- * The _extract_translatable_strings_ tool is available to help provide the source translation files for translators to
+ * The `extract_translatable_strings` tool is available to help provide the source translation files for translators to
  * work with. Given a set of paths to source files it will output the discovered translatable strings in each source
  * file in CSV format. The translator then simply adds his/her translated strings in the appropriate column using a
  * spreadsheet application. The tool always places file and line context information for every string in the generated
@@ -34,17 +36,16 @@ namespace Equit;
  * suitable.
  *
  * Translation files should only be generated after the source code for a release is frozen. This is because any
- * changes
- * to the source code after the translation files have been generated are likely to break the translation files due to
- * changes in the lines on which translatable strings occur. This problem can be lessened somewhat if the majority of
- * the strings in your UI can be serviced by generic translations, but it is good practice nonetheless to ensure that
- * your code is stable before having its UI translated.
+ * changes to the source code after the translation files have been generated are likely to break the translation files
+ * due to changes in the lines on which translatable strings occur. This problem can be lessened somewhat if the
+ * majority of the strings in your UI can be serviced by generic translations, but it is good practice nonetheless to
+ * ensure that your code is stable before having its UI translated.
  *
- * In order to use translations, an application must create an instance of the LibEquit\Translator class, provide it
- * with the language to use and one or more search paths in which to attempt to locate translation files, then use the
- * _translate()_ method with any string that it wishes to have translated. For example:
+ * In order to use translations, an application must create an instance of the `Bead\Translator` class, provide it with
+ * the language to use and one or more search paths in which to attempt to locate translation files, then use the
+ * `translate()` method with any string that it wishes to have translated. For example:
  *
- *     $t = new LibEquit\Translator('pt-BR');
+ *     $t = new Bead\Translator('pt-BR');
  *     $t->addSearchPath('i18n/myapp/');
  *     $msg = $t->translate('Hello there %1', basename(__FILE__), __LINE__);
  *     echo str_replace('%1', $argv[1]);
@@ -53,8 +54,7 @@ namespace Equit;
  * the above example, _%1_ is used as a placeholder to represent the content of a command-line argument. It is
  * recommended also that whatever scheme you use is capable of supporting reordering of the arguments by translators so
  * that they can be inserted into the translated string in the correct positions for the target language. Numbering
- * your
- * placeholders in sequence is a useful approach.
+ * your placeholders in sequence is a useful approach.
  *
  * This can be wrapped into small functions in your apps, using PHPs varargs and dynamic function-calling features to
  * reduce the amount of typing you need to do to translate each string. For example, with:
@@ -62,7 +62,7 @@ namespace Equit;
  *     function tr( $s, $file = '', $line = '' ) {
  *        global $translator;
  *
- *        if($translator instanceof LibEquit\Translator) {
+ *        if($translator instanceof Bead\Translator) {
  *            $s = $translator->translate($s, basename($file), $line);
  *        }
  *
@@ -97,7 +97,7 @@ namespace Equit;
  *
  * translating a string becomes:
  *
- *     $translator = new LibEquit\Translator('pt-BR');
+ *     $translator = new Bead\Translator('pt-BR');
  *     $translator->addSearchPath('i18n/myapp/');
  *     echo tr('Hello there %1', __FILE__, __LINE__, $argv[1]);
  *
@@ -107,7 +107,7 @@ namespace Equit;
  *     function tr( $s, $file = '', $line = '' ) {
  *        global $translator;
  *
- *        if($translator instanceof LibEquit\Translator) {
+ *        if($translator instanceof Bead\Translator) {
  *            $s = $translator->translate($s, basename($file), $line);
  *        }
  *
@@ -131,25 +131,12 @@ namespace Equit;
  *
  *        return str_replace($ph, $args, $s);
  *     }
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class LibEquit\Translator
- * @author Darren Edale
- * @package bead-framework
- *
- * @connections _None_
- * @settings _None_
- * @session _None_
  */
-class Translator {
+class Translator implements TranslatorContract
+{
+    /** @var string The default language. */
+    protected const DefaultLanguage = "en";
+
 	/** @var int The column in the translation file that contains the file name. */
 	protected const FILE_COL = 0;
 
@@ -163,20 +150,21 @@ class Translator {
 	protected const TRANSLATION_COL = 3;
 
 	/** The translator's language. */
-	private $m_lang = null;
+	private string $m_lang;
 
 	/** The cache of translated text. */
-	private $m_cache = [];
+	private array $m_cache = [];
 
 	/** The paths to search for translation files. */
-	private $m_searchPaths = [];
+	private array $m_searchPaths = [];
 
 	/**
 	 * Create a translator for a given language.
 	 *
 	 * @param $lang string _optional_ The language into which to translate.
 	 */
-	public function __construct(?string $lang = null) {
+	public function __construct(string $lang = self::DefaultLanguage)
+    {
 		$this->setLanguage($lang);
 	}
 
@@ -185,7 +173,8 @@ class Translator {
 	 *
 	 * @return string The target language.
 	 */
-	public function language(): string {
+	public function language(): string
+    {
 		return $this->m_lang;
 	}
 
@@ -199,7 +188,8 @@ class Translator {
 	 *
 	 * @param $lang string|null The target language.
 	 */
-	public function setLanguage(?string $lang): void {
+	public function setLanguage(string $lang): void
+    {
 		$this->m_lang = $lang;
 	}
 
@@ -219,7 +209,8 @@ class Translator {
 	 *
 	 * @param $path string The path to add.
 	 */
-	public function addSearchPath(string $path): void {
+	public function addSearchPath(string $path): void
+    {
 		$path = realpath($path);
 
 		if($path && !in_array($path, $this->m_searchPaths)) {
@@ -238,7 +229,8 @@ class Translator {
 	 *
 	 * @param $path string The path to remove.
 	 */
-	public function removeSearchPath(string $path): void {
+	public function removeSearchPath(string $path): void
+    {
 		$path = realpath($path);
 
 		if($path) {
@@ -262,7 +254,8 @@ class Translator {
 	 * which it has already loaded a translation file. Translation files are loaded the first time they are needed -
 	 * i.e. when a new language is encountered in a call to either hasTranslation() or translate().
 	 */
-	public function clearSearchPaths(): void {
+	public function clearSearchPaths(): void
+    {
 		$this->m_searchPaths = [];
 	}
 
@@ -273,7 +266,8 @@ class Translator {
 	 *
 	 * @return array[string] The list of search paths.
 	 */
-	public function searchPaths(): array {
+	public function searchPaths(): array
+    {
 		return $this->m_searchPaths;
 	}
 
@@ -282,7 +276,8 @@ class Translator {
 	 *
 	 * @return bool _true_ if the translation file has been loaded, _false_ if not.
 	 */
-	private function isLoaded(): bool {
+	private function isLoaded(): bool
+    {
 		return is_string($this->m_lang) && array_key_exists($this->m_lang, $this->m_cache);
 	}
 
@@ -295,7 +290,8 @@ class Translator {
 	 *
 	 * @return string The key.
 	 */
-	private static function cacheKey(string $string, ?string $file, ?int $line): string {
+	private static function cacheKey(string $string, ?string $file, ?int $line): string
+    {
 		if(empty($file)) {
 			$file = "~~NOFILE~~";
 		}
@@ -317,18 +313,19 @@ class Translator {
 	 *
 	 * @return bool _true_ if a translation file for the current language was loaded, _false_ otherwise.
 	 */
-	private function load(): bool {
+	private function load(): bool
+    {
 		if(!empty($this->m_lang)) {
 			foreach($this->m_searchPaths as $path) {
 				$filePath = "$path/{$this->m_lang}.csv";
 
 				if(file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
-					$f                            = fopen($filePath, "r");
+					$f = fopen($filePath, "r");
 					$this->m_cache[$this->m_lang] = [];
 
 					while(false !== ($line = fgetcsv($f))) {
-						$myFile  = $line[self::FILE_COL];
-						$myLine  = $line[self::LINE_COL];
+						$myFile  = empty($line[self::FILE_COL]) ? null : $line[self::FILE_COL];
+						$myLine  = empty($line[self::LINE_COL]) ? null : (intval($line[self::LINE_COL]) ?: null);
 						$myOrig  = $line[self::ORIGINAL_COL];
 						$myTrans = $line[self::TRANSLATION_COL];
 
@@ -357,7 +354,8 @@ class Translator {
 	 *
 	 * @return bool _true_ if the requested translation is available, _false_ if not.
 	 */
-	public function hasTranslation(string $string, ?string $file = null, ?int $line = null): bool {
+	public function hasTranslation(string $string, ?string $file = null, ?int $line = null): bool
+    {
 		if(!$this->isLoaded()) {
 			$this->load();
 		}
@@ -383,12 +381,13 @@ class Translator {
 	 *
 	 * @return string The translated string, or the original string if no suitable translation can be found.
 	 */
-	public function translate(string $string, string $file = null, $line = null): string {
-		if(!$this->isLoaded()) {
+	public function translate(string $string, string $file = null, $line = null): string
+    {
+		if (!$this->isLoaded()) {
 			$this->load();
 		}
 
-		if($this->isLoaded()) {
+		if ($this->isLoaded()) {
 			$keys = [
 				[$string, $file, $line],
 				[$string, $file, null],

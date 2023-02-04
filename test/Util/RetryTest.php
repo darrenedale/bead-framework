@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Equit\Test\Util;
+namespace BeadTests\Util;
 
-use Equit\Test\Framework\TestCase;
-use Equit\Util\Retry;
+use BeadTests\Framework\TestCase;
+use Bead\Util\Retry;
 use InvalidArgumentException;
 use TypeError;
 
