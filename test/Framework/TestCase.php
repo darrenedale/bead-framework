@@ -18,6 +18,10 @@ abstract class TestCase extends PhpUnitTestCase
     /** @var array<string> Names of functions mocked using mockFunction() */
     private array $functionMocks = [];
 
+    public static function tempDir(): string
+    {
+        return "/tmp/bead-framework/test";
+    }
 
     /** Subclasses that reimplement tearDown() must call the parent implementation. */
     public function tearDown(): void

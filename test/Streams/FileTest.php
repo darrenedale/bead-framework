@@ -14,7 +14,7 @@ class FileTest extends TestCase
 
     private const ReadFileName = __DIR__ . "/files/filetest-file01.txt";
 
-    private const WriteFileName = __DIR__ . "/files/filetest-write-file01.txt";
+    private const WriteFileName = "filetest-write-file01.txt";
 
     private File $m_stream;
 
@@ -25,14 +25,13 @@ class FileTest extends TestCase
 
     public function tearDown(): void
     {
-        if (file_exists(self::WriteFileName)) {
-            if (!@unlink(self::WriteFileName)) {
-                self::addWarning("Failed to remove temporary write-test file " . self::WriteFileName);
-            }
-        }
-
         unset($this->m_stream);
         parent::tearDown();
+    }
+
+    private static function writeFilename(): string
+    {
+        return self::tempDir() . "/" . self::WriteFileName;
     }
 
     /**
@@ -60,8 +59,8 @@ class FileTest extends TestCase
      */
     public function testConstructorReadWrite(): void
     {
-        file_put_contents(self::WriteFileName, '');
-        $stream = new File(self::WriteFileName, File::ModeRead | File::ModeWrite);
+        file_put_contents(self::writeFilename(), '');
+        $stream = new File(self::writeFilename(), File::ModeRead | File::ModeWrite);
         $this->assertTrue($stream->isReadable());
         $this->assertTrue($stream->isWritable());
     }
@@ -71,8 +70,8 @@ class FileTest extends TestCase
      */
     public function testConstructorWriteOnly(): void
     {
-        file_put_contents(self::WriteFileName, '');
-        $stream = new File(self::WriteFileName, File::ModeWrite);
+        file_put_contents(self::writeFilename(), '');
+        $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->assertFalse($stream->isReadable());
         $this->assertTrue($stream->isWritable());
     }
@@ -212,7 +211,7 @@ class FileTest extends TestCase
      */
     public function testIsWritable(): void
     {
-        $stream = new File(self::WriteFileName, File::ModeWrite);
+        $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->assertTrue($stream->isWritable());
     }
 
@@ -221,7 +220,7 @@ class FileTest extends TestCase
      */
     public function testClosedIsNotWritable(): void
     {
-        $stream = new File(self::WriteFileName, File::ModeWrite);
+        $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->assertTrue($stream->isWritable());
         $stream->close();
         $this->assertFalse($stream->isWritable());
@@ -232,7 +231,7 @@ class FileTest extends TestCase
      */
     public function testDetachedIsNotWritable(): void
     {
-        $stream = new File(self::WriteFileName, File::ModeWrite);
+        $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->assertTrue($stream->isWritable());
         $stream->detach();
         $this->assertFalse($stream->isWritable());
@@ -426,7 +425,7 @@ class FileTest extends TestCase
      */
     public function testReadThrowsWithWriteOnly(): void
     {
-        $stream = new File(self::WriteFileName, File::ModeWrite);
+        $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->expectException(FileStreamException::class);
         $content = $stream->read(4);
     }
@@ -444,7 +443,7 @@ class FileTest extends TestCase
      */
     public function testIsReadableWithWriteOnly(): void
     {
-        $stream = new File(self::WriteFileName, File::ModeWrite);
+        $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->assertFalse($stream->isReadable());
     }
 
@@ -526,7 +525,7 @@ class FileTest extends TestCase
      */
     public function testWrite(): void
     {
-        $stream = new File(self::WriteFileName, File::ModeWrite);
+        $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->assertEquals(4, $stream->write("file"));
     }
 
@@ -565,7 +564,7 @@ class FileTest extends TestCase
      */
     public function testWriteThrowsWithWriteFail(): void
     {
-        $stream = new File(self::WriteFileName, File::ModeWrite);
+        $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->mockFunction('fwrite', false);
         $this->expectException(FileStreamException::class);
         $this->expectExceptionMessage("The stream could not be written.");
