@@ -14,6 +14,8 @@ use Bead\Validation\DatasetAwareRule;
 use InvalidArgumentException;
 use LogicException;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validator rule to ensure that some data is non-empty unless some other field is set to one of a given set of values.
  */

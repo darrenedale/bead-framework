@@ -12,7 +12,9 @@ namespace Bead\Validation\Rules;
 
 use Bead\Validation\DatasetAwareRule;
 use InvalidArgumentException;
+
 use function Bead\Traversable\some;
+use function Bead\Helpers\I18n\tr;
 
 /**
  * Validator rule to ensure that some data is non-empty if all of a set of other fields are empty.

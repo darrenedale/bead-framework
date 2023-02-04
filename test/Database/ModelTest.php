@@ -13,7 +13,8 @@ use PDO;
 use Prophecy\Call\Call;
 use ReflectionProperty;
 use TypeError;
-use function Bead\Traversable\all;
+
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Test case for the database Model class.

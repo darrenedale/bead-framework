@@ -32,10 +32,11 @@
       "Bead\\": "src"
     },
     "files": [
-      "src/includes/array.php",
-      "src/includes/i18n.php",
-      "src/includes/string.php",
-      "src/includes/traversable.php"
+      "src/Helpers/I18n.php",
+      "src/Helpers/Iterable.php",
+      "src/Helpers/Str.php",
+      "src/polyfill/string.php",
+      "src/polyfill/array.php"
     ]
   },
   "autoload-dev": {

@@ -17,7 +17,8 @@ use Bead\Contracts\Router as RouterContract;
 use Bead\Router;
 use Bead\Request;
 use Bead\Testing\XRay;
-use function Bead\Traversable\accumulate;
+
+use function Bead\Helpers\Iterable\accumulate;
 
 /**
  * Test case for the Router class.

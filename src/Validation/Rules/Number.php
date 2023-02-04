@@ -12,6 +12,8 @@ namespace Bead\Validation\Rules;
 
 use Bead\Validation\TypeConvertingRule;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validator rule to ensure that some data is a valid number.
  */

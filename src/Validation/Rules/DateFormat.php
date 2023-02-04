@@ -13,6 +13,8 @@ namespace Bead\Validation\Rules;
 use DateTime;
 use Bead\Validation\Rule;
 
+use function Bead\Helpers\I18n\tr;
+
 /**
  * Validator rule to ensure that some data is a date string in a specified format.
  *

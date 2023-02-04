@@ -6,7 +6,8 @@ namespace Bead;
 use Closure;
 use RuntimeException;
 use InvalidArgumentException;
-use function Bead\Traversable\all;
+
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Encapsulation of an external process.
