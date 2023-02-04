@@ -1,34 +1,38 @@
 <?php
 
-namespace BeadTests;
+namespace BeadTests\Streams;
 
 use Bead\Exceptions\FileStreamException;
-use Bead\FileStream;
+use Bead\Streams\File;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
 use SplFileInfo;
 
-class FileStreamTest extends TestCase
+class FileTest extends TestCase
 {
 
-    private const ReadFileName = __DIR__ . "/files/filestreamtest-file01.txt";
-    private const WriteFileName = __DIR__ . "/files/filestreamtest-file02.txt";
+    private const ReadFileName = __DIR__ . "/files/filetest-file01.txt";
 
-    private FileStream $m_stream;
+    private const WriteFileName = __DIR__ . "/files/filetest-write-file01.txt";
+
+    private File $m_stream;
 
     public function setUp(): void
     {
-        $this->m_stream = new FileStream(self::ReadFileName, FileStream::ModeRead);
+        $this->m_stream = new File(self::ReadFileName, File::ModeRead);
     }
 
     public function tearDown(): void
     {
         if (file_exists(self::WriteFileName)) {
-            @unlink(self::WriteFileName);
+            if (!@unlink(self::WriteFileName)) {
+                self::addWarning("Failed to remove temporary write-test file " . self::WriteFileName);
+            }
         }
 
         unset($this->m_stream);
+        parent::tearDown();
     }
 
     /**
@@ -36,7 +40,7 @@ class FileStreamTest extends TestCase
      */
     public function testConstructorFileInfo(): void
     {
-        $stream = new FileStream(new SplFileInfo(self::ReadFileName), FileStream::ModeRead);
+        $stream = new File(new SplFileInfo(self::ReadFileName), File::ModeRead);
         $this->assertTrue($stream->isReadable());
         $this->assertFalse($stream->isWritable());
     }
@@ -46,7 +50,7 @@ class FileStreamTest extends TestCase
      */
     public function testConstructorReadOnly(): void
     {
-        $stream = new FileStream(self::ReadFileName, FileStream::ModeRead);
+        $stream = new File(self::ReadFileName, File::ModeRead);
         $this->assertTrue($stream->isReadable());
         $this->assertFalse($stream->isWritable());
     }
@@ -57,7 +61,7 @@ class FileStreamTest extends TestCase
     public function testConstructorReadWrite(): void
     {
         file_put_contents(self::WriteFileName, '');
-        $stream = new FileStream(self::WriteFileName, FileStream::ModeRead | FileStream::ModeWrite);
+        $stream = new File(self::WriteFileName, File::ModeRead | File::ModeWrite);
         $this->assertTrue($stream->isReadable());
         $this->assertTrue($stream->isWritable());
     }
@@ -68,7 +72,7 @@ class FileStreamTest extends TestCase
     public function testConstructorWriteOnly(): void
     {
         file_put_contents(self::WriteFileName, '');
-        $stream = new FileStream(self::WriteFileName, FileStream::ModeWrite);
+        $stream = new File(self::WriteFileName, File::ModeWrite);
         $this->assertFalse($stream->isReadable());
         $this->assertTrue($stream->isWritable());
     }
@@ -80,7 +84,7 @@ class FileStreamTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Invalid stream open mode 0x00000000");
-        $stream = new FileStream(self::ReadFileName, 0);
+        $stream = new File(self::ReadFileName, 0);
     }
 
     /**
@@ -90,7 +94,7 @@ class FileStreamTest extends TestCase
     {
         $this->expectException(FileStreamException::class);
         $this->expectExceptionMessage("Could not open file " . __DIR__ . "/files/filestreamtest-this-file-does-not-exist.txt.");
-        $stream = new FileStream(__DIR__ . "/files/filestreamtest-this-file-does-not-exist.txt", FileStream::ModeRead);
+        $stream = new File(__DIR__ . "/files/filestreamtest-this-file-does-not-exist.txt", File::ModeRead);
     }
 
     /**
@@ -162,7 +166,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure detaching the underlying resource from the stream renders it unusable.
      */
-    public function testDetach()
+    public function testDetach(): void
     {
         $stream = new Xray($this->m_stream);
         $expectedFh = $stream->m_fh;
@@ -176,7 +180,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure detaching the underlying resource from the stream throws when it's closed.
      */
-    public function testDetachThrowsWhenClosed()
+    public function testDetachThrowsWhenClosed(): void
     {
         $this->m_stream->close();
         $this->expectException(FileStreamException::class);
@@ -187,7 +191,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure detaching the underlying resource from the stream throws when it's already been detached.
      */
-    public function testDetachThrowsWhenDetached()
+    public function testDetachThrowsWhenDetached(): void
     {
         $this->m_stream->detach();
         $this->expectException(FileStreamException::class);
@@ -198,7 +202,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a read-only stream reports it is not writable.
      */
-    public function testIsNotWritable()
+    public function testIsNotWritable(): void
     {
         $this->assertFalse($this->m_stream->isWritable());
     }
@@ -206,18 +210,18 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a writable stream reports it is writable.
      */
-    public function testIsWritable()
+    public function testIsWritable(): void
     {
-        $stream = new FileStream(self::WriteFileName, FileStream::ModeWrite);
+        $stream = new File(self::WriteFileName, File::ModeWrite);
         $this->assertTrue($stream->isWritable());
     }
 
     /**
      * Ensure a closed stream reports it is not writable.
      */
-    public function testClosedIsNotWritable()
+    public function testClosedIsNotWritable(): void
     {
-        $stream = new FileStream(self::WriteFileName, FileStream::ModeWrite);
+        $stream = new File(self::WriteFileName, File::ModeWrite);
         $this->assertTrue($stream->isWritable());
         $stream->close();
         $this->assertFalse($stream->isWritable());
@@ -226,9 +230,9 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a detached stream reports it is not writable.
      */
-    public function testDetachedIsNotWritable()
+    public function testDetachedIsNotWritable(): void
     {
-        $stream = new FileStream(self::WriteFileName, FileStream::ModeWrite);
+        $stream = new File(self::WriteFileName, File::ModeWrite);
         $this->assertTrue($stream->isWritable());
         $stream->detach();
         $this->assertFalse($stream->isWritable());
@@ -237,7 +241,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure the correct filename is reported.
      */
-    public function testFileName()
+    public function testFileName(): void
     {
         $this->assertEquals(self::ReadFileName, $this->m_stream->fileName());
     }
@@ -245,7 +249,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure an empty filename is reported when closed.
      */
-    public function testFileNameWhenClosed()
+    public function testFileNameWhenClosed(): void
     {
         $this->m_stream->close();
         $this->assertEquals("", $this->m_stream->fileName());
@@ -254,7 +258,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure an empty filename is reported when detached.
      */
-    public function testFileNameWhenDetached()
+    public function testFileNameWhenDetached(): void
     {
         $this->m_stream->detach();
         $this->assertEquals("", $this->m_stream->fileName());
@@ -263,7 +267,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure getMetaData() returns no content.
      */
-    public function testGetMetadata()
+    public function testGetMetadata(): void
     {
         $this->assertEquals([], $this->m_stream->getMetadata());
         $this->assertEquals(null, $this->m_stream->getMetadata("any-key"));
@@ -272,7 +276,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a stream's full content can be retrieved.
      */
-    public function testGetContents()
+    public function testGetContents(): void
     {
         $this->assertEquals("A file with a small amount of content.", $this->m_stream->getContents());
     }
@@ -280,7 +284,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure fetching a file's contents sets the file position pointer.
      */
-    public function testGetContentsSetsPointer()
+    public function testGetContentsSetsPointer(): void
     {
         $this->m_stream->getContents();
         self::assertEquals(38, $this->m_stream->tell());
@@ -289,7 +293,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure an exception is thrown when the contents are requested for a closed stream.
      */
-    public function testGetContentsThrowsWhenClosed()
+    public function testGetContentsThrowsWhenClosed(): void
     {
         $this->m_stream->close();
         $this->expectException(FileStreamException::class);
@@ -299,7 +303,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure an exception is thrown when the contents are requested for a detached stream.
      */
-    public function testGetContentsThrowsWhenDetached()
+    public function testGetContentsThrowsWhenDetached(): void
     {
         $this->m_stream->detach();
         $this->expectException(FileStreamException::class);
@@ -309,7 +313,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a stream reports the correct pointer position.
      */
-    public function testTell()
+    public function testTell(): void
     {
         $this->assertEquals(0, $this->m_stream->tell());
         $this->m_stream->seek(4);
@@ -319,7 +323,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure rewind resets the pointer position.
      */
-    public function testRewind()
+    public function testRewind(): void
     {
         $this->m_stream->read(1);
         $this->assertEquals(1, $this->m_stream->tell());
@@ -330,7 +334,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure rewinding a closed stream throws an exception.
      */
-    public function testRewindThrowsWhenClosed()
+    public function testRewindThrowsWhenClosed(): void
     {
         $this->m_stream->close();
         $this->expectException(FileStreamException::class);
@@ -340,7 +344,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure rewinding a detached stream throws an exception.
      */
-    public function testRewindThrowsWhenDetached()
+    public function testRewindThrowsWhenDetached(): void
     {
         $this->m_stream->detach();
         $this->expectException(FileStreamException::class);
@@ -350,7 +354,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure streams are seekable.
      */
-    public function testIsSeekable()
+    public function testIsSeekable(): void
     {
         $this->assertTrue($this->m_stream->isSeekable());
     }
@@ -358,7 +362,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure closed streams are not seekable.
      */
-    public function testIsSeekableWithClosed()
+    public function testIsSeekableWithClosed(): void
     {
         $this->m_stream->close();
         $this->assertFalse($this->m_stream->isSeekable());
@@ -367,7 +371,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure detached streams are not seekable.
      */
-    public function testIsSeekableWithDetached()
+    public function testIsSeekableWithDetached(): void
     {
         $this->m_stream->detach();
         $this->assertFalse($this->m_stream->isSeekable());
@@ -376,7 +380,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure content can be read correctly from a stream.
      */
-    public function testRead()
+    public function testRead(): void
     {
         $this->m_stream->seek(2);
         $content = $this->m_stream->read(4);
@@ -386,7 +390,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure reading from a closed stream throws.
      */
-    public function testReadThrowsWhenClosed()
+    public function testReadThrowsWhenClosed(): void
     {
         $this->m_stream->seek(2);
         $this->m_stream->close();
@@ -397,20 +401,32 @@ class FileStreamTest extends TestCase
     /**
      * Ensure reading from a detached stream throws.
      */
-    public function testReadThrowsWhenDetached()
+    public function testReadThrowsWhenDetached(): void
     {
         $this->m_stream->seek(2);
         $this->m_stream->detach();
         $this->expectException(FileStreamException::class);
+        self::expectExceptionMessage("The stream is not open or is not readable.");
+        $content = $this->m_stream->read(4);
+    }
+
+    /**
+     * Ensure an exception is thrown in read() when fread() fails.
+     */
+    public function testReadThrowsWithReadFail(): void
+    {
+        $this->mockFunction('fread', false);
+        self::expectException(FileStreamException::class);
+        self::expectExceptionMessage("Error reading from the stream.");
         $content = $this->m_stream->read(4);
     }
 
     /**
      * Ensure reading from a write-only stream throws.
      */
-    public function testReadThrowsWithWriteOnly()
+    public function testReadThrowsWithWriteOnly(): void
     {
-        $stream = new FileStream(self::WriteFileName, FileStream::ModeWrite);
+        $stream = new File(self::WriteFileName, File::ModeWrite);
         $this->expectException(FileStreamException::class);
         $content = $stream->read(4);
     }
@@ -418,7 +434,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure streams correctly report readability.
      */
-    public function testIsReadable()
+    public function testIsReadable(): void
     {
         $this->assertTrue($this->m_stream->isReadable());
     }
@@ -426,16 +442,16 @@ class FileStreamTest extends TestCase
     /**
      * Ensure write-only streams report they are not readable.
      */
-    public function testIsReadableWithWriteOnly()
+    public function testIsReadableWithWriteOnly(): void
     {
-        $stream = new FileStream(self::WriteFileName, FileStream::ModeWrite);
+        $stream = new File(self::WriteFileName, File::ModeWrite);
         $this->assertFalse($stream->isReadable());
     }
 
     /**
      * Ensure closed streams report they are not readable.
      */
-    public function testIsReadableWhenClosed()
+    public function testIsReadableWhenClosed(): void
     {
         $this->m_stream->close();
         $this->assertFalse($this->m_stream->isReadable());
@@ -444,7 +460,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure detached streams report they are not readable.
      */
-    public function testIsReadableWhenDetached()
+    public function testIsReadableWhenDetached(): void
     {
         $this->m_stream->detach();
         $this->assertFalse($this->m_stream->isReadable());
@@ -453,7 +469,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a non-exhausted stream does not report EOF.
      */
-    public function testEof()
+    public function testEof(): void
     {
         $this->assertFalse($this->m_stream->eof());
     }
@@ -461,7 +477,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a read to the end of a stream does not report EOF.
      */
-    public function testEofAtEnd()
+    public function testEofAtEnd(): void
     {
         $this->m_stream->seek(0, SEEK_END);
         $this->assertFalse($this->m_stream->eof());
@@ -470,7 +486,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a read past the end of a stream reports EOF.
      */
-    public function testEofPastEnd()
+    public function testEofPastEnd(): void
     {
         $this->m_stream->seek(0, SEEK_END);
         $this->m_stream->read(1);
@@ -480,7 +496,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a closed stream throws when checking eof.
      */
-    public function testEofWhenClosed()
+    public function testEofWhenClosed(): void
     {
         $this->m_stream->seek(0, SEEK_END);
         $this->m_stream->read(1);
@@ -494,7 +510,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a detached stream throws when checking eof.
      */
-    public function testEofWhenDetached()
+    public function testEofWhenDetached(): void
     {
         $this->m_stream->seek(0, SEEK_END);
         $this->m_stream->read(1);
@@ -508,16 +524,16 @@ class FileStreamTest extends TestCase
     /**
      * Ensure a stream can be written.
      */
-    public function testWrite()
+    public function testWrite(): void
     {
-        $stream = new FileStream(self::WriteFileName, FileStream::ModeWrite);
+        $stream = new File(self::WriteFileName, File::ModeWrite);
         $this->assertEquals(4, $stream->write("file"));
     }
 
     /**
      * Ensure read-only streams can't be writteen.
      */
-    public function testWriteThrowsWithReadOnly()
+    public function testWriteThrowsWithReadOnly(): void
     {
         $this->expectException(FileStreamException::class);
         $this->m_stream->write("file");
@@ -526,7 +542,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure closed streams can't be writteen.
      */
-    public function testWriteThrowsWithClosed()
+    public function testWriteThrowsWithClosed(): void
     {
         $this->m_stream->close();
         $this->expectException(FileStreamException::class);
@@ -536,7 +552,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure detached streams can't be writteen.
      */
-    public function testWriteThrowsWithDetached()
+    public function testWriteThrowsWithDetached(): void
     {
         $this->m_stream->detach();
         $this->expectException(FileStreamException::class);
@@ -545,9 +561,21 @@ class FileStreamTest extends TestCase
     }
 
     /**
+     * Ensure detached streams can't be writteen.
+     */
+    public function testWriteThrowsWithWriteFail(): void
+    {
+        $stream = new File(self::WriteFileName, File::ModeWrite);
+        $this->mockFunction('fwrite', false);
+        $this->expectException(FileStreamException::class);
+        $this->expectExceptionMessage("The stream could not be written.");
+        $stream->write("file");
+    }
+
+    /**
      * Ensure closing a stream nullifies its state.
      */
-    public function testClose()
+    public function testClose(): void
     {
         $stream = new XRay($this->m_stream);
         $this->assertNotNull($stream->m_fh);
@@ -563,7 +591,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure closing a closed stream throws an exception.
      */
-    public function testCloseThrowsWhenClosed()
+    public function testCloseThrowsWhenClosed(): void
     {
         $this->m_stream->close();
         $this->expectException(FileStreamException::class);
@@ -574,7 +602,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure closing a detached stream throws an exception.
      */
-    public function testCloseThrowsWhenDetached()
+    public function testCloseThrowsWhenDetached(): void
     {
         $this->m_stream->detach();
         $this->expectException(FileStreamException::class);
@@ -585,7 +613,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure the stream's size can be fetched.
      */
-    public function testGetSize()
+    public function testGetSize(): void
     {
         $this->assertEquals(38, $this->m_stream->getSize());
     }
@@ -593,7 +621,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure fetching the stream's size throws when closed.
      */
-    public function testGetSizeThrowsWhenClosed()
+    public function testGetSizeThrowsWhenClosed(): void
     {
         $this->m_stream->close();
         $this->expectException(FileStreamException::class);
@@ -604,7 +632,7 @@ class FileStreamTest extends TestCase
     /**
      * Ensure fetching the stream's size throws when closed.
      */
-    public function testGetSizeThrowsWhenDetached()
+    public function testGetSizeThrowsWhenDetached(): void
     {
         $this->m_stream->close();
         $this->expectException(FileStreamException::class);
@@ -615,10 +643,23 @@ class FileStreamTest extends TestCase
     /**
      * Ensure fetching the size of the stream does not affect the position.
      */
-    public function testGetSizeLeavesPointer()
+    public function testGetSizeLeavesPointer(): void
     {
         $this->m_stream->seek(4, SEEK_SET);
         $this->m_stream->getSize();
         $this->assertEquals(4, $this->m_stream->tell());
+    }
+
+    /** Ensure a file can be cast to a string. */
+    public function testStringCast(): void
+    {
+        self::assertEquals(file_get_contents(self::ReadFileName), (string) $this->m_stream);
+    }
+
+    /** Ensure a we get an empty string for closed files cast to string. */
+    public function testStringCastWhenclosed(): void
+    {
+        $this->m_stream->close();
+        self::assertEquals("", (string) $this->m_stream);
     }
 }

@@ -13,6 +13,7 @@ namespace BeadTests\Framework;
 use Closure;
 use BeadTests\Framework\Constraints\AttributeIsInt;
 use BeadTests\Framework\Constraints\FlatArrayIsEquivalent;
+use LogicException;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
 use ReflectionException;
 use ReflectionMethod;
@@ -22,6 +23,45 @@ use ReflectionMethod;
  */
 abstract class TestCase extends PhpUnitTestCase
 {
+    /** @var array<string> Names of functions mocked using mockFunction() */
+    private array $functionMocks = [];
+
+
+    /** Subclasses that reimplement tearDown() must call the parent implementation. */
+    public function tearDown(): void
+    {
+        // removeFunctionMock() alters the array, so we iterate over a copy
+        foreach (array_keys($this->functionMocks) as $function) {
+            $this->removeFunctionMock($function);
+        }
+
+        parent::tearDown();
+    }
+
+    public function mockFunction(string $function, mixed $return): void
+    {
+        if (array_key_exists($function, $this->functionMocks)) {
+            $this->removeFunctionMock($function);
+        }
+
+        uopz_set_return($function, $return, $return instanceof Closure);
+        $this->functionMocks[$function] = $return;
+    }
+
+    public function removeFunctionMock(string $function): void
+    {
+        if (!array_key_exists($function, $this->functionMocks)) {
+            throw new LogicException("Attempt to remove mock for function '{$function}' that isn't mocked.");
+        }
+
+        if ($this->functionMocks[$function] !== uopz_get_return($function)) {
+            throw new LogicException("Mock for function '{$function}' has been removed externally.");
+        }
+
+        unset($this->functionMocks[$function]);
+        uopz_unset_return($function);
+    }
+
     /**
      * Fetch a randomly-generated string.
      *

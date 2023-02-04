@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Bead;
+namespace Bead\Streams;
 
 use Bead\Exceptions\FileStreamException;
 use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
-use RuntimeException;
 use SplFileInfo;
-use SplFileObject;
 use Throwable;
 
 /**
  * Implementation of Psr7 StreamInterface for local files.
+ *
+ * Note that many methods don't have return type specifiers because the definition of the interface omits them.
  */
-class FileStream implements StreamInterface
+class File implements StreamInterface
 {
     /** @var int Open the file for reading. */
     public const ModeRead = 0x01;
@@ -102,6 +102,8 @@ class FileStream implements StreamInterface
 
     /**
      * Close the stream.
+     *
+     * @throws FileStreamException if the stream is not open.
      */
     public function close()
     {
@@ -114,6 +116,8 @@ class FileStream implements StreamInterface
      * Detach and return the underlying stream resource.
      *
      * After this is done, the FileStream is no longer usable.
+     *
+     * @throws FileStreamException if the stream is not open.
      */
     public function detach()
     {
@@ -166,6 +170,7 @@ class FileStream implements StreamInterface
      */
     public function getContents()
     {
+        // NOTE rewind() throws the appropriate exception if the stream isn't seekable
         $this->rewind();
         return $this->read($this->getSize());
     }
@@ -174,24 +179,16 @@ class FileStream implements StreamInterface
      * Fetch the size of the file.
      *
      * @return int|null The size in bytes, or `null` if it's not open or can't be determined.
+     * @throws FileStreamException if the stream is not open.
      */
     public function getSize(): ?int
     {
-        $this->checkOpen();
-
-        if (!$this->isSeekable()) {
-            return null;
-        }
-
-        try {
-            $pos = $this->tell();
-            $this->seek(0, SEEK_END);
-            $size = $this->tell();
-            $this->seek($pos, SEEK_SET);
-            return $size;
-        } catch (Throwable $err) {
-            return null;
-        }
+        // NOTE tell() throws the appropriate exception if the file is not open
+        $pos = $this->tell();
+        $this->seek(0, SEEK_END);
+        $size = $this->tell();
+        $this->seek($pos, SEEK_SET);
+        return $size;
     }
 
     /**
@@ -211,6 +208,8 @@ class FileStream implements StreamInterface
      *
      * @param int $offset Where to seek to.
      * @param int $whence Where to seek from.
+     *
+     * @throws FileStreamException if the stream is not open.
      */
     public function seek($offset, $whence = SEEK_SET)
     {
@@ -225,6 +224,7 @@ class FileStream implements StreamInterface
      * precisely the number of bytes in the file from position 0 does *not* set EOF.
      *
      * @return bool `true` if the stream is exhausted `false` if not.
+     * @throws FileStreamException if the stream is not open.
      */
     public function eof()
     {
@@ -269,7 +269,7 @@ class FileStream implements StreamInterface
      * nearest.
      *
      * @return string The bytes read.
-     * @throws FileStreamException if the stream is not readable.
+     * @throws FileStreamException if the stream cannot be read.
      */
     public function read($length)
     {
