@@ -1,22 +1,14 @@
 <?php
 
-/**
- * @author Darren Edale
- * @version 0.9.2
- * @date May 2022
- */
-
 declare(strict_types = 1);
 
 namespace BeadTests\Framework;
 
-use Closure;
 use BeadTests\Framework\Constraints\AttributeIsInt;
 use BeadTests\Framework\Constraints\FlatArrayIsEquivalent;
+use Closure;
 use LogicException;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
-use ReflectionException;
-use ReflectionMethod;
 
 /**
  * Base class for test cases for the framework.
