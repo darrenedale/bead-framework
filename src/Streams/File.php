@@ -53,8 +53,12 @@ class File implements StreamInterface
         }
 
         if ($file instanceof SplFileInfo) {
-            $file =$file->getPathname();
+            $file = $file->getPathname();
         }
+
+        $perms = stat($file);
+        echo "File {$file} permissions: {$perms["uid"]}:{$perms["gid"]} {{$perms["mode"]}}\n";
+        die();
 
         $this->m_fh = @fopen($file, match ($mode) {
             self::ModeRead => "r",
