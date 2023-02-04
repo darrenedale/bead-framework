@@ -11,58 +11,60 @@ use Mockery;
 
 class ManyToOneTest extends TestCase
 {
-    private Application $m_app;
-    private Connection $m_db;
-    private Model $m_local;
-    private ManyToOne $m_relation;
+    private Application $app;
+
+    private Connection $db;
+
+    private Model $local;
+
+    private ManyToOne $relation;
 
     public function setUp(): void
     {
-        $this->m_db = Mockery::mock(Connection::class);
-        $this->m_app = Mockery::mock(Application::class);
-        uopz_set_return(Application::class, "instance", $this->m_app);
-
-        $this->m_app->shouldReceive("database")->andReturn($this->m_db);
-        $this->m_local = new class extends Model
+        $this->db = Mockery::mock(Connection::class);
+        $this->app = Mockery::mock(Application::class);
+        $this->mockMethod(Application::class, "instance", $this->app);
+        $this->app->shouldReceive("database")->andReturn($this->db);
+        $this->local = new class extends Model
         {
             protected static string $table = "Foo";
         };
 
-        $this->m_relation = new ManyToOne($this->m_local, "Bar", "id", "bar_id");
+        $this->relation = new ManyToOne($this->local, "Bar", "id", "bar_id");
     }
 
     public function tearDown(): void
     {
-        uopz_unset_return(Application::class, "instance");
-        unset($this->m_relation, $this->m_app, $this->m_db, $this->m_local);
+        unset($this->relation, $this->app, $this->db, $this->local);
+        parent::tearDown();
     }
 
     public function testConstructor(): void
     {
-        $relation = new ManyToOne($this->m_local, "Bar", "id", "bar_id");
-        self::assertSame($this->m_local, $relation->localModel());
-        self::assertEquals("Bar", $this->m_relation->relatedModel());
+        $relation = new ManyToOne($this->local, "Bar", "id", "bar_id");
+        self::assertSame($this->local, $relation->localModel());
+        self::assertEquals("Bar", $this->relation->relatedModel());
         self::assertEquals("bar_id", $relation->localKey());
         self::assertEquals("id", $relation->relatedKey());
     }
 
     public function testLocalKey(): void
     {
-        self::assertSame("bar_id", $this->m_relation->localKey());
+        self::assertSame("bar_id", $this->relation->localKey());
     }
 
     public function testLocalModel(): void
     {
-        self::assertSame($this->m_local, $this->m_relation->localModel());
+        self::assertSame($this->local, $this->relation->localModel());
     }
 
     public function testRelatedKey(): void
     {
-        self::assertEquals("id", $this->m_relation->relatedKey());
+        self::assertEquals("id", $this->relation->relatedKey());
     }
 
     public function testRelatedModel(): void
     {
-        self::assertEquals("Bar", $this->m_relation->relatedModel());
+        self::assertEquals("Bar", $this->relation->relatedModel());
     }
 }

@@ -48,12 +48,12 @@ final class I18nTest extends TestCase
 			}
 		};
 
-		uopz_set_return(Application::class, "instance", $this->m_app);
+        $this->mockMethod(Application::class, "instance", $this->m_app);
 	}
 
 	public function tearDown(): void
 	{
-		uopz_unset_return(Application::class, "instance");
+        parent::tearDown();
 		Mockery::close();
 	}
 
@@ -96,7 +96,7 @@ final class I18nTest extends TestCase
 
 	public function testTrWithoutApp(): void
 	{
-		uopz_set_return(Application::class, "instance", null);
+        $this->mockMethod(Application::class, "instance", null);
 
 		self::assertEquals("foo", tr("foo"));
 		self::assertEquals("foo bar", tr("foo %1", __FILE__, __LINE__, "bar"));

@@ -26,16 +26,14 @@ use Mockery;
 use PDO;
 use TypeError;
 
-use function uopz_set_return;
-use function uopz_unset_return;
-
 /**
  * Test the query builder class.
  */
 class QueryBuilderTest extends TestCase
 {
-    private ?Application $m_application;
-    private ?Connection $m_defaultConnection;
+    private ?Application $application;
+
+    private ?Connection $defaultConnection;
 
     /**
      * Sets up for every test.
@@ -44,25 +42,18 @@ class QueryBuilderTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->m_application = Mockery::mock(Application::class);
-        $this->m_defaultConnection = Mockery::mock(Connection::class);
-
-        uopz_set_return(Application::class, "instance", $this->m_application);
-
-        $this->m_application->shouldReceive("database")
-            ->andReturn($this->m_defaultConnection);
+        $this->application = Mockery::mock(Application::class);
+        $this->defaultConnection = Mockery::mock(Connection::class);
+        $this->mockMethod(Application::class, "instance", $this->application);
+        $this->application->shouldReceive("database")
+            ->andReturn($this->defaultConnection);
     }
 
     public function tearDown(): void
     {
-        uopz_unset_return(Application::class, "instance");
-
-        unset(
-            $this->m_application,
-            $this->m_defaultConnection
-        );
-
+        unset($this->application, $this->defaultConnection);
         Mockery::close();
+        parent::tearDown();
     }
 
     /**
@@ -111,15 +102,15 @@ class QueryBuilderTest extends TestCase
     public function testDefaultConstructor(): void
     {
         $builder = new QueryBuilder();
-        $this->m_application->shouldHaveReceived("database")->once();
-        self::assertSame($this->m_defaultConnection, $builder->connection());
+        $this->application->shouldHaveReceived("database")->once();
+        self::assertSame($this->defaultConnection, $builder->connection());
     }
 
     public function testConstructorWithConnection(): void
     {
         $connection = Mockery::mock(Connection::class);
         $builder = new QueryBuilder($connection);
-        $this->m_application->shouldNotHaveReceived("database");
+        $this->application->shouldNotHaveReceived("database");
         self::assertSame($connection, $builder->connection());
     }
 
@@ -161,7 +152,7 @@ class QueryBuilderTest extends TestCase
     {
         $builder = new QueryBuilder();
         $connection = Mockery::mock(PDO::class);
-        self::assertSame($this->m_defaultConnection, $builder->connection());
+        self::assertSame($this->defaultConnection, $builder->connection());
         $builder->setConnection($connection);
         self::assertSame($connection, $builder->connection());
     }
