@@ -6,6 +6,7 @@ namespace Bead\Helpers\Str;
 
 use Exception;
 use InvalidArgumentException;
+use RuntimeException;
 use SplFixedArray;
 
 use function array_map;
@@ -220,12 +221,16 @@ function random(int $length): string
 	assert (0 <= $length, new InvalidArgumentException("Can't produce a random string of < 0 characters in length."));
 	$str = "";
 
-	while (0 < $length) {
-		// NOTE base64 of 30 bytes gives 40 chars, none of which is '=' padding
-		$chars = min($length, 40);
-		$str .= str_replace(["/", "+",], ["-", "_",], substr(base64_encode(random_bytes(30)), 0, $chars));
-		$length -= $chars;
-	}
+    try {
+        while (0 < $length) {
+            // NOTE base64 of 30 bytes gives 40 chars, none of which is '=' padding
+            $chars = min($length, 40);
+            $str .= str_replace(["/", "+",], ["-", "_",], substr(base64_encode(random_bytes(30)), 0, $chars));
+            $length -= $chars;
+        }
+    } catch (Exception $err) {
+        throw new RuntimeException("Cryptographically-secure random strings are not available.");
+    }
 
 	return $str;
 }

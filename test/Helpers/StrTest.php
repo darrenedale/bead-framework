@@ -7,6 +7,7 @@ namespace BeadTests\Helpers;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
 use Exception;
+use RuntimeException;
 use TypeError;
 
 use function Bead\Helpers\Str\camelToSnake;
@@ -342,6 +343,7 @@ final class StrTest extends TestCase
 		random(-1);
 	}
 
+    /** Ensure random() */
 	public function testRandomIsCryptoSecure(): void
 	{
 		uopz_set_return(
@@ -353,8 +355,8 @@ final class StrTest extends TestCase
 			true
 		);
 
-		$this->expectException(Exception::class);
-		$this->expectDeprecationMessage("random_bytes() is not available.");
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage("Cryptographically-secure random strings are not available.");
 		$bytes = random(40);
 	}
 }
