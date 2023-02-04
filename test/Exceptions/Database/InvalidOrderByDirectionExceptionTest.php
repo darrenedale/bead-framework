@@ -14,37 +14,37 @@ class InvalidOrderByDirectionExceptionTest extends TestCase
     public function testWithOrderByDirection(): void
     {
         $err = new InvalidOrderByDirectionException("random");
-        $this->assertEquals("random", $err->getDirection());
-        $this->assertMessage($err, "");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("random", $err->getDirection());
+        self::assertMessage($err, "");
+        self::assertCode($err, 0);
+        self::assertPrevious($err, null);
     }
 
     public function testWithOrderByDirectionAndMessage(): void
     {
         $err = new InvalidOrderByDirectionException("random", "Message.");
-        $this->assertEquals("random", $err->getDirection());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("random", $err->getDirection());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 0);
+        self::assertPrevious($err, null);
     }
 
     public function testWithOrderByDirectionMessageAndCode(): void
     {
         $err = new InvalidOrderByDirectionException("random", "Message.", 42);
-        $this->assertEquals("random", $err->getDirection());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, null);
+        self::assertEquals("random", $err->getDirection());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 42);
+        self::assertPrevious($err, null);
     }
 
     public function testWithOrderByDirectionMessageCodeAndPrevious(): void
     {
         $previous = new Exception();
         $err = new InvalidOrderByDirectionException("random", "Message.", 42, $previous);
-        $this->assertEquals("random", $err->getDirection());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, $previous);
+        self::assertEquals("random", $err->getDirection());
+        self::assertMessage($err, "Message.");
+        self::assertCode($err, 42);
+        self::assertPrevious($err, $previous);
     }
 }

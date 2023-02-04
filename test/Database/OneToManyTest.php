@@ -40,29 +40,29 @@ class OneToManyTest extends TestCase
     public function testConstructor(): void
     {
         $relation = new OneToMany($this->m_local, "Bar", "foo_id", "id");
-        $this->assertSame($this->m_local, $relation->localModel());
-        $this->assertEquals("Bar", $this->m_relation->relatedModel());
-        $this->assertEquals("id", $relation->localKey());
-        $this->assertEquals("foo_id", $relation->relatedKey());
+        self::assertSame($this->m_local, $relation->localModel());
+        self::assertEquals("Bar", $this->m_relation->relatedModel());
+        self::assertEquals("id", $relation->localKey());
+        self::assertEquals("foo_id", $relation->relatedKey());
     }
 
     public function testLocalKey(): void
     {
-        $this->assertSame("id", $this->m_relation->localKey());
+        self::assertSame("id", $this->m_relation->localKey());
     }
 
     public function testLocalModel(): void
     {
-        $this->assertSame($this->m_local, $this->m_relation->localModel());
+        self::assertSame($this->m_local, $this->m_relation->localModel());
     }
 
     public function testRelatedKey(): void
     {
-        $this->assertEquals("foo_id", $this->m_relation->relatedKey());
+        self::assertEquals("foo_id", $this->m_relation->relatedKey());
     }
 
     public function testRelatedModel(): void
     {
-        $this->assertEquals("Bar", $this->m_relation->relatedModel());
+        self::assertEquals("Bar", $this->m_relation->relatedModel());
     }
 }

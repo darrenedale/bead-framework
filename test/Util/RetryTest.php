@@ -72,9 +72,9 @@ class RetryTest extends TestCase
 	{
 		$fn = self::createCallable();
 		$retry = new Retry($fn);
-		$this->assertSame($fn, $retry->retry());
-		$this->assertSame(1, $retry->maxRetries());
-		$this->assertNull($retry->exitCondition());
+		self::assertSame($fn, $retry->retry());
+		self::assertSame(1, $retry->maxRetries());
+		self::assertNull($retry->exitCondition());
 	}
 
 	/**
@@ -127,8 +127,8 @@ class RetryTest extends TestCase
 
 		$retry = new Retry(self::createCallable());
 		$actual = $retry->times($times);
-		$this->assertSame($retry, $actual);
-		$this->assertEquals($times, $actual->maxRetries());
+		self::assertSame($retry, $actual);
+		self::assertEquals($times, $actual->maxRetries());
 	}
 
 	/**
@@ -183,8 +183,8 @@ class RetryTest extends TestCase
 			->times($times);
 
 		$actual = $retry->until($predicate);
-		$this->assertSame($retry, $actual);
-		$this->assertSame($predicate, $retry->exitCondition());
+		self::assertSame($retry, $actual);
+		self::assertSame($predicate, $retry->exitCondition());
 	}
 
 	/**
@@ -219,8 +219,8 @@ class RetryTest extends TestCase
 			->times($times);
 
 		$retry();
-		$this->assertLessThanOrEqual($times, $retry->attemptsTaken());
-		$this->assertEquals($times, $actualTimes);
+		self::assertLessThanOrEqual($times, $retry->attemptsTaken());
+		self::assertEquals($times, $actualTimes);
 	}
 
 	/**
@@ -319,10 +319,10 @@ class RetryTest extends TestCase
 			->until($exitCondition);
 
 		$result = $retry();
-		$this->assertEquals($expectedTimes, $retry->attemptsTaken());
-		$this->assertLessThanOrEqual($maxTimes, $retry->attemptsTaken());
-		$this->assertEquals($expectedSuccess, $retry->succeeded());
-		$this->assertEquals($expectedResult, $result);
+		self::assertEquals($expectedTimes, $retry->attemptsTaken());
+		self::assertLessThanOrEqual($maxTimes, $retry->attemptsTaken());
+		self::assertEquals($expectedSuccess, $retry->succeeded());
+		self::assertEquals($expectedResult, $result);
 	}
 
 	/**
@@ -371,15 +371,15 @@ class RetryTest extends TestCase
 	{
 		$retry = (new Retry(self::createCallable()));
 		$retry();
-		$this->assertEquals(1, $retry->attemptsTaken());
+		self::assertEquals(1, $retry->attemptsTaken());
 
 		if (isset($exceptionClass)) {
 			$this->expectException($exceptionClass);
 		}
 
 		$retry->setMaxRetries($retries);
-		$this->assertEquals($retries, $retry->maxRetries());
-		$this->assertNull($retry->attemptsTaken());
+		self::assertEquals($retries, $retry->maxRetries());
+		self::assertNull($retry->attemptsTaken());
 	}
 
 	/**
@@ -406,7 +406,7 @@ class RetryTest extends TestCase
 		$retry = (new Retry(self::createCallable()))
 			->times($retries);
 
-		$this->assertEquals($retries, $retry->maxRetries());
+		self::assertEquals($retries, $retry->maxRetries());
 	}
 
 	/**
@@ -463,7 +463,7 @@ class RetryTest extends TestCase
 
 		$retry = new Retry(self::createCallable());
 		$retry->setRetry($callable);
-		$this->assertSame($callable, $retry->retry());
+		self::assertSame($callable, $retry->retry());
 	}
 
 	/**
@@ -496,7 +496,7 @@ class RetryTest extends TestCase
 	public function testRetry(callable $callable): void
 	{
 		$retry = new Retry($callable);
-		$this->assertSame($callable, $retry->retry());
+		self::assertSame($callable, $retry->retry());
 	}
 
 	/**
@@ -550,7 +550,7 @@ class RetryTest extends TestCase
 
 		$retry = new Retry(self::createCallable());
 		$retry->setExitCondition($exitCondition);
-		$this->assertSame($exitCondition, $retry->exitCondition());
+		self::assertSame($exitCondition, $retry->exitCondition());
 	}
 
 	/**
@@ -582,7 +582,7 @@ class RetryTest extends TestCase
 	{
 		$retry = (new Retry(self::createCallable()))
 			->until($exitCondition);
-		$this->assertSame($exitCondition, $retry->exitCondition());
+		self::assertSame($exitCondition, $retry->exitCondition());
 	}
 
 	/**
@@ -597,57 +597,57 @@ class RetryTest extends TestCase
 	{
 		// ensure it returns null on initialisation
 		$retry = new Retry(self::createCallable());
-		$this->assertNull($retry->attemptsTaken());
+		self::assertNull($retry->attemptsTaken());
 
 		// ensure it returns max when retry doesn't have an exit condition
 		$retry->times(1);
 		$retry();
-		$this->assertEquals(1, $retry->attemptsTaken());
+		self::assertEquals(1, $retry->attemptsTaken());
 
 		// ensure it gets reset when max changed
 		$retry->times(2);
-		$this->assertNull($retry->attemptsTaken());
+		self::assertNull($retry->attemptsTaken());
 		$retry();
-		$this->assertEquals(2, $retry->attemptsTaken());
+		self::assertEquals(2, $retry->attemptsTaken());
 
 		// ensure it gets reset when callable changed
 		$retry->setRetry(self::createCallable());
-		$this->assertNull($retry->attemptsTaken());
+		self::assertNull($retry->attemptsTaken());
 		$retry();
-		$this->assertEquals(2, $retry->attemptsTaken());
+		self::assertEquals(2, $retry->attemptsTaken());
 
 		// ensure it gets reset when exit condition changed
 		$retry->setExitCondition(fn($result): bool => true);
-		$this->assertNull($retry->attemptsTaken());
+		self::assertNull($retry->attemptsTaken());
 
 		// ensure it returns the correct value when the exit condition is in effect
 		$retry();
-		$this->assertEquals(1, $retry->attemptsTaken());
+		self::assertEquals(1, $retry->attemptsTaken());
 	}
 
 	public function testSucceeded(): void
 	{
 		// ensure it returns false on initialisation
 		$retry = new Retry(self::createCallable());
-		$this->assertFalse($retry->succeeded());
+		self::assertFalse($retry->succeeded());
 
 		// ensure it returns true when exit condition passes
 		$retry->setExitCondition(fn($result): bool => true);
 		$retry();
-		$this->assertTrue($retry->succeeded());
+		self::assertTrue($retry->succeeded());
 
 		// ensure it gets reset when max changed
 		$retry->times(2);
-		$this->assertFalse($retry->succeeded());
+		self::assertFalse($retry->succeeded());
 
 		// ensure it returns true when exit condition passes with greater max
 		$retry();
-		$this->assertEquals(1, $retry->attemptsTaken());
-		$this->assertTrue($retry->succeeded());
+		self::assertEquals(1, $retry->attemptsTaken());
+		self::assertTrue($retry->succeeded());
 
 		// ensure it gets reset when callable changed
 		$retry->setRetry(self::createCallable());
-		$this->assertFalse($retry->succeeded());
+		self::assertFalse($retry->succeeded());
 
 		// ensure it gets reset when exit condition changed
 		$retry->setExitCondition(function($result): bool {
@@ -661,11 +661,11 @@ class RetryTest extends TestCase
 			return $ret;
 		});
 		
-		$this->assertFalse($retry->succeeded());
+		self::assertFalse($retry->succeeded());
 
 		// ensure it returns the correct value when the exit condition returns true on a later attempt
 		$retry();
-		$this->assertEquals(2, $retry->attemptsTaken());
-		$this->assertTrue($retry->succeeded());
+		self::assertEquals(2, $retry->attemptsTaken());
+		self::assertTrue($retry->succeeded());
 	}
 }

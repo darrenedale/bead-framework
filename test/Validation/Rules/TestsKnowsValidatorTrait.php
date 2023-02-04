@@ -19,7 +19,7 @@ trait TestsKnowsValidatorTrait
 	public function testValidator(): void
 	{
 		$rule = self::createValidatorAwareRule();
-		$this->assertNull($rule->validator());
+		self::assertNull($rule->validator());
 
 		$validator = Mockery::mock(Validator::class);
 		$rule->setValidator($validator);

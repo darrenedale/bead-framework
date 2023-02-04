@@ -81,7 +81,7 @@ final class I18nTest extends TestCase
 			->andReturn($this->m_translator);
 
 		$actual = tr($str, __FILE__, __LINE__, ...$args);
-		$this->assertEquals($expected, $actual);
+		self::assertEquals($expected, $actual);
 	}
 
 	public function testTrWithoutTranslator(): void
@@ -89,17 +89,17 @@ final class I18nTest extends TestCase
 		$this->m_app->shouldReceive("translator")
 			->andReturn(null);
 
-		$this->assertEquals("foo", tr("foo"));
-		$this->assertEquals("foo bar", tr("foo %1", __FILE__, __LINE__, "bar"));
-		$this->assertEquals("foo bar baz", tr("foo %2 %1", __FILE__, __LINE__, "baz", "bar"));
+		self::assertEquals("foo", tr("foo"));
+		self::assertEquals("foo bar", tr("foo %1", __FILE__, __LINE__, "bar"));
+		self::assertEquals("foo bar baz", tr("foo %2 %1", __FILE__, __LINE__, "baz", "bar"));
 	}
 
 	public function testTrWithoutApp(): void
 	{
 		uopz_set_return(Application::class, "instance", null);
 
-		$this->assertEquals("foo", tr("foo"));
-		$this->assertEquals("foo bar", tr("foo %1", __FILE__, __LINE__, "bar"));
-		$this->assertEquals("foo bar baz", tr("foo %2 %1", __FILE__, __LINE__, "baz", "bar"));
+		self::assertEquals("foo", tr("foo"));
+		self::assertEquals("foo bar", tr("foo %1", __FILE__, __LINE__, "bar"));
+		self::assertEquals("foo bar baz", tr("foo %2 %1", __FILE__, __LINE__, "baz", "bar"));
 	}
 }

@@ -44,7 +44,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 
 		$guard = new ScopeGuard($closure);
 
-		$this->assertInstanceOf(ScopeGuard::class, $guard, "The ScopeGuard constructor did not create an instance of " . ScopeGuard::class . ".");
+		self::assertInstanceOf(ScopeGuard::class, $guard, "The ScopeGuard constructor did not create an instance of " . ScopeGuard::class . ".");
 	}
 
 	/**
@@ -59,7 +59,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 		});
 
 		$guard->invoke();
-		$this->assertTrue($called, "The scope guard closure was not called by invoke().");
+		self::assertTrue($called, "The scope guard closure was not called by invoke().");
 
 		$called1 = false;
 		$called2 = false;
@@ -73,8 +73,8 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 		});
 
 		$guard->invoke();
-		$this->assertTrue($called1, "The scope guard's initial closure was not called by invoke().");
-		$this->assertTrue($called2, "The scope guard's added closure was not called by invoke().");
+		self::assertTrue($called1, "The scope guard's initial closure was not called by invoke().");
+		self::assertTrue($called2, "The scope guard's added closure was not called by invoke().");
 
 		$called1 = false;
 		$called2 = false;
@@ -89,8 +89,8 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 
 		$cancelledGuard->cancel();
 		$cancelledGuard->invoke();
-		$this->assertFalse($called1, "The scope guard's initial closure was still called by invoke() after cancellation.");
-		$this->assertFalse($called2, "The scope guard's added closure was still called by invoke() after cancellation.");
+		self::assertFalse($called1, "The scope guard's initial closure was still called by invoke() after cancellation.");
+		self::assertFalse($called2, "The scope guard's added closure was still called by invoke() after cancellation.");
 	}
 
 	/**
@@ -106,7 +106,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 			});
 		})();
 
-		$this->assertTrue($called, "The scope guard closure was not called on destruction.");
+		self::assertTrue($called, "The scope guard closure was not called on destruction.");
 
 		$called1 = false;
 		$called2 = false;
@@ -121,8 +121,8 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 			});
 		})();
 
-		$this->assertTrue($called1, "The scope guard's initial closure was not called on destruction.");
-		$this->assertTrue($called2, "The scope guard's added closure was not called on destruction.");
+		self::assertTrue($called1, "The scope guard's initial closure was not called on destruction.");
+		self::assertTrue($called2, "The scope guard's added closure was not called on destruction.");
 	}
 
 	/**
@@ -141,7 +141,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 			$guard->cancel();
 		})();
 
-		$this->assertTrue($notCalled, "The scope guard closure was still called on destruction after cancellation.");
+		self::assertTrue($notCalled, "The scope guard closure was still called on destruction after cancellation.");
 
 		$notCalled1 = true;
 		$notCalled2 = true;
@@ -158,8 +158,8 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 			$guard->cancel();
 		})();
 
-		$this->assertTrue($notCalled1, "The scope guard's initial closure was still called on destruction after cancellation.");
-		$this->assertTrue($notCalled2, "The scope guard's added closure was still called on destruction after cancellation.");
+		self::assertTrue($notCalled1, "The scope guard's initial closure was still called on destruction after cancellation.");
+		self::assertTrue($notCalled2, "The scope guard's added closure was still called on destruction after cancellation.");
 
 		// test invoke() respets call to cancel()
 		$notCalled = true;
@@ -170,7 +170,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 
 		$guard->cancel();
 		$guard->invoke();
-		$this->assertTrue($notCalled, "The scope guard closure was still called on destruction after cancellation.");
+		self::assertTrue($notCalled, "The scope guard closure was still called on destruction after cancellation.");
 
 		$notCalled1 = true;
 		$notCalled2 = true;
@@ -185,8 +185,8 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 
 		$guard->cancel();
 		$guard->invoke();
-		$this->assertTrue($notCalled1, "The scope guard's initial closure was still called on destruction after cancellation.");
-		$this->assertTrue($notCalled2, "The scope guard's added closure was still called on destruction after cancellation.");
+		self::assertTrue($notCalled1, "The scope guard's initial closure was still called on destruction after cancellation.");
+		self::assertTrue($notCalled2, "The scope guard's added closure was still called on destruction after cancellation.");
 	}
 
 	/**
@@ -203,7 +203,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 		$guard->addClosure($closure);
 		$closuresMethod = new \ReflectionMethod($guard, "closures");
 		$closuresMethod->setAccessible(true);
-		$this->assertEquals(2, count($closuresMethod->invoke($guard)), "Scope guard did not have two closures after call to addClosure().");
+		self::assertEquals(2, count($closuresMethod->invoke($guard)), "Scope guard did not have two closures after call to addClosure().");
 	}
 
 	/**
@@ -222,7 +222,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 			$guard->enable();
 		})();
 
-		$this->assertTrue($called, "The scope guard closure was not called on destruction.");
+		self::assertTrue($called, "The scope guard closure was not called on destruction.");
 
 		$called1 = false;
 		$called2 = false;
@@ -240,7 +240,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 			$guard->enable();
 		})();
 
-		$this->assertTrue($called1, "The scope guard's initial closure was not called on destruction.");
-		$this->assertTrue($called2, "The scope guard's added closure was not called on destruction.");
+		self::assertTrue($called1, "The scope guard's initial closure was not called on destruction.");
+		self::assertTrue($called2, "The scope guard's added closure was not called on destruction.");
 	}
 }

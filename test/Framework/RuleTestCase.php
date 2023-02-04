@@ -67,6 +67,6 @@ abstract class RuleTestCase extends TestCase
         }
 
         $rule = new Integer();
-        $this->assertIsString($rule->message($field), "The message method did not produce a string.");
+        self::assertIsString($rule->message($field), "The message method did not produce a string.");
     }
 }

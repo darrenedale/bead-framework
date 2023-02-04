@@ -43,63 +43,63 @@ class ManyToManyTest extends TestCase
     public function testConstructorDefaults(): void
     {
         $relation = new ManyToMany($this->m_local, "Bar", "FooBarLink", "foo_id", "bar_id");
-        $this->assertEquals("id", $relation->localKey());
-        $this->assertEquals("id", $relation->relatedKey());
+        self::assertEquals("id", $relation->localKey());
+        self::assertEquals("id", $relation->relatedKey());
     }
 
     public function testConstructorWithLocalKey(): void
     {
         $relation = new ManyToMany($this->m_local, "Bar", "FooBarLink", "foo_id", "bar_id", "the_id");
-        $this->assertEquals("the_id", $relation->localKey());
-        $this->assertEquals("id", $relation->relatedKey());
+        self::assertEquals("the_id", $relation->localKey());
+        self::assertEquals("id", $relation->relatedKey());
     }
 
     public function testConstructorWithRelatedKey(): void
     {
         $relation = new ManyToMany($this->m_local, "Bar", "FooBarLink", "foo_id", "bar_id", null, "the_related_id");
-        $this->assertEquals("id", $relation->localKey());
-        $this->assertEquals("the_related_id", $relation->relatedKey());
+        self::assertEquals("id", $relation->localKey());
+        self::assertEquals("the_related_id", $relation->relatedKey());
     }
 
     public function testConstructorWithLocalAndRelatedKey(): void
     {
         $relation = new ManyToMany($this->m_local, "Bar", "FooBarLink", "foo_id", "bar_id", "the_local_id", "the_related_id");
-        $this->assertEquals("the_local_id", $relation->localKey());
-        $this->assertEquals("the_related_id", $relation->relatedKey());
+        self::assertEquals("the_local_id", $relation->localKey());
+        self::assertEquals("the_related_id", $relation->relatedKey());
     }
 
     public function testLocalKey(): void
     {
-        $this->assertSame("pk_on_foo", $this->m_relation->localKey());
+        self::assertSame("pk_on_foo", $this->m_relation->localKey());
     }
 
     public function testLocalModel(): void
     {
-        $this->assertSame($this->m_local, $this->m_relation->localModel());
+        self::assertSame($this->m_local, $this->m_relation->localModel());
     }
 
     public function testPivotLocalKey(): void
     {
-        $this->assertEquals("foo_id", $this->m_relation->pivotLocalKey());
+        self::assertEquals("foo_id", $this->m_relation->pivotLocalKey());
     }
 
     public function testPivotRelatedKey(): void
     {
-        $this->assertEquals("bar_id", $this->m_relation->pivotRelatedKey());
+        self::assertEquals("bar_id", $this->m_relation->pivotRelatedKey());
     }
 
     public function testPivotModel(): void
     {
-        $this->assertEquals("FooBarLink", $this->m_relation->pivotModel());
+        self::assertEquals("FooBarLink", $this->m_relation->pivotModel());
     }
 
     public function testRelatedKey(): void
     {
-        $this->assertEquals("pk_on_bar", $this->m_relation->relatedKey());
+        self::assertEquals("pk_on_bar", $this->m_relation->relatedKey());
     }
 
     public function testRelatedModel(): void
     {
-        $this->assertEquals("Bar", $this->m_relation->relatedModel());
+        self::assertEquals("Bar", $this->m_relation->relatedModel());
     }
 }

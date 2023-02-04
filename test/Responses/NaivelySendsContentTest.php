@@ -104,6 +104,6 @@ final class NaivelySendsContentTest extends TestCase
 		self::assertEquals(1, $httpResponseCodeCalled);
 		self::assertEquals(self::TestContent, ob_get_contents());
 		ob_end_clean();
-		$this->assertEmpty($expectedHeaders, "Not all expected headers were generated.");
+		self::assertEmpty($expectedHeaders, "Not all expected headers were generated.");
 	}
 }

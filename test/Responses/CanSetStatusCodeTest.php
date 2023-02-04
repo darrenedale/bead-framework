@@ -28,7 +28,7 @@ final class CanSetStatusCodeTest extends TestCase
     /** Ensure we can fetch the status code. */
     public function testStatusCode(): void
     {
-        $this->assertEquals(200, $this->createInstance()->statusCode());
+        self::assertEquals(200, $this->createInstance()->statusCode());
     }
 
     /** Ensure we can set the status code. */
@@ -36,6 +36,6 @@ final class CanSetStatusCodeTest extends TestCase
     {
         $instance = $this->createInstance();
         $instance->setStatusCode(400);
-        $this->assertEquals(400, $instance->statusCode());
+        self::assertEquals(400, $instance->statusCode());
     }
 }

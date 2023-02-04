@@ -90,7 +90,7 @@ class NullableTest extends TestCase
 		}
 
 		// rule always passes, our test expectations are handled by Mockery
-		$this->assertTrue($rule->passes("field", $value));
+		self::assertTrue($rule->passes("field", $value));
 	}
 
 	/**
@@ -104,9 +104,9 @@ class NullableTest extends TestCase
 		$rule = $this->createNullableRule();
 
 		if ($isNull) {
-			$this->assertEquals(null, $rule->convert($value));
+			self::assertEquals(null, $rule->convert($value));
 		} else {
-			$this->assertEquals($value, $rule->convert($value));
+			self::assertEquals($value, $rule->convert($value));
 		}
 	}
 
@@ -125,6 +125,6 @@ class NullableTest extends TestCase
 		$rule = $this->createNullableRule();
 		$this->m_validator->shouldIgnoreMissing();
 		$rule->passes("field", $value);
-		$this->assertEquals("", $rule->message("field"));
+		self::assertEquals("", $rule->message("field"));
 	}
 }

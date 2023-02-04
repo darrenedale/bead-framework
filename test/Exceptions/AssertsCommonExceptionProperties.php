@@ -6,23 +6,29 @@ use Throwable;
 
 trait AssertsCommonExceptionProperties
 {
-    private function assertMessage(Throwable $throwable, string $message): void
+    abstract public static function assertEquals(mixed $expected, mixed $actual, string $message = ""): void;
+
+    abstract public static function assertSame(mixed $expected, mixed $actual, string $message = ""): void;
+
+    abstract public static function assertMatchesRegularExpression(string $expected, string $actual, string $message = ""): void;
+
+    private static function assertMessage(Throwable $throwable, string $message): void
     {
-        $this->assertEquals($message, $throwable->getMessage());
+        self::assertEquals($message, $throwable->getMessage());
     }
 
-    private function assertMessageMatches(Throwable $throwable, string $pattern): void
+    private static function assertMessageMatches(Throwable $throwable, string $pattern): void
     {
-        $this->assertMatchesRegularExpression($message, $throwable->getMessage());
+        self::assertMatchesRegularExpression($message, $throwable->getMessage());
     }
 
-    private function assertCode(Throwable $throwable, int $code): void
+    private static function assertCode(Throwable $throwable, int $code): void
     {
-        $this->assertEquals($code, $throwable->getCode());
+        self::assertEquals($code, $throwable->getCode());
     }
 
-    private function assertPrevious(Throwable $throwable, ?Throwable $previous): void
+    private static function assertPrevious(Throwable $throwable, ?Throwable $previous): void
     {
-        $this->assertSame($previous, $throwable->getPrevious());
+        self::assertSame($previous, $throwable->getPrevious());
     }
 }

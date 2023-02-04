@@ -255,9 +255,9 @@ class ModelTest extends TestCase
         }
 
         $model = static::createModel($modelProperties, $modelData);
-        $this->assertEquals($expectedValue, $model->{$property}, "The model's {$property} property does not match the expected value.");
+        self::assertEquals($expectedValue, $model->{$property}, "The model's {$property} property does not match the expected value.");
         $model->{$property} = $newValue;
-        $this->assertEquals($expectedNewValue, $model->{$property}, "The model's {$property} property was not set to the expected value.");
+        self::assertEquals($expectedNewValue, $model->{$property}, "The model's {$property} property was not set to the expected value.");
     }
 
 	/**
@@ -323,9 +323,9 @@ class ModelTest extends TestCase
 
 		$model->foo_bar = $value;
 		$actual = $model->foo_bar;
-		$this->assertIsArray($actual, "Value of foo_bar property expected to be array.");
-		$this->assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
-		$this->assertEquals(1, $callTracker->callCount(), "Custom accessor was not called the correct number of times.");
+		self::assertIsArray($actual, "Value of foo_bar property expected to be array.");
+		self::assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
+		self::assertEquals(1, $callTracker->callCount(), "Custom accessor was not called the correct number of times.");
 	}
 
 	/**
@@ -402,8 +402,8 @@ class ModelTest extends TestCase
 
 		$model->foo_bar = $value;
 		$actual = $modelData->getValue($model)["foo_bar"];
-		$this->assertIsString($actual, "Value of foo_bar property expected to be string.");
-		$this->assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
-		$this->assertEquals(1, $callTracker->callCount(), "Custom mutator was not called the correct number of times.");
+		self::assertIsString($actual, "Value of foo_bar property expected to be string.");
+		self::assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
+		self::assertEquals(1, $callTracker->callCount(), "Custom mutator was not called the correct number of times.");
 	}
 }
