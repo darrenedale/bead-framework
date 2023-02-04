@@ -19,6 +19,7 @@ jobs:
           sudo apt-get update
           sudo apt-get -y upgrade
           sudo apt-get -y install php8.1 php8.1-dom php8.1-mbstring php8.1-uopz
+          sudo cp /usr/lib/php/8.1/php.ini-development /etc/php/8.0/php.ini
 
       - name: Select PHP 8.1
         run: sudo update-alternatives --set php /usr/bin/php8.1
