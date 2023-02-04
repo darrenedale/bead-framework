@@ -16,6 +16,11 @@ trait SendsHeaders
 	public abstract function headers(): array;
 
     /**
+     * Constrain the trait to classes that implement the contentType() method.
+     */
+	public abstract function contentType(): string;
+
+    /**
      * Send the headers.
      */
 	protected function sendHeaders(): void
