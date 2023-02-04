@@ -19,9 +19,9 @@ final class SessionFileSaveExceptionTest extends TestCase
     {
         $exception = new SessionFileSaveException(self::TesFilename);
         self::assertEquals(self::TesFilename, $exception->getFileName());
-        self::assertCode($exception, 0);
-        self::assertMessage($exception, "");
-        self::assertPrevious($exception, null);
+        self::assertCode(0, $exception);
+        self::assertMessage("", $exception);
+        self::assertPrevious(null, $exception);
     }
 
     /** Ensure we can set an exception code in the constructor. */
@@ -29,9 +29,9 @@ final class SessionFileSaveExceptionTest extends TestCase
     {
         $exception = new SessionFileSaveException(self::TesFilename, code: 42);
         self::assertEquals(self::TesFilename, $exception->getFileName());
-        self::assertCode($exception, 42);
-        self::assertMessage($exception, "");
-        self::assertPrevious($exception, null);
+        self::assertCode(42, $exception);
+        self::assertMessage("", $exception);
+        self::assertPrevious(null, $exception);
     }
 
     /** Ensure we can set an message in the constructor. */
@@ -39,9 +39,9 @@ final class SessionFileSaveExceptionTest extends TestCase
     {
         $exception = new SessionFileSaveException(self::TesFilename, message: "The meaning of life.");
         self::assertEquals(self::TesFilename, $exception->getFileName());
-        self::assertCode($exception, 0);
-        self::assertMessage($exception, "The meaning of life.");
-        self::assertPrevious($exception, null);
+        self::assertCode(0, $exception);
+        self::assertMessage("The meaning of life.", $exception);
+        self::assertPrevious(null, $exception);
     }
 
     /** Ensure we can set a previous exception in the constructor. */
@@ -50,8 +50,8 @@ final class SessionFileSaveExceptionTest extends TestCase
         $previous = new RuntimeException();
         $exception = new SessionFileSaveException(self::TesFilename, previous: $previous);
         self::assertEquals(self::TesFilename, $exception->getFileName());
-        self::assertCode($exception, 0);
-        self::assertMessage($exception, "");
-        self::assertPrevious($exception, $previous);
+        self::assertCode(0, $exception);
+        self::assertMessage("", $exception);
+        self::assertPrevious($previous, $exception);
     }
 }
