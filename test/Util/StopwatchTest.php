@@ -1,10 +1,11 @@
 <?php
+
 declare(strict_types = 1);
 
 namespace BeadTests\Util;
 
-use BeadTests\Framework\TestCase;
 use Bead\Util\Stopwatch;
+use BeadTests\Framework\TestCase;
 use Generator;
 use LogicException;
 use ReflectionProperty;
@@ -22,90 +23,123 @@ class StopwatchTest extends TestCase
     private const TestDurationTolerance = 100;
 
     /** @var Stopwatch The stopwatch used for testing. */
-    private Stopwatch $m_testStopwatch;
+    private Stopwatch $testStopwatch;
     
-    /**
-     * Set up the test fixture.
-     */
     public function setUp(): void
     {
-        $this->m_testStopwatch = new Stopwatch();
+        $this->testStopwatch = new Stopwatch();
+    }
+
+    public function tearDown(): void
+    {
+        if ($this->testStopwatch->isRunning()) {
+            $this->testStopwatch->stop();
+        }
+
+        unset ($this->testStopwatch);
     }
 
     /**
      * Data provider for testProcessName()
      *
-     * @return Generator The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestProcessName(): Generator
+    public function dataForTestProcessName(): iterable
     {
-        yield from [
-            "extremeEmpty" => [""],
-            "typicalTest1" => ["test1"],
-            "typicalTest2" => ["test2"],
-            "extremeWhitespace" => ["    "],
-            "invalidNull" => [null, TypeError::class],
-            "invalidBool" => [true, TypeError::class],
-            "invalidInt" => [5, TypeError::class],
-            "invalidFloat" => [23.469, TypeError::class],
-            "invalidStringable" => [new class() {
-                public function __toString(): string
-                {
-                    return "foo";
-                }
-            }, TypeError::class],
-            "invalidAssociativeArray" => [["__toString" => function(): string
-                {
-                    return "foo";
-                }
-            ], TypeError::class],
-            "invalidIndexedArray" => [["foo",], TypeError::class],
-        ];
+        yield "extremeEmpty" => [""];
+        yield "typicalTest1" => ["test1"];
+        yield "typicalTest2" => ["test2"];
+        yield "extremeWhitespace" => ["    "];
+    }
 
-        // 100 random valid names
-        for ($idx = 0; $idx < 100; ++$idx) {
-            yield "randomValidName{$idx}" => [self::randomString(mt_rand(2,10)),];
-        }
+    /**
+     * Ensure we can set the process name in the constructor.
+     *
+     * @dataProvider dataForTestProcessName
+     */
+    public function testConstructorWithProcessName(string $processName): void
+    {
+        $stopwatch = new Stopwatch($processName);
+        self::assertEquals($processName, $stopwatch->processName());
+    }
+
+    /** Ensure we can set start listeners in the constructor. */
+    public function testConstructorWithStartListener(): void
+    {
+        $called = false;
+        $onStart = function() use (&$called): void
+        {
+            $called = true;
+        };
+
+        $stopwatch = new Stopwatch(startListeners: [$onStart]);
+        $stopwatch->start();
+        self::assertTrue($called);
+        $stopwatch->stop();
+    }
+
+    /** Ensure we can set stop listeners in the constructor. */
+    public function testConstructorWithStopListener(): void
+    {
+        $called = false;
+        $onStop = function() use (&$called): void
+        {
+            $called = true;
+        };
+
+        $stopwatch = new Stopwatch(stopListeners: [$onStop]);
+        $stopwatch->start();
+        $stopwatch->stop();
+        self::assertTrue($called);
+    }
+
+    /** Ensure we can set reset listeners in the constructor. */
+    public function testConstructorWithResetListener(): void
+    {
+        $called = false;
+        $onStop = function() use (&$called): void
+        {
+            $called = true;
+        };
+
+        $stopwatch = new Stopwatch(resetListeners: [$onStop]);
+        $stopwatch->start();
+        $stopwatch->stop();
+        $stopwatch->reset();
+        self::assertTrue($called);
+    }
+
+    /** Ensure we can set reset listeners in the constructor. */
+    public function testConstructorWithAutostart(): void
+    {
+        $stopwatch = new Stopwatch(auto: true);
+        self::assertTrue($stopwatch->isRunning());
+        $stopwatch->stop();
     }
 
     /**
      * @dataProvider dataForTestProcessName
      *
-     * @param mixed $name The name to test with.
+     * @param string $name The name to test with.
      */
-    public function testProcessName($name, ?string $exceptionClass = null): void
+    public function testProcessName(string $name): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $this->m_testStopwatch->setProcessName($name);
-        self::assertEquals($name, $this->m_testStopwatch->processName());
+        $this->testStopwatch->setProcessName($name);
+        self::assertEquals($name, $this->testStopwatch->processName());
     }
 
     /**
      * Data provider for testDuration()
      *
-     * @return Generator The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestDuration(): Generator
+    public function dataForTestDuration(): iterable
     {
-        yield from [
-            "typical100" => [100],
-            "typical200" => [200],
-            "typical300" => [300],
-            "typical400" => [400],
-            "typical500" => [500],
-            "typical600" => [600],
-            "typical700" => [700],
-            "typical800" => [800],
-            "typical900" => [900],
-            "typical1000" => [1000],
-        ];
-
-        for ($idx = 0; $idx < 25; ++$idx) {
-            yield "randomTypical{$idx}" => [mt_rand(5, 50)];
-        }
+        yield "typical100" => [100];
+        yield "typical300" => [300];
+        yield "typical500" => [500];
+        yield "typical700" => [700];
+        yield "typical900" => [900];
     }
 
     /**
@@ -115,7 +149,7 @@ class StopwatchTest extends TestCase
      */
     public function testDuration(int $duration): void
     {
-        $res = $this->m_testStopwatch->start();
+        $res = $this->testStopwatch->start();
 
         if (!$res) {
             $this->markTestSkipped("Timer failed to start");
@@ -123,102 +157,117 @@ class StopwatchTest extends TestCase
 
         // we receive 1/1000 sec, usleep expects 1/1000000 sec
         usleep($duration * 1000);
-        $res = $this->m_testStopwatch->stop();
+        $res = $this->testStopwatch->stop();
 
         if (false === $res) {
             $this->markTestSkipped("Timer failed to stop");
         }
 
-        self::assertEqualsWithDelta($duration,$this->m_testStopwatch->duration() * 1000, self::TestDurationTolerance, "Duration outside tolerance.");
+        self::assertEqualsWithDelta($duration,$this->testStopwatch->duration() * 1000, self::TestDurationTolerance, "Duration outside tolerance.");
     }
 
-    /**
-     * Test the start() method.
-     */
+    /** Ensure duration returns null if the stopwatch is still running. */
+    public function testDurationWileRunning(): void
+    {
+        $this->testStopwatch->start();
+        self::assertNull($this->testStopwatch->duration());
+        $this->testStopwatch->stop();
+    }
+
+    /** Test the start() method. */
     public function testStart(): void
     {
-        $res = $this->m_testStopwatch->start();
+        $res = $this->testStopwatch->start();
         self::assertTrue($res, "failed to start timer");
-        $res = $this->m_testStopwatch->start();
+        $res = $this->testStopwatch->start();
         self::assertFalse($res, "should have received false when calling start() on a running timer");
 
-        if (false === $this->m_testStopwatch->stop()) {
+        if (false === $this->testStopwatch->stop()) {
             $this->markTestSkipped("Timer could not be stopped");
         }
 
-        $res = $this->m_testStopwatch->start();
+        $res = $this->testStopwatch->start();
         self::assertFalse($res, "should have received false when calling start() on a finished timer");
-        $this->m_testStopwatch->reset();
+        $this->testStopwatch->reset();
 
-        $res = $this->m_testStopwatch->start();
+        $res = $this->testStopwatch->start();
         self::assertTrue($res, "failed to start a timer that had been reset");
     }
 
-    /**
-     * Dummy method for use when testing addListener().
-     */
+    /** Ensure stop returns an appropriate duration. */
+    public function testStop(): void
+    {
+        $this->testStopwatch->start();
+
+        if (!$this->testStopwatch->isRunning()) {
+            self::markTestSkipped("Failed to start stopwatch.");
+        }
+
+        usleep(500000);
+        $actual = $this->testStopwatch->stop();
+        self::assertIsFloat($actual);
+        self::assertEqualsWithDelta(500, $actual * 1000, self::TestDurationTolerance);
+        self::assertFalse($this->testStopwatch->isRunning());
+    }
+
+    /** Ensure stop() returns null if the stopwatch is not currently running. */
+    public function testStopWhileNotRunning(): void
+    {
+        $this->testStopwatch->start();
+
+        if (!$this->testStopwatch->isRunning()) {
+            $this->markTestSkipped("Failed to stop stopwatch.");
+        }
+
+        usleep(250000);
+        $this->testStopwatch->stop();
+
+        if ($this->testStopwatch->isRunning()) {
+            $this->markTestSkipped("Failed to stop stopwatch.");
+        }
+
+        self::assertNull($this->testStopwatch->stop());
+    }
+
+    /** Dummy method for use when testing addListener(). */
     public static function dummyListener(): void
     {}
     
     /**
      * Data provider for testAddListener().
      *
-     * @return array[] The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestAddListener(): array
+    public function dataForTestAddListener(): iterable
     {
-        return [
-            "typicalStartClosure" => [Stopwatch::EventStart, function() {},],
-            "typicalStopClosure" => [Stopwatch::EventStart, function() {},],
-            "typicalResetClosure" => [Stopwatch::EventStart, function() {},],
-            "typicalAnonymousCallableStartListener" => [Stopwatch::EventStart, new class() {
-                public function __invoke(): void {}
-            },],
-            "typicalAnonymousCallableStopListener" => [Stopwatch::EventStop, new class() {
-                public function __invoke(): void {}
-            },],
-            "typicalAnonymousCallableResetListener" => [Stopwatch::EventReset, new class() {
-                public function __invoke(): void {}
-            },],
+        yield "typicalStartClosure" => [Stopwatch::EventStart, function() {},];
+        yield "typicalStopClosure" => [Stopwatch::EventStart, function() {},];
+        yield "typicalResetClosure" => [Stopwatch::EventStart, function() {},];
+        yield "typicalAnonymousCallableStartListener" => [Stopwatch::EventStart, new class() {
+            public function __invoke(): void {}
+        },];
+        yield "typicalAnonymousCallableStopListener" => [Stopwatch::EventStop, new class() {
+            public function __invoke(): void {}
+        },];
+        yield "typicalAnonymousCallableResetListener" => [Stopwatch::EventReset, new class() {
+            public function __invoke(): void {}
+        },];
 
-            "typicalMethodStartListener" => [Stopwatch::EventReset, [new class() {
-                public function listener(): void {}
-            }, "listener"],],
+        yield "typicalMethodStartListener" => [Stopwatch::EventReset, [new class() {
+            public function listener(): void {}
+        }, "listener"],];
 
-            "typicalMethodStopListener" => [Stopwatch::EventReset, [new class() {
-                public function listener(): void {}
-            }, "listener"],],
+        yield "typicalMethodStopListener" => [Stopwatch::EventReset, [new class() {
+            public function listener(): void {}
+        }, "listener"],];
 
-            "typicalMethodResetListener" => [Stopwatch::EventReset, [new class() {
-                public function listener(): void {}
-            }, "listener"],],
+        yield "typicalMethodResetListener" => [Stopwatch::EventReset, [new class() {
+            public function listener(): void {}
+        }, "listener"],];
 
-            "typicalStaticMethodStartListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],],
-            "typicalStaticMethodStopListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],],
-            "typicalStaticMethodResetListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],],
-
-            "invalidUnknownEvent" => [9999, function() {}, LogicException::class,],
-            "invalidNullStartListener" => [Stopwatch::EventStart, null, TypeError::class,],
-            "invalidNullStopListener" => [Stopwatch::EventStop, null, TypeError::class,],
-            "invalidNullResetListener" => [Stopwatch::EventReset, null, TypeError::class,],
-            "invalidBoolEvent" => [true, function() {}, TypeError::class,],
-            "invalidBoolStartListener" => [Stopwatch::EventStart, true, TypeError::class,],
-            "invalidBoolStopListener" => [Stopwatch::EventStop, true, TypeError::class,],
-            "invalidBoolResetListener" => [Stopwatch::EventReset, true, TypeError::class,],
-            "invalidIntStartListener" => [Stopwatch::EventStart, 12, TypeError::class,],
-            "invalidIntStopListener" => [Stopwatch::EventStop, 12, TypeError::class,],
-            "invalidIntResetListener" => [Stopwatch::EventReset, 12, TypeError::class,],
-            "invalidFloatEvent" => [56.2376, function() {}, TypeError::class,],
-            "invalidFloatStartListener" => [Stopwatch::EventStart, 56.2376, TypeError::class,],
-            "invalidFloatStopListener" => [Stopwatch::EventStop, 56.2376, TypeError::class,],
-            "invalidFloatResetListener" => [Stopwatch::EventReset, 56.2376, TypeError::class,],
-            "invalidEmptyStringEvent" => ["", function() {}, TypeError::class,],
-            "invalidEmptyStringStartListener" => [Stopwatch::EventStart, null, TypeError::class,],
-            "invalidEmptyStringStopListener" => [Stopwatch::EventStop, "", TypeError::class,],
-            "invalidEmptyStringResetListener" => [Stopwatch::EventReset, "", TypeError::class,],
-            "invalidAnonymousClassEvent" => [new class() {}, function() {}, TypeError::class,],
-            "invalidUnknownEventAndNullListener" => [9999, null, TypeError::class,],
-        ];
+        yield "typicalStaticMethodStartListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],];
+        yield "typicalStaticMethodStopListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],];
+        yield "typicalStaticMethodResetListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],];
     }
 
     /**
@@ -226,22 +275,23 @@ class StopwatchTest extends TestCase
      *
      * @param mixed $event The event for which to add the listener.
      * @param mixed $listener The listener to add.
-     * @param string|null $exceptionClass The exception expected, if any.
-     *
-     * @return void
      */
-    public function testAddListener($event, $listener, ?string $exceptionClass = null): void
+    public function testAddListener($event, $listener): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $this->m_testStopwatch->addListener($event, $listener);
+        $this->testStopwatch->addListener($event, $listener);
         $listenersProperty = new ReflectionProperty(Stopwatch::class, "m_listeners");
         $listenersProperty->setAccessible(true);
-        self::assertEquals($listenersProperty->getValue($this->m_testStopwatch)[$event][0], $listener, "The array of listeners for event {$event} did not consist of the test listener.");
+        self::assertEquals($listenersProperty->getValue($this->testStopwatch)[$event][0], $listener, "The array of listeners for event {$event} did not consist of the test listener.");
     }
 
+    /** Ensure addListener() rejects invalid events. */
+    public function testAddListenerThrows(): void
+    {
+        $listener = fn() => null;
+        $this->expectException(LogicException::class);
+        $this->testStopwatch->addListener(999, $listener);
+    }
+    
     /**
      * Basic test for start, stop and reset events.
      */
@@ -277,11 +327,11 @@ class StopwatchTest extends TestCase
             ++$reset["count"];
         };
 
-        $this->m_testStopwatch->addListener(Stopwatch::EventStart, $onStart);
-        $this->m_testStopwatch->addListener(Stopwatch::EventStop, $onStop);
-        $this->m_testStopwatch->addListener(Stopwatch::EventReset, $onReset);
+        $this->testStopwatch->addListener(Stopwatch::EventStart, $onStart);
+        $this->testStopwatch->addListener(Stopwatch::EventStop, $onStop);
+        $this->testStopwatch->addListener(Stopwatch::EventReset, $onReset);
 
-        $res = $this->m_testStopwatch->start();
+        $res = $this->testStopwatch->start();
 
         if (!$res) {
             $this->markTestSkipped("failed to start timer");
@@ -290,25 +340,113 @@ class StopwatchTest extends TestCase
         self::assertEquals(1, $started["count"]);
         self::assertEquals(0, $stopped["count"]);
         self::assertEquals(0, $reset["count"]);
-        self::assertEquals($this->m_testStopwatch->startTime(), $started["times"][0]);
+        self::assertEquals($this->testStopwatch->startTime(), $started["times"][0]);
 
-        $res = $this->m_testStopwatch->stop();
+        $res = $this->testStopwatch->stop();
 
         if (false === $res) {
-            $this->markTestSkipped("failed to start timer");
+            $this->markTestSkipped("Failed to start stopwatch.");
         }
 
         self::assertEquals(1, $stopped["count"]);
         self::assertEquals(1, $stopped["count"]);
         self::assertEquals(0, $reset["count"]);
-        self::assertEquals($this->m_testStopwatch->endTime(), $stopped["times"][0]);
-        self::assertEquals($this->m_testStopwatch->duration(), $res);
-        self::assertEquals($this->m_testStopwatch->duration(), $stopped["durations"][0]);
+        self::assertEquals($this->testStopwatch->endTime(), $stopped["times"][0]);
+        self::assertEquals($this->testStopwatch->duration(), $res);
+        self::assertEquals($this->testStopwatch->duration(), $stopped["durations"][0]);
 
-        $this->m_testStopwatch->reset();
+        $this->testStopwatch->reset();
 
         self::assertEquals(1, $stopped["count"]);
         self::assertEquals(1, $stopped["count"]);
         self::assertEquals(1, $reset["count"]);
+    }
+
+    /** Ensure we can add a start listener. */
+    public function testAddStartListener(): void
+    {
+        $started = [
+            "count" => 0,
+            "times" => [],
+        ];
+
+        $onStart = function (string $processName, float $start) use (&$started) {
+            ++$started["count"];
+            $started["times"][] = $start;
+        };
+
+        $this->testStopwatch->addStartListener($onStart);
+        $res = $this->testStopwatch->start();
+
+        if (!$res) {
+            $this->markTestSkipped("Failed to start stopwatch.");
+        }
+
+        self::assertEquals(1, $started["count"]);
+        self::assertEquals($this->testStopwatch->startTime(), $started["times"][0]);
+
+        $this->testStopwatch->stop();
+    }
+
+    /** Ensure we can add a stop listener. */
+    public function testAddStopListener(): void
+    {
+        $stopped = [
+            "count" => 0,
+            "times" => [],
+        ];
+
+        $onStop = function (string $processName, float $start, float $end, float $duration) use (&$stopped) {
+            ++$stopped["count"];
+            $stopped["times"][] = [
+                "start" => $start,
+                "end" => $end,
+                "duration" => $duration,
+            ];
+        };
+
+        $this->testStopwatch->addStopListener($onStop);
+        $res = $this->testStopwatch->start();
+
+        if (!$res) {
+            $this->markTestSkipped("Failed to start stopwatch.");
+        }
+
+        usleep(250000);
+
+        if (null === $this->testStopwatch->stop()) {
+            $this->markTestSkipped("Failed to stop stopwatch.");
+        }
+
+        self::assertEquals(1, $stopped["count"]);
+        self::assertEquals($this->testStopwatch->startTime(), $stopped["times"][0]["start"]);
+        self::assertEquals($this->testStopwatch->duration(), $stopped["times"][0]["duration"]);
+        self::assertEquals($this->testStopwatch->endTime(), $stopped["times"][0]["end"]);
+    }
+
+    /** Ensure we can add a reset listener. */
+    public function testAddResetListener(): void
+    {
+        $resetCount = 0;
+
+        $onReset = function (string $processName) use (&$resetCount) {
+            ++$resetCount;
+        };
+
+        $this->testStopwatch->addResetListener($onReset);
+        $res = $this->testStopwatch->start();
+
+        if (!$res) {
+            $this->markTestSkipped("Failed to start stopwatch.");
+        }
+
+        usleep(250000);
+
+        if (null === $this->testStopwatch->stop()) {
+            $this->markTestSkipped("Failed to stop stopwatch.");
+        }
+
+        $this->testStopwatch->reset();
+        self::assertEquals(1, $resetCount);
     }
 }
