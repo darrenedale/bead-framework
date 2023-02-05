@@ -2,8 +2,10 @@
 
 namespace Bead\Database;
 
+use Bead\Contracts\Database\Statement as DatabaseStatementContract;
 use DateTime;
 use Bead\Application;
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 use Bead\Contracts\SoftDeletableModel;
 use Bead\Exceptions\Database\ModelPropertyCastException;
 use Bead\Exceptions\Database\UnknownRelationException;
@@ -11,9 +13,6 @@ use Bead\Exceptions\Database\UnrecognisedQueryOperatorException;
 use Exception;
 use JsonException;
 use LogicException;
-use PDO;
-use PDOException;
-use PDOStatement;
 use ReflectionException;
 use ReflectionMethod;
 use TypeError;
@@ -77,8 +76,8 @@ abstract class Model
      */
     protected static array $properties = [];
 
-    /** @var PDO The database connection the model uses. */
-    private PDO $connection;
+    /** @var DatabaseConnectionContract The database connection the model uses. */
+    private DatabaseConnectionContract $connection;
 
     /**
 	 * @var array The model instance's data. Always stored as the type comes out of the database, always contains keys
@@ -103,9 +102,9 @@ abstract class Model
     /**
      * Fetch the model's database connection.
      *
-     * @return PDO The connection.
+     * @return DatabaseConnectionContract The connection.
      */
-    public function connection(): PDO
+    public function connection(): DatabaseConnectionContract
     {
         return $this->connection;
     }
@@ -158,9 +157,9 @@ abstract class Model
     /**
      * The default connection for models of this type.
      *
-     * @return PDO The default connection.
+     * @return DatabaseConnectionContract The default connection.
      */
-    protected static function defaultConnection(): PDO
+    protected static function defaultConnection(): DatabaseConnectionContract
     {
         return Application::instance()->database();
     }
@@ -295,9 +294,10 @@ abstract class Model
     {
         $stmt = $this->connection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `" . static::primaryKey() . "` = :primary_key LIMIT 1");
         $stmt->execute([":primary_key" => $this->data[static::primaryKey()]]);
-        $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (false === $data) {
+        try {
+            $data = $stmt->fetch();
+        } catch (\RuntimeException $err) {
             return false;
         }
 
@@ -469,7 +469,7 @@ abstract class Model
 	 *
 	 * @return mixed The value to store in the model for the primary key.
 	 */
-	protected static function castInsertedKeyToPrimaryKey($value)
+	protected static function castInsertedKeyToPrimaryKey(mixed $value)
 	{
 		$primaryKeyProperty = static::primaryKey();
 
@@ -1156,37 +1156,18 @@ abstract class Model
     /**
      * Helper to do a type-aware binding of values to a prepared statement.
      *
-     * @param PDOStatement $stmt The statement to bind to.
+     * @param DatabaseStatementContract $stmt The statement to bind to.
      * @param array $values The values to bind.
      *
-     * @throws PDOException if the number of values in the array is greater than the number of placeholders in the
+     * @throws \RuntimeException if the number of values in the array is greater than the number of placeholders in the
      * statement.
      */
-    public static function bindValues(PDOStatement $stmt, array $values): void
+    public static function bindValues(DatabaseStatementContract $stmt, array $values): void
     {
-        $stmt->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $idx = 1;
 
         foreach ($values as $value) {
-            switch (true) {
-                case is_bool($value):
-                    $type = PDO::PARAM_BOOL;
-                    break;
-
-                case is_int($value):
-                    $type = PDO::PARAM_INT;
-                    break;
-
-                case is_null($value):
-                    $type = PDO::PARAM_NULL;
-                    break;
-
-                default:
-                    $type = PDO::PARAM_STR;
-                    break;
-            }
-
-            $stmt->bindValue($idx, $value, $type);
+            $stmt->bindPositionalValue($idx, $value, $type);
             ++$idx;
         }
     }
@@ -1194,14 +1175,13 @@ abstract class Model
     /**
      * Helper to make an array of models from a prepared statement that has been executed.
      *
-     * @param PDOStatement $stmt The statement.
+     * @param DatabaseStatementContract $stmt The statement.
      *
      * @return array The models.
      */
-    protected static function makeModelsFromQuery(PDOStatement $stmt): array
+    protected static function makeModelsFromQuery(DatabaseStatementContract $stmt): array
     {
         $models = [];
-		$stmt->setFetchMode(PDO::FETCH_ASSOC);
 
         foreach ($stmt as $data) {
             $model = new static();
@@ -1216,10 +1196,9 @@ abstract class Model
      * Helper to prepare values for a WHERE clause involving field => value equality pairs.
      *
      * The provided array is treated as a map of field => value pairs to be used as a set of `field` = value expressions
-     * in a WHERE clause. It returns a typle of two, containing the SQL expressions to use in a PDO prepared statement's
-     * WHERE clause in the first member, and an array of values to bind to the prepared statement in the second member.
-     * It guarantees that the number of items in the values array matches the number of placeholders in the expressions
-     * array.
+     * in a WHERE clause. It returns a typle of two, containing the SQL expressions to use in a Statement's WHERE clause
+     * in the first member, and an array of values to bind to the prepared statement in the second member. It guarantees
+     * that the number of items in the values array matches the number of placeholders in the expressions array.
      *
      * For example, given the array ["name" => "Darren", "deleted_at" => null,]
      *

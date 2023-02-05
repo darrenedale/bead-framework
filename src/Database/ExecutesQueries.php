@@ -2,10 +2,10 @@
 
 namespace Bead\Database;
 
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
+use Bead\Contracts\Database\Statement as DatabaseStatementContract;
 use LogicException;
-use PDO;
-use PDOException;
-use PDOStatement;
+use RuntimeException;
 
 trait ExecutesQueries
 {
@@ -17,18 +17,18 @@ trait ExecutesQueries
 
     /**
      * Fetch the connection to use when preparing and/or executing the query.
-     * @return PDO The connection.
+     * @return DatabaseConnectionContract The connection.
      */
-    public abstract function connection(): PDO;
+    public abstract function connection(): DatabaseConnectionContract;
 
     /**
      * Fetch a prepared statement for the query builder.
      *
-     * @return PDOStatement The prepared statement.
-     * @throws PDOException if the built query is not valid for the connection.
+     * @return DatabaseStatementContract The prepared statement.
+     * @throws RuntimeException if the built query is not valid for the connection.
      * @throws LogicException if no connection is set..
      */
-    public function prepare(): PDOStatement
+    public function prepare(): DatabaseStatementContract
     {
         $connection = $this->connection();
 
@@ -42,10 +42,10 @@ trait ExecutesQueries
     /**
      * Execute the query.
      *
-     * @return PDOStatement The executed query.
-     * @throws PDOException if the built query is not valid for the connection.
+     * @return DatabaseStatementContract The executed query.
+     * @throws RuntimeException if the built query is not valid for the connection.
      */
-    public function execute(): PDOStatement
+    public function execute(): DatabaseStatementContract
     {
         $stmt = $this->prepare();
         $stmt->execute();

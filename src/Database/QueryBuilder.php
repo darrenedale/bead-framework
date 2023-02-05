@@ -2,31 +2,31 @@
 
 namespace Bead\Database;
 
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 use Bead\Contracts\QueryBuilder as QueryBuilderContract;
 use Bead\Application;
-use PDO;
 
 class QueryBuilder implements QueryBuilderContract
 {
     use BuildsQueries;
     use ExecutesQueries;
 
-    /** @var PDO|null The connection to use to execute the query. */
-    private ?PDO $connection;
+    /** @var DatabaseConnectionContract|null The connection to use to execute the query. */
+    private ?DatabaseConnectionContract $connection;
 
     /**
      * Initialise a new QueryBuilder instance.
      */
-    public function __construct(?PDO $connection = null)
+    public function __construct(?DatabaseConnectionContract $connection = null)
     {
         $this->connection = $connection ?? Application::instance()->database();
     }
 
     /**
      * Fetch the connection to use when preparing and/or executing the query.
-     * @return PDO The connection.
+     * @return DatabaseConnectionContract The connection.
      */
-    public function connection(): PDO
+    public function connection(): DatabaseConnectionContract
     {
         return $this->connection;
     }
@@ -34,9 +34,9 @@ class QueryBuilder implements QueryBuilderContract
     /**
      * Set the database connection to use when preparing and/or executing the query.
      *
-     * @param PDO $connection The connection to use.
+     * @param DatabaseConnectionContract $connection The connection to use.
      */
-    public function setConnection(PDO $connection): void
+    public function setConnection(DatabaseConnectionContract $connection): void
     {
         $this->connection = $connection;
     }

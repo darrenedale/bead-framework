@@ -2,12 +2,14 @@
 
 namespace Bead\Database;
 
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
+use Bead\Contracts\Database\Statement as DatabaseStatementContract;
 use PDO;
 
 /**
- * Lightweight extension of PDO that just adds a few static methods for convenience.
+ * Lightweight extension of PDO to implement an interface and enable test doubling and other replacement.
  */
-class Connection extends PDO
+class Connection extends PDO implements DatabaseConnectionContract
 {
 	/**
 	 * Escape any SQL wildcards found in some text.
@@ -83,4 +85,24 @@ class Connection extends PDO
 
 		return str_replace($s_from, $s_to, $text);
 	}
+
+    public function prepare(string $sql): DatabaseConnectionContract
+    {
+        return new Statement(parent::prepare($sql));
+    }
+
+    public function lastInsertId(): int|string|null
+    {
+        try {
+            $id = parent::lastInsertId();
+        } catch (\PDOException $err) {
+            $id = false;
+        }
+
+        if (false === $id) {
+            return null;
+        }
+
+        return $id;
+    }
 }

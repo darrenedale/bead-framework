@@ -13,6 +13,8 @@
 namespace Bead\Database;
 
 use ArrayAccess;
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
+use Bead\Contracts\Database\Statement as DatabaseStatementContract;
 use Countable;
 use DirectoryIterator;
 use Bead\Application;
@@ -22,8 +24,6 @@ use Iterator;
 use JsonException;
 use LogicException;
 use OutOfBoundsException;
-use PDO;
-use PDOStatement;
 use RuntimeException;
 
 use function Bead\Helpers\Str\random;
@@ -47,8 +47,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	/** @var int How many rows of results data to place in each results cache chunk file. */
 	protected const ResultsCacheFileChunkSize = 5000;
 
-	/** @var PDOStatement|null The results being paged. */
-	private ?PDOStatement $m_results = null;
+	/** @var DatabaseStatementContract|null The results being paged. */
+	private ?DatabaseStatementContract $m_results = null;
 
 	/** @var string The UID for the results being paged. */
 	private string $m_id;
@@ -77,13 +77,13 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      *
      * The constructor is internal only, use either `create()` or `fetch()` to initialise your cache objects.
      *
-     * @param PDOStatement|null $results `optional` The results to page.
+     * @param DatabaseStatementContract|null $results `optional` The results to page.
      * @param string $id `optional` The ID for the results cache. If empty a unique ID will be generated.
      *
      * @throws Exception If no ID is specified and one can't be generated internally. This should only happen on
      * relatively obscure platforms that don't provide good random data.
      */
-	protected function __construct(?PDOStatement $results = null, string $id = "")
+	protected function __construct(?DatabaseStatementContract $results = null, string $id = "")
 	{
 		if (empty($id)) {
 			$id = self::generateUid();
@@ -97,16 +97,16 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	}
 
     /**
-     * Create a new cached result set from a PDO statement.
+     * Create a new cached result set from a Statement.
      *
-     * @param PDOStatement $results The statement with the results.
+     * @param DatabaseStatementContract $results The statement with the results.
      * @param string $id The optional ID for the results. If not specified, or empty, a unique ID will be chosen.
      *
      * @return ResultsCache
      * @throws Exception If no ID is specified and one can't be generated internally. This should only happen on
      * relatively obscure platforms that don't provide good random data.
      */
-	public static function create(PDOStatement $results, string $id = ""): ResultsCache
+	public static function create(DatabaseStatementContract $results, string $id = ""): ResultsCache
 	{
 		return new static($results, $id);
 	}
@@ -278,10 +278,10 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 * This is only valid when the object is first built from the results of a database query. It is only provided as a
 	 * customisation point for subclasses, if required.
 	 *
-	 * @return PDOStatement|null The results, or `null` if no results have been set (i.e. the object has been
+	 * @return DatabaseStatementContract|null The results, or `null` if no results have been set (i.e. the object has been
 	 * reconstituted from the cache files).
 	 */
-	protected function results(): ?PDOStatement
+	protected function results(): ?DatabaseStatementContract
 	{
 		return $this->m_results;
 	}
@@ -292,9 +292,9 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * This is only valid when the first creating a cache object from the results of a database query. It is only
      * provided as a customisation point for subclasses, if required.
      *
-     * @param $results PDOStatement|null The results to display.
+     * @param $results DatabaseStatementContract|null The results to display.
      */
-    protected function setResults(PDOStatement $results): void
+    protected function setResults(DatabaseStatementContract $results): void
     {
         $this->m_results = $results;
         $this->m_rowCount = 0;
@@ -323,7 +323,6 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
             throw new LogicException("ResultsCache::cacheResults() called without a result set to cache.");
         }
 
-		$results->setFetchMode(PDO::FETCH_ASSOC);
         $rowIndex = 0;
         $chunkIndex = 0;
         $chunkData = [];

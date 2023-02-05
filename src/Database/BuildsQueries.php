@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Bead\Database;
 
-use Closure;
-use DateTime;
 use Bead\Exceptions\Database\DuplicateColumnNameException;
 use Bead\Exceptions\Database\DuplicateTableNameException;
 use Bead\Exceptions\Database\InvalidColumnNameException;
@@ -15,8 +13,9 @@ use Bead\Exceptions\Database\InvalidOrderByDirectionException;
 use Bead\Exceptions\Database\InvalidQueryExpressionException;
 use Bead\Exceptions\Database\InvalidTableNameException;
 use Bead\Exceptions\Database\OrphanedJoinException;
+use Closure;
+use DateTime;
 use InvalidArgumentException;
-use PDO;
 use TypeError;
 
 use function Bead\Helpers\Iterable\some;

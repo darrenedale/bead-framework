@@ -2,8 +2,8 @@
 
 namespace Bead\Database;
 
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 use DateTime;
-use PDO;
 
 /**
  * Trait for Model classes that use soft-deletes.
@@ -24,9 +24,9 @@ trait SoftDeletes
      *
      * This is a constraint to ensure the trait can only successfully be applied to Model (or Model-like) classes.
      *
-     * @return PDO The connection to use when soft-deleting/restoring the model.
+     * @return DatabaseConnectionContract The connection to use when soft-deleting/restoring the model.
      */
-    public abstract function connection(): PDO;
+    public abstract function connection(): DatabaseConnectionContract;
 
     /**
      * Fetch the table to use when soft-deleting/restoring the model.

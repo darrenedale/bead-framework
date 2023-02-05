@@ -2,8 +2,6 @@
 
 namespace Bead\Database;
 
-use PDO;
-
 /**
  * A model relation that links many local models to a single related model.
  *

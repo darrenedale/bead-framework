@@ -2,7 +2,7 @@
 
 namespace Bead\Database;
 
-use PDO;
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 use ReflectionMethod;
 
 /**
@@ -88,7 +88,6 @@ class ManyToMany extends Relation
         $pivotFixedWheresMethod->setAccessible(true);
 
         $stmt = $this->localModel()->connection()->prepare(" SELECT `r`.* FROM `" . $relatedClass::table() . "` AS `r`, `" . $pivotClass::table() . "` AS `p` WHERE `p`.`{$this->pivotRelatedKey()}` = `r`.`{$this->relatedKey()}` AND `p`.`{$this->pivotLocalKey()}` = ? " . $relatedFixedWheresMethod->invoke(null, "r") . $pivotFixedWheresMethod->invoke(null, "p"));
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
         $stmt->execute([$this->localModel()->{$this->localKey()}]);
         $this->relatedModels = $this->makeModelsFromQuery($stmt);
     }

@@ -2,7 +2,7 @@
 
 namespace Bead\Database;
 
-use PDOStatement;
+use Bead\Contracts\Database\Statement as DatabaseStatementContract;
 use ReflectionException;
 use ReflectionMethod;
 
@@ -80,14 +80,14 @@ abstract class Relation
     }
 
     /**
-     * Given an executed PDO statement, create a set of related model instances.
+     * Given an executed Statement, create a set of related model instances.
      *
-     * @param PDOStatement $stmt The PDO statement.
+     * @param DatabaseStatementContract $stmt The statement.
      *
      * @return array<Model> The created model.
      * @throws ReflectionException If the related model class is not actually a model class.
      */
-    protected function makeModelsFromQuery(PDOStatement $stmt): array
+    protected function makeModelsFromQuery(DatabaseStatementContract $stmt): array
     {
         $method = new ReflectionMethod($this->relatedModel, "makeModelsFromQuery");
         $method->setAccessible(true);

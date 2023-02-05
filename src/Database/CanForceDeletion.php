@@ -2,7 +2,7 @@
 
 namespace Bead\Database;
 
-use PDO;
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 
 /**
  * Endow a Model class with a forceDelete() method that forcibly deletes the model from the database.
@@ -14,9 +14,9 @@ trait CanForceDeletion
      *
      * This is a constraint to ensure the trait can only successfully be applied to Model (or Model-like) classes.
      *
-     * @return PDO The connection to use when soft-deleting/restoring the model.
+     * @return DatabaseConnectionContract The connection to use when soft-deleting/restoring the model.
      */
-    public abstract function connection(): PDO;
+    public abstract function connection(): DatabaseConnectionContract;
 
     /**
      * Fetch the table to use when soft-deleting/restoring the model.
@@ -48,6 +48,6 @@ trait CanForceDeletion
     {
         return $this->connection()
             ->prepare("DELETE FROM `" . static::table() . "` WHERE `" . static::primaryKey() . "` = ? LIMIT 1")
-            ->execute($this->{static::primaryKey()});
+            ->execute([$this->{static::primaryKey()}]);
     }
 }

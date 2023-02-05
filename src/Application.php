@@ -3,9 +3,9 @@
 namespace Bead;
 
 use Bead\Contracts\ErrorHandler;
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
-use Bead\Database\Connection;
 use Bead\ErrorHandler as BeadErrorHandler;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -57,8 +57,8 @@ abstract class Application implements ServiceContainer, ContainerInterface
     /** @var \Bead\Contracts\ErrorHandler|null The currently installed error handler. */
     private ?ErrorHandler $m_errorHandler = null;
 
-    /** @var Connection|null The data controller. */
-    private ?Connection $m_dbConnection = null;
+    /** @var DatabaseConnectionContract | null The database. */
+    private ?DatabaseConnectionContract $m_dbConnection = null;
 
     /** @var array The loaded config. */
     private array $m_config = [];
@@ -68,11 +68,11 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /**
      * @param string $appRoot
-     * @param Connection|null $db
+     * @param DatabaseConnectionContract|null $db
      *
      * @throws \Exception if the singleton has already been created or if the provided root directory does not exist.
      */
-    public function __construct(string $appRoot, ?Connection $db = null)
+    public function __construct(string $appRoot, ?DatabaseConnectionContract $db = null)
     {
         $this->setErrorHandler(new BeadErrorHandler());
 
@@ -398,9 +398,9 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * The returned data controller should be used by all classes and plugins whenever access to the database is
      * required.
      *
-     * @return Connection|null The data controller.
+     * @return DatabaseConnectionContract|null The data controller.
      */
-    public function database(): ?Connection
+    public function database(): ?DatabaseConnectionContract
     {
         return $this->m_dbConnection;
     }
@@ -410,9 +410,9 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * The data controller mediates all interaction between the application (including classes and plugins) and the
      * database.
      *
-     * @param $controller Connection|null The data controller to use.
+     * @param $controller DatabaseConnectionContract|null The data controller to use.
      */
-    public function setDatabase(?Connection $controller): void
+    public function setDatabase(?DatabaseConnectionContract $controller): void
     {
         $this->m_dbConnection = $controller;
     }
