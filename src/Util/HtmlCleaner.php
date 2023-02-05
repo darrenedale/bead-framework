@@ -1,20 +1,13 @@
 <?php
 
-/**
- * @todo The DOM objects always work with UTF-8. We should therefore convert the content using the input charset before
- * providing it to the DOMDocument and convert it back when providing output.
- * @todo finish comprehensive unit test
- * @todo ability to config attributes to strip (while leaving the element in place)
- */
-
 declare(strict_types = 1);
 
 namespace Bead\Util;
 
 use DOMDocument;
 use DOMNode;
-use Exception;
 use InvalidArgumentException;
+use RuntimeException;
 use StdClass;
 
 use function Bead\Helpers\Iterable\all;
@@ -66,25 +59,34 @@ class HtmlCleaner
     ];
 
     /** @var string The user's character set. */
-    private string $m_userCharset = "UTF-8";
+    private string $userCharset = "UTF-8";
 
     /** @var int The mode of operation for tag name cleaning. */
-    private int $m_tagMode = self::CombinedMode;
+    private int $tagMode = self::CombinedMode;
 
     /** @var int The mode of operation for class name cleaning. */
-    private int $m_classMode = self::CombinedMode;
+    private int $classMode = self::CombinedMode;
 
     /** @var int The mode of operation for ID cleaning. */
-    private int $m_idMode = self::CombinedMode;
+    private int $idMode = self::CombinedMode;
 
-    /** @var StdClass The tag deny/allow lists. */
-    private StdClass $m_tags;
+    /** @var array The tag allow list. */
+    private array $allowedTags = [];
 
-    /** @var StdClass The class name deny/allow lists. */
-    private StdClass $m_classes;
+    /** @var array The tag deny list. */
+    private array $deniedTags = [];
 
-    /** @var StdClass The ID deny/allow lists. */
-    private StdClass $m_ids;
+    /** @var array The class allow list. */
+    private array $allowedClasses = [];
+
+    /** @var array The class deny list. */
+    private array $deniedClasses = [];
+
+    /** @var array The id allow list. */
+    private array $allowedIds = [];
+
+    /** @var array The id deny list. */
+    private array $deniedIds = [];
 
     /**
      * Initialise a new HtmlCleaner object.
@@ -96,24 +98,11 @@ class HtmlCleaner
      * @param int $tagMode The mode of operation for the tag name filter.
      * @param int $classMode The mode of operation for the class attribute filter.
      * @param int $idMode The mode of operation for the id attribute filter.
+     *
+     * @throws InvalidArgumentException if the tag, class or ID mode is not valid.
      */
     public function __construct(int $tagMode = self::CombinedMode, int $classMode = self::CombinedMode, int $idMode = self::CombinedMode)
     {
-        $this->m_tags = (object) [
-            "allowList" => [],
-            "denyList" => [],
-        ];
-
-        $this->m_classes = (object) [
-            "allowList" => [],
-            "denyList" => [],
-        ];
-
-        $this->m_ids = (object) [
-            "allowList" => [],
-            "denyList" => [],
-        ];
-
         $this->setTagMode($tagMode);
         $this->setClassMode($classMode);
         $this->setIdMode($idMode);
@@ -125,14 +114,13 @@ class HtmlCleaner
      * The mode is always one of the class mode constants. Providing anything else is undefined behaviour.
      *
      * @param int $mode The mode for tag checking.
+     *
+     * @throws InvalidArgumentException if the mode is not valid.
      */
     public function setTagMode(int $mode): void
     {
-        if (self::AllowListMode != $mode && self::DenyListMode != $mode && self::CombinedMode != $mode) {
-            throw new InvalidArgumentException("test mode for tag names must be one of the class test mode constants");
-        }
-
-        $this->m_tagMode = $mode;
+        self::checkMode($mode);
+        $this->tagMode = $mode;
     }
 
     /**
@@ -141,14 +129,13 @@ class HtmlCleaner
      * The mode is always one of the class mode constants. Providing anything else is undefined behaviour.
      *
      * @param int $mode The mode for class checking.
+     *
+     * @throws InvalidArgumentException if the mode is not valid.
      */
     public function setClassMode(int $mode): void
     {
-        if (self::AllowListMode != $mode && self::DenyListMode != $mode && self::CombinedMode != $mode) {
-            throw new InvalidArgumentException("test mode for class attributes must be one of the class test mode constants");
-        }
-
-        $this->m_classMode = $mode;
+        self::checkMode($mode);
+        $this->classMode = $mode;
     }
 
     /**
@@ -157,14 +144,27 @@ class HtmlCleaner
      * The mode is always one of the class mode constants. Providing anything else is undefined behaviour.
      *
      * @param int $mode The mode for id attribute checking.
+     *
+     * @throws InvalidArgumentException if the mode is not valid.
      */
     public function setIdMode(int $mode): void
     {
-        if (self::AllowListMode != $mode && self::DenyListMode != $mode && self::CombinedMode != $mode) {
-            throw new InvalidArgumentException("test mode for id attributes must be one of the class test mode constants");
-        }
+        self::checkMode($mode);
+        $this->idMode = $mode;
+    }
 
-        $this->m_idMode = $mode;
+    /**
+     * Check a provided allow/deny mode.
+     *
+     * @param int $mode The mode to check.
+     *
+     * @throws InvalidArgumentException if the mode is not valid.
+     */
+    protected final static function checkMode(int $mode): void
+    {
+        if (self::AllowListMode != $mode && self::DenyListMode != $mode && self::CombinedMode != $mode) {
+            throw new InvalidArgumentException("Test mode for attributes and tag names must be one of the class test mode constants.");
+        }
     }
 
     /**
@@ -174,7 +174,7 @@ class HtmlCleaner
      */
     public function tagMode(): int
     {
-        return $this->m_tagMode;
+        return $this->tagMode;
     }
 
     /**
@@ -184,7 +184,7 @@ class HtmlCleaner
      */
     public function classMode(): int
     {
-        return $this->m_classMode;
+        return $this->classMode;
     }
 
     /**
@@ -194,7 +194,7 @@ class HtmlCleaner
      */
     public function idMode(): int
     {
-        return $this->m_idMode;
+        return $this->idMode;
     }
 
     /**
@@ -252,11 +252,11 @@ class HtmlCleaner
      */
     protected final function isValidTagName(string $name): bool
     {
-        if (empty($name)) {
+        if ("" === $name) {
             return false;
         }
 
-        $codePoints = toCodePoints($name, $this->m_userCharset);
+        $codePoints = toCodePoints($name, $this->userCharset);
 
         return self::isValidTagStartCodepoint($codePoints[0]) && all(array_slice($codePoints, 1), function(int $codePoint): bool {
             return self::isValidTagCodepoint($codePoint);
@@ -265,14 +265,22 @@ class HtmlCleaner
 
     protected final function isValidClass(string $name): bool
     {
+        if ("" === $name) {
+            return false;
+        }
+
         // TODO implement completely according to spec
-        return false === mb_strpos($name, " ", 0, $this->m_userCharset);
+        return false === mb_strpos($name, " ", 0, $this->userCharset);
     }
 
     protected final function isValidId(string $id): bool
     {
+        if ("" === $id) {
+            return false;
+        }
+
         // TODO implement completely according to spec
-        return false === mb_strpos($id, " ", 0, $this->m_userCharset);
+        return false === mb_strpos($id, " ", 0, $this->userCharset);
     }
 
     /**
@@ -289,20 +297,18 @@ class HtmlCleaner
      * @throws InvalidArgumentException if $items is not a string or array, or if it contains an invalid entry for the
      * list
      */
-    protected final function addToList(array &$list, $items, $validator): void
+    protected final function addToList(array &$list, array|string $items, callable $validator): void
     {
         if (is_string($items)) {
             $items = [$items];
-        } else if (!is_array($items)) {
-            throw new InvalidArgumentException("items to add to allow-list/deny-list must be string or array of strings");
         }
 
         if (!all($items, $validator)) {
-            throw new InvalidArgumentException("invalid tag name found in allow-list/deny-list");
+            throw new InvalidArgumentException("Invalid value found in allow or deny list.");
         }
 
         array_walk($items, function (string &$item) {
-            $item = mb_convert_case($item, MB_CASE_LOWER, $this->m_userCharset);
+            $item = mb_strtolower($item, $this->userCharset);
         });
 
         $list = array_unique([...$list, ...$items]);
@@ -323,9 +329,9 @@ class HtmlCleaner
      * @throws InvalidArgumentException if $tags is not a string or array, or if it contains a non-string or empty
      * string
      */
-    public function allowTags($tags): void
+    public function allowTags(array|string $tags): void
     {
-        $this->addToList($this->m_tags->allowList, $tags, fn(string $tagName): bool => $this->isValidTagName($tagName));
+        $this->addToList($this->allowedTags, $tags, fn(string $tagName): bool => $this->isValidTagName($tagName));
     }
 
     /**
@@ -343,9 +349,9 @@ class HtmlCleaner
      * @throws InvalidArgumentException if $tags is not a string or array, or if it contains a non-string or empty
      * string
      */
-    public function denyTags($tags): void
+    public function denyTags(array|string $tags): void
     {
-        $this->addToList($this->m_tags->denyList, $tags, fn(string $tagName): bool => $this->isValidTagName($tagName));
+        $this->addToList($this->deniedTags, $tags, fn(string $tagName): bool => $this->isValidTagName($tagName));
     }
 
     /**
@@ -364,9 +370,9 @@ class HtmlCleaner
      * @throws InvalidArgumentException if $classes is not a string or array, or if it contains a non-string or empty
      * string
      */
-    public function allowClasses($classes): void
+    public function allowClasses(array|string $classes): void
     {
-        $this->addToList($this->m_classes->allowList, $classes, fn(string $class): bool => $this->isValidClass($class));
+        $this->addToList($this->allowedClasses, $classes, fn(string $class): bool => $this->isValidClass($class));
     }
 
     /**
@@ -384,9 +390,9 @@ class HtmlCleaner
      * @throws InvalidArgumentException if $classes is not a string or array, or if it contains a non-string or empty
      * string
      */
-    public function denyClasses($classes): void
+    public function denyClasses(array|string $classes): void
     {
-        $this->addToList($this->m_classes->denyList, $classes, fn(string $class): bool => $this->isValidClass($class));
+        $this->addToList($this->deniedClasses, $classes, fn(string $class): bool => $this->isValidClass($class));
     }
 
     /**
@@ -405,9 +411,9 @@ class HtmlCleaner
      * @throws InvalidArgumentException if $ids is not a string or array, or if it contains a non-string or empty
      * string
      */
-    public function allowIds($ids): void
+    public function allowIds(array|string $ids): void
     {
-        $this->addToList($this->m_ids->allowList, $ids, fn(string $id): bool => $this->isValidId($id));
+        $this->addToList($this->allowedIds, $ids, fn(string $id): bool => $this->isValidId($id));
     }
 
     /**
@@ -420,44 +426,44 @@ class HtmlCleaner
      * empty strings will result in undefined behaviour. The IDs will be converted to lower-case for the deny-list, and
      * duplicates will not be added.
      *
-     * @param $ids array|string The ID(s) to add to the deny-list.
+     * @param $ids array<string>|string The ID(s) to add to the deny-list.
      *
      * @throws InvalidArgumentException if $ids is not a string or array, or if it contains a non-string or empty
      * string
      */
-    public function denyIds($ids): void
+    public function denyIds(array|string $ids): void
     {
-        $this->addToList($this->m_ids->denyList, $ids, fn(string $id): bool => $this->isValidId($id));
+        $this->addToList($this->deniedIds, $ids, fn(string $id): bool => $this->isValidId($id));
     }
 
     /**
      * Fetch the list of allow-listed tag names.
      *
-     * @return array The allow-list.
+     * @return array<string> The allow-list.
      */
     public function allowedTags(): array
     {
-        return $this->m_tags->allowList;
+        return $this->allowedTags;
     }
 
     /**
      * Fetch the list of deny-listed tag names.
      *
-     * @return array The deny-list.
+     * @return array<string> The deny-list.
      */
     public function deniedTags(): array
     {
-        return $this->m_tags->denyList;
+        return $this->deniedTags;
     }
 
     /**
      * Fetch the list of allow-listed class names.
      *
-     * @return array The allow-list.
+     * @return array<string> The allow-list.
      */
     public function allowedClasses(): array
     {
-        return $this->m_classes->allowList;
+        return $this->allowedClasses;
     }
 
     /**
@@ -467,7 +473,7 @@ class HtmlCleaner
      */
     public function deniedClasses(): array
     {
-        return $this->m_classes->denyList;
+        return $this->deniedClasses;
     }
 
     /**
@@ -477,7 +483,7 @@ class HtmlCleaner
      */
     public function allowedIds(): array
     {
-        return $this->m_ids->allowList;
+        return $this->allowedIds;
     }
 
     /**
@@ -487,7 +493,7 @@ class HtmlCleaner
      */
     public function deniedIds(): array
     {
-        return $this->m_ids->denyList;
+        return $this->deniedIds;
     }
 
     /**
@@ -503,17 +509,17 @@ class HtmlCleaner
     public function isAllowedTag(string $tagName): bool
     {
         // all lists are in lower case
-        $tagName = mb_convert_case($tagName, MB_CASE_LOWER, $this->m_userCharset);
+        $tagName = mb_strtolower($tagName, $this->userCharset);
 
         if (in_array($tagName, self::FixedDenyList)) {
             return false;
         }
 
-        if ($this->m_tagMode & self::DenyListMode && in_array($tagName, $this->m_tags->denyList)) {
+        if (($this->tagMode & self::DenyListMode) && in_array($tagName, $this->deniedTags)) {
             return false;
         }
 
-        if ($this->m_tagMode & self::AllowListMode && !in_array($tagName, $this->m_tags->allowList)) {
+        if (($this->tagMode & self::AllowListMode) && !in_array($tagName, $this->allowedTags)) {
             return false;
         }
 
@@ -532,21 +538,20 @@ class HtmlCleaner
      */
     public function isAllowedClassAttribute(string $class): bool
     {
-        // all lists are in lower case
-        $class   = mb_convert_case($class, MB_CASE_LOWER, $this->m_userCharset);
+        $class = mb_strtolower($class, $this->userCharset);
         $classes = preg_split("/[[:space:]]/", $class, 0, PREG_SPLIT_NO_EMPTY);
 
-        if ($this->m_classMode & self::DenyListMode) {
+        if ($this->classMode & self::DenyListMode) {
             foreach ($classes as $class) {
-                if (in_array($class, $this->m_classes->denyList)) {
+                if (in_array($class, $this->deniedClasses)) {
                     return false;
                 }
             }
         }
 
-        if ($this->m_classMode & self::AllowListMode) {
+        if ($this->classMode & self::AllowListMode) {
             foreach ($classes as $class) {
-                if (!in_array($class, $this->m_classes->allowList)) {
+                if (!in_array($class, $this->allowedClasses)) {
                     return false;
                 }
             }
@@ -568,13 +573,13 @@ class HtmlCleaner
     public function isAllowedId(string $id): bool
     {
         // all lists are in lower case
-        $id = mb_convert_case($id, MB_CASE_LOWER, $this->m_userCharset);
+        $id = mb_strtolower($id, $this->userCharset);
 
-        if ($this->m_idMode & self::DenyListMode && in_array($id, $this->m_ids->denyList)) {
+        if (($this->idMode & self::DenyListMode) && in_array($id, $this->deniedIds)) {
             return false;
         }
 
-        if ($this->m_tagMode & self::AllowListMode && !in_array($id, $this->m_ids->allowList)) {
+        if (($this->idMode & self::AllowListMode) && !in_array($id, $this->allowedIds)) {
             return false;
         }
 
@@ -584,11 +589,11 @@ class HtmlCleaner
     /**
      * Check whether a DOM node will pass the cleaner.
      *
-     * @param \DOMNode $node The node to check.
+     * @param DOMNode $node The node to check.
      *
      * @return bool `true` if the node is allowed, `false` if not.
      */
-    public function isAllowedNode(DOMNode $node): bool
+    protected final function isAllowedNode(DOMNode $node): bool
     {
         if (XML_ELEMENT_NODE == $node->nodeType) {
             if (!$this->isAllowedTag($node->nodeName)) {
@@ -619,15 +624,15 @@ class HtmlCleaner
      * @param string $html The HTML to clean.
      *
      * @return string The cleaned HTML.
-     * @throws Exception if the HTML cannot be parsed.
+     * @throws RuntimeException if the HTML cannot be parsed.
      *
      */
     public final function clean(string $html): string
     {
-        $doc = new DOMDocument("1.0", $this->m_userCharset);
+        $doc = new DOMDocument("1.0", $this->userCharset);
 
-        if (!$doc->loadXml("<htmlcleaner_root>$html</htmlcleaner_root>")) {
-            throw new Exception("failed to parse HTML");
+        if (!$doc->loadXml("<htmlcleaner_root>{$html}</htmlcleaner_root>")) {
+            throw new RuntimeException("failed to parse HTML");
         }
 
         $cleanNode = function (DOMNode $node) use (&$cleanNode): void {

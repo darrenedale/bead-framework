@@ -12,9 +12,11 @@ declare(strict_types = 1);
 namespace BeadTests;
 
 use BeadTests\Framework\TestCase;
+use Bead\Util\HtmlCleaner;
+use DOMDocument;
 use Exception;
 use InvalidArgumentException;
-use Bead\Util\HtmlCleaner;
+use RuntimeException;
 use StdClass;
 use TypeError;
 
@@ -29,7 +31,7 @@ class HtmlCleanerTest extends TestCase
     /**
      * @var HtmlCleaner The HtmlCleaner test instance.
      */
-    private HtmlCleaner $m_cleaner;
+    private HtmlCleaner $testCleaner;
 
     /**
      * Set up the test fixture.
@@ -38,7 +40,7 @@ class HtmlCleanerTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->m_cleaner = new HtmlCleaner();
+        $this->testCleaner = new HtmlCleaner();
     }
 
     /**
@@ -55,7 +57,7 @@ class HtmlCleanerTest extends TestCase
         self::assertIsArray($list, "{$name} is not an array");
 
         foreach ($list as $item) {
-            self::assertIsString($item, "{$name} contains an non-string");
+            self::assertIsString($item, "{$name} contains a non-string");
             self::assertNotEmpty($item, "{$name} contains an empty tag");
         }
     }
@@ -88,108 +90,84 @@ class HtmlCleanerTest extends TestCase
         return in_array($mode, self::ValidModes);
     }
 
-    /**
-     * Test the outcome of the default constructor.
-     *
-     * The test fixture contains a cleaner set up with the default constructor. This is the object that is tested.
-     */
+    /** Ensure the default constructor produces the expected instance. */
     public function testDefaultConstructor()
     {
-        $this->checkAllAllowOrDenyLists($this->m_cleaner, "default");
-        self::assertAttributeIsInt([$this->m_cleaner, "m_tagMode"], "tag filter mode of default cleaner is not an int");
-        self::assertAttributeIsInt([$this->m_cleaner, "m_idMode"], "id filter mode of default cleaner is not an int");
-        self::assertAttributeIsInt([$this->m_cleaner, "m_classMode"], "class filter mode of default cleaner is not an int");
+        self::assertEquals(HtmlCleaner::CombinedMode, $this->testCleaner->tagMode());
+        self::assertEquals(HtmlCleaner::CombinedMode, $this->testCleaner->idMode());
+        self::assertEquals(HtmlCleaner::CombinedMode, $this->testCleaner->classMode());
+        self::assertEquals([], $this->testCleaner->allowedTags());
+        self::assertEquals([], $this->testCleaner->allowedIds());
+        self::assertEquals([], $this->testCleaner->allowedClasses());
+        self::assertEquals([], $this->testCleaner->deniedTags());
+        self::assertEquals([], $this->testCleaner->deniedIds());
+        self::assertEquals([], $this->testCleaner->deniedClasses());
     }
 
-    public function dataForTestConstructor(): array
+    /** Ensure we can set a valid tag mode in the constructor. */
+    public function testConstructorWithTagMode()
     {
-        return [
-            "default_constructor" => [],
-            "tag_mode_only" => [HtmlCleaner::AllowListMode],
-            "invalid_tag_mode_only" => [self::InvalidMode],
-            "tag_mode_and_class_mode" => [HtmlCleaner::AllowListMode, HtmlCleaner::DenyListMode],
-            "invalid_tag_mode_and_valid_class_mode" => [self::InvalidMode, HtmlCleaner::AllowListMode],
-            "invalid_tag_mode_and_invalid_class_mode" => [self::InvalidMode, self::InvalidMode],
-            "all_three_modes" => [HtmlCleaner::AllowListMode, HtmlCleaner::DenyListMode, HtmlCleaner::CombinedMode],
-            "all_three_modes_invalid" => [self::InvalidMode, self::InvalidMode, self::InvalidMode],
-        ];
+        $cleaner = new HtmlCleaner(tagMode: HtmlCleaner::AllowListMode);
+        self::assertEquals(HtmlCleaner::AllowListMode, $cleaner->tagMode());
+        self::assertEquals(HtmlCleaner::CombinedMode, $cleaner->idMode());
+        self::assertEquals(HtmlCleaner::CombinedMode, $cleaner->classMode());
+        self::assertEquals([], $cleaner->allowedTags());
+        self::assertEquals([], $cleaner->allowedIds());
+        self::assertEquals([], $cleaner->allowedClasses());
+        self::assertEquals([], $cleaner->deniedTags());
+        self::assertEquals([], $cleaner->deniedIds());
+        self::assertEquals([], $cleaner->deniedClasses());
     }
 
-    /**
-     * Test the constructor.
-     *
-     * The arguments are optional, defaulting to `null`. If `null`, that argument is not provided to the constructor
-     * (that is, the constructor's default for that argument will be used instead). It is therefore only valid to
-     * provide test data that omits values or provides null values in a pattern that is compatible with the operation
-     * of default arguments. In short, the first missing or null argument implies that all the following arguments
-     * must also be null or absent. The test method checks that this is the case, and will skip the test if it detects
-     * that invalid data have been provided.
-     *
-     * @param int|null $tagMode The tag filter mode to provide to the constructor.
-     * @param int|null $idMode The id filter mode to provide to the constructor.
-     * @param int|null $classMode The class filter mode to provide to the constructor.
-     *
-     * @dataProvider dataForTestConstructor
-     */
-    public function testConstructor(?int $tagMode = null, ?int $classMode = null, ?int $idMode = null)
+    /** Ensure we can set a valid id mode in the constructor. */
+    public function testConstructorWithIdMode()
     {
-        if (!isset($tagMode)) {
-            if (isset($classMode) || isset($idMode)) {
-                $this->markTestSkipped("unusable test data provided - args 2 and 3 must not be set if arg 1 is not set");
-            }
-        } else {
-            if (!isset($classMode)) {
-                if (isset($idMode)) {
-                    $this->markTestSkipped("unusable test data provided - arg 3 must not be set if arg 2 is not set");
-                }
-            }
-        }
+        $cleaner = new HtmlCleaner(idMode: HtmlCleaner::AllowListMode);
+        self::assertEquals(HtmlCleaner::CombinedMode, $cleaner->tagMode());
+        self::assertEquals(HtmlCleaner::AllowListMode, $cleaner->idMode());
+        self::assertEquals(HtmlCleaner::CombinedMode, $cleaner->classMode());
+        self::assertEquals([], $cleaner->allowedTags());
+        self::assertEquals([], $cleaner->allowedIds());
+        self::assertEquals([], $cleaner->allowedClasses());
+        self::assertEquals([], $cleaner->deniedTags());
+        self::assertEquals([], $cleaner->deniedIds());
+        self::assertEquals([], $cleaner->deniedClasses());
+    }
 
-        $constructorArgs    = [];
-        $expectingException = false;
+    /** Ensure we can set a valid class mode in the constructor. */
+    public function testConstructorWithClassMode()
+    {
+        $cleaner = new HtmlCleaner(classMode: HtmlCleaner::AllowListMode);
+        self::assertEquals(HtmlCleaner::CombinedMode, $cleaner->tagMode());
+        self::assertEquals(HtmlCleaner::CombinedMode, $cleaner->idMode());
+        self::assertEquals(HtmlCleaner::AllowListMode, $cleaner->classMode());
+        self::assertEquals([], $cleaner->allowedTags());
+        self::assertEquals([], $cleaner->allowedIds());
+        self::assertEquals([], $cleaner->allowedClasses());
+        self::assertEquals([], $cleaner->deniedTags());
+        self::assertEquals([], $cleaner->deniedIds());
+        self::assertEquals([], $cleaner->deniedClasses());
+    }
 
-        foreach ([$tagMode, $classMode, $idMode] as $arg) {
-            if (!isset($arg)) {
-                break;
-            }
+    /** Ensure we get the expected exception when an invalid tag mode is given in the constructor. */
+    public function testConstructorWithInvalidTagMode()
+    {
+        self::expectException(InvalidArgumentException::class);
+        $cleaner = new HtmlCleaner(tagMode: self::InvalidMode);
+    }
 
-            $constructorArgs[]  = $arg;
-            $expectingException = $expectingException | !self::isValidFilterMode($arg);
-        }
+    /** Ensure we get the expected exception when an invalid id mode is given in the constructor. */
+    public function testConstructorWithInvalidIdMode()
+    {
+        self::expectException(InvalidArgumentException::class);
+        $cleaner = new HtmlCleaner(idMode: self::InvalidMode);
+    }
 
-        if ($expectingException) {
-            $this->expectException(InvalidArgumentException::class);
-        }
-
-        $cleaner = new HtmlCleaner(...$constructorArgs);
-        $this->checkAllAllowOrDenyLists($cleaner);
-        self::assertAttributeIsInt([$cleaner, "m_tagMode"], "tag filter mode of constructed cleaner is not an int");
-        self::assertAttributeIsInt([$cleaner, "m_idMode"], "id filter mode of constructed cleaner is not an int");
-        self::assertAttributeIsInt([$cleaner, "m_classMode"], "class filter mode of constructed cleaner is not an int");
-
-        if (isset($tagMode)) {
-            if (self::isValidFilterMode($tagMode)) {
-                self::assertSame($tagMode, $cleaner->tagMode(), "the tag filter mode {$cleaner->tagMode()} in the constructed object does not match the provided, valid mode {$tagMode}");
-            } else {
-                self::assertNotSame($tagMode, $cleaner->tagMode(), "the tag filter mode {$cleaner->tagMode()} in the constructed object matches the provided, invalid mode {$tagMode}");
-            }
-        }
-
-        if (isset($idMode)) {
-            if (self::isValidFilterMode($idMode)) {
-                self::assertSame($idMode, $cleaner->idMode(), "the id filter mode {$cleaner->idMode()} in the constructed object does not match the provided, valid mode {$idMode}");
-            } else {
-                self::assertNotSame($idMode, $cleaner->idMode(), "the id filter mode {$cleaner->idMode()} in the constructed object matches the provided, invalid mode {$idMode}");
-            }
-        }
-
-        if (isset($classMode)) {
-            if (self::isValidFilterMode($classMode)) {
-                self::assertSame($classMode, $cleaner->classMode(), "the class filter mode {$cleaner->classMode()} in the constructed object does not match the provided, valid mode {$classMode}");
-            } else {
-                self::assertNotSame($classMode, $cleaner->classMode(), "the class filter {$cleaner->classMode()} mode in the constructed object matches the provided, invalid mode {$classMode}");
-            }
-        }
+    /** Ensure we get the expected exception when an invalid tag mode is given in the constructor. */
+    public function testConstructorWithInvalidClassMode()
+    {
+        self::expectException(InvalidArgumentException::class);
+        $cleaner = new HtmlCleaner(classMode: self::InvalidMode);
     }
 
     /**
@@ -217,554 +195,533 @@ class HtmlCleanerTest extends TestCase
                 "value" => HtmlCleaner::CombinedMode,
             ],
             ],
-
-            "invalid_int_mode" => [-1, (object)["exception" => InvalidArgumentException::class, "value" => null,]],
-            "invalid_type_mode" => ["1", (object)["exception" => InvalidArgumentException::class, "value" => null,]],
         ];
     }
 
-    /**
-     * @dataProvider dataForTestMode
-     *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by setIdMode(), or null if we
-     *   are not expecting an exception
-     * - `value` should be the expected value of idMode() or `null` if we expect it not to change
-     *
-     * @param int $mode The mode to attempt to set.
-     * @param StdClass $expectation A description of what is expected to happen.
-     */
-    public function testTagMode($mode, StdClass $expectation)
+    public function testTagMode(): void
     {
-        $oldMode = $this->m_cleaner->tagMode();
-        self::assertIsInt($oldMode, "default tag name mode is not an integer");
-        self::assertContains($oldMode, self::ValidModes);
+        $oldMode = $this->testCleaner->tagMode();
+        
+        if ($oldMode === HtmlCleaner::DenyListMode) {
+            self::markTestSkipped("Test cleaner's existing tag mode is the same as the mode we're testing with.");
+        }
+        
+        $this->testCleaner->setTagMode(HtmlCleaner::DenyListMode);
+        self::assertEquals(HtmlCleaner::DenyListMode, $this->testCleaner->tagMode());
+    }
 
-        if (!is_int($mode)) {
-            $this->expectException("TypeError");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
+    public function testIdMode(): void
+    {
+        $oldMode = $this->testCleaner->idMode();
+        
+        if ($oldMode === HtmlCleaner::DenyListMode) {
+            self::markTestSkipped("Test cleaner's existing id mode is the same as the mode we're testing with.");
+        }
+        
+        $this->testCleaner->setIdMode(HtmlCleaner::DenyListMode);
+        self::assertEquals(HtmlCleaner::DenyListMode, $this->testCleaner->IdMode());
+    }
+
+    public function testClassMode(): void
+    {
+        $oldMode = $this->testCleaner->classMode();
+        
+        if ($oldMode === HtmlCleaner::DenyListMode) {
+            self::markTestSkipped("Test cleaner's existing class mode is the same as the mode we're testing with.");
+        }
+        
+        $this->testCleaner->setClassMode(HtmlCleaner::DenyListMode);
+        self::assertEquals(HtmlCleaner::DenyListMode, $this->testCleaner->ClassMode());
+    }
+
+    public function testTagModeThrows(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->setTagMode(self::InvalidMode);
+    }
+
+    public function testIdModeThrows(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->setIdMode(self::InvalidMode);
+    }
+
+    public function testClassModeThrows(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->setClassMode(self::InvalidMode);
+    }
+
+    /**
+     * Provides valid data for Tag list tests.
+     *
+     * @return iterable The test data.
+     */
+    public function dataForTestTags(): iterable
+    {
+        yield "empty_Tag_list" => [[], [],];
+        yield "single_string" => ["some-tag", ["some-tag"],];
+        yield "array_several_strings" => [["some-tag", "some-other-tag", "another-tag",], ["some-tag", "some-other-tag", "another-tag",],];
+        yield "array_several_strings_with_duplicates" => [["some-tag", "some-duplicate-tag", "another-tag", "some-duplicate-tag",], ["some-tag", "some-duplicate-tag", "another-tag",],];
+        yield "array_same_string_extreme_number_of_times" => [["some-duplicate-tag", "some-duplicate-tag", "some-duplicate-tag", "some-duplicate-tag", "some-duplicate-tag", "some-duplicate-tag"], ["some-duplicate-tag"],];
+    }
+
+    /**
+     * Provides invalid data for ID list tests.
+     *
+     * @return iterable The test data.
+     */
+    public function dataForTestTagsThrows(): iterable
+    {
+        yield "containsWhitespaceArray" => [["some tag"]];
+        yield "containsWhitespaceString" => ["some tag"];
+        yield "emptyStringArray" => [[""]];
+        yield "emptyStringString" => [""];
+    }
+
+    /**
+     * Ensure allowTags() accepts valid data.
+     *
+     * @dataProvider dataForTestTags
+     *
+     * @param array<string>|string $allowList The allowlist to test.
+     * @param array<string> $expected The expected outcome allow list.
+     */
+    public function testAllowTags(array|string $allowList, array $expected)
+    {
+        $this->testCleaner->allowTags($allowList);
+        self::assertEqualsCanonicalizing($expected, $this->testCleaner->allowedTags());
+    }
+
+    /**
+     * Ensure allowTags() throws with invalid content.
+     *
+     * @dataProvider dataForTestTagsThrows
+     */
+    public function testAllowTagsThrows(array|string $allowList): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->allowTags($allowList);
+    }
+
+    /**
+     * Ensure allowTags does not alter state with invalid content.
+     * @dataProvider dataForTestTagsThrows
+     */
+    public function testAllowTagsPreservesState(array|string $allowList): void
+    {
+        $before = ["one", "two",];
+        $this->testCleaner->allowTags($before);
+
+        if ($before !== $this->testCleaner->allowedTags()) {
+            self::markTestSkipped("The existing set of allowed ids is not as expected.");
         }
 
-        $this->m_cleaner->setTagMode($mode);
-        $actual = $this->m_cleaner->tagMode();
-        self::assertIsInt($actual, "actual tag name mode is not an integer");
-
-        if (isset($expectation->value)) {
-            self::assertSame($expectation->value, $actual, "actual tag name mode is not as expected after call to setTagMode({$mode})");
-        } else {
-            self::assertSame($oldMode, $actual, "actual tag name mode is not unchanged after failed call to setTagMode({$mode})");
+        try {
+            $this->testCleaner->allowTags($allowList);
+            self::fail("For this test, allowTags() is expected to throw.");
+        } catch (InvalidArgumentException $err) {
+            self::assertEqualsCanonicalizing($before, $this->testCleaner->allowedTags());
         }
     }
 
     /**
-     * @dataProvider dataForTestMode
+     * Ensure denyTags() accepts valid data.
      *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by setIdMode(), or null if we
-     *   are not expecting an exception
-     * - `value` should be the expected value of idMode() or `null` if we expect it not to change
+     * @dataProvider dataForTestTags
      *
-     * @param int $mode The mode to attempt to set.
-     * @param StdClass $expectation A description of what is expected to happen.
+     * @param array<string>|string $denyList The denylist to test.
+     * @param array<string> $expected The expected outcome deny list.
      */
-    public function testIdMode($mode, StdClass $expectation)
+    public function testDenyTags(array|string $denyList, array $expected)
     {
-        $oldMode = $this->m_cleaner->idMode();
-        self::assertIsInt($oldMode, "default ID mode is not an integer");
-        self::assertContains($oldMode, self::ValidModes);
+        $this->testCleaner->denyTags($denyList);
+        self::assertEqualsCanonicalizing($expected, $this->testCleaner->deniedTags());
+    }
 
-        if (!is_int($mode)) {
-            $this->expectException("TypeError");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
+    /**
+     * Ensure denyTags() throws with invalid content.
+     *
+     * @dataProvider dataForTestTagsThrows
+     */
+    public function testDenyTagsThrows(array|string $denyList): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->denyTags($denyList);
+    }
+
+    /**
+     * Ensure denyTags does not alter state with invalid content.
+     * @dataProvider dataForTestTagsThrows
+     */
+    public function testDenyTagsPreservesState(array|string $denyList): void
+    {
+        $before = ["one", "two",];
+        $this->testCleaner->denyTags($before);
+
+        if ($before !== $this->testCleaner->deniedTags()) {
+            self::markTestSkipped("The existing set of denied ids is not as expected.");
         }
 
-        $this->m_cleaner->setIdMode($mode);
-        $actual = $this->m_cleaner->idMode();
-        self::assertIsInt($actual, "actual ID mode is not an integer");
-
-        if (isset($expectation->value)) {
-            self::assertSame($expectation->value, $actual, "actual ID mode is not as expected after call to setIdMode({$mode})");
-        } else {
-            self::assertSame($oldMode, $actual, "actual ID mode is not unchanged after failed call to setIdMode({$mode})");
+        try {
+            $this->testCleaner->denyTags($denyList);
+            self::fail("For this test, denyTags() is expected to throw.");
+        } catch (InvalidArgumentException $err) {
+            self::assertEqualsCanonicalizing($before, $this->testCleaner->deniedTags());
         }
     }
 
     /**
-     * @dataProvider dataForTestMode
+     * Provides valid data for Id list tests.
      *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by setIdMode(), or null if we
-     *   are not expecting an exception
-     * - `value` should be the expected value of idMode() or `null` if we expect it not to change
-     *
-     * @param int $mode The mode to attempt to set.
-     * @param StdClass $expectation A description of what is expected to happen.
+     * @return iterable The test data.
      */
-    public function testClassMode($mode, StdClass $expectation)
+    public function dataForTestIds(): iterable
     {
-        $oldMode = $this->m_cleaner->classMode();
-        self::assertIsInt($oldMode, "default class mode is not an integer");
-        self::assertContains($oldMode, self::ValidModes);
+        yield "empty_Id_list" => [[], [],];
+        yield "single_string" => ["some-id", ["some-id"],];
+        yield "array_several_strings" => [["some-id", "some-other-id", "another-id",], ["some-id", "some-other-id", "another-id",],];
+        yield "array_several_strings_with_duplicates" => [["some-id", "some-duplicate-id", "another-id", "some-duplicate-id",], ["some-id", "some-duplicate-id", "another-id",],];
+        yield "array_same_string_extreme_number_of_times" => [["some-duplicate-id", "some-duplicate-id", "some-duplicate-id", "some-duplicate-id", "some-duplicate-id", "some-duplicate-id"], ["some-duplicate-id"],];
+    }
 
-        if (!is_int($mode)) {
-            $this->expectException("TypeError");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
+    /**
+     * Provides invalid data for ID list tests. 
+     * 
+     * @return iterable The test data.
+     */
+    public function dataForTestIdsThrows(): iterable
+    {
+        yield "containsWhitespaceArray" => [["some string"]];
+        yield "containsWhitespaceString" => ["some string"];
+        yield "emptyStringArray" => [[""]];
+        yield "emptyStringString" => [""];
+    }
+
+    /**
+     * Ensure allowIds() accepts valid data.
+     *
+     * @dataProvider dataForTestIds
+     *
+     * @param array<string>|string $allowList The allowlist to test.
+     * @param array<string> $expected The expected outcome allow list.
+     */
+    public function testAllowIds(array|string $allowList, array $expected)
+    {
+        $this->testCleaner->allowIds($allowList);
+        self::assertEqualsCanonicalizing($expected, $this->testCleaner->allowedIds());
+    }
+
+    /**
+     * Ensure allowIds() throws with invalid content.
+     *
+     * @dataProvider dataForTestIdsThrows
+     */
+    public function testAllowIdsThrows(array|string $allowList): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->allowIds($allowList);
+    }
+
+    /**
+     * Ensure allowIds does not alter state with invalid content.
+     * @dataProvider dataForTestIdsThrows
+     */
+    public function testAllowIdsPreservesState(array|string $allowList): void
+    {
+        $before = ["one", "two",];
+        $this->testCleaner->allowIds($before);
+
+        if ($before !== $this->testCleaner->allowedIds()) {
+            self::markTestSkipped("The existing set of allowed ids is not as expected.");
         }
 
-        $this->m_cleaner->setClassMode($mode);
-        $actual = $this->m_cleaner->classMode();
-        self::assertIsInt($actual, "actual class mode is not an integer");
-
-        if (isset($expectation->value)) {
-            self::assertSame($expectation->value, $actual, "actual class mode is not as expected after call to setClassMode({$mode})");
-        } else {
-            self::assertSame($oldMode, $actual, "actual class mode is not unchanged after failed call to setClassMode({$mode})");
+        try {
+            $this->testCleaner->allowIds($allowList);
+            self::fail("For this test, allowIds() is expected to throw.");
+        } catch (InvalidArgumentException $err) {
+            self::assertEqualsCanonicalizing($before, $this->testCleaner->allowedIds());
         }
     }
 
     /**
-     * Provide test data for tag deny/allow lists.
+     * Ensure denyIds() accepts valid data.
      *
-     * @return array The test data.
-     * @todo some tests triggering multiple calls to allowTags()/denyTags() to check the de-duplication over
-     * multiple calls
+     * @dataProvider dataForTestIds
      *
+     * @param array<string>|string $denyList The denylist to test.
+     * @param array<string> $expected The expected outcome deny list.
      */
-    public function dataForTestTagList(): array
+    public function testDenyIds(array|string $denyList, array $expected)
     {
-        return [
-            "empty_tag_list" => [
-                [],
-                (object)[
-                    "exception" => null,
-                    "value" => [],
-                ],
-            ],
-
-            "single_string" => [
-                "remove",
-                (object)[
-                    "exception" => null,
-                    "value" => ["remove"],
-                ],
-            ],
-
-            "array_several_strings" => [
-                ["remove", "ditch", "obliterate",],
-                (object)[
-                    "exception" => null,
-                    "value" => ["remove", "ditch", "obliterate"],
-                ],
-            ],
-
-            "array_several_strings_with_duplicates" => [
-                ["remove", "ditch", "remove", "obliterate", "ditch", "remove", "obliterate", "remove"],
-                (object)[
-                    "exception" => null,
-                    "value" => ["remove", "ditch", "obliterate"],
-                ],
-            ],
-
-            "array_same_string_extreme_number_of_times" => [
-                ["remove", "remove", "remove", "remove", "remove", "remove", "remove", "remove"],
-                (object)[
-                    "exception" => null,
-                    "value" => ["remove"],
-                ],
-            ],
-        ];
+        $this->testCleaner->denyIds($denyList);
+        self::assertEqualsCanonicalizing($expected, $this->testCleaner->deniedIds());
     }
 
     /**
-     * @dataProvider dataForTestTagList
+     * Ensure denyIds() throws with invalid content.
      *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by denyTags(), or `null`
-     *   if we are not expecting an exception
-     * - `value` should be the expected value of deniedTags() or `null` if we expect it not to change
-     *
-     * @param array|string $denyList The denylist to test.
-     * @param StdClass $expectation A description of the expected outcome.
+     * @dataProvider dataForTestIdsThrows
      */
-    public function testDenyTags($denyList, StdClass $expectation)
+    public function testDenyIdsThrows(array|string $denyList): void
     {
-        $oldBlacklist = $this->m_cleaner->deniedTags();
-
-        if (!is_string($denyList) && !is_array($denyList)) {
-            $this->expectException("TypeError");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
-        }
-
-        $this->m_cleaner->denyTags($denyList);
-        $actualBlacklist = $this->m_cleaner->deniedTags();
-        self::assertIsArray($actualBlacklist, "actual tags denylist is not an array");
-
-        if (isset($expectation->value)) {
-            self::assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual tags denylist is not as expected after call to denyTags()");
-        } else {
-            self::assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual tags denylist is not unchanged after failed call to denyTags()");
-        }
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->denyIds($denyList);
     }
 
     /**
-     * @dataProvider dataForTestTagList
-     *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by allowTags(), or `null`
-     *   if we are not expecting an exception
-     * - `value` should be the expected value of allowedTags() or `null` if we expect it not to change
-     *
-     * @param array|string $allowList The allowlist to test.
-     * @param StdClass $expectation A description of the expected outcome.
+     * Ensure denyIds does not alter state with invalid content.
+     * @dataProvider dataForTestIdsThrows
      */
-    public function testAllowListTags($allowList, StdClass $expectation)
+    public function testDenyIdsPreservesState(array|string $denyList): void
     {
-        $oldAllowlist = $this->m_cleaner->allowedTags();
+        $before = ["one", "two",];
+        $this->testCleaner->denyIds($before);
 
-        if (!is_string($allowList) && !is_array($allowList)) {
-            $this->expectException("TypeError", "argument for allowTags() is not an array or string");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
+        if ($before !== $this->testCleaner->deniedIds()) {
+            self::markTestSkipped("The existing set of denied ids is not as expected.");
         }
 
-        $this->m_cleaner->allowTags($allowList);
-        $actualAllowlist = $this->m_cleaner->allowedTags();
-        self::assertIsArray($actualAllowlist, "actual tags allowlist is not an array");
-
-        if (isset($expectation->value)) {
-            self::assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual tags allowlist is not as expected after call to allowTags()");
-        } else {
-            self::assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual tags allowlist is not unchanged after failed call to allowTags()");
-        }
-    }
-
-    /**
-     * Provide test data for id lists.
-     *
-     * @return array The test data.
-     * @todo some tests triggering multiple calls to allowListIds()/denyIds() to check the de-duplication over
-     * multiple calls
-     *
-     */
-    public function dataForTestIdList(): array
-    {
-        return [
-            "empty_id_list" => [
-                [],
-                (object)[
-                    "exception" => null,
-                    "value" => [],
-                ],
-            ],
-
-            "single_string" => [
-                "forbidden-id",
-                (object)[
-                    "exception" => null,
-                    "value" => ["forbidden-id"],
-                ],
-            ],
-
-            "array_several_strings" => [
-                ["forbidden-id", "this-one-goes", "not-welcome",],
-                (object)[
-                    "exception" => null,
-                    "value" => ["forbidden-id", "not-welcome", "this-one-goes"],
-                ],
-            ],
-
-            "array_several_strings_with_duplicates" => [
-                ["forbidden-id", "not-welcome", "this-one-goes", "forbidden-id", "not-welcome", "forbidden-id", "this-one-goes", "this-one-goes"],
-                (object)[
-                    "exception" => null,
-                    "value" => ["forbidden-id", "not-welcome", "this-one-goes"],
-                ],
-            ],
-
-            "array_same_string_extreme_number_of_times" => [
-                ["forbidden-id", "forbidden-id", "forbidden-id", "forbidden-id", "forbidden-id", "forbidden-id", "forbidden-id", "forbidden-id", "forbidden-id",],
-                (object)[
-                    "exception" => null,
-                    "value" => ["forbidden-id"],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * @dataProvider dataForTestIdList
-     *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by denyIds(), or `null`
-     *   if we are not expecting an exception
-     * - `value` should be the expected value of deniedIds() or `null` if we expect it not to change
-     *
-     * @param array|string $denyList The denylist to test.
-     * @param StdClass $expectation A description of the expected outcome.
-     */
-    public function testDenyIds($denyList, StdClass $expectation)
-    {
-        $oldBlacklist = $this->m_cleaner->deniedIds();
-
-        if (!is_string($denyList) && !is_array($denyList)) {
-            $this->expectException("TypeError");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
-        }
-
-        $this->m_cleaner->denyIds($denyList);
-        $actualBlacklist = $this->m_cleaner->deniedIds();
-        self::assertIsArray($actualBlacklist, "actual ids denylist is not an array");
-
-        if (isset($expectation->value)) {
-            self::assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual ids denylist is not as expected after call to denyIds()");
-        } else {
-            self::assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual ids denylist is not unchanged after failed call to denyIds()");
-        }
-    }
-
-    /**
-     * @dataProvider dataForTestIdList
-     *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by allowListIds(), or `null`
-     *   if we are not expecting an exception
-     * - `value` should be the expected value of allowedIds() or `null` if we expect it not to change
-     *
-     * @param array|string $allowList The allowlist to test.
-     * @param StdClass $expectation A description of the expected outcome.
-     */
-    public function testAllowListIds($allowList, StdClass $expectation)
-    {
-        $oldAllowlist = $this->m_cleaner->allowedIds();
-
-        if (!is_string($allowList) && !is_array($allowList)) {
-            $this->expectException("TypeError", "argument for allowIds() is not an array or string");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
-        }
-
-        $this->m_cleaner->allowIds($allowList);
-        $actualAllowlist = $this->m_cleaner->allowedIds();
-        self::assertIsArray($actualAllowlist, "actual ids allowlist is not an array");
-
-        if (isset($expectation->value)) {
-            self::assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual ids allowlist is not as expected after call to allowIds()");
-        } else {
-            self::assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual ids allowlist is not unchanged after failed call to allowIds()");
+        try {
+            $this->testCleaner->denyIds($denyList);
+            self::fail("For this test, denyIds() is expected to throw.");
+        } catch (InvalidArgumentException $err) {
+            self::assertEqualsCanonicalizing($before, $this->testCleaner->deniedIds());
         }
     }
 
     /**
      * Provide test data for class lists.
      *
-     * @return array The test data.
-     * @todo some tests triggering multiple calls to allowClasses()/denyClasses() to check the de-duplication
-     * over multiple calls
-     *
+     * @return iterable The test data.
      */
-    public function dataForTestClassList(): array
+    public function dataForTestClassList(): iterable
     {
-        return [
-            "empty_class_list" => [
-                [],
-                (object)[
-                    "exception" => null,
-                    "value" => [],
-                ],
-            ],
+        yield "empty_class_list" => [[], [],];
+        yield "single_string" => ["dangerous", ["dangerous"],];
+        yield "array_several_strings" => [["dangerous", "tracking-pixel", "auto-ajax-content",], ["tracking-pixel", "dangerous", "auto-ajax-content"],];
+        yield "array_several_strings_with_duplicates" => [["dangerous", "tracking-pixel", "dangerous", "auto-ajax-content", "tracking-pixel", "auto-ajax-content", "dangerous", "auto-ajax-content", "dangerous", "tracking-pixel"], ["tracking-pixel", "dangerous", "auto-ajax-content"],];
+        yield "array_same_string_extreme_number_of_times" => [["dangerous", "dangerous", "dangerous", "dangerous", "dangerous", "dangerous"], ["dangerous"],];
+    }
 
-            "single_string" => [
-                "dangerous",
-                (object)[
-                    "exception" => null,
-                    "value" => ["dangerous"],
-                ],
-            ],
-
-            "array_several_strings" => [
-                ["dangerous", "tracking-pixel", "auto-ajax-content"],
-                (object)[
-                    "exception" => null,
-                    "value" => ["tracking-pixel", "dangerous", "auto-ajax-content"],
-                ],
-            ],
-
-            "array_several_strings_with_duplicates" => [
-                ["dangerous", "tracking-pixel", "dangerous", "auto-ajax-content", "tracking-pixel", "auto-ajax-content", "dangerous", "auto-ajax-content", "dangerous", "tracking-pixel"],
-                (object)[
-                    "exception" => null,
-                    "value" => ["tracking-pixel", "dangerous", "auto-ajax-content"],
-                ],
-            ],
-
-            "array_same_string_extreme_number_of_times" => [
-                ["dangerous", "dangerous", "dangerous", "dangerous", "dangerous", "dangerous"],
-                (object)[
-                    "exception" => null,
-                    "value" => ["dangerous"],
-                ],
-            ],
-        ];
+    public function dataForTestClassesThrows(): iterable
+    {
+        yield "containsWhitespaceArray" => [["some string"]];
+        yield "containsWhitespaceString" => ["some string"];
+        yield "emptyStringArray" => [[""]];
+        yield "emptyStringString" => [""];
     }
 
     /**
      * @dataProvider dataForTestClassList
      *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by denyClasses(), or
-     *   `null` if we are not expecting an exception
-     * - `value` should be the expected value of deniedClasses() or `null` if we expect it not to change
-     *
-     * @param array|string $denyList The denylist to test.
-     * @param StdClass $expectation A description of the expected outcome.
+     * @param array<string>|string $denyList The denylist to test.
+     * @param array<string> $expected The expected outcome deny list.
      */
-    public function testDenyClasses($denyList, StdClass $expectation)
+    public function testDenyClasses(array|string $denyList, array $expected)
     {
-        $oldBlacklist = $this->m_cleaner->deniedClasses();
+        $this->testCleaner->denyClasses($denyList);
+        self::assertEqualsCanonicalizing($expected, $this->testCleaner->deniedClasses());
+    }
 
-        if (!is_string($denyList) && !is_array($denyList)) {
-            $this->expectException("TypeError");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
+    /**
+     * Ensure denyClasses() throws with invalid content.
+     *
+     * @dataProvider dataForTestClassesThrows
+     */
+    public function testDenyClassesThrows(array|string $denyList): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->denyClasses($denyList);
+    }
+
+    /**
+     * Ensure denyClasses does not alter state with invalid content.
+     * @dataProvider dataForTestClassesThrows
+     */
+    public function testDenyClassesPreservesState(array|string $denyList): void
+    {
+        $before = ["one", "two",];
+        $this->testCleaner->denyClasses($before);
+
+        if ($before !== $this->testCleaner->deniedClasses()) {
+            self::markTestSkipped("The existing set of denied classes is not as expected.");
         }
 
-        $this->m_cleaner->denyClasses($denyList);
-        $actualBlacklist = $this->m_cleaner->deniedClasses();
-        self::assertIsArray($actualBlacklist, "actual classes denylist is not an array");
-
-        if (isset($expectation->value)) {
-            self::assertEqualsCanonicalizing($expectation->value, $actualBlacklist, "actual classes denylist is not as expected after call to denyClasses()");
-        } else {
-            self::assertEqualsCanonicalizing($oldBlacklist, $actualBlacklist, "actual classes denylist is not unchanged after failed call to denyClasses()");
+        try {
+            $this->testCleaner->denyClasses($denyList);
+            self::fail("For this test, denyClasses() is expected to throw.");
+        } catch (InvalidArgumentException $err) {
+            self::assertEqualsCanonicalizing($before, $this->testCleaner->deniedClasses());
         }
     }
 
     /**
      * @dataProvider dataForTestClassList
      *
-     * The expectation contains two properties:
-     * - `exception` should be the name of an exception class that we expect to be thrown by denyClasses(), or
-     *   `null` if we are not expecting an exception
-     * - `value` should be the expected value of deniedClasses() or `null` if we expect it not to change
-     *
-     * @param array|string $allowList The denylist to test.
-     * @param StdClass $expectation A description of the expected outcome.
+     * @param array<string>|string $allowList The Allowlist to test.
+     * @param array<string> $expected The expected outcome Allow list.
      */
-    public function testAllowListClasses($allowList, StdClass $expectation)
+    public function testAllowClasses(array|string $allowList, array $expected)
     {
-        $oldAllowlist = $this->m_cleaner->allowedClasses();
+        $this->testCleaner->allowClasses($allowList);
+        self::assertEqualsCanonicalizing($expected, $this->testCleaner->allowedClasses());
+    }
 
-        if (!is_string($allowList) && !is_array($allowList)) {
-            $this->expectException("TypeError");
-        } else {
-            if (!empty($expectation->exception)) {
-                $this->expectException($expectation->exception);
-            }
+    /**
+     * Ensure AllowClasses() throws with invalid content.
+     *
+     * @dataProvider dataForTestClassesThrows
+     */
+    public function testAllowClassesThrows(array|string $allowList): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        $this->testCleaner->allowClasses($allowList);
+    }
+
+    /**
+     * Ensure AllowClasses does not alter state with invalid content.
+     * @dataProvider dataForTestClassesThrows
+     */
+    public function testAllowClassesPreservesState(array|string $allowList): void
+    {
+        $before = ["one", "two",];
+        $this->testCleaner->allowClasses($before);
+
+        if ($before !== $this->testCleaner->allowedClasses()) {
+            self::markTestSkipped("The existing set of allowed classes is not as expected.");
         }
 
-        $this->m_cleaner->allowClasses($allowList);
-        $actualAllowlist = $this->m_cleaner->allowedClasses();
-        self::assertIsArray($actualAllowlist, "actual classes allowlist is not an array");
-
-        if (isset($expectation->value)) {
-            self::assertEqualsCanonicalizing($expectation->value, $actualAllowlist, "actual classes allowlist is not as expected after call to allowClasses()");
-        } else {
-            self::assertEqualsCanonicalizing($oldAllowlist, $actualAllowlist, "actual classes allowlist is not unchanged after failed call to allowClasses()");
+        try {
+            $this->testCleaner->allowClasses($allowList);
+            self::fail("For this test, allowClasses() is expected to throw.");
+        } catch (InvalidArgumentException $err) {
+            self::assertEqualsCanonicalizing($before, $this->testCleaner->allowedClasses());
         }
     }
 
     /**
      * Data provider for testIsAllowedTag()
      *
-     * @return array[]
+     * @return iterable The test data.
      */
-    public function dataForTestIsAllowedTag(): array
+    public function dataForTestIsAllowedTag(): iterable
     {
-        return [
-            "typicalSpan-Allowed" => ["span", true, ["span",]],
-            "typicalSpan-NotAllowed" => ["span", false, ["div",]],
-            
-            "typicalDiv-Allowed" => ["div", true, ["div",]],
-            "typicalDiv-NotAllowed" => ["div", false, ["section",]],
-            
-            "typicalSpan-MultipleAllowed" => ["span", true, ["span", "div", "section", "article", ]],
-            "typicalSpan-MultipleNotAllowed" => ["span", false, ["div", "section", "article", "nav",]],
+        yield "typicalSpan-CombinedMode-NoDenyList-Allowed" => ["span", ["span",], [], HtmlCleaner::CombinedMode, true,];
+        yield "typicalSpan-CombinedMode-NoDenyList-NotAllowed" => ["span", ["div",], [], HtmlCleaner::CombinedMode, false,];
+        yield "typicalDiv-CombinedMode-NoDenyList-Allowed" => ["div", ["div",], [], HtmlCleaner::CombinedMode, true,];
+        yield "typicalDiv-CombinedMode-NoDenyList-NotAllowed" => ["div", ["section",], [], HtmlCleaner::CombinedMode, false,];
+        yield "typicalSpan-CombinedMode-NoDenyList-MultipleAllowed" => ["span", ["span", "div", "section", "article", ], [], HtmlCleaner::CombinedMode, true,];
+        yield "typicalSpan-CombinedMode-NoDenyList-MultipleNotAllowed" => ["span", ["div", "section", "article", "nav",], [], HtmlCleaner::CombinedMode, false,];
+        yield "typicalDiv-CombinedMode-NoDenyList-MultipleAllowed" => ["div", ["div", "section", "article",], [], HtmlCleaner::CombinedMode, true,];
+        yield "typicalDiv-CombinedMode-NoDenyList-MultipleNotAllowed" => ["div", ["section", "article", "nav",], [], HtmlCleaner::CombinedMode, false,];
+        yield "extremeDivSpace-CombinedMode-NoDenyList-DivAllowed" => ["div ", ["div",], [], HtmlCleaner::CombinedMode, false,];
+        yield "extremeSpanSpace-CombinedMode-NoDenyList-SpanAllowed" => ["span ", ["span",], [], HtmlCleaner::CombinedMode, false,];
 
-            "typicalDiv-MultipleAllowed" => ["div", true, ["div", "section", "article",]],
-            "typicalDiv-MultipleNotAllowed" => ["div", false, ["section", "article", "nav",]],
+        yield "typicalSpan-CombinedMode-NoAllowList-NotAllowed" => ["span", [], ["span",], HtmlCleaner::CombinedMode, false,];
+        yield "typicalDiv-CombinedMode-NoAllowList-NotAllowed" => ["div", [], ["div",], HtmlCleaner::CombinedMode, false,];
+        yield "typicalSpan-CombinedMode-NoAllowList-Multiple-NotAllowed" => ["span", [], ["span", "div", "section", "article", ], HtmlCleaner::CombinedMode, false,];
+        yield "typicalDiv-CombinedMode-NoAllowList-Multiple-NotAllowed" => ["div", [], ["div", "section", "article",], HtmlCleaner::CombinedMode, false,];
+        yield "extremeDivSpace-CombinedMode-NoAllowList-Div-NotAllowed" => ["div ", [], ["div",], HtmlCleaner::CombinedMode, false,];
+        yield "extremeSpanSpace-CombinedMode-NoAllowList-Span-NotAllowed" => ["span ", [], ["span",], HtmlCleaner::CombinedMode, false,];
 
-            "extremeDivSpace-DivAllowed" => ["div ", false, ["div",]],
-            "extremeSpanSpace-SpanAllowed" => ["span ", false, ["span",]],
+        yield "typicalSpan-AllowListMode-NoDenyList-Allowed" => ["span", ["span",], [], HtmlCleaner::AllowListMode, true,];
+        yield "typicalSpan-AllowListMode-NoDenyList-NotAllowed" => ["span", ["div",], [], HtmlCleaner::AllowListMode, false,];
+        yield "typicalDiv-AllowListMode-NoDenyList-Allowed" => ["div", ["div",], [], HtmlCleaner::AllowListMode, true,];
+        yield "typicalDiv-AllowListMode-NoDenyList-NotAllowed" => ["div", ["section",], [], HtmlCleaner::AllowListMode, false,];
+        yield "typicalSpan-AllowListMode-NoDenyList-MultipleAllowed" => ["span", ["span", "div", "section", "article", ], [], HtmlCleaner::AllowListMode, true,];
+        yield "typicalSpan-AllowListMode-NoDenyList-MultipleNotAllowed" => ["span", ["div", "section", "article", "nav",], [], HtmlCleaner::AllowListMode, false,];
+        yield "typicalDiv-AllowListMode-NoDenyList-MultipleAllowed" => ["div", ["div", "section", "article",], [], HtmlCleaner::AllowListMode, true,];
+        yield "typicalDiv-AllowListMode-NoDenyList-MultipleNotAllowed" => ["div", ["section", "article", "nav",], [], HtmlCleaner::AllowListMode, false,];
+        yield "extremeDivSpace-AllowListMode-NoDenyList-DivAllowed" => ["div ", ["div",], [], HtmlCleaner::AllowListMode, false,];
+        yield "extremeSpanSpace-AllowListMode-NoDenyList-SpanAllowed" => ["span ", ["span",], [], HtmlCleaner::AllowListMode, false,];
 
-            "invalidSpan-SpanSpaceAllowed" => ["span", false, ["span ",], InvalidArgumentException::class,],
-            "invalidDiv-DivSpaceAllowed" => ["div", false, ["div ",], InvalidArgumentException::class,],
-            "invalidDivSpace-DivSpaceAllowed" => ["div ", true, ["div ",], InvalidArgumentException::class,],
-            "invalidSpanSpace-SpanSpaceAllowed" => ["span ", true, ["span ",], InvalidArgumentException::class,],
-
-            "invalidStringableTagName" => [new class {
-            public function __toString(): string
-                {
-                    return "span";
-                }
-            }, false, ["span",], TypeError::class,],
-            "invalidNullTagName" => [null, false, ["span",], TypeError::class,],
-            "invalidIntTagName" => [21, false, ["span",], TypeError::class,],
-            "invalidFloatTagName" => [21.5467, false, ["span",], TypeError::class,],
-            "invalidTrueTagName" => [true, false, ["span",], TypeError::class,],
-            "invalidFalseTagName" => [false, false, ["span",], TypeError::class,],
-            "invalidArrayTagName" => [["span"], false, ["span",], TypeError::class,],
-            "invalidObjectTagName" => [(object) ["span"], false, ["span",], TypeError::class,],
-        ];
+        yield "typicalSpan-AllowListMode-NoAllowList-NotAllowed" => ["span", [], ["span",], HtmlCleaner::AllowListMode, false,];
+        yield "typicalDiv-AllowListMode-NoAllowList-NotAllowed" => ["div", [], ["div",], HtmlCleaner::AllowListMode, false,];
+        yield "typicalSpan-AllowListMode-NoAllowList-Multiple-NotAllowed" => ["span", [], ["span", "div", "section", "article", ], HtmlCleaner::AllowListMode, false,];
+        yield "typicalDiv-AllowListMode-NoAllowList-Multiple-NotAllowed" => ["div", [], ["div", "section", "article",], HtmlCleaner::AllowListMode, false,];
+        yield "extremeDivSpace-AllowListMode-NoAllowList-Div-NotAllowed" => ["div ", [], ["div",], HtmlCleaner::AllowListMode, false,];
+        yield "extremeSpanSpace-AllowListMode-NoAllowList-Span-NotAllowed" => ["span ", [], ["span",], HtmlCleaner::AllowListMode, false,];
     }
 
     /**
      * @dataProvider dataForTestIsAllowedTag
      */
-    public function testIsAllowedTag($tag, bool $allowed, ?array $allowedTags = null, ?string $exceptionClass = null): void
+    public function testIsAllowedTag(string $tag, array $allowedTags, array $deniedTags, int $mode, bool $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-        
-        if (isset($allowedTags)) {
-            $this->m_cleaner->allowTags($allowedTags);
-        }
-        
-        self::assertSame($allowed, $this->m_cleaner->isAllowedTag($tag));
+        $this->testCleaner->allowTags($allowedTags);
+        $this->testCleaner->denyTags($deniedTags);
+        $this->testCleaner->setTagMode($mode);
+        self::assertSame($expected, $this->testCleaner->isAllowedTag($tag));
     }
 
-//    public function testIsAllowedNode()
-//    {
-//    }
-//
-//    public function testIsAllowedId()
-//    {
-//    }
-//
-//    public function testIsAllowedClassAttribute()
-//    {
-//    }
+    /**
+     * Data provider for testIsAllowedId()
+     *
+     * @return iterable The test data.
+     */
+    public function dataForTestIsAllowedId(): iterable
+    {
+        yield "allowedCombinedWithNoDenyList" => ["some-id", ["some-id",], [], HtmlCleaner::CombinedMode, true,];
+        yield "forbiddenCombinedWithNoDenyList" => ["forbidden-id", ["some-id",], [], HtmlCleaner::CombinedMode, false,];
+        yield "forbiddenCombinedWithNoAllowList" => ["some-id", [], ["some-id",], HtmlCleaner::CombinedMode, false,];
+
+        yield "allowedAllowModeWithNoDenyList" => ["some-id", ["some-id",], [], HtmlCleaner::AllowListMode, true,];
+        yield "forbiddenAllowModeWithNoAllowList" => ["some-id", [], ["some-id",], HtmlCleaner::AllowListMode, false,];
+
+        yield "allowedDenyModeWithNoDenyList" => ["some-id", ["some-other-id",], [], HtmlCleaner::DenyListMode, true,];
+        yield "forbiddenDenyModeWithNoAllowList" => ["some-id", [], ["some-id",], HtmlCleaner::DenyListMode, false,];
+    }
+
+    /**
+     * @dataProvider dataForTestIsAllowedId
+     */
+    public function testIsAllowedId(string $tag, array $allowedIds, array $deniedIds, int $mode, bool $expected): void
+    {
+        $this->testCleaner->allowIds($allowedIds);
+        $this->testCleaner->denyIds($deniedIds);
+        $this->testCleaner->setIdMode($mode);
+        self::assertSame($expected, $this->testCleaner->isAllowedId($tag));
+    }
+
+    /**
+     * Data provider for testIsAllowedClass()
+     *
+     * @return iterable The test data.
+     */
+    public function dataForTestIsAllowedClass(): iterable
+    {
+        yield "allowedCombinedWithNoDenyList" => ["some-class", ["some-class",], [], HtmlCleaner::CombinedMode, true,];
+        yield "forbiddenCombinedWithNoDenyList" => ["forbidden-class", ["some-class",], [], HtmlCleaner::CombinedMode, false,];
+        yield "forbiddenCombinedWithNoAllowList" => ["some-class", [], ["some-class",], HtmlCleaner::CombinedMode, false,];
+
+        yield "allowedAllowModeWithNoDenyList" => ["some-class", ["some-class",], [], HtmlCleaner::AllowListMode, true,];
+        yield "forbiddenAllowModeWithNoAllowList" => ["some-class", [], ["some-class",], HtmlCleaner::AllowListMode, false,];
+
+        yield "allowedDenyModeWithNoDenyList" => ["some-class", ["some-other-class",], [], HtmlCleaner::DenyListMode, true,];
+        yield "forbiddenDenyModeWithNoAllowList" => ["some-class", [], ["some-class",], HtmlCleaner::DenyListMode, false,];
+        
+        yield "allowedMaultipleClassesCombinedWithNoDenyList" => ["some-class some-other-class", ["some-class", "some-other-class"], [], HtmlCleaner::CombinedMode, true,];
+        yield "forbiddenMaultipleClassesCombinedWithNoDenyList" => ["forbidden-class some-class", ["some-class",], [], HtmlCleaner::CombinedMode, false,];
+        yield "forbiddenMaultipleClassesCombinedWithNoAllowList" => ["some-class some-other-class", [], ["some-class",], HtmlCleaner::CombinedMode, false,];
+
+        yield "allowedMaultipleClassesAllowModeWithNoDenyList" => ["some-class some-other-class", ["some-class", "some-other-class",], [], HtmlCleaner::AllowListMode, true,];
+        yield "forbiddenMaultipleClassesAllowModeWithNoAllowList" => ["some-class some-other-class", [], ["some-class",], HtmlCleaner::AllowListMode, false,];
+
+        yield "allowedMaultipleClassesDenyModeWithNoDenyList" => ["some-class some-other-class", ["some-other-class",], [], HtmlCleaner::DenyListMode, true,];
+        yield "forbiddenMaultipleClassesDenyModeWithNoAllowList" => ["some-class some-other-class", [], ["some-class",], HtmlCleaner::DenyListMode, false,];
+    }
+
+    /**
+     * @dataProvider dataForTestIsAllowedClass
+     */
+    public function testIsAllowedClass(string $class, array $allowedClasses, array $deniedClasses, int $mode, bool $expected): void
+    {
+        $this->testCleaner->allowClasses($allowedClasses);
+        $this->testCleaner->denyClasses($deniedClasses);
+        $this->testCleaner->setClassMode($mode);
+        self::assertSame($expected, $this->testCleaner->isAllowedClassAttribute($class));
+    }
 
     public function dataForTestClean(): array
     {
@@ -1209,23 +1166,31 @@ class HtmlCleanerTest extends TestCase
     public function testClean(string $testHtml, string $expectedHtml, StdClass $config)
     {
         try {
-            $this->m_cleaner->setTagMode($config->tags->mode);
-            $this->m_cleaner->allowTags($config->tags->allowList);
-            $this->m_cleaner->denyTags($config->tags->denyList);
+            $this->testCleaner->setTagMode($config->tags->mode);
+            $this->testCleaner->allowTags($config->tags->allowList);
+            $this->testCleaner->denyTags($config->tags->denyList);
 
-            $this->m_cleaner->setIdMode($config->ids->mode);
-            $this->m_cleaner->allowIds($config->ids->allowList);
-            $this->m_cleaner->denyIds($config->ids->denyList);
+            $this->testCleaner->setIdMode($config->ids->mode);
+            $this->testCleaner->allowIds($config->ids->allowList);
+            $this->testCleaner->denyIds($config->ids->denyList);
 
-            $this->m_cleaner->setClassMode($config->classes->mode);
-            $this->m_cleaner->allowClasses($config->classes->allowList);
-            $this->m_cleaner->denyClasses($config->classes->denyList);
+            $this->testCleaner->setClassMode($config->classes->mode);
+            $this->testCleaner->allowClasses($config->classes->allowList);
+            $this->testCleaner->denyClasses($config->classes->denyList);
         }
         catch (InvalidArgumentException $err) {
-            $this->markTestSkipped("Exception {$err} thrown configuring cleaner - check config in test data");
+            $this->markTestSkipped("Exception {$err} configuring cleaner - check config in test data");
         }
 
-        $actualHtml = $this->m_cleaner->clean($testHtml);
+        $actualHtml = $this->testCleaner->clean($testHtml);
         self::assertSame($expectedHtml, $actualHtml);
+    }
+
+    /** Ensure clean() throws when the HTML can't be parsed. */
+    public function testCleanThrows(): void
+    {
+        $this->mockMethod(DOMDocument::class, 'loadXml', false);
+        self::expectException(RuntimeException::class);
+        $this->testCleaner->clean("");
     }
 }

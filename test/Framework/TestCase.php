@@ -141,8 +141,9 @@ abstract class TestCase extends PhpUnitTestCase
             throw new LogicException("Attempt to remove mock for method '{$class}::{$function}' that isn't mocked.");
         }
 
-        if ($this->methodMocks[$class][$method] !== uopz_get_return($class, $method)) {
-            throw new LogicException("Mock for method '{$class}::{$function}' has been removed externally.");
+        // strtolower() works around bug in old(er) versions of uopz
+        if ($this->methodMocks[$class][$method] !== uopz_get_return(strtolower($class), strtolower($method))) {
+            throw new LogicException("Mock for method '{$class}::{$method}' has been removed externally.");
         }
 
         unset($this->methodMocks[$class][$method]);
