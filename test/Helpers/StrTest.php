@@ -19,19 +19,9 @@ use function Bead\Helpers\Str\random;
 use function range;
 use function strlen;
 use function strspn;
-use function uopz_get_return;
-use function uopz_set_return;
-use function uopz_unset_return;
 
 final class StrTest extends TestCase
 {
-	public function tearDown(): void
-	{
-		if (!is_null(uopz_get_return("random_bytes"))) {
-			uopz_unset_return("random_bytes");
-		}
-	}
-
 	public function dataForTestCamelToSnake(): iterable
 	{
 		yield from [
@@ -346,13 +336,11 @@ final class StrTest extends TestCase
     /** Ensure random() */
 	public function testRandomIsCryptoSecure(): void
 	{
-		uopz_set_return(
-			"random_bytes",
+        $this->mockFunction("random_bytes",
 			function(int $length): string
 			{
 				throw new Exception("random_bytes() is not available.");
-			},
-			true
+			}
 		);
 
 		$this->expectException(RuntimeException::class);

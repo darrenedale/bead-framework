@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BeadTests\Responses;
 
 use Bead\Responses\NaivelySendsContent;
-use PHPUnit\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 
 final class NaivelySendsContentTest extends TestCase
 {
@@ -22,17 +22,6 @@ final class NaivelySendsContentTest extends TestCase
 
 	/** @var int The expected HTTP status code for the response. */
 	public const TestStatusCode = 200;
-
-	public function tearDown(): void
-	{
-		if (uopz_get_return('header')) {
-			uopz_unset_return('header');
-		}
-
-		if (uopz_get_return('http_response_code')) {
-			uopz_unset_return('http_response_code');
-		}
-	}
 
 	/** Create an anonymous object that imports the trait under test. */
 	private function createInstance(): mixed
@@ -75,28 +64,24 @@ final class NaivelySendsContentTest extends TestCase
 		$expectedHeaders[] = "content-type: " . self::TestContentType;
 		$test = $this;
 
-		uopz_set_return(
-			'header',
+        $this->mockFunction('header',
 			function (string $header, bool $replace) use (&$expectedHeaders, $test)
 			{
 				$test->assertTrue($replace);
 				$idx = array_search($header, $expectedHeaders);
 				$test->assertIsInt($idx, "Unexpected header '{$header}' generated.");
 				array_splice($expectedHeaders, $idx, 1);
-			},
-			true
+			}
 		);
 
 		$httpResponseCodeCalled = 0;
 
-		uopz_set_return(
-			'http_response_code',
+        $this->mockFunction('http_response_code',
 			function (int $code) use (&$httpResponseCodeCalled, $test)
 			{
 				++$httpResponseCodeCalled;
 				$test->assertEquals(NaivelySendsContentTest::TestStatusCode, $code);
-			},
-			true
+			}
 		);
 
 		ob_start();

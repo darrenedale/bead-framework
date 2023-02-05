@@ -15,8 +15,11 @@ use PHPUnit\Framework\TestCase as PhpUnitTestCase;
  */
 abstract class TestCase extends PhpUnitTestCase
 {
-    /** @var array<string> Names of functions mocked using mockFunction() */
+    /** @var array<string,mixed> Functions mocked using mockFunction() */
     private array $functionMocks = [];
+
+    /** @var array<string,array<string,mixed>> Methods mocked using mockMethod() */
+    private array $methodMocks = [];
 
     public static function tempDir(): string
     {
@@ -26,14 +29,27 @@ abstract class TestCase extends PhpUnitTestCase
     /** Subclasses that reimplement tearDown() must call the parent implementation. */
     public function tearDown(): void
     {
-        // removeFunctionMock() alters the array, so we iterate over a copy
         foreach (array_keys($this->functionMocks) as $function) {
             $this->removeFunctionMock($function);
+        }
+
+        foreach (array_keys($this->methodMocks) as $class) {
+            foreach (array_keys($this->methodMocks[$class]) as $method) {
+                $this->removeMethodMock($class, $method);
+            }
+
+            unset ($this->methodMocks[$class]);
         }
 
         parent::tearDown();
     }
 
+    /**
+     * Replace a function with a mock.
+     *
+     * @param string $function The name of the function to replace.
+     * @param mixed $return The return value or closure with which to replace the function.
+     */
     public function mockFunction(string $function, mixed $return): void
     {
         if (array_key_exists($function, $this->functionMocks)) {
@@ -44,6 +60,25 @@ abstract class TestCase extends PhpUnitTestCase
         $this->functionMocks[$function] = $return;
     }
 
+    /**
+     * Check whether a function is currently mocked.
+     *
+     * @param string $function The function to check.
+     *
+     * @return bool `true` if it's mocked, `false` if not.
+     */
+    public function isFunctionMocked(string $function): bool
+    {
+        return in_array($function, $this->functionMocks);
+    }
+
+    /**
+     * Remove a function mock.
+     *
+     * @param string $function The name of the mocked function to restore.
+     *
+     * @throws LogicException if the provided function is not mocked.
+     */
     public function removeFunctionMock(string $function): void
     {
         if (!array_key_exists($function, $this->functionMocks)) {
@@ -56,6 +91,62 @@ abstract class TestCase extends PhpUnitTestCase
 
         unset($this->functionMocks[$function]);
         uopz_unset_return($function);
+    }
+
+    /**
+     * Replace a method with a mock.
+     *
+     * @param class-string $class The name of the class whose method is to be replaced.
+     * @param string $method The name of the method to replace.
+     * @param mixed $return The return value or closure with which to replace the method.
+     */
+    public function mockMethod(string $class, string $method, mixed $return): void
+    {
+        if (array_key_exists($class, $this->methodMocks) && array_key_exists($method, $this->methodMocks[$class])) {
+            $this->removeMethodMock($class, $method);
+        }
+
+        if (!array_key_exists($class, $this->methodMocks)) {
+            $this->methodMocks[$class] = [];
+        }
+
+        uopz_set_return($class, $method, $return, $return instanceof Closure);
+        $this->methodMocks[$class][$method] = $return;
+    }
+
+    /**
+     * Check whether a method is currently mocked.
+     *
+     * @param class-string $class The class whose method is to be checked.
+     * @param string $method The method to check.
+     *
+     * @return bool `true` if it's mocked, `false` if not.
+     */
+    public function isMethodMocked(string $class, string $method): bool
+    {
+        return in_array($class, $this->methodMocks) && in_array($method, $this->methodMocks[$class]);
+    }
+
+    /**
+     * Remove a method mock.
+     *
+     * @param class-string $class The name of the class whose mocked method is to be restored.
+     * @param string $method The name of the mocked method to restore.
+     *
+     * @throws LogicException if the provided method is not mocked.
+     */
+    public function removeMethodMock(string $class, string $method): void
+    {
+        if (!array_key_exists($class, $this->methodMocks) || !array_key_exists($method, $this->methodMocks[$class])) {
+            throw new LogicException("Attempt to remove mock for method '{$class}::{$function}' that isn't mocked.");
+        }
+
+        if ($this->methodMocks[$class][$method] !== uopz_get_return($class, $method)) {
+            throw new LogicException("Mock for method '{$class}::{$function}' has been removed externally.");
+        }
+
+        unset($this->methodMocks[$class][$method]);
+        uopz_unset_return($class, $method);
     }
 
     /**

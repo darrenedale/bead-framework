@@ -44,10 +44,6 @@ class SharedMemoryTest extends TestCase
      */
     public function tearDown(): void
     {
-        if (!is_null(uopz_get_return("rand"))) {
-            uopz_unset_return("rand");
-        }
-
         $this->m_memory->delete();
 
         /** @var SharedMemory $memory */
@@ -59,6 +55,7 @@ class SharedMemoryTest extends TestCase
         }
 
         unset($this->m_memory, $this->m_memories);
+        parent::tearDown();
     }
 
     public function testCreateWithId(): void
@@ -81,15 +78,17 @@ class SharedMemoryTest extends TestCase
         $newId = 0x80808080;
         $called = false;
 
-        uopz_set_return("rand", function() use ($existingId, $newId, &$called): int
-        {
-            if (!$called) {
-                $called = true;
-                return $existingId;
-            }
+        $this->mockFunction("rand",
+            function() use ($existingId, $newId, &$called): int
+            {
+                if (!$called) {
+                    $called = true;
+                    return $existingId;
+                }
 
-            return $newId;
-        }, true);
+                return $newId;
+            }
+        );
 
         $memory = SharedMemory::create(10);
         $this->m_memories[] = $memory;
