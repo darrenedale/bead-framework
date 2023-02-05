@@ -40,7 +40,7 @@ class StaticXRay
     private array $m_xRayedMethods = [];
 
     /** @var string[] Cache of methods that cannot be resolved. */
-    private array $m_unresolvedMethods = [];
+    private array $m_unresolvableMethods = [];
 
     /** @var string[] Cache of resolved public static properties. */
     private array $m_publicProperties = [];
@@ -51,7 +51,7 @@ class StaticXRay
     private array $m_xRayedProperties = [];
 
     /** @var string[] Cache of properties that cannot be resolved. */
-    private array $m_unresolvedProperties = [];
+    private array $m_unresolvableProperties = [];
 
     /**
      * Initialise a new static x-ray for a named class.
@@ -78,7 +78,7 @@ class StaticXRay
      */
     protected function resolveMethod(string $method): void
     {
-        if (in_array($method, $this->m_publicMethods) || in_array($method, $this->m_unresolvedMethods) || isset($this->m_xRayedMethods[$method])) {
+        if (in_array($method, $this->m_publicMethods) || in_array($method, $this->m_unresolvableMethods) || isset($this->m_xRayedMethods[$method])) {
             return;
         }
 
@@ -89,7 +89,7 @@ class StaticXRay
         }
 
         if (!isset($reflector) || !$reflector->isStatic()) {
-            $this->m_unresolvedMethods[] = $method;
+            $this->m_unresolvableMethods[] = $method;
             return;
         }
 
@@ -109,7 +109,7 @@ class StaticXRay
      */
     protected function resolveProperty(string $property): void
     {
-        if (in_array($property, $this->m_publicProperties) || in_array($property, $this->m_unresolvedProperties) || isset($this->m_xRayedProperties[$property])) {
+        if (in_array($property, $this->m_publicProperties) || in_array($property, $this->m_unresolvableProperties) || isset($this->m_xRayedProperties[$property])) {
             return;
         }
 
@@ -120,7 +120,7 @@ class StaticXRay
         }
 
         if (!isset($reflector) || !$reflector->isStatic()) {
-            $this->m_unresolvedProperties[] = $property;
+            $this->m_unresolvableProperties[] = $property;
             return;
         }
 
@@ -260,6 +260,7 @@ class StaticXRay
             return $this->className()::$$property = $value;
         } else if ($this->isXRayedStaticProperty($property)) {
             $this->m_xRayedProperties[$property]->setValue(null, $value);
+            return $this->m_xRayedProperties[$property]->getValue(null);
         }
 
         throw new LogicException("Static property '{$property}' does not exist on object of class '{$this->m_subjectReflector->getName()}'.");

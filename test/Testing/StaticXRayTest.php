@@ -1,19 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BeadTests\Testing;
 
 use BadMethodCallException;
+use Bead\Exceptions\Testing\StaticXRayException;
+use Bead\Testing\StaticXRay;
 use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
-use Bead\Testing\StaticXRay;
 use LogicException;
+use ReflectionException;
 
-class StaticXRayTest extends TestCase
+final class StaticXRayTest extends TestCase
 {
     public const StringArg = "hitch-hiker";
     public const IntArg = 42;
 
     private StaticXRay $m_xRay;
+
     private CallTracker $m_tracker;
 
     public function setUp(): void
@@ -22,33 +27,36 @@ class StaticXRayTest extends TestCase
 
         $testObject = new class($this->m_tracker)
         {
-            private static CallTracker $m_tracker;
-            private static string $m_privateStaticProperty = "private-static-property";
+            private static CallTracker $callTracker;
+            private static string $privateStaticProperty = "private-static-property";
             public static string $publicStaticProperty = "public-static-property";
 
-            private string $m_privateProperty = "private-property";
+            private string $privateProperty = "private-property";
             public string $publicProperty = "public-property";
 
             public function __construct(CallTracker $tracker)
             {
-                self::$m_tracker = $tracker;
+                self::$callTracker = $tracker;
+                // we reset these every time the object is created so that they don't persist between tests
+                self::$privateStaticProperty = "private-static-property";
+                self::$publicStaticProperty = "public-static-property";
             }
 
             private static function privateStaticMethod(): string
             {
-                self::$m_tracker->increment();
+                self::$callTracker->increment();
                 return "private-static-method";
             }
 
             public static function publicStaticMethod(): string
             {
-                self::$m_tracker->increment();
+                self::$callTracker->increment();
                 return "public-static-method";
             }
 
             private static function privateStaticMethodWithArgs(string $arg1, int $arg2): string
             {
-                self::$m_tracker->increment();
+                self::$callTracker->increment();
                 StaticXRayTest::assertEquals(StaticXRayTest::StringArg, $arg1);
                 StaticXRayTest::assertEquals(StaticXRayTest::IntArg, $arg2);
                 return "{$arg1} {$arg2}";
@@ -56,11 +64,16 @@ class StaticXRayTest extends TestCase
 
             public static function publicStaticMethodWithArgs(string $arg1, int $arg2): string
             {
-                self::$m_tracker->increment();
+                self::$callTracker->increment();
                 StaticXRayTest::assertEquals(StaticXRayTest::StringArg, $arg1);
                 StaticXRayTest::assertEquals(StaticXRayTest::IntArg, $arg2);
                 return "{$arg1} {$arg2}";
             }
+
+			private static function privateStaticMethodThatThrows(): void
+			{
+				throw new ReflectionException("Test exception.");
+			}
 
             private function privateMethod(): string
             {
@@ -90,12 +103,12 @@ class StaticXRayTest extends TestCase
             public static function __callStatic(string $method, array $args): string
             {
                 if ("staticMagicMethod" === $method) {
-                    self::$m_tracker->increment();
+                    self::$callTracker->increment();
                     return "magic-method";
                 }
 
                 if ("staticMagicMethodWithArgs" === $method) {
-                    self::$m_tracker->increment();
+                    self::$callTracker->increment();
                     return "{$args[0]} {$args[1]}";
                 }
 
@@ -104,6 +117,13 @@ class StaticXRayTest extends TestCase
         };
 
         $this->m_xRay = new StaticXRay(get_class($testObject));
+    }
+
+    public function testConstructorThrows(): void
+    {
+        self::expectException(StaticXRayException::class);
+        self::expectExceptionMessage("The class 'non-existent-class' does not exist.");
+        $xRay = new StaticXRay("non-existent-class");
     }
 
     public function testPublicStaticProperty(): void
@@ -115,9 +135,9 @@ class StaticXRayTest extends TestCase
 
     public function testXRayedStaticProperty(): void
     {
-        self::assertFalse($this->m_xRay->isPublicStaticProperty("m_privateStaticProperty"));
-        self::assertTrue($this->m_xRay->isXRayedStaticProperty("m_privateStaticProperty"));
-        self::assertEquals("private-static-property", $this->m_xRay->m_privateStaticProperty);
+        self::assertFalse($this->m_xRay->isPublicStaticProperty("privateStaticProperty"));
+        self::assertTrue($this->m_xRay->isXRayedStaticProperty("privateStaticProperty"));
+        self::assertEquals("private-static-property", $this->m_xRay->privateStaticProperty);
     }
 
     public function testPublicProperty(): void
@@ -131,9 +151,9 @@ class StaticXRayTest extends TestCase
     public function testPrivateProperty(): void
     {
         self::expectException(LogicException::class);
-        self::assertFalse($this->m_xRay->isPublicStaticProperty("m_privateProperty"));
-        self::assertFalse($this->m_xRay->isXRayedStaticProperty("m_privateProperty"));
-        self::assertEquals("", $this->m_xRay->m_privateProperty);
+        self::assertFalse($this->m_xRay->isPublicStaticProperty("privateProperty"));
+        self::assertFalse($this->m_xRay->isXRayedStaticProperty("privateProperty"));
+        self::assertEquals("", $this->m_xRay->privateProperty);
     }
 
     public function testNonExistentProperty(): void
@@ -150,6 +170,37 @@ class StaticXRayTest extends TestCase
         self::assertFalse($this->m_xRay->isPublicStaticProperty(""));
         self::assertFalse($this->m_xRay->isXRayedStaticProperty(""));
         self::assertEquals("", $this->m_xRay->{""});
+    }
+
+    public function testSetPublicStaticProperty(): void
+    {
+        if ("other-value" === $this->m_xRay->className()::$publicStaticProperty) {
+            self::markTestSkipped("The public static property already has the value we want to change it to.");
+        }
+
+        $this->m_xRay->publicStaticProperty = "other-value";
+        self::assertEquals("other-value", $this->m_xRay->className()::$publicStaticProperty);
+    }
+
+    public function testSetPrivateStaticProperty(): void
+    {
+        if ("other-value" === $this->m_xRay->privateStaticProperty) {
+            self::markTestSkipped("The private static property already has the value we want to change it to.");
+        }
+
+        $this->m_xRay->privateStaticProperty = "other-value";
+        self::assertEquals("other-value", $this->m_xRay->privateStaticProperty);
+    }
+
+    public function testSetNonExistentProperty(): void
+    {
+        if ($this->m_xRay->isXRayedStaticProperty("nonExistentProperty") || $this->m_xRay->isPublicStaticProperty("nonExistentProperty")) {
+            self::markTestSkipped("The property 'nonExistentProperty' must not exist for this test to be valid.");
+        }
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage("Static property 'nonExistentProperty' does not exist on object of class '" . $this->m_xRay->className() . "'.");
+        $this->m_xRay->nonExistentProperty = "other-value";
     }
 
     public function testPublicStaticMethod(): void
@@ -189,6 +240,13 @@ class StaticXRayTest extends TestCase
         self::assertEquals($expected, $this->m_xRay->privateStaticMethodWithArgs(self::StringArg, self::IntArg));
         self::assertEquals(1, $this->m_tracker->callCount());
     }
+
+	public function testXRayedPrivateStaticMethodThatThrows(): void
+	{
+		self::expectException(BadMethodCallException::class);
+		self::expectExceptionMessage("Static method 'privateStaticMethodThatThrows' could not be invoked on class '" . $this->m_xRay->className() . "'.");
+		$this->m_xRay->privateStaticMethodThatThrows();
+	}
 
     public function testPublicMethod(): void
     {
@@ -245,7 +303,7 @@ class StaticXRayTest extends TestCase
         self::expectException(BadMethodCallException::class);
         self::assertFalse($this->m_xRay->isPublicStaticMethod("nonExistentMethod"));
         self::assertFalse($this->m_xRay->isXRayedStaticMethod("nonExistentMethod"));
-        self::assertEquals("", $this->m_xRay->nonExistentMethod());
+        $this->m_xRay->nonExistentMethod();
     }
 
     public function testEmptyMethod(): void
@@ -253,6 +311,20 @@ class StaticXRayTest extends TestCase
         self::expectException(BadMethodCallException::class);
         self::assertFalse($this->m_xRay->isPublicStaticMethod(""));
         self::assertFalse($this->m_xRay->isXRayedStaticMethod(""));
-        self::assertEquals("", $this->m_xRay->{""}());
+        $this->m_xRay->{""}();
+    }
+
+    public function testNonExistentMethodNoCallStatic(): void
+    {
+        $object = (object)[];
+        $xray = new StaticXRay(get_class($object));
+
+        if ($xray->isPublicStaticMethod("__callStatic") || $xray->isPublicStaticMethod("nonExistentMethod") || $xray->isXRayedStaticMethod("nonExistentMethod")) {
+            self::markTestSkipped("The methods nonExistentMethod and __callStatic must not exist on the test object for this test to be valid.");
+        }
+
+        self::expectException(BadMethodCallException::class);
+        self::expectExceptionMessage("Static method 'nonExistentMethod' does not exist on class '" . get_class($object) . "'.");
+        $xray->nonExistentMethod();
     }
 }
