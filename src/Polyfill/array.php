@@ -1,6 +1,7 @@
 <?php
 
-if (!function_exists("array_is_list")) {
+namespace Bead\Polyfill
+{
 	function array_is_list(array $arr): bool
 	{
 		$idx = 0;
@@ -14,5 +15,15 @@ if (!function_exists("array_is_list")) {
 		}
 
 		return true;
+	}
+}
+
+namespace
+{
+	if (!function_exists("array_is_list")) {
+		function array_is_list(array $arr): bool
+		{
+			return Bead\Polyfill\array_is_list($arr);
+		}
 	}
 }

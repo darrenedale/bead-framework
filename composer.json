@@ -35,8 +35,8 @@
       "src/Helpers/I18n.php",
       "src/Helpers/Iterable.php",
       "src/Helpers/Str.php",
-      "src/polyfill/string.php",
-      "src/polyfill/array.php"
+      "src/Polyfill/string.php",
+      "src/Polyfill/array.php"
     ]
   },
   "autoload-dev": {
