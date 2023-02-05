@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BeadTests\Testing;
 
 use BadMethodCallException;
@@ -8,14 +10,15 @@ use Bead\Testing\StaticXRay;
 use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
 use LogicException;
+use ReflectionException;
 
-// TODO test invoking the static xrayed method throws BadMethodCall
-class StaticXRayTest extends TestCase
+final class StaticXRayTest extends TestCase
 {
     public const StringArg = "hitch-hiker";
     public const IntArg = 42;
 
     private StaticXRay $m_xRay;
+
     private CallTracker $m_tracker;
 
     public function setUp(): void
@@ -66,6 +69,11 @@ class StaticXRayTest extends TestCase
                 StaticXRayTest::assertEquals(StaticXRayTest::IntArg, $arg2);
                 return "{$arg1} {$arg2}";
             }
+
+			private static function privateStaticMethodThatThrows(): void
+			{
+				throw new ReflectionException("Test exception.");
+			}
 
             private function privateMethod(): string
             {
@@ -232,6 +240,13 @@ class StaticXRayTest extends TestCase
         self::assertEquals($expected, $this->m_xRay->privateStaticMethodWithArgs(self::StringArg, self::IntArg));
         self::assertEquals(1, $this->m_tracker->callCount());
     }
+
+	public function testXRayedPrivateStaticMethodThatThrows(): void
+	{
+		self::expectException(BadMethodCallException::class);
+		self::expectExceptionMessage("Static method 'privateStaticMethodThatThrows' could not be invoked on class '" . $this->m_xRay->className() . "'.");
+		$this->m_xRay->privateStaticMethodThatThrows();
+	}
 
     public function testPublicMethod(): void
     {
