@@ -8,7 +8,7 @@ use Bead\Contracts\Database\Statement as DatabaseStatementContract;
 use PDO;
 
 /**
- * Lightweight extension of PDO to implement an interface and enable test doubling and other replacement.
+ * Lightweight extension of PDO to implement the Connecton interface using PDO.
  */
 class Connection extends PDO implements DatabaseConnectionContract
 {
@@ -51,7 +51,7 @@ class Connection extends PDO implements DatabaseConnectionContract
 	}
 
 	/**
-	 * Translate from \em de-facto to SQL wildcards.
+	 * Translate from _de-facto_ to SQL wildcards.
 	 *
 	 * This helper function translates _*_ and _?_ in a user-provided piece of text to _.*_ and _._ respectively so that
 	 * it can be used in a SQL _REGEX_ clause with the intended meaning.

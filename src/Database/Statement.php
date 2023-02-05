@@ -14,7 +14,7 @@ use PDOStatement;
 use Traversable;
 
 /**
- * A prepared statement for execution by a database connection.
+ * A prepared statement for execution by a database connection using PDO.
  * TODO custom exception classes?
  */
 class Statement implements StatementContract, IteratorAggregate
