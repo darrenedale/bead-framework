@@ -2,21 +2,20 @@
 
 namespace Bead\Database;
 
-use Bead\Contracts\Database\Statement as DatabaseStatementContract;
-use DateTime;
 use Bead\Application;
 use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
-use Bead\Contracts\SoftDeletableModel;
+use Bead\Contracts\Database\SoftDeletableModel;
+use Bead\Contracts\Database\Statement as DatabaseStatementContract;
 use Bead\Exceptions\Database\ModelPropertyCastException;
 use Bead\Exceptions\Database\UnknownRelationException;
 use Bead\Exceptions\Database\UnrecognisedQueryOperatorException;
+use DateTime;
 use Exception;
 use JsonException;
 use LogicException;
 use ReflectionException;
 use ReflectionMethod;
 use TypeError;
-
 use function Bead\Helpers\Iterable\all;
 use function Bead\Helpers\Str\snakeToCamel;
 
@@ -1167,7 +1166,7 @@ abstract class Model
         $idx = 1;
 
         foreach ($values as $value) {
-            $stmt->bindPositionalValue($idx, $value, $type);
+            $stmt->bindPositionalParameter($idx, $value, $type);
             ++$idx;
         }
     }

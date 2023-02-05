@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Contracts;
+namespace Bead\Contracts\Database;
 
 /**
  * Contract for models that can be soft-deleted.

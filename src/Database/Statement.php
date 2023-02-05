@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace Bead\Database;
 
 use Bead\Contracts\Database\Statement as StatementContract;
+use Bead\Exceptions\Database\StatementException;
 use Iterator;
 use IteratorAggregate;
 use PDO;
 use PDOException;
 use PDOStatement;
-use RuntimeException;
 use Traversable;
 
+/**
+ * A prepared statement for execution by a database connection.
+ * TODO custom exception classes?
+ */
 class Statement implements StatementContract, IteratorAggregate
 {
+    /** @var PDOStatement The underlying PDO Statement. */
     private PDOStatement $statement;
 
     public function __construct(PDOStatement $statement)
@@ -24,7 +29,8 @@ class Statement implements StatementContract, IteratorAggregate
         $this->statement->setFetchMode(PDO::FETCH_ASSOC);
     }
 
-    private function bindValue(string|int  $parameter, mixed $value): void
+    /** Helper to bind values to statmenet parameters. */
+    private function bindValue(string|int $parameter, mixed $value): void
     {
         $previous = null;
         
@@ -41,49 +47,123 @@ class Statement implements StatementContract, IteratorAggregate
         }
 
         if (!$successful) {
-            throw new RuntimeException("Failed to bind value to parameter {$parameter}.", previous: $previous);
+            throw new StatementException("Failed to bind value to parameter {$parameter}.", previous: $previous);
         }
     }
-    
-    public function bindNamedValue(string $parameter, mixed $value): void
+
+    /**
+     * Bind a value to a named parameter.
+     *
+     * @param string $parameter The parameter to bind to.
+     * @param mixed $value The value to bind.
+     */
+    public function bindNamedParameter(string $parameter, mixed $value): void
     {
         $this->bindValue($parameter, $value);
     }
 
-    public function bindPositionalValue(int $position, mixed $value): void
+    /**
+     * Bind a value to a positional parameter.
+     *
+     * @param int $position The parameter position to bind to.
+     * @param mixed $value The value to bind.
+     */
+    public function bindPositionalParameter(int $position, mixed $value): void
     {
-        $this->bindValue($parameter, $value);
+        $this->bindValue($position, $value);
     }
-    
-    public function execute(?array $params = null): bool
+
+    /**
+     * Bind several named parameters at once.
+     *
+     * @param array<string,mixed> $values The values to bind to the parameters, keyed by parameter name.
+     */
+    public function bindNamedParameters(array $values): void
     {
-        return $this->statement->execute($params);
+        foreach ($values as $parameter => $value) {
+            assert(is_string($parameter), new LogicException("Keys must be strings when binding named parameters."));
+            $this->bindNamedParameter($parameter, $value);
+        }
     }
-    
+
+    /**
+     * Bind all parameters in one call.
+     *
+     * Parameters will be bound starting at the first parameter for the first value in the array.
+     *
+     * @param array<int,mixed> $values The values to bind to the parameters.
+     */
+    public function bindPositionalParameters(array $values): void
+    {
+        $idx = 0;
+
+        foreach ($values as $value) {
+            $this->bindPositionalParameter($idx, $value);
+            ++$idx;
+        }
+    }
+
+    /**
+     * Execute the statement.
+     *
+     * @param array|null $arguments The values for the statement's parameters.
+     *
+     * @return bool `true` if the statement was executed, `false` if not.
+     */
+    public function execute(?array $arguments = null): bool
+    {
+        return $this->statement->execute($arguments);
+    }
+
+    /**
+     * Fetch all the rows from the last execution of the statement.
+     *
+     * @return array<int,array<string,mixed>> The rows.
+     */
     public function fetchAll(): array
     {
         try {
             return $this->statement->fetchAll();
         } catch (PDOException $err) {
-            throw new RuntimeException("Failed to fetch the data.", previous: $err);
+            throw new StatementException("Failed to fetch the data.", previous: $err);
         }
     }
-    
+
+    /**
+     * Fetch the next row from the last execution of the statement.
+     *
+     * @return array<string,mixed>|null The data for the next row.
+     */
     public function fetchNext(): ?array
     {
-        $row = $this->statement->fetch();
+        try {
+            $row = $this->statement->fetch();
+        } catch (PDOException $err) {
+            throw new StatementException("Failed to fetch the next row of data.", previous: $err);
+        }
+
         return is_array($row) ? $row : null;
     }
-    
+
+    /**
+     * Count the number of rows in the result from the last execution of the statement.
+     *
+     * @return int The number of rows.
+     */
     public function count(): int
     {
         try {
             return $this->statement->rowCount();
         } catch (PDOException $err) {
-            throw new RuntimeException("Failed to fetch row count.", previous: $err);
+            throw new StatementException("Failed to fetch row count.", previous: $err);
         }
     }
-    
+
+    /**
+     * Fetch the iterator that implements the Traversable interface.
+     *
+     * @return Iterator The iterator.
+     */
     public function getIterator(): Iterator
     {
         return $this->statement->getIterator();

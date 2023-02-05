@@ -3,6 +3,7 @@
 namespace Bead\Database;
 
 use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
+use Bead\Contracts\Database\QueryBuilder as QueryBuilderContract;
 use Bead\Contracts\Database\Statement as DatabaseStatementContract;
 use PDO;
 
@@ -89,6 +90,11 @@ class Connection extends PDO implements DatabaseConnectionContract
     public function prepare(string $sql): DatabaseConnectionContract
     {
         return new Statement(parent::prepare($sql));
+    }
+
+    public function createQuery(): QueryBuilderContract
+    {
+        return new QueryBuilder($this);
     }
 
     public function lastInsertId(): int|string|null

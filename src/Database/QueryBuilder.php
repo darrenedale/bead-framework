@@ -2,9 +2,9 @@
 
 namespace Bead\Database;
 
-use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
-use Bead\Contracts\QueryBuilder as QueryBuilderContract;
 use Bead\Application;
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
+use Bead\Contracts\Database\QueryBuilder as QueryBuilderContract;
 
 class QueryBuilder implements QueryBuilderContract
 {
