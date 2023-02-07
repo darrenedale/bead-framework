@@ -6,7 +6,6 @@ namespace BeadTests\Exceptions;
 
 use Bead\Exceptions\DuplicateRouteParameterNameException;
 use BeadTests\Framework\TestCase;
-use Mockery;
 use RuntimeException;
 
 final class DuplicateRouteParameterNameExceptionTest extends TestCase
