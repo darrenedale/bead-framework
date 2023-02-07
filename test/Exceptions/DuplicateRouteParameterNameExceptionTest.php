@@ -13,7 +13,7 @@ final class DuplicateRouteParameterNameExceptionTest extends TestCase
 {
 	use AssertsCommonExceptionProperties;
 
-	/** Ensure the erroneous request can be set in the exception constructor. */
+	/** Ensure the duplicate parameter and route can be set in the exception constructor. */
 	public function testConstructor(): void
 	{
 		$exception = new DuplicateRouteParameterNameException("invalid-parameter", "/home/route");
