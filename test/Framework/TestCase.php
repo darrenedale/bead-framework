@@ -26,6 +26,15 @@ abstract class TestCase extends PhpUnitTestCase
         return "/tmp/bead-framework/test";
     }
 
+	/**
+	 * Perform a fake assertion so that tests where Mockery does everything for us don't have to be annotated with
+	 * doesNotPerformAssertions, which turns off the coverage engine.
+	 */
+	protected static final function assertMockeryHandlesTestExpectations(): void
+	{
+		self::assertTrue(true);
+	}
+
     /** Subclasses that reimplement tearDown() must call the parent implementation. */
     public function tearDown(): void
     {

@@ -1,11 +1,11 @@
 <?php
 
-namespace Bead\Contracts;
+namespace Bead\Contracts\Session;
 
 /**
  * Interface for session storage backends.
  */
-interface SessionHandler
+interface Handler
 {
     /**
      * Initialise a new handler.
@@ -133,6 +133,11 @@ interface SessionHandler
      * Write the session data to permanent storage.
      */
     public function commit(): void;
+
+    /**
+     * Load a session from permanent storage, discarding any updated data.
+     */
+    public function load(string $id): void;
 
     /**
      * Reload the session from permanent storage, discarding any updated data.

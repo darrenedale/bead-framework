@@ -2,7 +2,7 @@
 
 namespace Bead\Session\Handlers;
 
-use Bead\Contracts\SessionHandler;
+use Bead\Contracts\Session\Handler;
 
 /**
  * Session handler that uses PHP's built-in sessions.
@@ -11,7 +11,7 @@ use Bead\Contracts\SessionHandler;
  * session storage backend you are advised not to access `$_SESSION` directly. Only one session using this handler can
  * be in use at any given time.
  */
-class Php implements SessionHandler
+class Php implements Handler
 {
     /** @inheritDoc */
     public function __construct(?string $id = null)
@@ -149,7 +149,15 @@ class Php implements SessionHandler
         session_commit();
     }
 
-    /**
+	/**
+	 * @inheritDoc
+	 */
+	public function load(string $id): void
+	{
+		session_id($id);
+	}
+
+	/**
      * @inheritDoc
      */
     public function reload(): void

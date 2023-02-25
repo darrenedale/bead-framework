@@ -25,7 +25,7 @@ interface DataAccessor extends ArrayAccess
      *
      * @return mixed|null The value.
      */
-    public function get(string $key, $default = null);
+    public function get(string $key, mixed $default = null);
 
     /**
      * Extract the data for one or more keys from the session.
@@ -36,7 +36,7 @@ interface DataAccessor extends ArrayAccess
      *
      * @return mixed|array<string,mixed> The extracted data.
      */
-    public function extract($keys);
+    public function extract(string|array $keys);
 
     /**
      * Fetch all the session data.
@@ -51,7 +51,7 @@ interface DataAccessor extends ArrayAccess
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
      */
-    public function set($keyOrData, $data = null): void;
+    public function set(string|array $keyOrData, mixed $data = null): void;
 
     /**
      * Push an item onto the end of an array stored in the session.
@@ -59,7 +59,7 @@ interface DataAccessor extends ArrayAccess
      * @param string $key The key that contains the array.
      * @param mixed $data The item to push onto the end of it.
      */
-    public function push(string $key, $data): void;
+    public function push(string $key, mixed $data): void;
 
     /**
      * Push a set of items onto the end of an array stored in the session.
@@ -101,12 +101,12 @@ interface DataAccessor extends ArrayAccess
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
      */
-    public function transientSet($keyOrData, $data = null): void;
+    public function transientSet(string|array $keyOrData, mixed $data = null): void;
 
     /**
      * Remove one or more keys from the session data.
      *
      * @param array<string>|string $keys The key or keys to remove.
      */
-    public function remove($keys): void;
+    public function remove(string|array $keys): void;
 }

@@ -4,7 +4,7 @@ namespace Bead\Session\Handlers;
 
 use Bead\Application;
 use Bead\AppLog;
-use Bead\Contracts\SessionHandler;
+use Bead\Contracts\Session\Handler;
 use Bead\Exceptions\Session\InvalidSessionDirectoryException;
 use Bead\Exceptions\Session\InvalidSessionFileException;
 use Bead\Exceptions\Session\SessionDestroyedException;
@@ -13,13 +13,12 @@ use Bead\Exceptions\Session\SessionNotFoundException;
 use DirectoryIterator;
 use Exception;
 use SplFileInfo;
-
 use function Bead\Helpers\Str\random;
 
 /**
  * Session handler that uses files to store session data persistently.
  */
-class File implements SessionHandler
+class File implements Handler
 {
     /** @var string Default session storage location, relative to application root directory. */
     private const DefaultSessionDirectory = "data/session";
@@ -334,6 +333,51 @@ class File implements SessionHandler
         }
     }
 
+	/**
+	 * @inheritDoc
+	 * @throws InvalidSessionDirectoryException if the configured storage directory for session files is not valid.
+	 * @throws InvalidSessionFileException if a problem is found with the data stored in the session file.
+	 * @throws SessionDestroyedException if the session has been destroyed.
+	 */
+	public function load(string $id): void
+	{
+		$this->throwIfDestroyed();
+		$session = unserialize(file_get_contents(self::sessionDirectory() . "/{$id}"));
+
+		if (!is_int($session["created_at"] ?? null)) {
+			throw new InvalidSessionFileException(self::sessionDirectory() . "/{$id}", "The session file '" . self::sessionDirectory() . "/{$id}' contains an invalid created-at timestamp.");
+		}
+
+		if (!is_int($session["last_used_at"] ?? null)) {
+			throw new InvalidSessionFileException(self::sessionDirectory() . "/{$id}", "The session file '" . self::sessionDirectory() . "/{$id}' contains an invalid last-used-at timestamp.");
+		}
+
+		if (!is_int($session["id_created_at"] ?? null)) {
+			throw new InvalidSessionFileException(self::sessionDirectory() . "/{$id}", "The session file '" . self::sessionDirectory() . "/{$id}' contains an invalid id-created-at timestamp.");
+		}
+
+		if (isset($session["id_expired_at"]) && !is_int($session["id_expired_at"])) {
+			throw new InvalidSessionFileException(self::sessionDirectory() . "/{$id}", "The session file '" . self::sessionDirectory() . "/{$id}' contains an invalid expired-at timestamp.");
+		}
+
+		if (isset($session["replacement_id"]) && !self::isValidId($session["replacement_id"])) {
+			throw new InvalidSessionFileException(self::sessionDirectory() . "/{$id}", "The session file '" . self::sessionDirectory() . "/{$id}' contains an invalid replacement ID.");
+		}
+
+		if (!is_array($session["data"] ?? null)) {
+			throw new InvalidSessionFileException(self::sessionDirectory() . "/{$id}", "The session file '" . self::sessionDirectory() . "/{$id}' contains an invalid data array.");
+		}
+
+		$this->m_id = $id;
+		$this->m_createdAt = $session["created_at"];
+		$this->m_lastUsedAt = $session["last_used_at"];
+		$this->m_idCreatedAt = $session["id_created_at"];
+		$this->m_idExpiredAt = $session["id_expired_at"];
+		$this->m_replacementId = $session["replacement_id"];
+		$this->m_data = $session["data"];
+		$this->m_destroyed = false;
+	}
+	
     /**
      * @inheritDoc
      * @throws InvalidSessionDirectoryException if the configured storage directory for session files is not valid.
@@ -342,40 +386,7 @@ class File implements SessionHandler
      */
     public function reload(): void
     {
-        $this->throwIfDestroyed();
-        $session = unserialize(file_get_contents(self::sessionDirectory() . "/{$this->id()}"));
-
-        if (!is_int($session["created_at"] ?? null)) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid created-at timestamp.");
-        }
-
-        if (!is_int($session["last_used_at"] ?? null)) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid last-used-at timestamp.");
-        }
-
-        if (!is_int($session["id_created_at"] ?? null)) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid id-created-at timestamp.");
-        }
-
-        if (isset($session["id_expired_at"]) && !is_int($session["id_expired_at"])) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid expired-at timestamp.");
-        }
-
-        if (isset($session["replacement_id"]) && !self::isValidId($session["replacement_id"])) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid replacement ID.");
-        }
-
-        if (!is_array($session["data"] ?? null)) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid data array.");
-        }
-
-        $this->m_createdAt = $session["created_at"];
-        $this->m_lastUsedAt = $session["last_used_at"];
-        $this->m_idCreatedAt = $session["id_created_at"];
-        $this->m_idExpiredAt = $session["id_expired_at"];
-        $this->m_replacementId = $session["replacement_id"];
-        $this->m_data = $session["data"];
-        $this->m_destroyed = false;
+		$this->load($this->id());
     }
 
     /**

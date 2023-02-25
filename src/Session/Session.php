@@ -2,19 +2,15 @@
 
 namespace Bead\Session;
 
-use Bead\Contracts\SessionHandler;
+use Bead\Contracts\Session\Handler;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
-use Bead\Exceptions\Session\InvalidSessionHandlerException;
 use Bead\Exceptions\Session\SessionExpiredException;
-use Bead\Exceptions\Session\SessionNotFoundException;
-use Bead\Session\Handlers\File as FileSessionHandler;
-use Bead\Session\Handlers\Php as PhpSessionHandler;
 use Bead\WebApplication;
 use Exception;
 use InvalidArgumentException;
 use RuntimeException;
 use TypeError;
-use function Bead\Traversable\all;
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Class encapsulating session data.
@@ -41,18 +37,12 @@ class Session implements DataAccessor
     /** @var int The default number of seconds after which an unused session is considered dead. */
     public const DefaultSessionIdleTimeoutPeriod = 1800;
 
-    /** @var SessionHandler The session handler. */
-    private SessionHandler $m_handler;
+    /** @var Handler The session handler. */
+    private Handler $m_handler;
 
     /** @var array<string, int> Stores the keys in the session that are transient, and how many more requests they will
      * last before being removed. */
     private array $m_transientKeys = [];
-
-    /** @var array<string,class-string> The known session handler types. */
-    private static array $m_handlerClasses = [
-        "file" => FileSessionHandler::class,
-        "php" => PhpSessionHandler::class,
-    ];
 
     /**
      * Initialise a new session.
@@ -60,27 +50,28 @@ class Session implements DataAccessor
      * Start a new session, or load an existing session based on its ID. The session will be backed with the session
      * handler defined in the application's session config file.
      *
-     * @param string|null $id The optional session ID. If not provided, a new ID will be generated.
+     * @param Handler $handler The handler to use to manage the session data.
      *
-     * @throws SessionNotFoundException If the ID provided does not identify an existing session.
      * @throws ExpiredSessionIdUsedException If the ID provided is for a session that has had its ID cycled.
      * @throws SessionExpiredException If the session identified hasn't been used for more than the threshold duration.
      */
-    public function __construct(?string $id = null)
+    public function __construct(Handler $handler)
     {
-        $this->m_handler = self::createHandler($id);
+        $this->m_handler = $handler;
 
         if ($this->handler()->idHasExpired()) {
             if ($this->handler()->idExpiredAt() < time() - self::expiredSessionGracePeriod()) {
                 // expired and beyond the grace period
+				$id = $this->id();
                 $this->destroy();
                 throw new ExpiredSessionIdUsedException($id, "The provided session ID is not valid.");
             } else {
                 // expired and within the grace period, promote to the regenerated ID for the old session ID
-                $this->m_handler = self::createHandler($this->handler()->replacementId());
+				$this->handler()->load($this->handler()->replacementId());
             }
         } else if ($this->lastUsedAt() < time() - self::sessionIdleTimeoutPeriod()) {
             // not used for too long
+			$id = $this->id();
             $this->destroy();
             throw new SessionExpiredException($id, "The session with the provided ID has been unused for more than " . self::sessionIdleTimeoutPeriod() . " seconds.");
         } else if ($this->handler()->idGeneratedAt() < time() - self::sessionIdRegenerationPeriod()) {
@@ -153,9 +144,9 @@ class Session implements DataAccessor
     /**
      * Fetch the session handler.
      *
-     * @return SessionHandler The handler.
+     * @return Handler The handler.
      */
-    public function handler(): SessionHandler
+    public function handler(): Handler
     {
         return $this->m_handler;
     }
@@ -261,15 +252,11 @@ class Session implements DataAccessor
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
      */
-    public function set($keyOrData, $data = null): void
+    public function set(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
             $this->handler()->set($keyOrData, $data);
             return;
-        }
-
-        if (!is_array($keyOrData)) {
-            throw new TypeError("set() expects a key and value or an array of keys and values.");
         }
 
         if (!all(array_keys($keyOrData), "is_string")) {
@@ -289,16 +276,12 @@ class Session implements DataAccessor
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
      */
-    public function transientSet($keyOrData, $data = null): void
+    public function transientSet(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
             $this->handler()->set($keyOrData, $data);
             $this->m_transientKeys[$keyOrData] = 1;
             return;
-        }
-
-        if (!is_array($keyOrData)) {
-            throw new InvalidArgumentException("transientSet() expects a key and value or an array of keys and values.");
         }
 
         if (!all(array_keys($keyOrData), "is_string")) {
@@ -319,9 +302,7 @@ class Session implements DataAccessor
      */
     public function pruneTransientData(): void
     {
-        $remove = array_filter($this->m_transientKeys, function(int $count): bool {
-            return 0 >= $count;
-        });
+        $remove = array_filter($this->m_transientKeys, fn(int $count): bool  => (0 >= $count));
 
         $this->remove($remove);
 
@@ -351,12 +332,10 @@ class Session implements DataAccessor
      *
      * @param array<string>|string $keys The key or keys to remove.
      */
-    public function remove($keys): void
+    public function remove(string|array $keys): void
     {
         if (is_string($keys)) {
             $keys = [$keys];
-        } else if (!is_array($keys)) {
-            throw new TypeError("remove() expects a key or an array of keys.");
         } else if (!all($keys, "is_string")) {
             throw new InvalidArgumentException("Keys for session data to remove must be strings.");
         }
@@ -410,36 +389,12 @@ class Session implements DataAccessor
     }
 
     /**
-     * Helper to create the SessionHandler backing sessions.
-     *
-     * The type of handler is determined by the session config file.
-     *
-     * @throws SessionNotFoundException if the session handler for the identified session can't be created.
-     * @throws Exception if the session handler specified in the configuration file is not recognised.
-     */
-    protected static function createHandler(?string $id): SessionHandler
-    {
-        $type = WebApplication::instance()->config("session.handler", "file");
-        $class = self::$m_handlerClasses[$type] ?? null;
-
-        if (!isset($class)) {
-            throw new InvalidSessionHandlerException("Session handler '{$type}' configured in session config file is not recognised.");
-        }
-
-        try {
-            return new $class($id);
-        } catch (Exception $err) {
-            throw new SessionNotFoundException($id ?? "", "Exception creating {$type} session handler ({$class}).", 0, $err);
-        }
-    }
-
-    /**
      * Push a value onto the end of an array stored in the session.
      *
      * @param string $key The session array to add to.
      * @param mixed $data The data to add.
      */
-    public function push(string $key, $data): void
+    public function push(string $key, mixed $data): void
     {
         $this->pushAll($key, [$data]);
     }

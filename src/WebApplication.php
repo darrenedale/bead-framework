@@ -4,6 +4,7 @@ namespace Bead;
 
 use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
+use Bead\Contracts\Session\HandlerFactory as SessionHandlerFactoryContract;
 use Bead\Database\Connection;
 use Bead\Exceptions\CsrfTokenVerificationException;
 use Bead\Exceptions\InvalidPluginException;
@@ -14,6 +15,7 @@ use Bead\Exceptions\NotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
 use Bead\Session\DataAccessor as SessionDataAccessor;
+use Bead\Session\Handlers\Factory as SessionHandlerFactory;
 use DirectoryIterator;
 use Exception;
 use InvalidArgumentException;
@@ -176,6 +178,7 @@ class WebApplication extends Application
 	public function __construct(string $appRoot, ?Connection $db = null)
 	{
 		parent::__construct($appRoot, $db);
+		$this->bootstrap();
 		$this->initialiseSession();
 		$this->m_session = $this->sessionData(self::SessionDataContext);
 		$this->setRouter(new Router());
@@ -187,6 +190,17 @@ class WebApplication extends Application
 		if (!empty($this->config("app.plugins.namespace"))) {
 			$this->setPluginsNamespace($this->config("app.plugins.namespace"));
 		}
+	}
+
+	/**
+	 * Reimplement this to bootstrap your application.
+	 *
+	 * If you reimplement this method, ensure you call this base implementation.
+	 */
+	protected function bootstrap(): void
+	{
+		// default session handler factory
+		$this->bindService(SessionHandlerFactoryContract::class, new SessionHandlerFactory());
 	}
 
 	/**

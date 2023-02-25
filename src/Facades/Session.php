@@ -3,12 +3,14 @@
 namespace Bead\Facades;
 
 use BadMethodCallException;
+use Bead\Contracts\Session\HandlerFactory;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\PrefixedAccessor;
 use Bead\Session\Session as BeadSession;
 use Bead\Session\SessionHandler;
+use Bead\WebApplication;
 use Exception;
 use LogicException;
 
@@ -56,12 +58,17 @@ final class Session
             throw new LogicException("Session already started.");
         }
 
+		$app = WebApplication::instance();
+		$type = WebApplication::instance()->config("session.handler", "file");
+		$id = $_COOKIE[BeadSession::CookieName] ?? null;
+
+		/** @var HandlerFactory $factory */
+		$factory = $app->get(HandlerFactory::class);
+
         try {
-            self::$session = new BeadSession($_COOKIE[BeadSession::CookieName] ?? null);
-        } catch (SessionNotFoundException $err) {
-            self::$session = new BeadSession();
-        } catch (SessionExpiredException $err) {
-            self::$session = new BeadSession();
+            self::$session = new BeadSession($factory->handler($type, $id));
+        } catch (SessionNotFoundException | SessionExpiredException $err) {
+            self::$session = new BeadSession($factory->handler($type));
         }
 
         return self::$session;
