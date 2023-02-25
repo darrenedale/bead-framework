@@ -26,12 +26,12 @@ final class CanPrefixTest extends TestCase
                 return false;
             }
 
-            public function get(string $key, $default = null)
+            public function get(string $key, mixed $default = null): mixed
             {
                 return null;
             }
 
-            public function extract($keys)
+            public function extract(string|array $keys): array
             {
                 return [];
             }
@@ -41,11 +41,11 @@ final class CanPrefixTest extends TestCase
                 return [];
             }
 
-            public function set($keyOrData, $data = null): void
+            public function set(string|array $keyOrData, mixed $data = null): void
             {
             }
 
-            public function push(string $key, $data): void
+            public function push(string $key, mixed $data): void
             {
             }
 
@@ -53,16 +53,16 @@ final class CanPrefixTest extends TestCase
             {
             }
 
-            public function pop(string $key, int $n = 1)
+            public function pop(string $key, int $n = 1): mixed
             {
                 return null;
             }
 
-            public function transientSet($keyOrData, $data = null): void
+            public function transientSet(string|array $keyOrData, mixed $data = null): void
             {
             }
 
-            public function remove($keys): void
+            public function remove(string|array $keys): void
             {
             }
         };

@@ -199,7 +199,7 @@ class Session implements DataAccessor
      *
      * @return mixed|null The value.
      */
-    public function get(string $key, $default = null)
+    public function get(string $key, mixed $default = null): mixed
     {
         return $this->handler()->get($key) ?? $default;
     }
@@ -213,16 +213,12 @@ class Session implements DataAccessor
 	 *
 	 * @return mixed|array<string,mixed> The extracted data.
 	 */
-    public function extract($keys)
+    public function extract(string|array $keys): mixed
     {
         if (is_string($keys)) {
             $data = $this->get($keys);
             $this->remove($keys);
             return $data;
-        }
-
-        if (!is_array($keys)) {
-            throw new TypeError("Parameter \$keys expects a string or array of strings, " . gettype($keys) . " given.");
         }
 
         if (!all($keys, "is_string")) {
@@ -261,15 +257,11 @@ class Session implements DataAccessor
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
      */
-    public function set($keyOrData, $data = null): void
+    public function set(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
             $this->handler()->set($keyOrData, $data);
             return;
-        }
-
-        if (!is_array($keyOrData)) {
-            throw new TypeError("set() expects a key and value or an array of keys and values.");
         }
 
         if (!all(array_keys($keyOrData), "is_string")) {
@@ -289,16 +281,12 @@ class Session implements DataAccessor
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
      */
-    public function transientSet($keyOrData, $data = null): void
+    public function transientSet(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
             $this->handler()->set($keyOrData, $data);
             $this->m_transientKeys[$keyOrData] = 1;
             return;
-        }
-
-        if (!is_array($keyOrData)) {
-            throw new InvalidArgumentException("transientSet() expects a key and value or an array of keys and values.");
         }
 
         if (!all(array_keys($keyOrData), "is_string")) {
@@ -351,12 +339,10 @@ class Session implements DataAccessor
      *
      * @param array<string>|string $keys The key or keys to remove.
      */
-    public function remove($keys): void
+    public function remove(string|array $keys): void
     {
         if (is_string($keys)) {
             $keys = [$keys];
-        } else if (!is_array($keys)) {
-            throw new TypeError("remove() expects a key or an array of keys.");
         } else if (!all($keys, "is_string")) {
             throw new InvalidArgumentException("Keys for session data to remove must be strings.");
         }
@@ -439,7 +425,7 @@ class Session implements DataAccessor
      * @param string $key The session array to add to.
      * @param mixed $data The data to add.
      */
-    public function push(string $key, $data): void
+    public function push(string $key, mixed $data): void
     {
         $this->pushAll($key, [$data]);
     }
@@ -470,7 +456,7 @@ class Session implements DataAccessor
      *
      * @return array|mixed|null
      */
-    public function pop(string $key, int $n = 1)
+    public function pop(string $key, int $n = 1): mixed
     {
         $arr = $this->get($key);
 
