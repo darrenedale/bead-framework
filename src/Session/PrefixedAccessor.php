@@ -55,7 +55,7 @@ class PrefixedAccessor implements DataAccessor
     /**
      * @inheritDoc
      */
-    public function get(string $key, $default = null)
+    public function get(string $key, mixed $default = null): mixed
     {
         return $this->m_parent->get($this->prefixedKey($key), $default);
     }
@@ -63,14 +63,10 @@ class PrefixedAccessor implements DataAccessor
     /**
      * @inheritDoc
      */
-    public function extract($keys)
+    public function extract(string|array $keys): mixed
     {
         if (is_string($keys)) {
             return $this->m_parent->extract($this->prefixedKey($keys));
-        }
-
-        if (!is_array($keys)) {
-            throw new TypeError("Parameter \$keys expects a string or array of strings, " . gettype($keys) . " given.");
         }
 
         if (!all($keys, "is_string")) {
@@ -87,15 +83,11 @@ class PrefixedAccessor implements DataAccessor
     /**
      * @inheritDoc
      */
-    public function set($keyOrData, $data = null): void
+    public function set(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
             $this->m_parent->set($this->prefixedKey($keyOrData), $data);
             return;
-        }
-
-        if (!is_array($keyOrData)) {
-            throw new TypeError("Parameter \$keys expects a string or an array of strings.");
         }
 
         foreach ($keyOrData as $key => $data) {
@@ -106,7 +98,7 @@ class PrefixedAccessor implements DataAccessor
     /**
      * @inheritDoc
      */
-    public function push(string $key, $data): void
+    public function push(string $key, mixed $data): void
     {
         $this->m_parent->push($this->prefixedKey($key), $data);
     }
@@ -122,7 +114,7 @@ class PrefixedAccessor implements DataAccessor
     /**
      * @inheritDoc
      */
-    public function pop(string $key, int $n = 1)
+    public function pop(string $key, int $n = 1): mixed
     {
         return $this->m_parent->pop($this->prefixedKey($key), $n);
     }
@@ -130,15 +122,11 @@ class PrefixedAccessor implements DataAccessor
     /**
      * @inheritDoc
      */
-    public function transientSet($keyOrData, $data = null): void
+    public function transientSet(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
             $this->m_parent->transientSet($this->prefixedKey($keyOrData), $data);
             return;
-        }
-
-        if (!is_array($keyOrData)) {
-            throw new TypeError("Parameter \$keys expects a string or an array of strings.");
         }
 
         foreach ($keyOrData as $key => $data) {
@@ -149,14 +137,14 @@ class PrefixedAccessor implements DataAccessor
     /**
      * @inheritDoc
      */
-    public function remove($keys): void
+    public function remove(string|array $keys): void
     {
         if (is_string($keys)) {
             $this->m_parent->remove($this->prefixedKey($keys));
             return;
         }
 
-        if (!is_array($keys) || !all($keys, "is_string")) {
+        if (!all($keys, "is_string")) {
             throw new TypeError("Parameter \$keys expects a string or an array of strings.");
         }
 

@@ -221,7 +221,7 @@ class File implements SessionHandler
      * @inheritDoc
      * @throws SessionDestroyedException if the session has been destroyed.
      */
-    public function get(string $key)
+    public function get(string $key): mixed
     {
         $this->throwIfDestroyed();
         return $this->m_data[$key] ?? null;
@@ -241,7 +241,7 @@ class File implements SessionHandler
      * @inheritDoc
      * @throws SessionDestroyedException if the session has been destroyed.
      */
-    public function set(string $key, $data)
+    public function set(string $key, mixed $data): void
     {
         $this->throwIfDestroyed();
         $this->m_data[$key] = $data;

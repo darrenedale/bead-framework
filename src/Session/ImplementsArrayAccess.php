@@ -15,12 +15,12 @@ trait ImplementsArrayAccess
     /**
      * Constrain trait users to provide a get() method.
      */
-    public abstract function get(string $key);
+    public abstract function get(string $key): mixed;
 
     /**
      * Constrain trait users to provide a set() method.
      */
-    public abstract function set(string $key, $value): void;
+    public abstract function set(string $key, mixed $value): void;
 
     /**
      * Constrain trait users to provide a remove() method.

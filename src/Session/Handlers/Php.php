@@ -73,7 +73,7 @@ class Php implements SessionHandler
     }
 
     /** @inheritDoc */
-    public function get(string $key)
+    public function get(string $key): mixed
     {
         return $_SESSION["__data"][$key] ?? null;
     }
@@ -85,7 +85,7 @@ class Php implements SessionHandler
     }
 
     /** @inheritDoc */
-    public function set(string $key, $data)
+    public function set(string $key, $data): void
     {
         $_SESSION["__data"][$key] = $data;
     }
