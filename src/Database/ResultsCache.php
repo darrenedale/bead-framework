@@ -550,7 +550,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 *
 	 * @return bool `true` if the index is in bounds, `false` otherwise.
 	 */
-	public function offsetExists($offset): bool
+	public function offsetExists(mixed $offset): bool
 	{
 		return is_int($offset) && 0 <= $offset && $this->rowCount() > $offset;
 	}
@@ -558,7 +558,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	/**
 	 * @throws LogicException - ResultsCache instances are read-only.
 	 */
-	public function offsetSet($offset, $value)
+	public function offsetSet(mixed $offset, mixed $value): void
 	{
 		throw new LogicException("ResultsCache instances are not writable.");
 	}
@@ -566,7 +566,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	/**
 	 * @throws LogicException - ResultsCache instances are read-only.
 	 */
-	public function offsetUnset($offset)
+	public function offsetUnset(mixed $offset): void
 	{
 		throw new LogicException("ResultsCache instances are not writable.");
 	}
@@ -579,7 +579,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
 	 * @return array
 	 * @throws OutOfBoundsException if the offset is not valid
 	 */
-	public function offsetGet($offset): ?array
+	public function offsetGet(mixed $offset): ?array
 	{
 		if (!$this->offsetExists($offset)) {
 			throw new OutOfBoundsException("The offset {$offset} is out of bounds.");
