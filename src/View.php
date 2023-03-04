@@ -11,8 +11,8 @@ use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
 use TypeError;
-use function Bead\Traversable\some;
 
+use function Bead\Helpers\Iterable\some;
 use function Bead\Helpers\Str\html;
 
 /**
