@@ -2,10 +2,14 @@
 
 namespace Bead;
 
+use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Database\Connection;
+use Bead\Environment\Environment;
+use Bead\Environment\Providers\Environment as EnvironmentProvider;
+use Bead\Environment\Providers\File as FileProvider;
 use Bead\ErrorHandler as BeadErrorHandler;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -37,7 +41,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
     protected static ?Application $s_instance = null;
 
     /** @var string The application's root directory. */
-    private string $m_appRoot;
+    private string $appRoot;
 
     /** @var string Optional application version string. */
     protected string $m_version = "";
@@ -87,8 +91,9 @@ abstract class Application implements ServiceContainer, ContainerInterface
             throw new Exception("Application root directory '{$appRoot}' does not exist.");
         }
 
-        $this->m_appRoot = $realAppRoot;
-        $this->loadConfig("{$this->m_appRoot}/config");
+        $this->appRoot = $realAppRoot;
+        $this->setupEnvironment();
+        $this->loadConfig("{$this->appRoot}/config");
         $this->setupTranslator();
         $this->setDatabase($db);
     }
@@ -123,6 +128,45 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
+     * Provide the list of environment files that should be loeaded.
+     *
+     * Reimplement this method to customise the set of environment files loaded by your app. If you reimplement this
+     * method, your implementation may rely ont he application root directory being set but cannot rely on the
+     * configuration being loaded.
+     *
+     * Files in the returned array should be in reverse order of precedence.
+     *
+     * @return string[] The environment files to load.
+     */
+    protected function environmentFiles(): array
+    {
+        $envFile = "{$this->rootDir()}/.env";
+
+        if (file_exists($envFile)) {
+            return [$envFile];
+        }
+
+        return [];
+    }
+
+    /**
+     * Set up the application's environment.
+     *
+     * The environment is bound to the EnvironmentProvider in the container.
+     */
+    protected function setupEnvironment(): void
+    {
+        $environment = new Environment();
+        $environment->addProvider(new EnvironmentProvider());
+
+        foreach ($this->environmentFiles() as $file) {
+            $environment->addProvider(new FileProvider($file));
+        }
+
+        $this->bindService(EnvironmentContract::class, $environment);
+    }
+
+    /**
      * Load the configuration files from the provided directory.
      *
      * @param string $path The directory from which to load the configuration.
@@ -148,7 +192,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function rootDir(): string
     {
-        return $this->m_appRoot;
+        return $this->appRoot;
     }
 
     /**
