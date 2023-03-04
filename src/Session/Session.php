@@ -204,16 +204,12 @@ class Session implements DataAccessor
 	 *
 	 * @return mixed|array<string,mixed> The extracted data.
 	 */
-    public function extract($keys)
+    public function extract(string|array $keys)
     {
         if (is_string($keys)) {
             $data = $this->get($keys);
             $this->remove($keys);
             return $data;
-        }
-
-        if (!is_array($keys)) {
-            throw new TypeError("Parameter \$keys expects a string or array of strings, " . gettype($keys) . " given.");
         }
 
         if (!all($keys, "is_string")) {
@@ -224,13 +220,13 @@ class Session implements DataAccessor
 
         foreach ($keys as $key) {
             $value = $this->get($key);
+            $this->remove($key);
 
             if (!isset($value)) {
                 continue;
             }
 
             $data[$key] = $value;
-            $this->remove($key);
         }
 
         return $data;
@@ -298,7 +294,7 @@ class Session implements DataAccessor
      * Purge the transient data that's due to expire.
      *
      * You probably never want to call this yourself. It is called automatically in the destructor so you can safely
-     * leave the WebApplication manage the session's lifecycle for you.
+     * leave the WebApplication to manage the session's lifecycle for you.
      */
     public function pruneTransientData(): void
     {
@@ -410,7 +406,7 @@ class Session implements DataAccessor
         $arr = $this->get($key, []);
 
         if (!is_array($arr)) {
-            throw new RuntimeException("The session key '{$key}' does not contain an array.");
+            throw new InvalidArgumentException("The session key '{$key}' does not contain an array.");
         }
 
         $arr = array_merge($arr, $data);
@@ -427,10 +423,11 @@ class Session implements DataAccessor
      */
     public function pop(string $key, int $n = 1)
     {
+		assert(0 < $n, new InvalidArgumentException("The number of items to pop must be > 0."));
         $arr = $this->get($key);
 
         if (!is_array($arr)) {
-            throw new RuntimeException("The session key '{$key}' does not contain an array.");
+            throw new InvalidArgumentException("The session key '{$key}' does not contain an array.");
         }
 
         if (1 === $n) {

@@ -437,10 +437,257 @@ class SessionTest extends TestCase
 		(new Session($this->handler))->remove(["test-key-1", 2, "test-key-2"]);
 	}
 
-	// TODO testExtract()
+	/** Ensure session extracts and removes a single key that exists. */
+	public function testExtractOneKey(): void
+	{
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn('value');
+
+		$this->handler->shouldReceive('remove')
+			->once()
+			->with('key');
+
+		$session = new Session($this->handler);
+		$actual = $session->extract('key');
+		self::assertEquals('value', $actual);
+	}
+
+	/** Ensure session handles extraction of a single key that does not exist as expected. */
+	public function testExtractOneMissingKey(): void
+	{
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn(null);
+
+		$this->handler->shouldReceive('remove')
+			->once()
+			->with('key');
+
+		$session = new Session($this->handler);
+		$actual = $session->extract('key');
+		self::assertEquals(null, $actual);
+	}
+
+	/** Ensure session extracts and removes a keys that exist. */
+	public function testExtractManyKeys(): void
+	{
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key-1')
+			->andReturn('value-1');
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key-2')
+			->andReturn('value-2');
+
+		$this->handler->shouldReceive('remove')
+			->once()
+			->with('key-1');
+
+		$this->handler->shouldReceive('remove')
+			->once()
+			->with('key-2');
+
+		$session = new Session($this->handler);
+		$actual = $session->extract('key');
+		self::assertIsArray($actual);
+		self::assertEqualsCanonicalizing(['value-1', 'value-2'], $actual);
+	}
+
+	/** Ensure session handles extraction of a a set of keys when some don't exist. */
+	public function testExtractManyWithMissingKey(): void
+	{
+		$data = [
+			'key-1' => 'value-1',
+			'key-2' => 'value-2',
+			'key-4' => 'value-4',
+		];
+
+		$keysToExtract = [...array_keys($data), 'key-3'];
+
+		foreach ($keysToExtract as $key) {
+			$this->handler->shouldReceive('get')
+				->once()
+				->with($key)
+				->andReturn($data[$key] ?? null);
+
+			$this->handler->shouldReceive('remove')
+				->once()
+				->with($key);
+		}
+
+		$session = new Session($this->handler);
+		$actual = $session->extract($keysToExtract);
+		self::assertEqualsCanonicalizing(array_values($data), $actual);
+	}
+
+	/** Ensure we can push a single value onto the end of an array stored in the session. */
+	public function testPush(): void
+	{
+		$original = ['a', 'b', 'c',];
+		$extra = 'd';
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn($original);
+
+		$this->handler->shouldReceive('set')
+			->once()
+			->with('key', [...$original, $extra]);
+
+		$session = new Session($this->handler);
+		$session->push('key', $extra);
+		self::assertMockeryHandlesTestExpectations();
+	}
+
+	/** Ensure we can push an array as a value onto the end of an array stored in the session. */
+	public function testPushWithArray(): void
+	{
+		$original = ['a', 'b', 'c',];
+		$extra = ['d', 'e', 'f',];
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn($original);
+
+		$this->handler->shouldReceive('set')
+			->once()
+			->with('key', [...$original, $extra]);
+
+		$session = new Session($this->handler);
+		$session->push('key', $extra);
+		self::assertMockeryHandlesTestExpectations();
+	}
+
+	/** Ensure push() throws when the given key does not contain an array. */
+	public function testPushThrows(): void
+	{
+		self::expectException(InvalidArgumentException::class);
+		self::expectExceptionMessage("The session key 'key' does not contain an array.");
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn('value');
+
+		$this->handler->shouldNotReceive('set');
+		$session = new Session($this->handler);
+		$session->push('key', 'a');
+	}
+
+	/** Ensure we can push multiple values onto the end of an array stored in the session. */
+	public function testPushAll(): void
+	{
+		$original = ['a', 'b', 'c',];
+		$extra = ['d', 'e', 'f',];
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn($original);
+
+		$this->handler->shouldReceive('set')
+			->once()
+			->with('key', [...$original, ...$extra]);
+
+		$session = new Session($this->handler);
+		$session->pushAll('key', $extra);
+		self::assertMockeryHandlesTestExpectations();
+	}
+
+	/** Ensure pushAll() throws when the given key does not contain an array. */
+	public function testPushAllThrows(): void
+	{
+		self::expectException(InvalidArgumentException::class);
+		self::expectExceptionMessage("The session key 'key' does not contain an array.");
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn('value');
+
+		$this->handler->shouldNotReceive('set');
+		$session = new Session($this->handler);
+		$session->pushAll('key', ['a']);
+	}
+
+	/** Ensure we can pop one value by default from an array stored in a session key. */
+	public function testPopOne(): void
+	{
+		$original = ['a', 'b', 'c',];
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn($original);
+
+		$this->handler->shouldReceive('set')
+			->once()
+			->with('key', ['a', 'b',]);
+
+		$session = new Session($this->handler);
+		$actual = $session->pop('key');
+		self::assertEquals('c', $actual);
+	}
+
+	/** Ensure we can pop one value by default from an array stored in a session key. */
+	public function testPopMany(): void
+	{
+		$original = ['a', 'b', 'c', 'd',];
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn($original);
+
+		$this->handler->shouldReceive('set')
+			->once()
+			->with('key', ['a', 'b',]);
+
+		$session = new Session($this->handler);
+		$actual = $session->pop('key', 2);
+		self::assertIsArray($actual);
+		self::assertEqualsCanonicalizing(['c', 'd',], $actual);
+	}
+
+	/** Ensure pop throws when the key provided does not identify an array in the session data. */
+	public function testPopThrowsWithInvalidKey(): void
+	{
+		self::expectException(InvalidArgumentException::class);
+		self::expectExceptionMessage("The session key 'key' does not contain an array.");
+
+		$this->handler->shouldReceive('get')
+			->once()
+			->with('key')
+			->andReturn('value');
+
+		$this->handler->shouldNotReceive('set');
+		$session = new Session($this->handler);
+		$session->pop('key');
+	}
+
+	/** Ensure pop throws when the key provided does not identify an array in the session data. */
+	public function testPopThrowsWithInvalidNumber(): void
+	{
+		if ("1" !== ini_get("zend.assertions")) {
+			$this->markTestSkipped("Assertions are not enabled, Session::pop() must fail an assertion for this test.");
+		}
+
+		self::expectException(InvalidArgumentException::class);
+		self::expectExceptionMessage("The number of items to pop must be > 0.");
+
+		$this->handler->shouldNotReceive('get');
+		$this->handler->shouldNotReceive('set');
+		$session = new Session($this->handler);
+		$session->pop('key', 0);
+	}
+
 	// TODO testPruneTransientData()
 	// TODO testRefreshTransientData()
-	// TODO testPush()
-	// TODO testPushAll()
-	// TODO testPop()
 }

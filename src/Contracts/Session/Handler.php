@@ -51,6 +51,8 @@ interface Handler
     /**
      * Remove a value from the session.
      *
+	 * It is not an error to request removal of a key that does not exist. This should just be a no-op.
+	 *
      * @param string $key The key of the value to remove.
      */
     public function remove(string $key): void;
