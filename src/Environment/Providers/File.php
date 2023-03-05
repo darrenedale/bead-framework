@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bead\Environment\Providers;
 
 use Bead\Contracts\Environment as EnvironmentContract;
+use Bead\Exceptions\Environment\Exception as EnvironmentException;
 use Bead\Exceptions\Environment\FileProviderParseException;
 use RuntimeException;
 use SplFileInfo;
@@ -23,7 +24,7 @@ class File implements EnvironmentContract
     /**
      * Initialise a new reader.
      *
-     * Env file readers are read on-demand - construction is a very cheap operation.
+     * Env files are parsed on-demand - construction is a very cheap operation.
      *
      * @param string $fileName The file to read.
      */
@@ -46,16 +47,17 @@ class File implements EnvironmentContract
         try {
             $file = $fileInfo->openFile();
         } catch  (RuntimeException $err) {
-            throw new RuntimeException("Failed to read env file {$this->fileName()}: {$err->getMessage()}", previous: $err);
+            throw new EnvironmentException("Failed to read env file '{$this->fileName()}': {$err->getMessage()}", previous: $err);
         }
 
         $data = [];
         $lineNumber = 0;
 
         foreach ($file as $line) {
+            ++$lineNumber;
             $line = trim($line);
 
-            if ("#" === $line[0]) {
+            if ("" === $line || "#" === $line[0]) {
                 continue;
             }
 
@@ -65,13 +67,41 @@ class File implements EnvironmentContract
                 throw new FileProviderParseException($this->fileName(), $lineNumber, "Invalid declaration at line {$lineNumber} in '{$this->fileName()}'.");
             }
 
-            array_walk($keyValue, "trim");
-            [$key, $value] = $keyValue;
-            $data[$key] = self::extractValue($value);
-            ++$lineNumber;
+            $key = self::validateKey($keyValue[0]);
+
+            if (!isset($key)) {
+                throw new FileProviderParseException($this->fileName(), $lineNumber, "Invalid varaible name '{$keyValue[0]}' at line {$lineNumber} in '{$this->fileName()}'.");
+            }
+
+            if (array_key_exists($key, $data)) {
+                throw new FileProviderParseException($this->fileName(), $lineNumber, "Varaible name '{$key}' at line {$lineNumber} has been defined previously in '{$this->fileName()}'.");
+            }
+
+            $data[$key] = self::extractValue($keyValue[1]);
         }
 
         $this->data = $data;
+    }
+
+    /**
+     * Ensure a key is valid as an environment variable name.
+     *
+     * Valid names start with an English letter or an underscore and contain only English letters, Arabic digits and
+     * underscore characters. Technically, an environment variable name *could* be anything in the OpenGroup's portable
+     * character set (https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap06.html) but most shell utilities
+     * limit support to only the subset validated here.
+     *
+     * @param string $key The key to validate. It's passed by reference and modified in-place.
+     *
+     * @return string|null The validated key or null if the key is invalid.
+     */
+    private static function validateKey(string $key): ?string
+    {
+        if (preg_match("/^\s*[_a-zA-Z][_a-zA-Z0-9]*\s*\$/", $key)) {
+            return trim($key);
+        }
+
+        return null;
     }
 
     /**
@@ -84,9 +114,13 @@ class File implements EnvironmentContract
      */
     private static function extractValue(string $value): string
     {
-        foreach (["\"", "'"] as $quote) {
-            if ($value[0] === $quote && $value[-1] === $quote) {
-                return substr($value, 1, -1);
+        $value = trim($value);
+
+        if ("" !== $value) {
+            foreach (["\"", "'"] as $quote) {
+                if ($value[0] === $quote && $value[-1] === $quote) {
+                    return substr($value, 1, -1);
+                }
             }
         }
 
@@ -102,7 +136,7 @@ class File implements EnvironmentContract
     /**
      * Determine whether the file contains a given key.
      *
-     * Calling this will trigger the file to be parsed.
+     * Calling this will trigger the file to be parsed if it hasn't been already.
      *
      * @param string $key The key to check for.
      *
@@ -114,7 +148,7 @@ class File implements EnvironmentContract
             $this->parse();
         }
 
-        return isset($data[$key]);
+        return isset($this->data[$key]);
     }
 
     /**
@@ -130,6 +164,6 @@ class File implements EnvironmentContract
             $this->parse();
         }
 
-        return $data[$key] ?? "";
+        return $this->data[$key] ?? "";
     }
 }
