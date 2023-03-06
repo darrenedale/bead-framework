@@ -15,6 +15,8 @@ use SplFileInfo;
  */
 class File implements EnvironmentContract
 {
+    use ValidatesVariableNames;
+
     /** @var string The env file to read. */
     private string $fileName;
 
@@ -67,7 +69,7 @@ class File implements EnvironmentContract
                 throw new FileProviderParseException($this->fileName(), $lineNumber, "Invalid declaration at line {$lineNumber} in '{$this->fileName()}'.");
             }
 
-            $key = self::validateKey($keyValue[0]);
+            $key = self::validateVariableName($keyValue[0]);
 
             if (!isset($key)) {
                 throw new FileProviderParseException($this->fileName(), $lineNumber, "Invalid varaible name '{$keyValue[0]}' at line {$lineNumber} in '{$this->fileName()}'.");
@@ -81,27 +83,6 @@ class File implements EnvironmentContract
         }
 
         $this->data = $data;
-    }
-
-    /**
-     * Ensure a key is valid as an environment variable name.
-     *
-     * Valid names start with an English letter or an underscore and contain only English letters, Arabic digits and
-     * underscore characters. Technically, an environment variable name *could* be anything in the OpenGroup's portable
-     * character set (https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap06.html) but most shell utilities
-     * limit support to only the subset validated here.
-     *
-     * @param string $key The key to validate. It's passed by reference and modified in-place.
-     *
-     * @return string|null The validated key or null if the key is invalid.
-     */
-    private static function validateKey(string $key): ?string
-    {
-        if (preg_match("/^\s*[_a-zA-Z][_a-zA-Z0-9]*\s*\$/", $key)) {
-            return trim($key);
-        }
-
-        return null;
     }
 
     /**

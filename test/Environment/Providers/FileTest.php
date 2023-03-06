@@ -8,7 +8,7 @@ use Bead\Environment\Providers\File;
 use Bead\Exceptions\Environment\Exception as EnvironmentException;
 use Bead\Exceptions\Environment\FileProviderParseException;
 use Bead\Testing\XRay;
-use PHPUnit\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 
 final class FileTest extends TestCase
 {
