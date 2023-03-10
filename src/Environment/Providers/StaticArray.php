@@ -20,7 +20,7 @@ class StaticArray implements Environment
     private array $data = [];
 
     /**
-     * Initialis a new StaticArray environment provider.
+     * Initialise a new StaticArray environment provider.
      *
      * @param array<string,string|int|float> $data The environment variables.
      */
