@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Facades;
 
+use BadMethodCallException;
 use Bead\Application;
 use Bead\Contracts\Environment as EnvironmentContract;
 use LogicException;
@@ -14,7 +15,7 @@ use LogicException;
  * @method static bool has(string $key)
  * @method static string get(string $key)
  */
-class Environment
+final class Environment
 {
     public static function __callStatic(string $method, array $args)
     {
@@ -25,7 +26,7 @@ class Environment
         }
 
         if (!method_exists($environment, $method)) {
-            throw new BadMethodCallException("The method '{$method}' does not exist on the instance bound to " . Environment::class . ".");
+            throw new BadMethodCallException("The method '{$method}' does not exist on the instance bound to " . EnvironmentContract::class . ".");
         }
 
         return $environment->{$method}(...$args);

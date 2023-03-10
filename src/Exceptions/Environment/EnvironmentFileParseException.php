@@ -7,9 +7,9 @@ namespace Bead\Exceptions\Environment;
 use Bead\Exceptions\Throwable;
 
 /**
- * Exceptions throw by the File environmentn provider.
+ * Exceptions throw by the File environment provider.
  */
-class FileProviderParseException extends Exception
+class EnvironmentFileParseException extends Exception
 {
     /** @var string The name of the environment file that triggered the exception. */
     private string $fileName;

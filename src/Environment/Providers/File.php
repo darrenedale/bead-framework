@@ -6,7 +6,7 @@ namespace Bead\Environment\Providers;
 
 use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Exceptions\Environment\Exception as EnvironmentException;
-use Bead\Exceptions\Environment\FileProviderParseException;
+use Bead\Exceptions\Environment\EnvironmentFileParseException;
 use RuntimeException;
 use SplFileInfo;
 
@@ -66,17 +66,17 @@ class File implements EnvironmentContract
             $keyValue = explode("=", $line, 2);
 
             if (2 !== count($keyValue)) {
-                throw new FileProviderParseException($this->fileName(), $lineNumber, "Invalid declaration at line {$lineNumber} in '{$this->fileName()}'.");
+                throw new EnvironmentFileParseException($this->fileName(), $lineNumber, "Invalid declaration at line {$lineNumber} in '{$this->fileName()}'.");
             }
 
             $key = self::validateVariableName($keyValue[0]);
 
             if (!isset($key)) {
-                throw new FileProviderParseException($this->fileName(), $lineNumber, "Invalid varaible name '{$keyValue[0]}' at line {$lineNumber} in '{$this->fileName()}'.");
+                throw new EnvironmentFileParseException($this->fileName(), $lineNumber, "Invalid varaible name '{$keyValue[0]}' at line {$lineNumber} in '{$this->fileName()}'.");
             }
 
             if (array_key_exists($key, $data)) {
-                throw new FileProviderParseException($this->fileName(), $lineNumber, "Varaible name '{$key}' at line {$lineNumber} has been defined previously in '{$this->fileName()}'.");
+                throw new EnvironmentFileParseException($this->fileName(), $lineNumber, "Varaible name '{$key}' at line {$lineNumber} has been defined previously in '{$this->fileName()}'.");
             }
 
             $data[$key] = self::extractValue($keyValue[1]);

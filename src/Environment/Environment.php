@@ -24,13 +24,13 @@ use function Bead\Helpers\Iterable\some;
  */
 class Environment implements EnvironmentContract
 {
-    /** @var array The environment variable providers. */
+    /** @var array<EnvironmentContract> The environment variable providers. */
     private array $providers = [];
 
     /**
      * Add a provider to the environment.
      *
-     * @param Provider $provider The provider to add.
+     * @param EnvironmentContract $provider The provider to add.
      */
     public function addProvider(EnvironmentContract $provider): void
     {
@@ -46,7 +46,7 @@ class Environment implements EnvironmentContract
      */
     public function has(string $key): bool
     {
-        return some($this->providers, fn(Provider $provider) => $provider->has($key));
+        return some($this->providers, fn(EnvironmentContract $provider) => $provider->has($key));
     }
 
     /**
@@ -67,7 +67,7 @@ class Environment implements EnvironmentContract
                     return $provider->get($key);
                 }
             } catch (EnvironmentException $err) {
-                // TODO log exception message and continue
+                AppLog::warning("Environment exception querying environment provider of type " . get_class($provider) . ": {$err->getMessage()}");
             }
         }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Environment\Providers;
 
-use \Bead\Contracts\Environment;
+use Bead\Contracts\Environment;
 use Bead\Exceptions\Environment\InvalidEnvironmentArrayException;
 
 use function Bead\Helpers\Iterable\all;
@@ -20,7 +20,7 @@ class StaticArray implements Environment
     private array $data = [];
 
     /**
-     * Initialis a new StaticArray environment provider.
+     * Initialise a new StaticArray environment provider.
      *
      * @param array<string,string|int|float> $data The environment variables.
      */
