@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Bead\Exceptions\Environment;
 
 use Bead\Exceptions\Throwable;
+use RuntimeException;
 
 /**
  * Exceptions throw by the File environment provider.
  */
-class EnvironmentFileParseException extends Exception
+class EnvironmentFileParseException extends RuntimeException
 {
     /** @var string The name of the environment file that triggered the exception. */
     private string $fileName;
@@ -34,13 +35,13 @@ class EnvironmentFileParseException extends Exception
     }
 
     /** The name of the file that could not be parsed. */
-    public function getFileName(): string
+    public function getEnvironmentFileName(): string
     {
         return $this->fileName;
     }
 
     /** The line number in the file that could not be parsed. */
-    public function getLineNumber(): int
+    public function getEnvironmentFileLineNumber(): int
     {
         return $this->envLine;
     }

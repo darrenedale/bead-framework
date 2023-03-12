@@ -11,7 +11,7 @@ use Bead\Environment\Environment;
 use Bead\Environment\Providers\StaticArray;
 use Bead\Facades\Environment as EnvironmentFacade;
 use LogicException;
-use PHPUnit\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 
 final class EnvironmentTest extends TestCase
 {
