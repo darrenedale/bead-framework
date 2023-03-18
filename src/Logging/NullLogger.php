@@ -14,7 +14,7 @@ class NullLogger extends PsrAbstractLogger implements LoggerContract
     use HasLogLevel;
 
     /**
-     * Log a message.
+     * "Log" a message.
      *
      * The message is simply ignored.
      *

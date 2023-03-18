@@ -9,6 +9,7 @@ use Bead\Contracts\Logger as LoggerContract;
  */
 trait HasLogLevel
 {
+    /** @var int The maximum log level. */
     private int $level = LoggerContract::InformationLevel;
 
     /**
