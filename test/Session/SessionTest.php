@@ -16,7 +16,7 @@ use InvalidArgumentException;
 use Mockery;
 use Mockery\MockInterface;
 
-class SessionTest extends TestCase
+final class SessionTest extends TestCase
 {
 	private const CurrentTime = 1677267395;
 
@@ -688,6 +688,63 @@ class SessionTest extends TestCase
 		$session->pop('key', 0);
 	}
 
-	// TODO testPruneTransientData()
-	// TODO testRefreshTransientData()
+	/** Ensure pruning transient data removes the expected keys from the session. */
+	public function testPruneTransientData(): void
+	{
+		$session = new XRay(new Session($this->handler));
+		$session->m_transientKeys = [
+			"KEY_1" => 1,
+			"KEY_2" => 0,
+			"KEY_3" => 2,
+			"KEY_4" => -1,
+		];
+
+		$this->handler->shouldReceive("remove")
+			->once()
+			->with("KEY_2");
+
+		$this->handler->shouldReceive("remove")
+			->once()
+			->with("KEY_4");
+
+		$session->pruneTransientData();
+
+		self::assertEqualsCanonicalizing(
+			[
+				"KEY_1" => 0,
+				"KEY_3" => 1,
+			],
+			$session->m_transientKeys
+		);
+
+		// NOTE destructor also calls pruneTransientData
+		$this->handler->shouldReceive("remove")
+			->once()
+			->with("KEY_1");
+	}
+
+	/** Ensure refreshing the transient data prevents any keys from being removed. */
+	public function testRefreshTransientData(): void
+	{
+		$session = new XRay(new Session($this->handler));
+		$session->m_transientKeys = [
+			"KEY_1" => 1,
+			"KEY_2" => 0,
+			"KEY_3" => 2,
+			"KEY_4" => -1,
+		];
+
+		$this->handler->shouldNotReceive("remove");
+		$session->refreshTransientData();
+
+		self::assertEqualsCanonicalizing(
+			[
+				"KEY_1" => 1,
+				"KEY_2" => 1,
+				"KEY_3" => 2,
+				"KEY_4" => 1,
+			],
+			$session->m_transientKeys
+		);
+	}
 }

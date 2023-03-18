@@ -6,10 +6,7 @@ use Bead\Contracts\Session\Handler;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\WebApplication;
-use Exception;
 use InvalidArgumentException;
-use RuntimeException;
-use TypeError;
 use function Bead\Helpers\Iterable\all;
 
 /**
@@ -298,17 +295,17 @@ class Session implements DataAccessor
      */
     public function pruneTransientData(): void
     {
-        $remove = array_filter($this->m_transientKeys, fn(int $count): bool  => (0 >= $count));
+        $remove = array_filter($this->m_transientKeys, fn(int $count): bool => (0 >= $count));
+        $this->remove(array_keys($remove));
+		$this->m_transientKeys = array_diff_key($this->m_transientKeys, $remove);
 
-        $this->remove($remove);
-
-        $this->m_transientKeys = array_filter($this->m_transientKeys, function(string $key) use ($remove): bool {
-            return !in_array($key, $remove);
-        });
-
-        foreach ($this->m_transientKeys as &$count) {
-            --$count;
-        }
+		array_walk(
+			$this->m_transientKeys,
+			function(int & $count): void
+			{
+				--$count;
+			}
+		);
     }
 
     /**
@@ -316,11 +313,15 @@ class Session implements DataAccessor
      */
     public function refreshTransientData(): void
     {
-        foreach ($this->m_transientKeys as &$count) {
-            if (0 >= $count) {
-                $count = 1;
-            }
-        }
+		array_walk(
+			$this->m_transientKeys,
+			function(int & $count): void
+			{
+				if (0 >= $count) {
+					$count = 1;
+				}
+			}
+		);
     }
 
     /**
