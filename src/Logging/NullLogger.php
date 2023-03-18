@@ -3,40 +3,25 @@
 namespace Bead\Logging;
 
 use Bead\Contracts\Logger as LoggerContract;
+use Psr\Log\AbstractLogger as PsrAbstractLogger;
+use Stringable;
 
 /**
  * Fake logger to discard all messages.
- *
- * Instances of this class are always open - calling close() has no effect.
  */
-class NullLogger implements Logger
+class NullLogger extends PsrAbstractLogger implements LoggerContract
 {
     use HasLogLevel;
 
     /**
-     * @inheritDoc
+     * Log a message.
+     *
+     * The message is simply ignored.
+     *
+     * @param int|string|Stringable $level The log level.
+     * @param string|Stringable $message The message to ignore.
+     * @param array $context The message context, if any.
      */
-    public function open(): void
+    public function log(int | string | Stringable $level, string | Stringable $message, array $context = []): void
     {}
-
-    /**
-     * @inheritDoc
-     */
-    public function close(): void
-    {}
-
-    /**
-     * @inheritDoc
-     */
-    public function isOpen(): bool
-    {
-        return true;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function write(string $message, int $level = self::InformationLevel): void
-    {
-    }
 }
