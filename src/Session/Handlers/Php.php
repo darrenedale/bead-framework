@@ -3,6 +3,7 @@
 namespace Bead\Session\Handlers;
 
 use Bead\Contracts\Session\Handler;
+use Bead\Exceptions\Session\SessionException;
 
 /**
  * Session handler that uses PHP's built-in sessions.
@@ -10,6 +11,8 @@ use Bead\Contracts\Session\Handler;
  * This is a thin wrapper around PHP's built-in sessions, implementing the SessionHandler interface. If you use this
  * session storage backend you are advised not to access `$_SESSION` directly. Only one session using this handler can
  * be in use at any given time.
+ *
+ * TODO unit test
  */
 class Php implements Handler
 {
@@ -73,7 +76,7 @@ class Php implements Handler
     }
 
     /** @inheritDoc */
-    public function get(string $key)
+    public function get(string $key): mixed
     {
         return $_SESSION["__data"][$key] ?? null;
     }
@@ -85,7 +88,7 @@ class Php implements Handler
     }
 
     /** @inheritDoc */
-    public function set(string $key, $data)
+    public function set(string $key, $data): void
     {
         $_SESSION["__data"][$key] = $data;
     }

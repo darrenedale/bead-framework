@@ -31,7 +31,7 @@ interface Handler
      *
      * @return mixed The value stored with the key, or `null` if the key is not set.
      */
-    public function get(string $key);
+    public function get(string $key): mixed;
 
     /**
      * Fetch all the data in the session.
@@ -46,7 +46,7 @@ interface Handler
      * @param string $key The key of the value to set.
      * @param mixed $data The value to store.
      */
-    public function set(string $key, $data);
+    public function set(string $key, mixed $data): void;
 
     /**
      * Remove a value from the session.

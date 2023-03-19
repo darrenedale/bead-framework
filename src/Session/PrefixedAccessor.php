@@ -4,10 +4,12 @@ namespace Bead\Session;
 
 use InvalidArgumentException;
 use TypeError;
-use function Bead\Traversable\all;
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Data accessor for session data that delegates to a parent accessor with all keys prefixed.
+ *
+ * TODO unit test
  */
 class PrefixedAccessor implements DataAccessor
 {

@@ -10,6 +10,7 @@ use Bead\Exceptions\Session\InvalidSessionFileException;
 use Bead\Exceptions\Session\SessionDestroyedException;
 use Bead\Exceptions\Session\SessionFileSaveException;
 use Bead\Exceptions\Session\SessionNotFoundException;
+use Bead\Session\Session;
 use DirectoryIterator;
 use Exception;
 use SplFileInfo;
@@ -17,6 +18,8 @@ use function Bead\Helpers\Str\random;
 
 /**
  * Session handler that uses files to store session data persistently.
+ *
+ * TODO unit test
  */
 class File implements Handler
 {
@@ -220,7 +223,7 @@ class File implements Handler
      * @inheritDoc
      * @throws SessionDestroyedException if the session has been destroyed.
      */
-    public function get(string $key)
+    public function get(string $key): mixed
     {
         $this->throwIfDestroyed();
         return $this->m_data[$key] ?? null;
@@ -240,7 +243,7 @@ class File implements Handler
      * @inheritDoc
      * @throws SessionDestroyedException if the session has been destroyed.
      */
-    public function set(string $key, $data)
+    public function set(string $key, $data): void
     {
         $this->throwIfDestroyed();
         $this->m_data[$key] = $data;
