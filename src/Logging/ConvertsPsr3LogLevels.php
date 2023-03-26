@@ -2,6 +2,7 @@
 
 namespace Bead\Logging;
 
+use Bead\Contracts\Logger as LoggerContract;
 use Bead\Exceptions\Logging\LoggerException;
 use Psr\Log\LogLevel;
 
@@ -14,14 +15,14 @@ trait ConvertsPsr3LogLevels
         }
 
         return match((string) $level) {
-            LogLevel::EMERGENCY => self::EmergencyLevel,
-            LogLevel::ALERT => self::AlertLevel,
-            LogLevel::CRITICAL => self::CriticalLevel,
-            LogLevel::ERROR => self::ErrorLevel,
-            LogLevel::WARNING => self::WarningLevel,
-            LogLevel::NOTICE => self::NoticeLevel,
-            LogLevel::INFO => self::InformationLevel,
-            LogLevel::DEBUG => self::DebugLevel,
+            LogLevel::EMERGENCY => LoggerContract::EmergencyLevel,
+            LogLevel::ALERT => LoggerContract::AlertLevel,
+            LogLevel::CRITICAL => LoggerContract::CriticalLevel,
+            LogLevel::ERROR => LoggerContract::ErrorLevel,
+            LogLevel::WARNING => LoggerContract::WarningLevel,
+            LogLevel::NOTICE => LoggerContract::NoticeLevel,
+            LogLevel::INFO => LoggerContract::InformationLevel,
+            LogLevel::DEBUG => LoggerContract::DebugLevel,
             default => throw new LoggerException("Unrecognised log level {$level}."),
         };
     }

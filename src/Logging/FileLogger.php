@@ -73,7 +73,7 @@ class FileLogger extends PsrAbstractLogger implements LoggerContract
      * @@throws LoggerException if the provided level can't be converted from a PSR3 string-like Loglevel to a Bead log
      * level.
      */
-    public function log(int | string | Stringable $level, string | Stringable $message, array $context = []): void
+    public function log($level, string | Stringable $message, array $context = []): void
     {
         $level = self::convertLogLevel($level);
 

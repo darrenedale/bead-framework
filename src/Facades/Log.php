@@ -18,13 +18,13 @@ use Stringable;
  * @method static void error(string|Stringable $message, array $context = [])
  * @method static void warning(string|Stringable $message, array $context = [])
  * @method static void notice(string|Stringable $message, array $context = [])
- * @method static void info($level, string|Stringable $message, array $context = [])
+ * @method static void info(string|Stringable $message, array $context = [])
  * @method static void debug(string|Stringable $message, array $context = [])
  * @method static void log(int|string|Stringable $level, string|Stringable $message, array $context = [])
  */
 class Log
 {
-    public function __callStatic(string $method, mixed ...$args): mixed
+    public static function __callStatic(string $method, array $args): mixed
     {
         $app = Application::instance();
         assert($app instanceof Application, new LogicException("Log facade used without Application container instance."));

@@ -30,7 +30,7 @@ trait LogsToStream
      * @throws LoggerException if the level of the message requires a write but the stream is not valid; or if the
      * provided level can't be converted from a PSR3 string-like Loglevel to a Bead log level.
      */
-    final public function log(int | string | Stringable $level, string | Stringable $message, array $context = []): void
+    final public function log($level, string | Stringable $message, array $context = []): void
     {
         $level = self::convertLogLevel($level);
 

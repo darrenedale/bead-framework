@@ -22,6 +22,6 @@ class NullLogger extends PsrAbstractLogger implements LoggerContract
      * @param string|Stringable $message The message to ignore.
      * @param array $context The message context, if any.
      */
-    public function log(int | string | Stringable $level, string | Stringable $message, array $context = []): void
+    public function log($level, string | Stringable $message, array $context = []): void
     {}
 }

@@ -2,12 +2,15 @@
 
 namespace Bead\Logging;
 
+use ArrayAccess;
 use Bead\Contracts\Logger as LoggerContract;
 use Bead\Exceptions\Logging\LoggerException;
 use Countable;
 use Iterator;
 use LogicException;
+use OutOfBoundsException;
 use Psr\Log\AbstractLogger as PsrAbstractLogger;
+use Stringable;
 use Throwable;
 
 use function Bead\Helpers\Iterable\all;
@@ -16,7 +19,7 @@ use function Bead\Helpers\Str\build;
 /**
  * Composite logger to write to several logs at once.
  */
-class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Iterator, Countable
+class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Iterator, Countable, ArrayAccess
 {
     use HasLogLevel;
     use ConvertsPsr3LogLevels;
@@ -25,7 +28,7 @@ class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Itera
     private array $loggers = [];
 
     /** @var int Tracks the $loggers array for the Iterator interface. */
-    private int $loggerIndex;
+    private int $loggerIndex = 0;
 
     /**
      * Add a logger to the composite logger.
@@ -52,15 +55,13 @@ class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Itera
      * @@throws LoggerException if one of the required composite loggers throws when logging the message, or if the
      * provided level can't be converted from a PSR3 string-like Loglevel to a Bead log level.
      */
-    public function log(int | string | Stringable $level, string | Stringable $message, array $context = []): void
+    public function log($level, string | Stringable $message, array $context = []): void
     {
         $level = self::convertLogLevel($level);
 
         if ($level > $this->level()) {
             return;
         }
-
-        $message = build($message, ...$context);
 
         foreach ($this->loggers as $logger) {
             try {
@@ -77,6 +78,29 @@ class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Itera
     public function count(): int
     {
         return count($this->loggers);
+    }
+
+    // ArrayAccess interface
+    public function offsetExists(mixed $offset): bool
+    {
+        return is_int($offset) && 0 <= $offset && $this->count() > $offset;
+    }
+
+    public function offsetGet(mixed $offset): LoggerContract
+    {
+        assert(is_int($offset), new LogicException("CompositLogger offsets must be integers."));
+        assert(0 <= $offset && $this->count() > $offset, new OutOfBoundsException("Logger {$offset} not found in CompositeLogger."));
+        return $this->loggers[$offset]["logger"];
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        throw new LogicException("CompositeLoggers are read-only data structures.");
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        throw new LogicException("CompositeLoggers are read-only data structures.");
     }
 
     // Iterator interface
