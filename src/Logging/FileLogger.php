@@ -10,6 +10,7 @@ use RuntimeException;
 use SplFileInfo;
 use SplFileObject;
 use Stringable;
+
 use function Bead\Helpers\Str\build;
 
 /**
@@ -21,10 +22,10 @@ class FileLogger extends PsrAbstractLogger implements LoggerContract
     use ConvertsPsr3LogLevels;
 
     /** @var int Flag indicating the log file should be overwritten if it already exists. */
-    public const FlagOverwrite = 0x02;
+    public const FlagOverwrite = 0x01;
 
     /** @var int Flag indicating the log file should be appended to if it already exists. */
-    public const FlagAppend = 0x04;
+    public const FlagAppend = 0x02;
 
     /** @var string The name of the log file. */
     private string $fileName;
@@ -44,13 +45,19 @@ class FileLogger extends PsrAbstractLogger implements LoggerContract
 
         try {
             $this->file = (new SplFileInfo($this->fileName()))->openFile(match (true) {
-                $flags & self::FlagAppend => "a",
-                $flags & self::FlagOverwrite => "w",
+                (bool) ($flags & self::FlagAppend) => "a",
+                (bool) ($flags & self::FlagOverwrite) => "w",
                 default => "x",
             });
         } catch (RuntimeException $err) {
             throw new FileLoggerException("Failed to open log file {$this->fileName()} for writing: {$err->getMessage()}", previous: $err);
         }
+    }
+
+    /** Flush the log write buffer to the file on destruction. */
+    public function __destruct()
+    {
+        $this->file->fflush();
     }
 
     /**
