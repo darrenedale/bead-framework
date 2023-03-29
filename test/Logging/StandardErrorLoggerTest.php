@@ -5,6 +5,7 @@ namespace BeadTests\Logging;
 use Bead\Contracts\Logger as LoggerContract;
 use Bead\Logging\StandardErrorLogger;
 use Bead\Testing\XRay;
+use BeadTests\Framework\TestCase;
 
 class StandardErrorLoggerTest extends TestCase
 {
