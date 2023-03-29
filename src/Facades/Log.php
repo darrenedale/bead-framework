@@ -2,9 +2,7 @@
 
 namespace Bead\Facades;
 
-use Bead\Application;
 use Bead\Contracts\Logger as LoggerContract;
-use LogicException;
 use Stringable;
 
 /**
@@ -22,14 +20,7 @@ use Stringable;
  * @method static void debug(string|Stringable $message, array $context = [])
  * @method static void log(int|string|Stringable $level, string|Stringable $message, array $context = [])
  */
-class Log
+class Log extends ApplicationServiceFacade
 {
-    public static function __callStatic(string $method, array $args): mixed
-    {
-        $app = Application::instance();
-        assert($app instanceof Application, new LogicException("Log facade used without Application container instance."));
-        $logger = $app->get(LoggerContract::class);
-        assert($logger instanceof LoggerContract, new LogicException("No service bound to " . LoggerContract::class));
-        return $logger->{$method}(...$args);
-    }
+    protected static string $serviceInterface = LoggerContract::class;
 }
