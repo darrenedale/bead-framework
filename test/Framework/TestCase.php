@@ -191,4 +191,14 @@ abstract class TestCase extends PhpUnitTestCase
     {
         self::assertThat($objectAndAttr, new AttributeIsInt(), $msg);
     }
+
+    /**
+     * Call this if the test is externally verified (e.g. by Mockery).
+     *
+     * This prevents PHPUnit from marking the test as risky on the basis that it doesn't perform any assertions.
+     */
+    protected static function markTestAsExternallyVerified(): void
+    {
+        self::assertTrue(true);
+    }
 }
