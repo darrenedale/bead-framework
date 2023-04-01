@@ -4,7 +4,6 @@ declare(strict_types = 1);
 
 namespace BeadTests\Framework;
 
-use BeadTests\Facades\LogTest;
 use BeadTests\Framework\Constraints\AttributeIsInt;
 use BeadTests\Framework\Constraints\FlatArrayIsEquivalent;
 use Closure;
