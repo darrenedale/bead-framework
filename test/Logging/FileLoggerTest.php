@@ -27,7 +27,6 @@ final class FileLoggerTest extends TestCase
 
     public function setUp(): void
     {
-        @mkdir($this->tempDir(), recursive: true);
         $this->logger = new FileLogger(self::logFilePathName());
     }
 
@@ -36,7 +35,6 @@ final class FileLoggerTest extends TestCase
         unset ($this->logger);
         @unlink(self::logFilePathName());
         @unlink(self::logFilePathName(self::TestAltLogFileName));
-        @rmdir($this->tempDir());
         parent::tearDown();
     }
 
