@@ -10,6 +10,7 @@ use Bead\Exceptions\InvalidPluginException;
 use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
+use Bead\Exceptions\Logging\LoggerException;
 use Bead\Exceptions\NotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
@@ -17,6 +18,7 @@ use Bead\Session\DataAccessor as SessionDataAccessor;
 use DirectoryIterator;
 use Exception;
 use InvalidArgumentException;
+use LogicException;
 use ReflectionClass;
 use ReflectionException;
 use RuntimeException;
@@ -208,23 +210,21 @@ class WebApplication extends Application
 	 * `setPluginsDirectory()` will fail.
 	 *
 	 * @param string $dir The directory to load plugins from.
-	 *
-	 * @return bool `true` If the provided directory was valid and was set, `false` otherwise.
+     *
+     * @throws LogicException if the app is already running
+     * @throws InvalidPluginsDirectoryException if the provided directory is not valid.
 	 */
-	public function setPluginsDirectory(string $dir): bool
+	public function setPluginsDirectory(string $dir): void
 	{
 		if ($this->isRunning()) {
-			AppLog::error("can't set plugins path while application is running", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+            throw new LogicException("Can't set plugins path while application is running");
 		}
 
 		if (!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $dir)) {
-			AppLog::error("invalid plugins path: \"$dir\"", __FILE__, __LINE__, __FUNCTION__);
-			return false;
+            throw new InvalidPluginsDirectoryException($dir, "Plugin directories must be composed entirely of path segments that are alphanumeric plus _ and -.");
 		}
 
 		$this->m_pluginsDirectory = $dir;
-		return true;
 	}
 
 	/**

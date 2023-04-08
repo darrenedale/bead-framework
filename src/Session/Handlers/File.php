@@ -3,13 +3,13 @@
 namespace Bead\Session\Handlers;
 
 use Bead\Application;
-use Bead\AppLog;
 use Bead\Contracts\SessionHandler;
 use Bead\Exceptions\Session\InvalidSessionDirectoryException;
 use Bead\Exceptions\Session\InvalidSessionFileException;
 use Bead\Exceptions\Session\SessionDestroyedException;
 use Bead\Exceptions\Session\SessionFileSaveException;
 use Bead\Exceptions\Session\SessionNotFoundException;
+use Bead\Facades\Log;
 use DirectoryIterator;
 use Exception;
 use SplFileInfo;
@@ -419,7 +419,7 @@ class File implements SessionHandler
             }
 
             if (!$file->isFile() || !$file->isReadable()) {
-                AppLog::warning("Session directory entry {$file->getRealPath()} is not a file or is not readable when purging session directory.");
+                Log::warning("Session directory entry {$file->getRealPath()} is not a file or is not readable when purging session directory.");
                 continue;
             }
 
@@ -430,7 +430,7 @@ class File implements SessionHandler
                     $session->destroy();
                 }
             } catch (Exception $err) {
-                AppLog::error("Exception reading session file {$file->getRealPath()} when purging session directory: {$err->getMessage()}");
+                Log::error("Exception reading session file {$file->getRealPath()} when purging session directory: {$err->getMessage()}");
             }
         }
     }

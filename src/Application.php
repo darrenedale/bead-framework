@@ -11,7 +11,7 @@ use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
 use DirectoryIterator;
 use Exception;
-use InvalidArgumentException;
+use Bead\Facades\Log;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
@@ -126,6 +126,8 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Load the configuration files from the provided directory.
      *
      * @param string $path The directory from which to load the configuration.
+     *
+     * @throws RuntimeException If an unreadable or invalid configuration file is found.
      */
     protected function loadConfig(string $path): void
     {
@@ -133,8 +135,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
         foreach (new DirectoryIterator($path) as $configFile) {
             if ($configFile->isLink() || !$configFile->isFile() || !$configFile->isReadable() || "php" !== $configFile->getExtension()) {
-                AppLog::error("config file '{$configFile->getFilename()}' is not valid or is not readable.");
-                continue;
+                throw new RuntimeException("config file '{$configFile->getFilename()}' is not valid or is not readable.");
             }
 
             $this->m_config[$configFile->getBasename(".php")] = include($configFile->getRealPath());
@@ -237,7 +238,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @param string $service The service identifier to bind to.
      * @param mixed $instance The service instance.
      *
-     * @throws ServieAlreadyBoundException if there is already a service bound to the identifier.
+     * @throws ServiceAlreadyBoundException if there is already a service bound to the identifier.
      */
     public function bindService(string $service, $instance): void
     {
@@ -449,17 +450,12 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function emitEvent(string $event, ...$eventArgs): bool
     {
-        if (!is_string($event)) {
-            AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
         $event = strtolower($event);
 
         if (isset($this->m_eventCallbacks[$event])) {
             foreach ($this->m_eventCallbacks[$event] as $callback) {
-                if (!is_callable($callback, false)) {
-                    AppLog::warning("ignoring un-callable callback: " . print_r($callback, true), __FILE__, __LINE__, __FUNCTION__);
+                if (!is_callable($callback)) {
+                    Log::warning("ignoring un-callable event callback: " . print_r($callback, true));
                     continue;
                 }
 
@@ -516,16 +512,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function connect(string $event, callable $callback): bool
     {
-        if (!is_string($event)) {
-            AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
-        if (!is_callable($callback, true)) {
-            AppLog::error("invalid callback", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
         $event = strtolower($event);
 
         if (!isset($this->m_eventCallbacks[$event])) {
@@ -578,16 +564,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function disconnect(string $event, callable $callback): bool
     {
-        if (!is_string($event)) {
-            AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
-        if (!is_callable($callback, true)) {
-            AppLog::error("invalid callback", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
         $event = strtolower($event);
 
         if (isset($this->m_eventCallbacks[$event])) {

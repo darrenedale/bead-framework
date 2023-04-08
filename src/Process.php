@@ -6,6 +6,7 @@ namespace Bead;
 use Closure;
 use RuntimeException;
 use InvalidArgumentException;
+use Bead\Facades\Log;
 
 use function Bead\Helpers\Iterable\all;
 
@@ -44,7 +45,7 @@ class Process
 	/** @var array<string,string|float|int>|null The process environment. */
 	private ?array $m_environment = null;
 
-	/** @var null The process handle, `null` while the process is not running. */
+	/** @var resource|null The process handle, `null` while the process is not running. */
 	private $m_proc = null;
 
 	/** @var int|null The process's PID while running. */
@@ -66,7 +67,7 @@ class Process
 	 * Initialise a new DriverProcess with a given command-line and working directory.
 	 * @param string $command The command to run.
 	 * @param array<string|int|float> $args The command line arguments.
-	 * @param string $workingDirectory The working directory in which to run the command.
+	 * @param string|null $workingDirectory The working directory in which to run the command.
 	 */
 	public function __construct(string $command, array $args = [], ?string $workingDirectory = null, ?Closure $outputNotifier = null, ?Closure $errorNotifier = null)
 	{
@@ -93,7 +94,7 @@ class Process
 			}
 
 			if ($this->isRunning()) {
-				AppLog::error("Process {$this->pid()} [{$this->command()}] could not be stopped.");
+				Log::error("Process {$this->pid()} [{$this->command()}] could not be stopped.");
 			}
 		}
 	}
@@ -212,7 +213,7 @@ class Process
 	 *
 	 * The command-line arguments can't be set while the process is running.
 	 *
-	 * @param array<string|flaot|int> $arguments The command line arguments to set.
+	 * @param array<string|float|int> $arguments The command line arguments to set.
 	 *
 	 * @throws RuntimeException if the process is running.
 	 */
@@ -230,9 +231,9 @@ class Process
 	}
 
 	/**
-	 * Fetch the command line of the process.
+	 * Fetch the command-line arguments of the process.
 	 *
-	 * @return string The command line.
+	 * @return array<string|int|float> The command line arguments.
 	 */
 	public function arguments(): array
 	{
@@ -327,7 +328,7 @@ class Process
 	/**
 	 * Set the callback to be called when output is available.
 	 *
-	 * @param \Closure|null $notifier The callback, or `null` to remove any existing callback.
+	 * @param Closure|null $notifier The callback, or `null` to remove any existing callback.
 	 */
 	public function setOutputNotifier(?Closure $notifier): void
 	{
@@ -337,7 +338,7 @@ class Process
 	/**
 	 * Set the callback to be called when error output is available.
 	 *
-	 * @param \Closure|null $notifier The callback, or `null` to remove any existing callback.
+	 * @param Closure|null $notifier The callback, or `null` to remove any existing callback.
 	 */
 	public function setErrorNotifier(?Closure $notifier): void
 	{
