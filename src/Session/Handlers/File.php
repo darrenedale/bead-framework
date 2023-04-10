@@ -10,6 +10,7 @@ use Bead\Exceptions\Session\InvalidSessionFileException;
 use Bead\Exceptions\Session\SessionDestroyedException;
 use Bead\Exceptions\Session\SessionFileSaveException;
 use Bead\Exceptions\Session\SessionNotFoundException;
+use Bead\Session\Session;
 use DirectoryIterator;
 use Exception;
 use SplFileInfo;
