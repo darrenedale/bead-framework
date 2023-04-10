@@ -11,13 +11,10 @@ use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
 use DirectoryIterator;
 use Exception;
-use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
 use Throwable;
-
-use function Bead\Helpers\Str\stringify;
 
 /**
  * Abstract base class for all applications.
