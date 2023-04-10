@@ -234,7 +234,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @param string $service The service identifier to bind to.
      * @param mixed $instance The service instance.
      *
-     * @throws ServieAlreadyBoundException if there is already a service bound to the identifier.
+     * @throws ServiceAlreadyBoundException if there is already a service bound to the identifier.
      */
     public function bindService(string $service, $instance): void
     {
@@ -249,19 +249,19 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Replace a service already bound to the Application instance.
      *
      * @param string $service The service identifier to bind to.
-     * @param mixed $object The service instance.
+     * @param mixed $instance The service instance.
      *
      * @return mixed The previously-bound service.
      * @throws ServiceNotFoundException If no instance is currently bound to the identified service.
      */
-    public function replaceService(string $service, $object)
+    public function replaceService(string $service, mixed $instance): mixed
     {
         if (!$this->serviceIsBound($service)) {
             throw new ServiceNotFoundException($service, "The service '{$service}' is not bound to the Application instance.");
         }
 
         $previous = $this->m_services[$service];
-        $this->m_services[$service] = $object;
+        $this->m_services[$service] = $instance;
         return $previous;
     }
 
@@ -285,10 +285,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @return mixed The service.
      * @throws ServiceNotFoundException If no service is bound to the identifier.
      */
-    public function service(string $service)
+    public function service(string $service): mixed
     {
         if (!array_key_exists($service, $this->m_services)) {
-            throw new ServiceNotFoundException("The service {$service} was not found in the container.");
+            throw new ServiceNotFoundException($service, "The service {$service} was not found in the container.");
         }
 
         return $this->m_services[$service];
