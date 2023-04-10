@@ -5,6 +5,13 @@ namespace Bead\Email;
 use InvalidArgumentException;
 use LogicException;
 
+use function assert;
+use function is_null;
+use function is_string;
+use function mb_strtolower;
+use function preg_match;
+use function trim;
+
 /**
  * Class representing a part of a multipart email message.
  *
@@ -42,7 +49,7 @@ class Part
      * @param $contentType string The content type for the message part.
      * @param $contentEncoding string The content encoding.
      */
-    function __construct(string $content = "", string $contentType = Part::DefaultContentType, string $contentEncoding = Part::DefaultContentEncoding)
+    function __construct(string $content = "", string $contentType = self::DefaultContentType, string $contentEncoding = self::DefaultContentEncoding)
     {
         $this->setContentType($contentType);
         $this->setContentEncoding($contentEncoding);
@@ -65,7 +72,7 @@ class Part
             $header = new Header($header, (string) $value);
         }
 
-        switch (mb_strtolower($header->name(),"UTF-8")) {
+        switch (mb_strtolower($header->name(),self::DefaultTextCharset)) {
             case "content-type":
                 $this->setContentType($header->value());
                 break;
