@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bead\Email;
 
 use InvalidArgumentException;
@@ -165,7 +167,7 @@ class Part
         $contentType = trim($contentType);
 
         /* validate the content type */
-        if ("*/*" != $contentType) {
+        if ("*/*" !== $contentType) {
             // can't initialise static $rxMimeType with non-const content so have to do it this way
             if (is_null($rxMimeType)) {
                 $rxMimeType = "#^([a-z]+|x-{$token})/({$token})( *; *{$token} *= *(?:{$token}|{$quotedString}))*\$#";
@@ -212,7 +214,7 @@ class Part
         /* validate the content encoding: x-gzip | x-compress | token */
         if ("x-gzip" !== $contentEncoding && "x-compress" !== $contentEncoding) {
             /* FIXME validate the content-encoding properly */
-            if ('' == trim($contentEncoding)) {
+            if ("" === trim($contentEncoding)) {
                 throw new InvalidArgumentException("Content encoding provided (\"$contentEncoding\") is not valid.");
             }
         }
@@ -229,9 +231,9 @@ class Part
     /**
      * Gets the body content of the message part.
      *
-     * This method returns the content exactly as provided. EmailPart objects do not force the content to conform to
+     * This method returns the content exactly as provided. Part objects do not force the content to conform to
      * RFC2045 by chunking it into 76 character lines. It is therefore up to the containing class (usually Email) to
-     * chunk up the data if required. The php function *chunk_split()* serves this purpose well.
+     * chunk up the data if required. The php function `chunk_split()` serves this purpose well.
      *
      * On a successful call, the content provided is always a byte sequence represented as a PHP string. It will be the
      * exact content provided either in the constructor or to `setContent()` if used after construction.

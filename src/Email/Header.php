@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bead\Email;
 
 use InvalidArgumentException;
+use Stringable;
+
 use function Bead\Helpers\Iterable\all;
 
 /**
@@ -27,7 +31,7 @@ use function Bead\Helpers\Iterable\all;
  * The full string representation of the header, suitable for inclusion in an email message header section, can be
  * fetched by calling `generate()`.
  */
-class Header
+class Header implements Stringable
 {
     /** @var string The name of the header. */
     private string $name;
@@ -58,10 +62,23 @@ class Header
     }
 
     /**
-     * Set the name of the header.
+     * Check whether a string contains a valid header name.
      *
-     * The name must be a UTF-8 encoded string. It may not be empty and must be composed entirely of characters from the
-     * set !#$%&'*+-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZZ^_`abcdefghijklmnopqrstuvwxyz|~
+     * Valid names are UTF-8 encoded strings composed entirely of characters from the set:
+     *
+     *     !#$%&'*+-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZZ^_`abcdefghijklmnopqrstuvwxyz|~
+     *
+     * @param string $name The name to test.
+     *
+     * @return bool `true` if the name is valid `false` if not.
+     */
+    public static function isValidName(string $name): bool
+    {
+        return 1 === preg_match("/^[!#$%&'*+\\-0-9A-Z^_`a-z|~]+\$/", trim($name));
+    }
+
+    /**
+     * Set the name of the header.
      *
      * @param $name string The name for the header.
      *
@@ -71,7 +88,7 @@ class Header
     {
         $name = trim($name);
 
-        if (!preg_match("/^[!#$%&'*+\\-0-9A-Z^_`a-z|~]+\$/", $name)) {
+        if (!self::isValidName($name)) {
             throw new InvalidArgumentException("Invalid header name \"$name\".");
         }
 
@@ -79,9 +96,9 @@ class Header
     }
 
     /**
-     * Get the value of the header.
+     * Get the name of the header.
      *
-     * @return string The header name, or `null` on error.
+     * @return string The header name.
      */
     final public function name(): string
     {
@@ -91,7 +108,7 @@ class Header
     /**
      * Set the value of the header.
      *
-     * The value may be an empty string. It may also be `null` to indicate that the value is not set.
+     * The value may be an empty string.
      *
      * @param $value string The value for the header.
      */
@@ -103,23 +120,11 @@ class Header
     /**
      * Get the value of the header.
      *
-     * @return string The header value, or `null` on error.
+     * @return string The header value.
      */
     public function value(): string
     {
         return $this->value;
-    }
-
-    /**
-     * Check whether a parameter is set for the header.
-     *
-     * @param $name string the name of the parameter to check.
-     *
-     * @return bool `true` if the parameter is set, `false` otherwise.
-     */
-    public function hasParameter(string $name): bool
-    {
-        return array_key_exists($name, $this->params);
     }
 
     /**
@@ -131,6 +136,19 @@ class Header
     public function setParameter(string $name, string $value): void
     {
         $this->params[$name] = $value;
+    }
+
+    /**
+     * Get all parameters for the header.
+     *
+     * The parameters are returned as an array, keyed by the parameter name. Both the keys and values are always UTF-8
+     * encoded strings.
+     *
+     * @return array<string,string> The parameters.
+     */
+    public function parameters(): array
+    {
+        return $this->params;
     }
 
     /**
@@ -146,11 +164,23 @@ class Header
     }
 
     /**
+     * Check whether a parameter is set for the header.
+     *
+     * @param $name string the name of the parameter to check.
+     *
+     * @return bool `true` if the parameter is set, `false` otherwise.
+     */
+    public function hasParameter(string $name): bool
+    {
+        return array_key_exists($name, $this->params);
+    }
+
+    /**
      * Remove a parameter from the list of parameters for the header.
      *
      * @param $name string The name of the parameter to remove.
      */
-    public function clearParameter(string $name): void
+    public function removeParameter(string $name): void
     {
         if (!$this->hasParameter($name)) {
             return;
@@ -170,23 +200,10 @@ class Header
     }
 
     /**
-     * Get all parameters for the header.
-     *
-     * The parameters are returned as an array, keyed by the parameter key. Both the keys and values are always UTF-8
-     * encoded strings.
-     *
-     * @return array<string,string> The parameters.
-     */
-    public function parameters(): array
-    {
-        return $this->params;
-    }
-
-    /**
      * Generate the header line.
      *
      * The header line is generated without any trailing delimiter. For SMTP and POP3 the delimiter is the sequence
-     * <cr><lf> but other protocols, including protocols that are yet to be created, may use other delimiters. For this
+     * `CRLF` but other protocols, including protocols that are yet to be created, may use other delimiters. For this
      * reason, it is up to the protocol handler to add the appropriate delimiter.
      *
      * @return string The header line.
@@ -200,5 +217,15 @@ class Header
         }
 
         return $header;
+    }
+
+    /**
+     * Fetch the string representation of the header.
+     *
+     * @return string The header string.
+     */
+    public function __toString(): string
+    {
+        return $this->generate();
     }
 }

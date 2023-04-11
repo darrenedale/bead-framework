@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bead\Email;
 
 use InvalidArgumentException;
@@ -409,8 +411,8 @@ class Email
     {
         if (is_string($part)) {
             $part = new Part($part);
-            $part->setContentType($contentType);
-            $part->setContentEncoding($contentEncoding);
+            $part->setContentType((string) $contentType);
+            $part->setContentEncoding((string) $contentEncoding);
         }
 
         $this->parts[] = $part;
