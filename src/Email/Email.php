@@ -403,9 +403,9 @@ class Email
      * used respectively. It is the client code's responsibility to ensure that the data in the content string provided
      * matches the type and transfer encoding specified. No checks, translations or conversions will be carried out.
      *
-     * @param Part|string $part Part The part to add.
-     * @param string|null $contentType
-     * @param string|null $contentEncoding
+     * @param Part|string $part The part to add.
+     * @param string|null $contentType The content type for the part, if `$part` is a string.
+     * @param string|null $contentEncoding The content transfer encoding for the part, if `$part` is a string.
      */
     public function addBodyPart(Part|string $part, ?string $contentType = null, ?string $contentEncoding = null): void
     {
@@ -439,9 +439,12 @@ class Email
     public function addAttachment(string $content, string $contentType, string $contentEncoding, string $filename): void
     {
         $newPart = new Part($content);
-        $newPart->setContentType("{$contentType}; name=\"{$filename}\"");
+        $newPart->setContentType($contentType);
         $newPart->setContentEncoding($contentEncoding);
-        $newPart->addHeader("Content-Disposition", "attachment");
+        $newPart->addHeader(
+            "Content-Disposition",
+            "attachment; filename=\"" . str_replace("\"", "\\\"", $filename) . "\""
+        );
 
         $this->addBodyPart($newPart);
     }

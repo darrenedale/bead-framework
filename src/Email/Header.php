@@ -15,7 +15,7 @@ use function Bead\Helpers\Iterable\all;
  * An email header is composed of a header name, a header value and zero or more header value parameters. It is
  * presented in an email message as:
  *
- *     {name}: {value}[;{param-name}={param-value}[;{param-name}={param-value}]...]
+ *     {name}: {value}[; {param-name}={param-value}[; {param-name}={param-value}]...]
  *
  * Use `name()` and `setName()` to fetch and set the header name. Use `value()` and `setValue()` to fetch and set the
  * value.
@@ -25,11 +25,17 @@ use function Bead\Helpers\Iterable\all;
  * presence of certain named parameters can be tested with `hasParameter()` and the number of parameters present in the
  * header can be checked with `parameterCount()`.
  *
+ * You are not obliged to use the parameters functionality directly - it is legitimate to pre-build header values that
+ * include any parameters and pass them to `setValue()`. Just be mindful that if you do this, any parameters that have
+ * been set using `setParameter()` will still be added to the header, and any parameters included in your `setValue()`
+ * call *won't* be included in those returned by `parameters()`. You're advised, therefore, to stick to one or other way
+ * of setting parameters and not to mix them.
+ *
  * The header name is validated when `setName()` is called, which throws an InvalidArgumentException if it doesn't pass
  * validation.
  *
  * The full string representation of the header, suitable for inclusion in an email message header section, can be
- * fetched by calling `generate()`.
+ * fetched by calling `generate()` or casting to a `string`.
  */
 class Header implements Stringable
 {
