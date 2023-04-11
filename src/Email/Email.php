@@ -41,11 +41,14 @@ class Email
     private const LF = "\n";
 
     /** @var string The default delimiter to use between parts in the message body. */
-    const DefaultDelimiter = "--email-delimiter-16fbcac50765f150dc35716069dba9c9--";
+    private const DefaultDelimiter = "--email-delimiter-16fbcac50765f150dc35716069dba9c9--";
 
-    /* some old (< 2.9 AFAIK) versions of postfix need the line end to be this on *nix */
-    /** @var string The line ending to use in the message body during transmission. */
-    const LineEnd = self::LF;
+    /**
+     * some old (< 2.9 AFAIK) versions of postfix need the line end to be this on *nix
+     *
+     * @var string The line ending to use in the message body during transmission.
+     */
+    private const LineEnd = self::LF;
 
     /** @var Part[] The parts of the email body. */
     protected array $parts = [];
@@ -174,6 +177,162 @@ class Email
     }
 
     /**
+     * Gets the subject of the email message.
+     *
+     * @return string The message subject.
+     */
+    public function subject(): string
+    {
+        return $this->headerByName("subject")?->value() ?? "";
+    }
+
+    /**
+     * Sets the subject of the email message.
+     *
+     * @param $subject string the new subject of the email message.
+     */
+    public function setSubject(string $subject): void
+    {
+        $header = $this->headerByName("Subject");
+
+        if (!isset($header)) {
+            $this->traitAddHeader(new Header("Subject", $subject));
+        } else {
+            $header->setValue($subject);
+        }
+    }
+
+    /**
+     * Gets the recipients of the message.
+     *
+     * @return string[] The primary recipients of the message.
+     */
+    public function to(): array
+    {
+        return $this->headerValues("To");
+    }
+
+    /**
+     * Add a recipient of the message.
+     *
+     * The recipient should be provided in RFCxxxx format, although this rule is not strictly enforced (yet).
+     *
+     * @param $address string|string[] the new recipient address(es).
+     */
+    public function addTo(string|array $address): void
+    {
+        if (is_array($address)) {
+            if (!all($address, "is_string")) {
+                throw new InvalidArgumentException("Addresses provided to addTo() must all be strings.");
+            }
+        } else {
+            $address = [$address];
+        }
+
+        foreach ($address as $addr) {
+            $this->traitAddHeader(new Header("To", $addr));
+        }
+    }
+
+    /**
+     * Gets the carbon-copy recipients of the message.
+     *
+     * The cc recipients are returned as an array of addresses. If there are none, this will be an empty array.
+     *
+     * @return string[] The CC recipients.
+     */
+    public function cc(): array
+    {
+        return $this->headerValues("Cc");
+    }
+
+    /**
+     * Add a recipient of the message.
+     *
+     * The recipient's address is added to the Cc list. The address should be provided in RFCxxxx format, although this
+     * rule is not strictly enforced (yet).
+     *
+     * @param $address string|string[] the new recipient.
+     */
+    public function addCc(string|array $address): void
+    {
+        if (is_array($address)) {
+            if (!all($address, "is_string")) {
+                throw new InvalidArgumentException("Addresses provided to addCc() must all be strings.");
+            }
+        } else {
+            $address = [$address];
+        }
+
+        foreach ($address as $addr) {
+            $this->traitAddHeader(new Header("Cc", $addr));
+        }
+    }
+
+    /**
+     * Gets the blind-carbon-copy recipients of the message.
+     *
+     * The BCC recipients are returned as an array of addresses. If there are none, this will be an empty array.
+     *
+     * @return string[] The BCC recipients.
+     */
+    public function bcc(): array
+    {
+        return $this->headerValues("Bcc");
+    }
+
+    /**
+     * Add a recipient of the message.
+     *
+     * The recipient's address is added to the Bcc list. The address should be provided in RFCxxxx format, although this
+     * rule is not strictly enforced (yet).
+     *
+     * @param $address string|string[] the new recipient.
+     */
+    public function addBcc(string|array $address): void
+    {
+        if (is_array($address)) {
+            if (!all($address, "is_string")) {
+                throw new InvalidArgumentException("Addresses provided to addBcc() must all be strings.");
+            }
+        } else {
+            $address = [$address];
+        }
+
+        foreach ($address as $addr) {
+            $this->traitAddHeader(new Header("Bcc", $addr));
+        }
+    }
+
+    /**
+     * Gets the sender of the message.
+     *
+     * @return string The message sender.
+     */
+    public function from(): string
+    {
+        return $this->headerByName("From")?->value() ?? "";
+    }
+
+    /**
+     * Sets the sender of the message.
+     *
+     * The sender should be provided in RFCxxxx format, although this rule is not strictly enforced (yet).
+     *
+     * @param $sender string the new sender of the message.
+     */
+    public function setFrom(string $sender): void
+    {
+        $header = $this->headerByName("From");
+
+        if (isset($header)) {
+            $header->setValue($sender);
+        } else {
+            $this->traitAddHeader(new Header("From", $sender));
+        }
+    }
+
+    /**
      * Gets the body of the message.
      *
      * The body of the message is formatted in a way that complies with RFC2045. Briefly, this means that the content of
@@ -237,162 +396,6 @@ class Email
 
         // by default parts have content-type text/plain, content-transfer-encoding: quoted-printable
         $this->parts = [new Part($body)];
-    }
-
-    /**
-     * Gets the subject of the email message.
-     *
-     * @return string The message subject.
-     */
-    public function subject(): string
-    {
-        return $this->headerByName("subject")?->value() ?? "";
-    }
-
-    /**
-     * Sets the subject of the email message.
-     *
-     * @param $subject string the new subject of the email message.
-     */
-    public function setSubject(string $subject): void
-    {
-        $header = $this->headerByName("Subject");
-
-        if (!isset($header)) {
-            $this->traitAddHeader(new Header("Subject", $subject));
-        } else {
-            $header->setValue($subject);
-        }
-    }
-
-    /**
-     * Gets the recipients of the message.
-     *
-     * @return string[] The primary recipients of the message.
-     */
-    public function to(): array
-    {
-        return $this->headerValues("To");
-    }
-
-    /**
-     * Add a recipient of the message.
-     *
-     * The recipient should be provided in RFCxxxx format, although this rule is not strictly enforced (yet).
-     *
-     * @param $address string|string[] the new recipient address(es).
-     */
-    public function addTo(string|array $address): void
-    {
-        if (is_array($address)) {
-            if (!all($address, "is_string")) {
-                throw new InvalidArgumentException("Addresses provided to addTo() must all be strings.");
-            }
-        } else {
-            $address = [$address];
-        }
-
-        foreach ($address as $addr) {
-            $this->traitAddHeader(new Header("To", $addr));
-        }
-    }
-
-    /**
-     * Add a recipient of the message.
-     *
-     * The recipient's address is added to the Cc list. The address should be provided in RFCxxxx format, although this
-     * rule is not strictly enforced (yet).
-     *
-     * @param $address string|string[] the new recipient.
-     */
-    public function addCc(string|array $address): void
-    {
-        if (is_array($address)) {
-            if (!all($address, "is_string")) {
-                throw new InvalidArgumentException("Addresses provided to addCc() must all be strings.");
-            }
-        } else {
-            $address = [$address];
-        }
-
-        foreach ($address as $addr) {
-            $this->traitAddHeader(new Header("Cc", $addr));
-        }
-    }
-
-    /**
-     * Add a recipient of the message.
-     *
-     * The recipient's address is added to the Bcc list. The address should be provided in RFCxxxx format, although this
-     * rule is not strictly enforced (yet).
-     *
-     * @param $address string|string[] the new recipient.
-     */
-    public function addBcc(string|array $address): void
-    {
-        if (is_array($address)) {
-            if (!all($address, "is_string")) {
-                throw new InvalidArgumentException("Addresses provided to addBcc() must all be strings.");
-            }
-        } else {
-            $address = [$address];
-        }
-
-        foreach ($address as $addr) {
-            $this->traitAddHeader(new Header("Bcc", $addr));
-        }
-    }
-
-    /**
-     * Gets the sender of the message.
-     *
-     * @return string The message sender.
-     */
-    public function from(): string
-    {
-        return $this->headerByName("From")?->value() ?? "";
-    }
-
-    /**
-     * Sets the sender of the message.
-     *
-     * The sender should be provided in RFCxxxx format, although this rule is not strictly enforced (yet).
-     *
-     * @param $sender string the new sender of the message.
-     */
-    public function setFrom(string $sender): void
-    {
-        $header = $this->headerByName("From");
-
-        if (isset($header)) {
-            $header->setValue($sender);
-        } else {
-            $this->traitAddHeader(new Header("From", $sender));
-        }
-    }
-
-    /**
-     * Gets the carbon-copy recipients of the message.
-     *
-     * The cc recipients are returned as an array of addresses. If there are none, this will be an empty array.
-     *
-     * @return string[] The CC recipients.
-     */
-    public function cc(): array
-    {
-        return $this->headerValues("Cc");
-    }
-
-    /**
-     * Gets the blind-carbon-copy recipients of the message.
-     *
-     * The BCC recipients are returned as an array of addresses. If there are none, this will be an empty array.
-     *
-     * @return string[] The BCC recipients.
-     */
-    public function bcc(): array
-    {
-        return $this->headerValues("Bcc");
     }
 
     /**

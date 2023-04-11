@@ -83,17 +83,9 @@ trait HasHeaders
      *
      * @return Header[] The headers if found, or an empty array if not.
      */
-    private function allHeadersByName(string $name): array
+    public function allHeadersByName(string $name): array
     {
-        $ret = [];
-
-        foreach ($this->headers() as $header) {
-            if (0 === strcasecmp($header->name(), $name)) {
-                $ret[] = $header;
-            }
-        }
-
-        return $ret;
+        return array_filter($this->headers(), fn(Header $header): bool => 0 === strcasecmp($header->name(), $name));
     }
 
     /**
@@ -153,7 +145,7 @@ trait HasHeaders
 
         // TODO parse the parameters
         /* EmailHeader constructor handles validation */
-        $this->addHeader(new Header(trim($header[0]), trim($header[1])));
+        $this->addHeader(new Header(trim($components[0]), trim($components[1])));
     }
 
     /**
