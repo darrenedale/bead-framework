@@ -4,10 +4,13 @@ declare(strict_types = 1);
 
 namespace BeadTests\Framework;
 
+use ArrayAccess;
+use BeadTests\Framework\Constraints\ArrayHasEntry;
 use BeadTests\Framework\Constraints\AttributeIsInt;
 use BeadTests\Framework\Constraints\FlatArrayIsEquivalent;
 use Closure;
 use LogicException;
+use PHPUnit\Framework\Constraint\LogicalNot;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
 
 /**
@@ -138,7 +141,7 @@ abstract class TestCase extends PhpUnitTestCase
     public function removeMethodMock(string $class, string $method): void
     {
         if (!array_key_exists($class, $this->methodMocks) || !array_key_exists($method, $this->methodMocks[$class])) {
-            throw new LogicException("Attempt to remove mock for method '{$class}::{$function}' that isn't mocked.");
+            throw new LogicException("Attempt to remove mock for method '{$class}::{$method}' that isn't mocked.");
         }
 
         // strtolower() works around bug in old(er) versions of uopz
@@ -190,6 +193,32 @@ abstract class TestCase extends PhpUnitTestCase
     public static function assertAttributeIsInt(array $objectAndAttr, string $msg = ""): void
     {
         self::assertThat($objectAndAttr, new AttributeIsInt(), $msg);
+    }
+
+    /**
+     * Assert that an array-like value contains a given entry.
+     *
+     * @param mixed $key The required key.
+     * @param mixed $value The value required for the key.
+     * @param array|ArrayAccess $arr The array-like value to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertArrayHasEntry(mixed $key, mixed $value, array|ArrayAccess $arr, string $msg = ""): void
+    {
+        self::assertThat($arr, new ArrayHasEntry($key, $value), $msg);
+    }
+
+    /**
+     * Assert that an array-like value does not contain a given entry.
+     *
+     * @param mixed $key The key required to be absent or without the value.
+     * @param mixed $value The value required not to be the value of the key.
+     * @param array|ArrayAccess $arr The array-like value to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertArrayNotHasEntry(mixed $key, mixed $value, array|ArrayAccess $arr, string $msg = ""): void
+    {
+        self::assertThat($arr, new LogicalNot(new ArrayHasEntry($key, $value)), $msg);
     }
 
     /**
