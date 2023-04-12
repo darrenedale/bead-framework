@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bead\Email;
 
 use InvalidArgumentException;
+
 use function Bead\Helpers\Iterable\all;
 
 /**
@@ -161,7 +162,7 @@ trait HasHeaders
      */
     private static function parametersMatch(array $first, array $second): bool
     {
-        return all(array_keys($first), fn($name): bool => array_key_exists($name, $second) && $first[$name] === $second[$name]);
+        return count($first) === count($second) && all(array_keys($first), fn($name): bool => array_key_exists($name, $second) && $first[$name] === $second[$name]);
     }
 
     /**
