@@ -175,7 +175,7 @@ class Part
 
             // for now we don't use the expression captures, but 1 = type, 2 = subtype, 3 = params
             if (!preg_match($rxMimeType, $contentType)) {
-                throw new InvalidArgumentException("content type \"{$contentType}\" is not valid.");
+                throw new InvalidArgumentException("Content type \"{$contentType}\" is not valid.");
             }
         }
 
@@ -215,7 +215,7 @@ class Part
         if ("x-gzip" !== $contentEncoding && "x-compress" !== $contentEncoding) {
             /* FIXME validate the content-encoding properly */
             if ("" === trim($contentEncoding)) {
-                throw new InvalidArgumentException("Content encoding provided (\"$contentEncoding\") is not valid.");
+                throw new InvalidArgumentException("Content encoding \"$contentEncoding\" is not valid.");
             }
         }
 
