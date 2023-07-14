@@ -16,7 +16,7 @@ class Crypter implements CrypterContract
 
 	public function __construct(string $key)
 	{
-		assert('' !== $key, new Exception('The encryption key must not be empty'));
+        self::checkKey($key);
 		$this->key = $key;
 	}
 }

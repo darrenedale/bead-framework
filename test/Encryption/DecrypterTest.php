@@ -5,12 +5,19 @@ declare(strict_types=1);
 namespace BeadTests\Encryption;
 
 use Bead\Contracts\Encryption\SerializationMode;
-use Bead\Encryption\Crypter;
+use Bead\Encryption\Decrypter;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use Exception;
 
-class CrypterTest extends TestCase
+// TODO ensure decrypt() throws with invalid base64
+// TODO ensure decrypt() throws with truncated data
+// TODO ensure decrypt() throws with invalid serialized flag
+// TODO ensure decrypt() throws when sodium throws
+// TODO ensure decrypt() throws when sodium returns false
+// TODO ensure decrypt() throws when unserialize fails
+// TODO ensure decrypt() handles serialization of false as special case
+class DecrypterTest extends TestCase
 {
     private const EncryptionKey = '-some-insecure-key-insecure-some';
 
@@ -18,16 +25,16 @@ class CrypterTest extends TestCase
 
     private const ArrayRawData = ['the-data', 'more-data'];
 
-    private Crypter $crypter;
+    private Decrypter $decrypter;
 
     public function setUp(): void
     {
-        $this->crypter = new Crypter(self::EncryptionKey);
+        $this->decrypter = new Decrypter(self::EncryptionKey);
     }
 
     public function testConstructor(): void
 	{
-		$crypter = new Crypter(self::EncryptionKey);
+		$crypter = new Decrypter(self::EncryptionKey);
 		self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
 	}
 
@@ -43,32 +50,8 @@ class CrypterTest extends TestCase
 	{
 		self::expectException(Exception::class);
 		self::expectExceptionMessage('Invalid encryption key');
-		new Crypter($key);
+		new Decrypter($key);
 	}
-
-    public function testEncrypt(): void
-    {
-        self::mockFunction('random_bytes', '000011112222333344445555');
-        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg==", $this->crypter->encrypt(self::RawData));
-    }
-
-    public function testEncryptDoesntAutoSerializeString(): void
-    {
-        self::mockFunction('random_bytes', '000011112222333344445555');
-        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg==", $this->crypter->encrypt(self::RawData, SerializationMode::Auto));
-    }
-
-    public function testEncryptAutoSerializes(): void
-    {
-        self::mockFunction('random_bytes', '000011112222333344445555');
-        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WeAelQVLV8IHIWXYsUXxm95ZfdnvELEzY1npRj1hPCebFKtX+vA11J5LQTo9qBPjRhbCQJe+XTtruh9E4rY=", $this->crypter->encrypt(self::ArrayRawData, SerializationMode::Auto));
-    }
-
-    public function testEncryptForceSerializes(): void
-    {
-        self::mockFunction('random_bytes', '000011112222333344445555');
-        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=", $this->crypter->encrypt(self::RawData, SerializationMode::On));
-    }
 
     public function dataForTestDecrypt(): iterable
     {
@@ -80,6 +63,6 @@ class CrypterTest extends TestCase
     /** @dataProvider dataForTestDecrypt */
     public function testDecrypt(string $encrypted, mixed $expected): void
     {
-        self::assertEquals($expected, $this->crypter->decrypt($encrypted));
+        self::assertEquals($expected, $this->decrypter->decrypt($encrypted));
     }
 }

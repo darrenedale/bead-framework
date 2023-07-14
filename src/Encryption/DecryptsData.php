@@ -18,13 +18,13 @@ trait DecryptsData
 			throw new Exception('Invalid encrypted data');
 		}
 
-		if (SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + SODIUM_CRYPTO_SECRETBOX_MACBYTES + 1 < mb_strlen($data, '8bit')) {
+		if (SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + SODIUM_CRYPTO_SECRETBOX_MACBYTES + 1 > mb_strlen($data, '8bit')) {
 			throw new Exception('Invalid encrypted data');
 		}
 
-		$nonce = substr($data, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, '8bit');
-		$serialized = substr($data,SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, 1, '8bit');
-		$data = substr($data, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + 1, null, '8bit');
+		$nonce = mb_substr($data, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, '8bit');
+		$serialized = mb_substr($data,SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, 1, '8bit');
+		$data = mb_substr($data, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + 1, null, '8bit');
 
 		if (!in_array($serialized, ['Y', 'N'])) {
 			throw new Exception('Invalid encrypted data');
@@ -44,17 +44,17 @@ trait DecryptsData
 
 		if ('Y' === $serialized) {
 			# we do this so that we can be sure that unserialize() returning false indicates an error
-			if (serialize(false) === $data) {
+			if (serialize(false) === $decrypted) {
 				return false;
 			}
 
-			$data = unserialize($data);
+            $decrypted = unserialize($decrypted);
 
-			if (false === $data) {
+			if (false === $decrypted) {
 				throw new Exception('The decrypted data could not be unserialized');
 			}
 		}
 
-		return $data;
+		return $decrypted;
 	}
 }

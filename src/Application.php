@@ -2,10 +2,13 @@
 
 namespace Bead;
 
+use Bead\Contracts\Encryption\Decrypter;
+use Bead\Contracts\Encryption\Encrypter;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Database\Connection;
+use Bead\Encryption\Crypter;
 use Bead\ErrorHandler as BeadErrorHandler;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -87,6 +90,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
         $this->m_appRoot = $realAppRoot;
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->setupTranslator();
+        $this->setUpCrypter();
         $this->setDatabase($db);
     }
 
@@ -117,6 +121,17 @@ abstract class Application implements ServiceContainer, ContainerInterface
         $this->m_translator->setLanguage($this->config("app.language", "en-GB"));
 
         $this->bindService(TranslatorContract::class, $this->m_translator);
+    }
+
+    /**
+     * Helper to bind the configured crypter to the encryption interfaces.
+     */
+    private function setupCrypter(): void
+    {
+        $crypter = new Crypter($this->config("crypt.key"));
+        $this->bindService(Decrypter::class, $crypter);
+        $this->bindService(Encrypter::class, $crypter);
+        $this->bindService(Crypter::class, $crypter);
     }
 
     /**
