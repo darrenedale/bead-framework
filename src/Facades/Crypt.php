@@ -15,5 +15,5 @@ use Bead\Contracts\Encryption\SerializationMode;
  */
 class Crypt extends ApplicationServiceFacade
 {
-    protected static string $serviceInterface = LoggerContract::class;
+    protected static string $serviceInterface = CrypterContract::class;
 }
