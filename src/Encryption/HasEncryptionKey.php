@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Bead\Encryption;
 
-use Exception;
+use Bead\Exceptions\EncryptionException;
+use LogicException;
 
 trait HasEncryptionKey
 {
-	private string $key = '';
+	private string $key = "";
 
 	public function __destruct()
 	{
@@ -17,14 +18,14 @@ trait HasEncryptionKey
 
     private static function checkKey(string $key): void
     {
-        if (SODIUM_CRYPTO_SECRETBOX_KEYBYTES !== mb_strlen($key, '8bit')) {
-            throw new Exception('Invalid encryption key');
+        if (SODIUM_CRYPTO_SECRETBOX_KEYBYTES !== mb_strlen($key, "8bit")) {
+            throw new EncryptionException("Invalid encryption key");
         }
     }
 
 	private function key(): string
 	{
-		assert('' !== $this->key, new Exception('No encryption key has been set.'));
+		assert("" !== $this->key, new LogicException("No encryption key has been set."));
 		return $this->key;
 	}
 }

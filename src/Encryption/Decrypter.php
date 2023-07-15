@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Bead\Encryption;
 
 use Bead\Contracts\Encryption\Decrypter as DecrypterContract;
-use Exception;
 
 class Decrypter implements DecrypterContract
 {

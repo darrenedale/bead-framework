@@ -6,17 +6,11 @@ namespace BeadTests\Encryption;
 
 use Bead\Contracts\Encryption\SerializationMode;
 use Bead\Encryption\Decrypter;
+use Bead\Exceptions\EncryptionException;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
-use Exception;
+use SodiumException;
 
-// TODO ensure decrypt() throws with invalid base64
-// TODO ensure decrypt() throws with truncated data
-// TODO ensure decrypt() throws with invalid serialized flag
-// TODO ensure decrypt() throws when sodium throws
-// TODO ensure decrypt() throws when sodium returns false
-// TODO ensure decrypt() throws when unserialize fails
-// TODO ensure decrypt() handles serialization of false as special case
 class DecrypterTest extends TestCase
 {
     private const EncryptionKey = '-some-insecure-key-insecure-some';
@@ -48,7 +42,7 @@ class DecrypterTest extends TestCase
     /** @dataProvider dataForTestConstructorThrows */
 	public function testConstructorThrows(string $key): void
 	{
-		self::expectException(Exception::class);
+		self::expectException(EncryptionException::class);
 		self::expectExceptionMessage('Invalid encryption key');
 		new Decrypter($key);
 	}
@@ -65,4 +59,64 @@ class DecrypterTest extends TestCase
     {
         self::assertEquals($expected, $this->decrypter->decrypt($encrypted));
     }
+
+    public function testDecryptThrowsWithInvalidBase64(): void
+    {
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Invalid encrypted data (bad base64)");
+        $this->decrypter->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg==");
+    }
+
+    public function testDecryptThrowsWithTruncatedData(): void
+    {
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Invalid encrypted data (truncated)");
+        // this base64 has S where the serialization flag should be
+        $this->decrypter->decrypt("MDAwMDExMTEy");
+    }
+
+    public function testDecryptThrowsWithBadSerializedFlag(): void
+    {
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Invalid encrypted data (bad serialization flag)");
+        // this base64 has S where the serialization flag should be
+        $this->decrypter->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1UwRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");
+    }
+
+    public function testDecryptThrowsWhenSodiumThrows(): void
+    {
+        $this->mockFunction('sodium_crypto_secretbox_open', function() {
+            throw new SodiumException('The Sodium Exception');
+        });
+
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Exception decrypting data: The Sodium Exception");
+        $this->decrypter->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");
+    }
+
+    public function testDecryptThrowsWhenSodiumFails(): void
+    {
+        $this->mockFunction('sodium_crypto_secretbox_open', fn(): bool => false);
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Unable to decrypt data");
+        $this->decrypter->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");
+    }
+
+    public function testDecryptThrowsWhenUnserializeFails(): void
+    {
+        $this->mockFunction('unserialize', fn(): bool => false);
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("The decrypted data could not be unserialized");
+        $this->decrypter->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");
+    }
+
+    /**
+     * Since serialize() returns false both when it fails and when it successfully unserializes the serialization of
+     * false, we need a test to prove unserializing false works as expected.
+     */
+    public function testDecryptHandlesSerializedFalse(): void
+    {
+        self::assertFalse($this->decrypter->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WRAMN0yXiip7bqD7ICAwK1Zafdvu"));
+    }
 }
+
