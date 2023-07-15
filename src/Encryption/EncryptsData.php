@@ -12,7 +12,7 @@ trait EncryptsData
 {
 	private abstract function key(): string;
 
-	private static abstract function randomBytes(int $len): string;
+	private abstract function randomBytes(int $len): string;
 
 	public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string
 	{
@@ -38,7 +38,7 @@ trait EncryptsData
 				throw new EncryptionException("Invalid serialization mode");
 		};
 
-		$nonce = self::randomBytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+		$nonce = $this->randomBytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
 
         try {
             $encrypted = base64_encode(

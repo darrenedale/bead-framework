@@ -9,7 +9,7 @@ use LogicException;
 
 trait GeneratesRandomBytes
 {
-	private static function randomBytes(int $len): string
+	private function randomBytes(int $len): string
 	{
         assert(0 < $len, new LogicException("Length of random bytes must be > 0"));
 
@@ -24,6 +24,6 @@ trait GeneratesRandomBytes
             }
         }
 
-        throw new EncryptionException("Cryptographically secure random bytes are not available on this platoform.");
+        throw new EncryptionException("Cryptographically secure random bytes are not available on this platoform");
 	}
 }

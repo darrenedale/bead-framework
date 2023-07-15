@@ -9,6 +9,7 @@ use Bead\Encryption\Encrypter;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use Bead\Exceptions\EncryptionException;
+use SodiumException;
 
 class EncrypterTest extends TestCase
 {
@@ -68,5 +69,29 @@ class EncrypterTest extends TestCase
     {
         self::mockFunction("random_bytes", "000011112222333344445555");
         self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=", $this->encrypter->encrypt(self::RawData, SerializationMode::On));
+    }
+
+    public function testEncryptForceNotToSerialize(): void
+    {
+        self::mockFunction("random_bytes", "000011112222333344445555");
+        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg==", $this->encrypter->encrypt(self::RawData, SerializationMode::Off));
+    }
+
+    public function testEncryptInvalidSerializationModeThrows(): void
+    {
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Invalid serialization mode");
+        $this->encrypter->encrypt(self::RawData, -1);
+    }
+
+    public function testEncryptThrowsWhenSodiumThrows(): void
+    {
+        $this->mockFunction('sodium_crypto_secretbox', function() {
+            throw new SodiumException('The Sodium Exception');
+        });
+
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Exception encrypting data: The Sodium Exception");
+        $this->encrypter->encrypt(self::RawData);
     }
 }

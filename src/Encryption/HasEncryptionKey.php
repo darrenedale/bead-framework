@@ -25,7 +25,7 @@ trait HasEncryptionKey
 
 	private function key(): string
 	{
-		assert("" !== $this->key, new LogicException("No encryption key has been set."));
+		assert("" !== $this->key, new LogicException("No encryption key has been set"));
 		return $this->key;
 	}
 }
