@@ -14,10 +14,10 @@ trait DecryptsData
 
 	public function decrypt(string $data): mixed
 	{
-		$data = base64_decode($data, true);
-
-		if (false === $data) {
-			throw new EncryptionException("Invalid encrypted data (bad base64)");
+        try {
+            $data = sodium_base642bin($data, SODIUM_BASE64_VARIANT_ORIGINAL);
+        } catch (SodiumException $err) {
+			throw new EncryptionException("Invalid encrypted data: {$err->getMessage()}", previous: $err);
 		}
 
 		if (SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + SODIUM_CRYPTO_SECRETBOX_MACBYTES + 1 > mb_strlen($data, "8bit")) {

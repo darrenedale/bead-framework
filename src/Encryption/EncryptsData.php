@@ -41,10 +41,11 @@ trait EncryptsData
 		$nonce = $this->randomBytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
 
         try {
-            $encrypted = base64_encode(
+            $encrypted = sodium_bin2base64(
                 $nonce .
                 $serialized .
-                sodium_crypto_secretbox($data, $nonce, $this->key())
+                sodium_crypto_secretbox($data, $nonce, $this->key()),
+                SODIUM_BASE64_VARIANT_ORIGINAL
             );
         } catch (SodiumException $err) {
             throw new EncryptionException("Exception encrypting data: {$err->getMessage()}", previous: $err);

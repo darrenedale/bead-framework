@@ -12,7 +12,7 @@ use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use LogicException;
 
-class HasEncryptionKeyTest extends \BeadTests\Framework\TestCase
+class HasEncryptionKeyTest extends TestCase
 {
     /** @var HasEncryptionKey */
     private object $instance;
@@ -57,9 +57,9 @@ class HasEncryptionKeyTest extends \BeadTests\Framework\TestCase
 
     public function testKeyThrowsWhenEmpty(): void
     {
+        $instance = new XRay($this->instance);
         self::expectException(LogicException::class);
         self::expectExceptionMessage("No encryption key has been set");
-        $instance = new XRay($this->instance);
         $instance->key();
     }
 

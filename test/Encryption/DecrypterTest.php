@@ -63,8 +63,9 @@ class DecrypterTest extends TestCase
     public function testDecryptThrowsWithInvalidBase64(): void
     {
         self::expectException(EncryptionException::class);
-        self::expectExceptionMessage("Invalid encrypted data (bad base64)");
-        $this->decrypter->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg==");
+        self::expectExceptionMessageMatches("/^Invalid encrypted data:/");
+        // absence of = padding should cause decoding to fail because sodium b64 decoding is strictly conformant
+        $this->decrypter->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg");
     }
 
     public function testDecryptThrowsWithTruncatedData(): void
