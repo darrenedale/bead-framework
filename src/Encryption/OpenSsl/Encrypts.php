@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Bead\Encryption;
+namespace Bead\Encryption\OpenSsl;
 
 use Bead\Contracts\Encryption\SerializationMode;
 use Bead\Exceptions\EncryptionException;
-use SodiumException;
 
-trait EncryptsData
+trait Encrypts
 {
+    use ScrubsStrings;
+
+    public abstract function algorithm(): string;
+
 	private abstract function key(): string;
 
 	private abstract function randomBytes(int $len): string;
@@ -38,21 +41,22 @@ trait EncryptsData
 				throw new EncryptionException("Invalid serialization mode");
 		};
 
-		$nonce = $this->randomBytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $algorithm = $this->algorithm();
+        $ivLength = openssl_cipher_iv_length($algorithm);
+		$iv = $this->randomBytes($ivLength);
 
-        try {
-            $encrypted = sodium_bin2base64(
-                $nonce .
-                $serialized .
-                sodium_crypto_secretbox($data, $nonce, $this->key()),
-                SODIUM_BASE64_VARIANT_ORIGINAL
-            );
-        } catch (SodiumException $err) {
-            throw new EncryptionException("Exception encrypting data: {$err->getMessage()}", previous: $err);
+        $encrypted = base64_encode(
+            $iv .
+            $serialized .
+            openssl_encrypt($data, $algorithm, $this->key(), 0, $iv)
+        );
+
+        if (false === $encrypted) {
+            throw new EncryptionException("Unable to encrypt data");
         }
 
-		sodium_memzero($data);
-		sodium_memzero($serialized);
+        self::scrubString($data);
+        self::scrubString($serialized);
 		return $encrypted;
 	}
 }

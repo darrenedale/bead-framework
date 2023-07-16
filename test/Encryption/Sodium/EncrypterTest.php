@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Encryption;
+namespace BeadTests\Encryption\Sodium;
 
 use Bead\Contracts\Encryption\SerializationMode;
-use Bead\Encryption\Encrypter;
+use Bead\Encryption\Sodium\Encrypter;
+use Bead\Exceptions\EncryptionException;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
-use Bead\Exceptions\EncryptionException;
 use SodiumException;
 
 class EncrypterTest extends TestCase

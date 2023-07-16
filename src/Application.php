@@ -8,7 +8,8 @@ use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Database\Connection;
-use Bead\Encryption\Crypter;
+use Bead\Encryption\OpenSsl\Crypter as OpenSslCrypter;
+use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
 use Bead\ErrorHandler as BeadErrorHandler;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -128,7 +129,18 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     private function setupCrypter(): void
     {
-        $crypter = new Crypter($this->config("crypt.key"));
+        $cryptConfig = $this->config("crypto");
+
+        if (!isset($cryptConfig["driver"])) {
+            return;
+        }
+
+        $crypter = match($cryptConfig["driver"]) {
+            "openssl" => new OpenSslCrypter($cryptConfig["algorithm"] ?? "", $cryptConfig["key"] ?? ""),
+            "sodium" => new SodiumCrypter($cryptConfig["key"] ?? ""),
+            default => throw new RuntimeException("Invalid crypto driver {$cryptConfig["driver"]}"),
+        };
+
         $this->bindService(Decrypter::class, $crypter);
         $this->bindService(Encrypter::class, $crypter);
         $this->bindService(Crypter::class, $crypter);
