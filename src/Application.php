@@ -2,6 +2,7 @@
 
 namespace Bead;
 
+use Bead\Contracts\Encryption\Crypter;
 use Bead\Contracts\Encryption\Decrypter;
 use Bead\Contracts\Encryption\Encrypter;
 use Bead\Contracts\ErrorHandler;
@@ -91,7 +92,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
         $this->m_appRoot = $realAppRoot;
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->setupTranslator();
-        $this->setUpCrypter();
+        $this->setupCrypter();
         $this->setDatabase($db);
     }
 
