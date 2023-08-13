@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Bead\Encryption;
+namespace Bead\Encryption\Sodium;
 
 use Bead\Contracts\Encryption\Decrypter as DecrypterContract;
-use Exception;
+use Bead\Encryption\HasKey;
 
 class Decrypter implements DecrypterContract
 {
-	use HasEncryptionKey;
-	use DecryptsData;
+	use HasKey;
+    use ChecksKey;
+	use Decrypts;
 
 	public function __construct(string $key)
 	{

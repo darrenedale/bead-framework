@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Bead\Encryption;
+namespace Bead\Encryption\Sodium;
 
 use Bead\Contracts\Encryption\Encrypter as EncrypterContract;
-use Exception;
+use Bead\Encryption\GeneratesRandomBytes;
+use Bead\Encryption\HasKey;
 
 class Encrypter implements EncrypterContract
 {
-	use HasEncryptionKey;
-	use EncryptsData;
+	use HasKey;
+    use ChecksKey;
+	use Encrypts;
 	use GeneratesRandomBytes;
 
 	public function __construct(string $key)
