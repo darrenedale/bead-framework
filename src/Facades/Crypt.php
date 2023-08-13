@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Bead\Facades;
 
 use Bead\Contracts\Encryption\Crypter as CrypterContract;
-use Bead\Contracts\Encryption\SerializationMode;
+use Bead\Encryption\SerializationMode;
 
 /**
  * Facade for easy access to the Application container's Encrypter and Decrypter.

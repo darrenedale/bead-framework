@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Bead\Contracts\Encryption;
+namespace Bead\Encryption;
 
 final class SerializationMode
 {
