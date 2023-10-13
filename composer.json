@@ -21,7 +21,9 @@
     "psr/log": "^3"
   },
   "suggest": {
-    "ext-shmop": "*"
+    "ext-shmop": "*",
+    "ext-openssl": "*",
+    "ext-sodium": "*"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
