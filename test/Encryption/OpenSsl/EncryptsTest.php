@@ -6,6 +6,7 @@ namespace BeadTests\Encryption\OpenSsl;
 
 use Bead\Encryption\SerializationMode;
 use Bead\Encryption\OpenSsl\Encrypts;
+use Bead\Exceptions\EncryptionException;
 use BeadTests\Framework\TestCase;
 
 class EncryptsTest extends TestCase
@@ -39,23 +40,43 @@ class EncryptsTest extends TestCase
         };
     }
 
-    public function testEncrypt(): void
+	public static function dataForTestEncrypt1(): iterable
+	{
+		yield "auto-serialization-string" => [self::RawData, SerializationMode::Auto, "MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09"];
+		yield "auto-serialization-array" => [self::ArrayRawData, SerializationMode::Auto, "MTExMTExMTFZZlJGNXR5bCtjVGhqWkd2OXVRT1ZPV0tqMEVuSTR5K3d0VElHOWQ2M1EyenowOGZLQURKaDNiQytYNVBWOFZObw=="];
+		yield "forced-serialization-string" => [self::RawData, SerializationMode::On, "MTExMTExMTFZNUlNYmY5ZUE4bC9xQmFBUmxBMFRkUT09"];
+		yield "no-serialization-string" => [self::RawData, SerializationMode::Off, "MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09"];
+	}
+
+	/** @dataProvider dataForTestEncrypt1 */
+    public function testEncrypt1(mixed $data, int $serializationMode, string $expected): void
     {
+        self::assertEquals($expected, $this->instance->encrypt($data, $serializationMode));
+    }
+
+	/** Ensure default serialisation mode is auto */
+    public function testEncrypt2(): void
+    {
+		// string won't be serialized
         self::assertEquals("MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09", $this->instance->encrypt(self::RawData));
+		// array will
+        self::assertEquals("MTExMTExMTFZZlJGNXR5bCtjVGhqWkd2OXVRT1ZPV0tqMEVuSTR5K3d0VElHOWQ2M1EyenowOGZLQURKaDNiQytYNVBWOFZObw==", $this->instance->encrypt(self::ArrayRawData));
     }
 
-    public function testEncryptDoesntAutoSerializeString(): void
-    {
-        self::assertEquals("MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09", $this->instance->encrypt(self::RawData, SerializationMode::Auto));
-    }
+	/** Ensure encrypt() throws with an invalid serialization mode. */
+	public function testEncrypt3(): void
+	{
+		self::expectException(EncryptionException::class);
+		self::expectExceptionMessage("Invalid serialization mode");
+		$this->instance->encrypt(self::RawData, -1);
+	}
 
-    public function testEncryptAutoSerializes(): void
-    {
-        self::assertEquals("MTExMTExMTFZZlJGNXR5bCtjVGhqWkd2OXVRT1ZPV0tqMEVuSTR5K3d0VElHOWQ2M1EyenowOGZLQURKaDNiQytYNVBWOFZObw==", $this->instance->encrypt(self::ArrayRawData, SerializationMode::Auto));
-    }
-
-    public function testEncryptForceSerializes(): void
-    {
-        self::assertEquals("MTExMTExMTFZNUlNYmY5ZUE4bC9xQmFBUmxBMFRkUT09", $this->instance->encrypt(self::RawData, SerializationMode::On));
-    }
+	/** Ensure encrypt() throws when base64 encoding fails. */
+	public function testEncrypt4(): void
+	{
+		self::mockFunction('base64_encode', fn(string $data): string|false => false);
+		self::expectException(EncryptionException::class);
+		self::expectExceptionMessage("Unable to encrypt data");
+		$this->instance->encrypt(self::RawData);
+	}
 }
