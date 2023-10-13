@@ -23,7 +23,8 @@ class GeneratesRandomBytesTest extends TestCase
         $this->instance = new XRay($instance);
     }
 
-    public function testGenerateRandomBytes(): void
+	/** Ensure random_bytes() can be used to generate random bytes. */
+    public function testGenerateRandomBytes1(): void
     {
         $this->mockFunction('random_bytes', function(int $len): string {
             TestCase::assertEquals(64, $len);
@@ -33,7 +34,8 @@ class GeneratesRandomBytesTest extends TestCase
         self::assertEquals(str_repeat('X', 64), $this->instance->randomBytes(64));
     }
 
-    public function testGenerateRandomBytesOpenSsl(): void
+	/** Ensure openssl_random_pseudo_bytes() is used when random_bytes() is not available. */
+    public function testGenerateRandomBytes2(): void
     {
         $this->mockFunction('function_exists', function(string $fn): bool {
             return match($fn) {
@@ -51,7 +53,8 @@ class GeneratesRandomBytesTest extends TestCase
         self::assertEquals(str_repeat('X', 64), $this->instance->randomBytes(64));
     }
 
-    public function testGenerateRandomBytesOpenSslWeak(): void
+	/** Ensure an exception is thrown when openssl_random_pseudo_bytes indicates the randomness is not strong. */
+    public function testGenerateRandomBytes3(): void
     {
         $this->mockFunction('function_exists', function(string $fn): bool {
             return match($fn) {

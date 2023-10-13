@@ -8,6 +8,9 @@ use Bead\Encryption\SerializationMode;
 use Bead\Exceptions\EncryptionException;
 use SodiumException;
 
+/**
+ * Trait to encrypt data using Sodium.
+ */
 trait Encrypts
 {
 	private abstract function key(): string;

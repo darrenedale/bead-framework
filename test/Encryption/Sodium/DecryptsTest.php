@@ -14,7 +14,7 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
 
     private const ArrayRawData = ["the-data", "more-data"];
 
-    /** @var Encrypts */
+    /** @var Decrypts */
     private object $instance;
 
     public function setUp(): void
@@ -29,20 +29,25 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
         };
     }
 
-    public function dataForTestDecrypt(): iterable
+    public static function dataForTestDecrypt1(): iterable
     {
         yield "serialized string" => ["MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=", self::RawData];
         yield "serialized array" => ["MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WeAelQVLV8IHIWXYsUXxm95ZfdnvELEzY1npRj1hPCebFKtX+vA11J5LQTo9qBPjRhbCQJe+XTtruh9E4rY=", self::ArrayRawData];
         yield "unserialized string" => ["MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg==", self::RawData];
     }
 
-    /** @dataProvider dataForTestDecrypt */
-    public function testDecrypt(string $encrypted, mixed $expected): void
+    /**
+	 * Ensure decrypt() successfully decrypts data.
+	 *
+	 * @dataProvider dataForTestDecrypt1
+	 */
+    public function testDecrypt1(string $encrypted, mixed $expected): void
     {
         self::assertEquals($expected, $this->instance->decrypt($encrypted));
     }
 
-    public function testDecryptThrowsWithInvalidBase64(): void
+	/** Ensure decrypt() throws with invalid base64 data. */
+    public function testDecrypt2(): void
     {
         self::expectException(EncryptionException::class);
         self::expectExceptionMessageMatches("/^Invalid encrypted data:/");
@@ -50,14 +55,16 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
         $this->instance->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg");
     }
 
-    public function testDecryptThrowsWithTruncatedData(): void
+	/** Ensure decrypt() throws with truncated data. */
+    public function testDecrypt3(): void
     {
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Invalid encrypted data (truncated)");
         $this->instance->decrypt("MDAwMDExMTEy");
     }
 
-    public function testDecryptThrowsWithBadSerializedFlag(): void
+	/** Ensure decrypt() throws when the serialization flag in the encrypted data is invalid. */
+    public function testDecrypt4(): void
     {
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Invalid encrypted data (bad serialization flag)");
@@ -65,7 +72,8 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
         $this->instance->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1UwRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");
     }
 
-    public function testDecryptThrowsWhenSodiumThrows(): void
+	/** Ensure decrypt throws an EncryptionException when Sodium throws. */
+    public function testDecrypt5(): void
     {
         $this->mockFunction("sodium_crypto_secretbox_open", function() {
             throw new SodiumException("The Sodium Exception");
@@ -76,7 +84,8 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
         $this->instance->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");
     }
 
-    public function testDecryptThrowsWhenSodiumFails(): void
+	/** Ensure decrypt throws when Sodium fails. */
+    public function testDecrypt6(): void
     {
         $this->mockFunction("sodium_crypto_secretbox_open", fn(): bool => false);
         self::expectException(EncryptionException::class);
@@ -84,7 +93,8 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
         $this->instance->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");
     }
 
-    public function testDecryptThrowsWhenUnserializeFails(): void
+	/** Ensure decrypt throws when unserialization fails. */
+    public function testDecrypt7(): void
     {
         $this->mockFunction("unserialize", fn(): bool => false);
         self::expectException(EncryptionException::class);
@@ -93,10 +103,12 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
     }
 
     /**
-     * Since serialize() returns false both when it fails and when it successfully unserializes the serialization of
+	 * Ensure decrypting the encrypted value `false` works.
+	 *
+	 * Since serialize() returns false both when it fails and when it successfully unserializes the serialization of
      * false, we need a test to prove unserializing false works as expected.
      */
-    public function testDecryptHandlesSerializedFalse(): void
+    public function testDecrypt8(): void
     {
         self::assertFalse($this->instance->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WRAMN0yXiip7bqD7ICAwK1Zafdvu"));
     }

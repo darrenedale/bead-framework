@@ -21,7 +21,7 @@ class ChecksKeyTest extends TestCase
         };
     }
 
-    public function dataForTestCheckKey(): iterable
+    public static function dataForTestCheckKey1(): iterable
     {
         yield "empty" => ["", false];
 
@@ -30,8 +30,8 @@ class ChecksKeyTest extends TestCase
         }
     }
 
-    /** @dataProvider dataForTestCheckKey */
-    public function testCheckKey(string $key, bool $passes): void
+    /** @dataProvider dataForTestCheckKey1 */
+    public function testCheckKey1(string $key, bool $passes): void
     {
         if (!$passes) {
             self::expectException(EncryptionException::class);

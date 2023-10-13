@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Bead\Encryption\OpenSsl;
 
+use Bead\Encryption\ScrubsStrings;
 use Bead\Exceptions\EncryptionException;
 
+/**
+ * Trait to decrypt data encrypted using OpenSSL.
+ */
 trait Decrypts
 {
     use ScrubsStrings;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Encryption\OpenSsl;
 
+/** Trait used by several tests to provide the cipher methods that OpenSSL supports. */
 trait ProvidesOpenSslSupportedAlgorithms
 {
 	public static function openSslSupportedAlgorithms(): iterable

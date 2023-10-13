@@ -6,7 +6,9 @@ namespace BeadTests\Encryption\Sodium;
 
 use Bead\Encryption\SerializationMode;
 use Bead\Encryption\Sodium\Encrypts;
+use Bead\Exceptions\EncryptionException;
 use BeadTests\Framework\TestCase;
+use SodiumException;
 
 class EncryptsTest extends TestCase
 {
@@ -34,23 +36,43 @@ class EncryptsTest extends TestCase
         };
     }
 
-    public function testEncrypt(): void
-    {
-        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg==", $this->instance->encrypt(self::RawData));
-    }
+	public static function dataForTestEncrypt1(): iterable
+	{
+		yield "auto-serialization-string" => [self::RawData, SerializationMode::Auto, "MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg=="];
+		yield "auto-serialization-array" => [self::ArrayRawData, SerializationMode::Auto, "MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WeAelQVLV8IHIWXYsUXxm95ZfdnvELEzY1npRj1hPCebFKtX+vA11J5LQTo9qBPjRhbCQJe+XTtruh9E4rY="];
+		yield "forced-serialization-string" => [self::RawData, SerializationMode::On, "MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg="];
+		yield "no-serialization-string" => [self::RawData, SerializationMode::Off, "MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg=="];
+	}
 
-    public function testEncryptDoesntAutoSerializeString(): void
-    {
-        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg==", $this->instance->encrypt(self::RawData, SerializationMode::Auto));
-    }
+	/** @dataProvider dataForTestEncrypt1 */
+	public function testEncrypt1(mixed $data, int $serializationMode, string $expected): void
+	{
+		self::assertEquals($expected, $this->instance->encrypt($data, $serializationMode));
+	}
 
-    public function testEncryptAutoSerializes(): void
-    {
-        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WeAelQVLV8IHIWXYsUXxm95ZfdnvELEzY1npRj1hPCebFKtX+vA11J5LQTo9qBPjRhbCQJe+XTtruh9E4rY=", $this->instance->encrypt(self::ArrayRawData, SerializationMode::Auto));
-    }
+	/** Ensure default serialisation mode is auto */
+	public function testEncrypt2(): void
+	{
+		// string won't be serialized
+		self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg==", $this->instance->encrypt(self::RawData));
+		// array will
+		self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WeAelQVLV8IHIWXYsUXxm95ZfdnvELEzY1npRj1hPCebFKtX+vA11J5LQTo9qBPjRhbCQJe+XTtruh9E4rY=", $this->instance->encrypt(self::ArrayRawData));
+	}
 
-    public function testEncryptForceSerializes(): void
-    {
-        self::assertEquals("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=", $this->instance->encrypt(self::RawData, SerializationMode::On));
-    }
+	/** Ensure encrypt() throws with an invalid serialization mode. */
+	public function testEncrypt3(): void
+	{
+		self::expectException(EncryptionException::class);
+		self::expectExceptionMessage("Invalid serialization mode");
+		$this->instance->encrypt(self::RawData, -1);
+	}
+
+	/** Ensure encrypt() throws when encryption fails. */
+	public function testEncrypt4(): void
+	{
+		self::mockFunction('sodium_bin2base64', fn(string $data): string => throw new SodiumException("Test exception."));
+		self::expectException(EncryptionException::class);
+		self::expectExceptionMessage("Exception encrypting data: Test exception.");
+		$this->instance->encrypt(self::RawData);
+	}
 }

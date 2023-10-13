@@ -13,6 +13,7 @@ use BeadTests\Framework\TestCase;
 class DecrypterTest extends TestCase
 {
 	use ProvidesOpenSslSupportedAlgorithms;
+	use ProvidesOpenSslUnsupportedAlgorithms;
 
     private const EncryptionKey = "-some-insecure-key-insecure-some";
 
@@ -29,7 +30,7 @@ class DecrypterTest extends TestCase
 		self::assertEquals($algorithm, $crypter->algorithm());
 	}
 
-    public function dataForTestConstructorThrows1(): iterable
+    public static function dataForTestConstructor2(): iterable
     {
         yield "empty" => [""];
         yield "marginally too short" => ["some-insecure-key-insec"];
@@ -38,45 +39,26 @@ class DecrypterTest extends TestCase
     /**
 	 * Ensure constructor throws with a keys that are not long enough.
 	 *
-	 * @dataProvider dataForTestConstructorThrows1
+	 * @dataProvider dataForTestConstructor2
 	 */
-	public function testConstructorThrows1(string $key): void
+	public function testConstructor2(string $key): void
 	{
 		self::expectException(EncryptionException::class);
 		self::expectExceptionMessage("Invalid encryption key");
 		new Decrypter("aes-256-gcm", $key);
 	}
 
-    public function dataForTestConstructorThrows2(): iterable
+    public static function dataForTestConstructor3(): iterable
     {
-		yield "empty" => [""];
-
-		if (!function_exists('openssl_get_cipher_methods')) {
-			self::fail("OpenSSL extension doesn't appear to be loaded.");
-		}
-
-		$algorithms = openssl_get_cipher_methods();
-
-		foreach (
-			[
-				"nonsense", "this-method-is-not-available", "something-else", "aes-127-cbc", "bluefish", "foo", "bar",
-				"7", " ", "-",
-			] as $algorithm) {
-			if (in_array($algorithm, $algorithms)) {
-				# only test with algorithms known to be invalid
-				continue;
-			}
-
-			yield $algorithm => [$algorithm];
-		}
+		yield from self::openSslUnsupportedAlgorithms();
     }
 
     /**
 	 * Ensure constructor throws with a keys that are not long enough.
 	 *
-	 * @dataProvider dataForTestConstructorThrows2
+	 * @dataProvider dataForTestConstructor3
 	 */
-	public function testConstructorThrows2(string $algorithm): void
+	public function testConstructor3(string $algorithm): void
 	{
 		self::expectException(EncryptionException::class);
 		self::expectExceptionMessage("Cipher algorithm '{$algorithm}' is not supported");

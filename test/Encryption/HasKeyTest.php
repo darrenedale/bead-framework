@@ -19,19 +19,30 @@ class HasKeyTest extends TestCase
     public function setUp(): void
     {
         $this->instance = new class {
-            use HasKey;
+			public static bool $scrubStringCalled = false;
+
+            use HasKey {
+				scrubString as traitScrubString;
+			}
+
+			private static function scrubString(string & $str): void
+			{
+				self::$scrubStringCalled = true;
+				self::traitScrubString($str);
+			}
         };
     }
 
-    public function testKey(): void
+	/** Ensure we get the expected key. */
+    public function testKey1(): void
     {
         $instance = new XRay($this->instance);
         $instance->key = "something";
         self::assertEquals("something", $instance->key());
     }
 
-
-    public function testKeyThrowsWhenEmpty(): void
+	/** Ensure key() throws when the key is empty. */
+    public function testKey2(): void
     {
         $instance = new XRay($this->instance);
         self::expectException(LogicException::class);
@@ -39,16 +50,15 @@ class HasKeyTest extends TestCase
         $instance->key();
     }
 
-    public function testDestructor(): void
+	/** Ensure the destructor scrubs the key. */
+    public function testDestructor1(): void
     {
+		/** @var class-string $instanceClass */
+		$instanceClass = $this->instance::class;
+		self::assertFalse($instanceClass::$scrubStringCalled);
         $instance = new XRay($this->instance);
         $instance->key = "something";
-        unset($instance);
-
-        self::mockFunction("sodium_memzero", function(string &$str): void {
-            TestCase::assertEquals("something", $str);
-        });
-
-        unset($this->instance);
+        unset($instance, $this->instance);
+		self::assertTrue($instanceClass::$scrubStringCalled);
     }
 }

@@ -14,7 +14,7 @@ class DecryptsTest extends TestCase
 
     private const ArrayRawData = ["the-data", "more-data"];
 
-    /** @var Encrypts */
+    /** @var Decrypts */
     private object $instance;
 
     public function setUp(): void
@@ -34,34 +34,37 @@ class DecryptsTest extends TestCase
         };
     }
 
-    public function dataForTestDecrypt(): iterable
+    public static function dataForTestDecrypt1(): iterable
     {
         yield "serialized string" => ["MTExMTExMTFZNUlNYmY5ZUE4bC9xQmFBUmxBMFRkUT09", self::RawData];
         yield "serialized array" => ["MTExMTExMTFZZlJGNXR5bCtjVGhqWkd2OXVRT1ZPV0tqMEVuSTR5K3d0VElHOWQ2M1EyenowOGZLQURKaDNiQytYNVBWOFZObw", self::ArrayRawData];
         yield "unserialized string" => ["MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09", self::RawData];
     }
 
-    /** @dataProvider dataForTestDecrypt */
-    public function testDecrypt(string $encrypted, mixed $expected): void
+    /** @dataProvider dataForTestDecrypt1 */
+    public function testDecrypt1(string $encrypted, mixed $expected): void
     {
         self::assertEquals($expected, $this->instance->decrypt($encrypted));
     }
 
-    public function testDecryptThrowsWithInvalidBase64(): void
+	/** Ensure decrypt() throws when the encrypted bse64 is not valid. */
+    public function testDecrypt2(): void
     {
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Invalid encrypted data");
         $this->instance->decrypt("MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09===");
     }
 
-    public function testDecryptThrowsWithTruncatedData(): void
+	/** Ensure decrypt() throws with truncated encrypted data. */
+    public function testDecrypt3(): void
     {
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Invalid encrypted data (truncated)");
         $this->instance->decrypt("MTExMTEx");
     }
 
-    public function testDecryptThrowsWithBadSerializedFlag(): void
+	/** Ensure decrypt() throws when the serialization flag in the encrypted data is not valid. */
+    public function testDecrypt4(): void
     {
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Invalid encrypted data (bad serialization flag)");
@@ -69,7 +72,8 @@ class DecryptsTest extends TestCase
         $this->instance->decrypt("MTExMTExMTFTNUlNYmY5ZUE4bC9xQmFBUmxBMFRkUT09");
     }
 
-    public function testDecryptThrowsWhenOpenSslFails(): void
+	/** Ensure decrypt() throws when OpenSSL fails. */
+    public function testDecrypt5(): void
     {
         $this->mockFunction("openssl_decrypt", fn(): bool => false);
         self::expectException(EncryptionException::class);
@@ -77,7 +81,8 @@ class DecryptsTest extends TestCase
         $this->instance->decrypt("MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09");
     }
 
-    public function testDecryptThrowsWhenUnserializeFails(): void
+	/** Ensure decrypt() throws when unserialize() fails. */
+    public function testDecrypt6(): void
     {
         $this->mockFunction("unserialize", fn(): bool => false);
         self::expectException(EncryptionException::class);
@@ -86,10 +91,12 @@ class DecryptsTest extends TestCase
     }
 
     /**
+	 * Ensure decrypting the encrypted value `false` works.
+	 *
      * Since serialize() returns false both when it fails and when it successfully unserializes the serialization of
      * false, we need a test to prove unserializing false works as expected.
      */
-    public function testDecryptHandlesSerializedFalse(): void
+    public function testDecrypt7(): void
     {
         self::assertFalse($this->instance->decrypt("MTExMTExMTFZTUNKMTcxZ2ltTlk9"));
     }

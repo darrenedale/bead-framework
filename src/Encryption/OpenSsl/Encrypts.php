@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Bead\Encryption\OpenSsl;
 
+use Bead\Encryption\ScrubsStrings;
 use Bead\Encryption\SerializationMode;
 use Bead\Exceptions\EncryptionException;
 
+/**
+ * Trait to encrypt data using OpenSSL.
+ */
 trait Encrypts
 {
     use ScrubsStrings;

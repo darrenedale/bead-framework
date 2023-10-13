@@ -21,12 +21,13 @@ class ChecksKeyTest extends TestCase
         };
     }
 
-	public function testMinimumKeyLength(): void
+	/** Ensure the minimum key length is the expected value. */
+	public function testMinimumKeyLength1(): void
 	{
 		self::assertEquals(24, (new StaticXRay($this->instance::class))->minimumKeyLength());
 	}
 
-    public static function dataForTestCheckKey(): iterable
+    public static function dataForTestCheckKey1(): iterable
     {
         yield "empty" => ["", false];
 
@@ -35,8 +36,12 @@ class ChecksKeyTest extends TestCase
         }
     }
 
-    /** @dataProvider dataForTestCheckKey */
-    public function testCheckKey(string $key, bool $passes): void
+    /**
+	 * Ensure checkKey() provides the expected results.
+	 *
+	 * @dataProvider dataForTestCheckKey1
+	 */
+    public function testCheckKey1(string $key, bool $passes): void
     {
         if (!$passes) {
             self::expectException(EncryptionException::class);

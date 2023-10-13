@@ -33,7 +33,7 @@ class CrypterTest extends TestCase
 		self::assertEquals($algorithm, $crypter->algorithm());
 	}
 
-    public function dataForTestConstructorThrows1(): iterable
+    public static function dataForTestConstructor2(): iterable
     {
         yield "empty" => [""];
         yield "marginally too short" => ["some-insecure-key-insec"];
@@ -42,16 +42,16 @@ class CrypterTest extends TestCase
     /**
 	 * Ensure constructor throws with a keys that are not long enough.
 	 *
-	 * @dataProvider dataForTestConstructorThrows1
+	 * @dataProvider dataForTestConstructor2
 	 */
-	public function testConstructorThrows1(string $key): void
+	public function testConstructorThrows2(string $key): void
 	{
 		self::expectException(EncryptionException::class);
 		self::expectExceptionMessage("Invalid encryption key");
 		new Crypter("aes-256-gcm", $key);
 	}
 
-    public function dataForTestConstructorThrows2(): iterable
+    public static function dataForTestConstructor3(): iterable
     {
 		yield "empty" => [""];
 
@@ -78,9 +78,9 @@ class CrypterTest extends TestCase
     /**
 	 * Ensure constructor throws with a keys that are not long enough.
 	 *
-	 * @dataProvider dataForTestConstructorThrows2
+	 * @dataProvider dataForTestConstructor3
 	 */
-	public function testConstructorThrows2(string $algorithm): void
+	public function testConstructor3(string $algorithm): void
 	{
 		self::expectException(EncryptionException::class);
 		self::expectExceptionMessage("Cipher algorithm '{$algorithm}' is not supported");

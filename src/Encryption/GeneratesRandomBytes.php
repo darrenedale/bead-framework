@@ -7,8 +7,19 @@ namespace Bead\Encryption;
 use Bead\Exceptions\EncryptionException;
 use LogicException;
 
+/**
+ * Shared implementation of generation of cryptographicall-secure random byttes.
+ */
 trait GeneratesRandomBytes
 {
+	/**
+	 * Get some cryptographically-secure random bytes.
+	 *
+	 * @param int $len How many bytes.
+	 *
+	 * @return string The random bytes generated.
+	 * @throws EncryptionException if a source of cryptographically-secure random bytes is not available.
+	 */
 	private function randomBytes(int $len): string
 	{
         assert(0 < $len, new LogicException("Length of random bytes must be > 0"));

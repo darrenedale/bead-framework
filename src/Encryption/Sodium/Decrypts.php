@@ -7,6 +7,9 @@ namespace Bead\Encryption\Sodium;
 use Bead\Exceptions\EncryptionException;
 use SodiumException;
 
+/**
+ * Trait to decrypt data encrypted using Sodium.
+ */
 trait Decrypts
 {
     /** Classes utilising the trait must provide an encryption key. */

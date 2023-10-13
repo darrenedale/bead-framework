@@ -13,23 +13,28 @@ use SodiumException;
 
 class CrypterTest extends TestCase
 {
+	use ProvidesInvalidKeys;
+
     private const EncryptionKey = "-some-insecure-key-insecure-some";
 
-    public function testConstructor(): void
+	/** Ensure we can construct a Crypter with a valid key. */
+    public function testConstructor1(): void
 	{
 		$crypter = new Crypter(self::EncryptionKey);
 		self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
 	}
 
-    public function dataForTestConstructorThrows(): iterable
+    public static function dataForTestConstructor2(): iterable
     {
-        yield "empty" => [""];
-        yield "marginally too short" => ["some-insecure-key-insecure-some"];
-        yield "marginally too long" => ["-some-insecure-key-insecure-some-"];
+		yield from self::invalidKeys();
     }
 
-    /** @dataProvider dataForTestConstructorThrows */
-	public function testConstructorThrows(string $key): void
+    /**
+	 * Ensure constructor throws with invalid keys.
+	 *
+	 * @dataProvider dataForTestConstructor2
+	 */
+	public function testConstructor2(string $key): void
 	{
 		self::expectException(EncryptionException::class);
 		self::expectExceptionMessage("Invalid encryption key");

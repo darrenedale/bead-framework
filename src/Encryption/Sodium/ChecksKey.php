@@ -6,6 +6,9 @@ namespace Bead\Encryption\Sodium;
 
 use Bead\Exceptions\EncryptionException;
 
+/**
+ * Trait for establishing whether a key is valid for use with Sodium encryption/decryption.
+ */
 trait ChecksKey
 {
     private static function checkKey(string $key): void
