@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Encryption\OpenSsl;
 
-use Bead\Contracts\Encryption\SerializationMode;
+use Bead\Encryption\SerializationMode;
 use Bead\Exceptions\EncryptionException;
 
 trait Encrypts

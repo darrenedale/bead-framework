@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Encryption\Sodium;
 
-use Bead\Contracts\Encryption\SerializationMode;
+use Bead\Encryption\SerializationMode;
 use Bead\Exceptions\EncryptionException;
 use SodiumException;
 

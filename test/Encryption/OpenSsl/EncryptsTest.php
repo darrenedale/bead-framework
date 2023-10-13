@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Encryption\OpenSsl;
 
-use Bead\Contracts\Encryption\SerializationMode;
-use Bead\Encryption\GeneratesRandomBytes;
+use Bead\Encryption\SerializationMode;
 use Bead\Encryption\OpenSsl\Encrypts;
 use BeadTests\Framework\TestCase;
 

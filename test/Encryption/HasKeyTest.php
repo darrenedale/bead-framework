@@ -23,29 +23,6 @@ class HasKeyTest extends TestCase
         };
     }
 
-    public function dataForTestCheckKey(): iterable
-    {
-        yield "empty" => ["", false];
-
-        for ($chars = 1; $chars < SODIUM_CRYPTO_SECRETBOX_KEYBYTES + 2; ++$chars) {
-            yield "{$chars} chars" => [str_repeat("X", $chars), SODIUM_CRYPTO_SECRETBOX_KEYBYTES === $chars];
-        }
-    }
-
-    /** @dataProvider dataForTestCheckKey */
-    public function testCheckKey(string $key, bool $passes): void
-    {
-        if (!$passes) {
-            self::expectException(EncryptionException::class);
-            self::expectExceptionMessage("Invalid encryption key");
-        } else {
-            // in this scenario, if the method doesn't throw the test passes
-            self::markTestAsExternallyVerified();
-        }
-
-        (new StaticXRay(get_class($this->instance)))->checkKey($key);
-    }
-
     public function testKey(): void
     {
         $instance = new XRay($this->instance);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Encryption\Sodium;
 
-use Bead\Contracts\Encryption\SerializationMode;
+use Bead\Encryption\SerializationMode;
 use Bead\Encryption\Sodium\Crypter;
 use Bead\Exceptions\EncryptionException;
 use Bead\Testing\XRay;

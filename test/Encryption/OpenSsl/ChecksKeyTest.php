@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Encryption\Sodium;
+namespace BeadTests\Encryption\OpenSsl;
 
 use Bead\Encryption\OpenSsl\ChecksKey;
 use Bead\Exceptions\EncryptionException;
@@ -21,7 +21,12 @@ class ChecksKeyTest extends TestCase
         };
     }
 
-    public function dataForTestCheckKey(): iterable
+	public function testMinimumKeyLength(): void
+	{
+		self::assertEquals(24, (new StaticXRay($this->instance::class))->minimumKeyLength());
+	}
+
+    public static function dataForTestCheckKey(): iterable
     {
         yield "empty" => ["", false];
 
