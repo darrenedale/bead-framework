@@ -5,13 +5,7 @@
     <rule ref="PSR12">
         <exclude name="Generic.NamingConventions.UpperCaseConstantName" />
         <exclude name="Generic.Files.LineLength" />
-    </rule>
-
-    <!-- allow single space after reference operator in function declaration -->
-    <rule ref="Squiz.Functions.FunctionDeclarationArgumentSpacing">
-        <properties>
-            <property name="requiredSpacesAfterReferenceOperator" value="1"/>
-        </properties>
+        <exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing" />
     </rule>
 
 </ruleset>

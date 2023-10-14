@@ -6,8 +6,6 @@ namespace BeadStandards\PhpCodeSniffer\BeadStandard\Sniffs\Functions;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
-use PHP_CodeSniffer\Standards\Generic\Sniffs\Functions\OpeningFunctionBraceBsdAllmanSniff;
-use PHP_CodeSniffer\Standards\Generic\Sniffs\Functions\OpeningFunctionBraceKernighanRitchieSniff;
 use PHP_CodeSniffer\Util\Tokens;
 
 use function str_repeat;
