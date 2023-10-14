@@ -214,13 +214,13 @@ class StaticXRay
     {
         if ($this->isPublicStaticMethod($method)) {
             return [$this->className(), $method](...$args);
-        } else if ($this->isXRayedStaticMethod($method)) {
+        } elseif ($this->isXRayedStaticMethod($method)) {
             try {
                 return $this->m_xRayedMethods[$method]->invoke(null, ...$args);
             } catch (ReflectionException $err) {
                 throw new BadMethodCallException("Static method '{$method}' could not be invoked on class '{$this->className()}'.", 0, $err);
             }
-        } else if (method_exists($this->className(), "__callStatic")) {
+        } elseif (method_exists($this->className(), "__callStatic")) {
             return [$this->className(), "__callStatic"]($method, $args);
         }
 
@@ -239,7 +239,7 @@ class StaticXRay
     {
         if ($this->isPublicStaticProperty($property)) {
             return $this->className()::$$property;
-        } else if ($this->isXRayedStaticProperty($property)) {
+        } elseif ($this->isXRayedStaticProperty($property)) {
             return $this->m_xRayedProperties[$property]->getValue();
         }
 
@@ -258,7 +258,7 @@ class StaticXRay
     {
         if ($this->isPublicStaticProperty($property)) {
             return $this->className()::$$property = $value;
-        } else if ($this->isXRayedStaticProperty($property)) {
+        } elseif ($this->isXRayedStaticProperty($property)) {
             $this->m_xRayedProperties[$property]->setValue(null, $value);
             return $this->m_xRayedProperties[$property]->getValue(null);
         }

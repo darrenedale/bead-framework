@@ -383,9 +383,9 @@ class ModelTest extends TestCase
 
 				if (!isset($value)) {
 					$this->data["foo_bar"] = "";
-				} else if (is_array($value) && all($value, "is_string")) {
+				} elseif (is_array($value) && all($value, "is_string")) {
 					$this->data["foo_bar"] = implode(",", $value);
-				} else if (is_string($value)) {
+				} elseif (is_string($value)) {
 					$this->data["foo_bar"] = $value;
 				} else {
 					throw new ModelPropertyCastException(self::class, "foo_bar", $value, "The value cannot be cast to a comma-delimited array of strings.");

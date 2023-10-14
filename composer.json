@@ -51,7 +51,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "BeadTests\\": "test"
+      "BeadTests\\": "test",
+      "BeadStandards\\": "standards"
     }
   }
 }

@@ -57,7 +57,7 @@ function camelToSnake(string $str, ?string $encoding = null): string
         $replacement = mb_convert_encoding($replacement, $encoding, "UTF-8");
     }
 
-    # use mb_substr to get first char as it could be multibyte
+    // use mb_substr to get first char as it could be multibyte
     $ret =
         mb_strtolower(
             mb_substr($str, 0, 1, $encoding),

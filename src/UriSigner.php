@@ -153,7 +153,7 @@ class UriSigner implements UriSignerContract
         return implode(
             "&",
             array_map(
-                fn($key, $value) => urlencode($key) . "=" . urlencode($value),
+                fn ($key, $value) => urlencode($key) . "=" . urlencode($value),
                 array_keys($parameters),
                 array_values($parameters)
             )

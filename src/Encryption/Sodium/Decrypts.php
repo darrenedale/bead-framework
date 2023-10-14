@@ -13,7 +13,7 @@ use SodiumException;
 trait Decrypts
 {
     /** Classes utilising the trait must provide an encryption key. */
-    private abstract function key(): string;
+    abstract private function key(): string;
 
     public function decrypt(string $data): mixed
     {
@@ -28,7 +28,7 @@ trait Decrypts
         }
 
         $nonce = mb_substr($data, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, "8bit");
-        $serialized = mb_substr($data,SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, 1, "8bit");
+        $serialized = mb_substr($data, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, 1, "8bit");
         $data = mb_substr($data, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + 1, null, "8bit");
 
         if (!in_array($serialized, ["Y", "N"])) {
@@ -48,7 +48,7 @@ trait Decrypts
         sodium_memzero($data);
 
         if ("Y" === $serialized) {
-            # we do this so that we can be sure that unserialize() returning false indicates an error
+            // we do this so that we can be sure that unserialize() returning false indicates an error
             if (serialize(false) === $decrypted) {
                 return false;
             }

@@ -13,9 +13,9 @@ use SodiumException;
  */
 trait Encrypts
 {
-    private abstract function key(): string;
+    abstract private function key(): string;
 
-    private abstract function randomBytes(int $len): string;
+    abstract private function randomBytes(int $len): string;
 
     public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string
     {

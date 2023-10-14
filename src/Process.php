@@ -57,11 +57,11 @@ class Process
     /** @var array|null[] The input, output and error stream resources. */
     private array $m_streams = [null, null, null,];
 
-    /** @var \Closure|null The callback to notify when output is available. */
-    private ?\Closure $m_outputNotifier;
+    /** @var Closure|null The callback to notify when output is available. */
+    private ?Closure $m_outputNotifier;
 
-    /** @var \Closure|null The callback to notify when error output is available. */
-    private ?\Closure $m_errorNotifier;
+    /** @var Closure|null The callback to notify when error output is available. */
+    private ?Closure $m_errorNotifier;
 
     /**
      * Initialise a new DriverProcess with a given command-line and working directory.
@@ -109,7 +109,7 @@ class Process
      */
     protected static function buildCommandLine(string $command, array $args): string
     {
-        array_walk($args, fn(& $arg, $key) => escapeshellarg($arg));
+        array_walk($args, fn (& $arg, $key) => escapeshellarg($arg));
         return escapeshellcmd($command) . " " . implode(" ", $args);
     }
 
@@ -223,7 +223,7 @@ class Process
             throw new RuntimeException("Can't change the command-line arguments of a running process.");
         }
 
-        if (!all($arguments, fn($arg): bool => is_string($arg) || is_int($arg) || is_float($arg))) {
+        if (!all($arguments, fn ($arg): bool => is_string($arg) || is_int($arg) || is_float($arg))) {
             throw new InvalidArgumentException("All arguments must be strings or numbers.");
         }
 
@@ -610,7 +610,7 @@ class Process
             return [];
         }
 
-        return array_filter([self::OutStream, self::ErrStream], fn($stream): bool => in_array($this->m_streams[$stream], $read));
+        return array_filter([self::OutStream, self::ErrStream], fn ($stream): bool => in_array($this->m_streams[$stream], $read));
     }
 
     /**

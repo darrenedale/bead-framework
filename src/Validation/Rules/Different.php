@@ -6,7 +6,7 @@
  * @date May 2022
  */
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Bead\Validation\Rules;
 

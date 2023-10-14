@@ -341,7 +341,7 @@ abstract class Model
         if (
             $this->connection()
                 ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([$primaryKeyProperty])}) VALUES ({$this->buildPropertyPlaceholderList([$primaryKeyProperty])})")
-                ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== $primaryKeyProperty), ARRAY_FILTER_USE_KEY)))
+                ->execute(array_values(array_filter($this->data, fn (string $key): bool => ($key !== $primaryKeyProperty), ARRAY_FILTER_USE_KEY)))
         ) {
             if (isset(static::$properties[$primaryKeyProperty])) {
                 $this->data[$primaryKeyProperty] = static::castInsertedKeyToPrimaryKey($this->connection()->lastInsertId());
@@ -411,7 +411,7 @@ abstract class Model
      */
     public static function create(array $data)
     {
-        if (!all(array_keys($data), fn($key): bool => is_int($key))) {
+        if (!all(array_keys($data), fn ($key): bool => is_int($key))) {
             $model = new static();
             $model->populate($data);
             $model->insert();
@@ -449,7 +449,7 @@ abstract class Model
      */
     public static function make(array $data)
     {
-        if (!all(array_keys($data), fn($key): bool => is_int($key))) {
+        if (!all(array_keys($data), fn ($key): bool => is_int($key))) {
             $model = new static();
             $model->populate($data);
             return $model;

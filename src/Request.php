@@ -331,7 +331,7 @@ class Request
      */
     public function onlyUrlParameters(array $keys): array
     {
-        return array_filter($this->m_urlParams, fn(string $key): bool => in_array(strtolower($key), $keys), ARRAY_FILTER_USE_KEY);
+        return array_filter($this->m_urlParams, fn (string $key): bool => in_array(strtolower($key), $keys), ARRAY_FILTER_USE_KEY);
     }
 
     /**
@@ -436,7 +436,7 @@ class Request
      */
     public function onlyPostData(array $keys): array
     {
-        return array_filter($this->m_postData, fn(string $key): bool => in_array(strtolower($key), $keys), ARRAY_FILTER_USE_KEY);
+        return array_filter($this->m_postData, fn (string $key): bool => in_array(strtolower($key), $keys), ARRAY_FILTER_USE_KEY);
     }
 
     /**

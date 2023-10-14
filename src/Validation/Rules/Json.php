@@ -30,16 +30,16 @@ class Json implements Rule
      */
     public function passes(string $field, $data): bool
     {
-		if (!is_string($data)) {
-			return false;
-		}
+        if (!is_string($data)) {
+            return false;
+        }
         try {
-			json_decode($data, false, 512, JSON_THROW_ON_ERROR);
+            json_decode($data, false, 512, JSON_THROW_ON_ERROR);
         } catch (Throwable $err) {
             return false;
         }
 
-		return true;
+        return true;
     }
 
     /**

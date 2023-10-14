@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Bead Framework Coding Standards" xsi:noNamespaceSchemaLocation="phpcs.xsd">
+    <description>The Bead framework coding standard.</description>
+
+    <rule ref="PSR12">
+        <exclude name="Generic.NamingConventions.UpperCaseConstantName" />
+        <exclude name="Generic.Files.LineLength" />
+    </rule>
+
+    <!-- allow single space after reference operator in function declaration -->
+    <rule ref="Squiz.Functions.FunctionDeclarationArgumentSpacing">
+        <properties>
+            <property name="requiredSpacesAfterReferenceOperator" value="1"/>
+        </properties>
+    </rule>
+
+</ruleset>

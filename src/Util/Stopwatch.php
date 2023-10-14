@@ -61,11 +61,13 @@ class Stopwatch
         $this->m_auto = $auto;
         $this->setProcessName($processName);
 
-        foreach ([
+        foreach (
+            [
                 self::EventStart => $startListeners,
                 self::EventStop => $stopListeners,
                 self::EventReset => $resetListeners,
-            ] as $event => $listeners) {
+            ] as $event => $listeners
+        ) {
             foreach ($listeners as $listener) {
                 $this->addListener($event, $listener);
             }

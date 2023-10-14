@@ -32,7 +32,7 @@ class RequiredWithoutAll implements DatasetAwareRule
      */
     public function __construct(array $otherFields)
     {
-        assert (!empty($otherFields),(
+        assert(!empty($otherFields), (
             8 <= PHP_MAJOR_VERSION
             ? new InvalidArgumentException("Argument for parameter \$otherFields must not be an empty array.")
             : "Argument for parameter \$otherFields must not be an empty array."
@@ -48,7 +48,7 @@ class RequiredWithoutAll implements DatasetAwareRule
     protected function otherFieldIsPresent(): bool
     {
         $data = $this->dataset();
-        return some($this->otherFields(), fn(string $field): bool => self::isFilled($data[$field] ?? null));
+        return some($this->otherFields(), fn (string $field): bool => self::isFilled($data[$field] ?? null));
     }
 
     /**

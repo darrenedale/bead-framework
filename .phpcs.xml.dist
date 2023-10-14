@@ -1,21 +1,13 @@
 <?xml version="1.0"?>
-<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="PHP_CodeSniffer" xsi:noNamespaceSchemaLocation="phpcs.xsd">
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Bead Framework Coding Standards" xsi:noNamespaceSchemaLocation="phpcs.xsd">
     <description>The coding standards for the Bead framework.</description>
 
     <file>*.php</file>
     <file>src</file>
     <file>test</file>
 
-    <rule ref="PSR12">
-        <exclude name="Generic.NamingConventions.UpperCaseConstantName" />
-        <exclude name="Generic.Files.LineLength" />
-    </rule>
+    <exclude-pattern>./test/smoke</exclude-pattern>
 
-    <!-- allow single space after reference operator in function declaration -->
-    <rule ref="Squiz.Functions.FunctionDeclarationArgumentSpacing">
-        <properties>
-            <property name="requiredSpacesAfterReferenceOperator" value="1"/>
-        </properties>
-    </rule>
+    <rule ref="./standards/PhpCodeSniffer/BeadStandard" />
 
 </ruleset>
