@@ -13,18 +13,18 @@ use Bead\Exceptions\EncryptionException;
  */
 class Decrypter implements DecrypterContract
 {
-	use HasKey;
-	use ChecksKey;
-	use Decrypts;
+    use HasKey;
+    use ChecksKey;
+    use Decrypts;
 
-	/**
-	 * Initialise a new Decrypter
-	 *
-	 * @throws EncryptionException if the the key is not valid.
-	 */
-	public function __construct(string $key)
-	{
+    /**
+     * Initialise a new Decrypter
+     *
+     * @throws EncryptionException if the the key is not valid.
+     */
+    public function __construct(string $key)
+    {
         self::checkKey($key);
-		$this->key = $key;
-	}
+        $this->key = $key;
+    }
 }

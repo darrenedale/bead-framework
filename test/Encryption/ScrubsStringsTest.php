@@ -30,18 +30,18 @@ class ScrubsStringsTest extends TestCase
         $sequence = 0;
 
         $this->mockFunction(
-        	'rand',
-			function(int $low, int $high) use (&$sequence): int {
-				TestCase::assertEquals(0, $low);
-				TestCase::assertEquals(255, $high);
-				return $sequence++;
-			}
-		);
+            'rand',
+            function(int $low, int $high) use (&$sequence): int {
+                TestCase::assertEquals(0, $low);
+                TestCase::assertEquals(255, $high);
+                return $sequence++;
+            }
+        );
 
         $str = "something";
         $this->instance->callScrubString($str);
         self::assertEquals(9, strlen($str));
-		self::assertEquals(9, $sequence);
+        self::assertEquals(9, $sequence);
         self::assertEquals("\x08\x07\x06\x05\x04\x03\x02\x01\x00", $str);
     }
 }

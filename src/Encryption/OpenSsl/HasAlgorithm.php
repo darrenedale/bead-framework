@@ -16,13 +16,13 @@ trait HasAlgorithm
 
     private string $algorithm = "";
 
-	/**
-	 * Set the OpenSSL algorithm to use for encryption/decryption.
-	 *
-	 * @param string $algorithm
-	 *
-	 * @throws EncryptionException if the algorithm is not supported.
-	 */
+    /**
+     * Set the OpenSSL algorithm to use for encryption/decryption.
+     *
+     * @param string $algorithm
+     *
+     * @throws EncryptionException if the algorithm is not supported.
+     */
     public function setAlgorithm(string $algorithm): void
     {
         if (!isset(self::$availableCiphers)) {
@@ -36,9 +36,9 @@ trait HasAlgorithm
         $this->algorithm = $algorithm;
     }
 
-	/**
-	 * @return string The OpenSSL algorithm to use for encryption/decryption.
-	 */
+    /**
+     * @return string The OpenSSL algorithm to use for encryption/decryption.
+     */
     public function algorithm(): string
     {
         assert("" !== $this->algorithm, new LogicException("Cipher algorithm has not been set"));

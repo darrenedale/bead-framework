@@ -40,43 +40,43 @@ class EncryptsTest extends TestCase
         };
     }
 
-	public static function dataForTestEncrypt1(): iterable
-	{
-		yield "auto-serialization-string" => [self::RawData, SerializationMode::Auto, "MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09"];
-		yield "auto-serialization-array" => [self::ArrayRawData, SerializationMode::Auto, "MTExMTExMTFZZlJGNXR5bCtjVGhqWkd2OXVRT1ZPV0tqMEVuSTR5K3d0VElHOWQ2M1EyenowOGZLQURKaDNiQytYNVBWOFZObw=="];
-		yield "forced-serialization-string" => [self::RawData, SerializationMode::On, "MTExMTExMTFZNUlNYmY5ZUE4bC9xQmFBUmxBMFRkUT09"];
-		yield "no-serialization-string" => [self::RawData, SerializationMode::Off, "MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09"];
-	}
+    public static function dataForTestEncrypt1(): iterable
+    {
+        yield "auto-serialization-string" => [self::RawData, SerializationMode::Auto, "MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09"];
+        yield "auto-serialization-array" => [self::ArrayRawData, SerializationMode::Auto, "MTExMTExMTFZZlJGNXR5bCtjVGhqWkd2OXVRT1ZPV0tqMEVuSTR5K3d0VElHOWQ2M1EyenowOGZLQURKaDNiQytYNVBWOFZObw=="];
+        yield "forced-serialization-string" => [self::RawData, SerializationMode::On, "MTExMTExMTFZNUlNYmY5ZUE4bC9xQmFBUmxBMFRkUT09"];
+        yield "no-serialization-string" => [self::RawData, SerializationMode::Off, "MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09"];
+    }
 
-	/** @dataProvider dataForTestEncrypt1 */
+    /** @dataProvider dataForTestEncrypt1 */
     public function testEncrypt1(mixed $data, int $serializationMode, string $expected): void
     {
         self::assertEquals($expected, $this->instance->encrypt($data, $serializationMode));
     }
 
-	/** Ensure default serialisation mode is auto */
+    /** Ensure default serialisation mode is auto */
     public function testEncrypt2(): void
     {
-		// string won't be serialized
+        // string won't be serialized
         self::assertEquals("MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09", $this->instance->encrypt(self::RawData));
-		// array will
+        // array will
         self::assertEquals("MTExMTExMTFZZlJGNXR5bCtjVGhqWkd2OXVRT1ZPV0tqMEVuSTR5K3d0VElHOWQ2M1EyenowOGZLQURKaDNiQytYNVBWOFZObw==", $this->instance->encrypt(self::ArrayRawData));
     }
 
-	/** Ensure encrypt() throws with an invalid serialization mode. */
-	public function testEncrypt3(): void
-	{
-		self::expectException(EncryptionException::class);
-		self::expectExceptionMessage("Invalid serialization mode");
-		$this->instance->encrypt(self::RawData, -1);
-	}
+    /** Ensure encrypt() throws with an invalid serialization mode. */
+    public function testEncrypt3(): void
+    {
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Invalid serialization mode");
+        $this->instance->encrypt(self::RawData, -1);
+    }
 
-	/** Ensure encrypt() throws when base64 encoding fails. */
-	public function testEncrypt4(): void
-	{
-		self::mockFunction('base64_encode', fn(string $data): string|false => false);
-		self::expectException(EncryptionException::class);
-		self::expectExceptionMessage("Unable to encrypt data");
-		$this->instance->encrypt(self::RawData);
-	}
+    /** Ensure encrypt() throws when base64 encoding fails. */
+    public function testEncrypt4(): void
+    {
+        self::mockFunction('base64_encode', fn(string $data): string|false => false);
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Unable to encrypt data");
+        $this->instance->encrypt(self::RawData);
+    }
 }

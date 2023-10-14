@@ -37,10 +37,10 @@ class ChecksKeyTest extends TestCase
     }
 
     /**
-	 * Ensure checkKey() provides the expected results.
-	 *
-	 * @dataProvider dataForTestCheckKey1
-	 */
+     * Ensure checkKey() provides the expected results.
+     *
+     * @dataProvider dataForTestCheckKey1
+     */
     public function testCheckKey1(string $key, bool $passes): void
     {
         if (!$passes) {

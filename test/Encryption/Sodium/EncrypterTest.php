@@ -29,13 +29,13 @@ class EncrypterTest extends TestCase
 
     /**
      * Ensure constructor throws with invalid keys.
-	 *
-	 * @dataProvider dataForTestConstructor2
-	 */
-	public function testConstructor2(string $key): void
-	{
-		self::expectException(EncryptionException::class);
-		self::expectExceptionMessage("Invalid encryption key");
-		new Encrypter($key);
-	}
+     *
+     * @dataProvider dataForTestConstructor2
+     */
+    public function testConstructor2(string $key): void
+    {
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Invalid encryption key");
+        new Encrypter($key);
+    }
 }

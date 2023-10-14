@@ -63,7 +63,7 @@ class DecryptsTest extends TestCase
         $this->instance->decrypt("MTExMTEx");
     }
 
-	/** Ensure decrypt() throws when the serialization flag in the encrypted data is not valid. */
+    /** Ensure decrypt() throws when the serialization flag in the encrypted data is not valid. */
     public function testDecrypt4(): void
     {
         self::expectException(EncryptionException::class);
@@ -72,7 +72,7 @@ class DecryptsTest extends TestCase
         $this->instance->decrypt("MTExMTExMTFTNUlNYmY5ZUE4bC9xQmFBUmxBMFRkUT09");
     }
 
-	/** Ensure decrypt() throws when OpenSSL fails. */
+    /** Ensure decrypt() throws when OpenSSL fails. */
     public function testDecrypt5(): void
     {
         $this->mockFunction("openssl_decrypt", fn(): bool => false);
@@ -81,7 +81,7 @@ class DecryptsTest extends TestCase
         $this->instance->decrypt("MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09");
     }
 
-	/** Ensure decrypt() throws when unserialize() fails. */
+    /** Ensure decrypt() throws when unserialize() fails. */
     public function testDecrypt6(): void
     {
         $this->mockFunction("unserialize", fn(): bool => false);
@@ -91,8 +91,8 @@ class DecryptsTest extends TestCase
     }
 
     /**
-	 * Ensure decrypting the encrypted value `false` works.
-	 *
+     * Ensure decrypting the encrypted value `false` works.
+     *
      * Since serialize() returns false both when it fails and when it successfully unserializes the serialization of
      * false, we need a test to prove unserializing false works as expected.
      */

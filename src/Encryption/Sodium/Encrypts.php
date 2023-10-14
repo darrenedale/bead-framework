@@ -13,35 +13,35 @@ use SodiumException;
  */
 trait Encrypts
 {
-	private abstract function key(): string;
+    private abstract function key(): string;
 
-	private abstract function randomBytes(int $len): string;
+    private abstract function randomBytes(int $len): string;
 
-	public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string
-	{
-		$serialized = "N";
+    public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string
+    {
+        $serialized = "N";
 
-		switch ($serializationMode) {
-			case SerializationMode::Auto:
-				if (!is_string($data)) {
-					$serialized = "Y";
-					$data = serialize($data);
-				}
-				break;
+        switch ($serializationMode) {
+            case SerializationMode::Auto:
+                if (!is_string($data)) {
+                    $serialized = "Y";
+                    $data = serialize($data);
+                }
+                break;
 
-			case SerializationMode::On:
-				$serialized = "Y";
-				$data = serialize($data);
-				break;
+            case SerializationMode::On:
+                $serialized = "Y";
+                $data = serialize($data);
+                break;
 
-			case SerializationMode::Off:
-				break;
+            case SerializationMode::Off:
+                break;
 
-			default:
-				throw new EncryptionException("Invalid serialization mode");
-		};
+            default:
+                throw new EncryptionException("Invalid serialization mode");
+        };
 
-		$nonce = $this->randomBytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $nonce = $this->randomBytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
 
         try {
             $encrypted = sodium_bin2base64(
@@ -54,8 +54,8 @@ trait Encrypts
             throw new EncryptionException("Exception encrypting data: {$err->getMessage()}", previous: $err);
         }
 
-		sodium_memzero($data);
-		sodium_memzero($serialized);
-		return $encrypted;
-	}
+        sodium_memzero($data);
+        sodium_memzero($serialized);
+        return $encrypted;
+    }
 }

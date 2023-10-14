@@ -12,16 +12,16 @@ use LogicException;
  */
 trait GeneratesRandomBytes
 {
-	/**
-	 * Get some cryptographically-secure random bytes.
-	 *
-	 * @param int $len How many bytes.
-	 *
-	 * @return string The random bytes generated.
-	 * @throws EncryptionException if a source of cryptographically-secure random bytes is not available.
-	 */
-	private function randomBytes(int $len): string
-	{
+    /**
+     * Get some cryptographically-secure random bytes.
+     *
+     * @param int $len How many bytes.
+     *
+     * @return string The random bytes generated.
+     * @throws EncryptionException if a source of cryptographically-secure random bytes is not available.
+     */
+    private function randomBytes(int $len): string
+    {
         assert(0 < $len, new LogicException("Length of random bytes must be > 0"));
 
         if (function_exists("random_bytes")) {
@@ -36,5 +36,5 @@ trait GeneratesRandomBytes
         }
 
         throw new EncryptionException("Cryptographically secure random bytes are not available on this platoform");
-	}
+    }
 }

@@ -40,32 +40,32 @@ class HasAlgorithmTest extends TestCase
         $this->instance->algorithm();
     }
 
-	public static function dataForTestSetAlgorithm1(): iterable
-	{
-		yield from self::openSslSupportedAlgorithms();
-	}
+    public static function dataForTestSetAlgorithm1(): iterable
+    {
+        yield from self::openSslSupportedAlgorithms();
+    }
 
-	/**
-	 * Ensure the algorithm can be set successfully.
-	 *
-	 * @dataProvider dataForTestSetAlgorithm1
-	 */
+    /**
+     * Ensure the algorithm can be set successfully.
+     *
+     * @dataProvider dataForTestSetAlgorithm1
+     */
     public function testSetAlgorithm1(string $algorithm): void
     {
         $this->instance->setAlgorithm($algorithm);
         self::assertEquals($algorithm, $this->instance->algorithm());
     }
 
-	public static function dataForTestSetAlgorithm2(): iterable
-	{
-		yield from self::openSslUnsupportedAlgorithms();
-	}
+    public static function dataForTestSetAlgorithm2(): iterable
+    {
+        yield from self::openSslUnsupportedAlgorithms();
+    }
 
-	/**
-	 * Ensure setAlgorithm() throws when the algorithm is not supported.
-	 *
-	 * @dataProvider dataForTestSetAlgorithm2
-	 */
+    /**
+     * Ensure setAlgorithm() throws when the algorithm is not supported.
+     *
+     * @dataProvider dataForTestSetAlgorithm2
+     */
     public function testSetAlgorithm2(string $algorithm): void
     {
         self::expectException(EncryptionException::class);

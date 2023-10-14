@@ -10,17 +10,17 @@ trait ProvidesOpenSslSupportedAlgorithms
     public static function openSslSupportedAlgorithms(): iterable
     {
         if (!function_exists('openssl_get_cipher_methods')) {
-    		self::fail("OpenSSL extension doesn't appear to be loaded.");
-		}
+            self::fail("OpenSSL extension doesn't appear to be loaded.");
+        }
 
-		$algorithms = openssl_get_cipher_methods();
+        $algorithms = openssl_get_cipher_methods();
 
-		if (0 === count($algorithms)) {
-			self::fail("No OpenSSL cipher methods supported.");
-		}
+        if (0 === count($algorithms)) {
+            self::fail("No OpenSSL cipher methods supported.");
+        }
 
-		foreach ($algorithms as $algorithm) {
-			yield $algorithm => [$algorithm];
-		}
-	}
+        foreach ($algorithms as $algorithm) {
+            yield $algorithm => [$algorithm];
+        }
+    }
 }

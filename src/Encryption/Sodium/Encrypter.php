@@ -14,19 +14,19 @@ use Bead\Exceptions\EncryptionException;
  */
 class Encrypter implements EncrypterContract
 {
-	use HasKey;
-	use ChecksKey;
-	use Encrypts;
-	use GeneratesRandomBytes;
+    use HasKey;
+    use ChecksKey;
+    use Encrypts;
+    use GeneratesRandomBytes;
 
-	/**
-	 * Initialise a new Encrypter
-	 *
-	 * @throws EncryptionException if the the key is not valid.
-	 */
-	public function __construct(string $key)
-	{
-		self::checkKey($key);
-		$this->key = $key;
-	}
+    /**
+     * Initialise a new Encrypter
+     *
+     * @throws EncryptionException if the the key is not valid.
+     */
+    public function __construct(string $key)
+    {
+        self::checkKey($key);
+        $this->key = $key;
+    }
 }

@@ -26,18 +26,18 @@ class CrypterTest extends TestCase
 
     public static function dataForTestConstructor2(): iterable
     {
-		yield from self::invalidKeys();
+        yield from self::invalidKeys();
     }
 
     /**
-	 * Ensure constructor throws with invalid keys.
-	 *
-	 * @dataProvider dataForTestConstructor2
-	 */
-	public function testConstructor2(string $key): void
-	{
-		self::expectException(EncryptionException::class);
-		self::expectExceptionMessage("Invalid encryption key");
-		new Crypter($key);
-	}
+     * Ensure constructor throws with invalid keys.
+     *
+     * @dataProvider dataForTestConstructor2
+     */
+    public function testConstructor2(string $key): void
+    {
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Invalid encryption key");
+        new Crypter($key);
+    }
 }

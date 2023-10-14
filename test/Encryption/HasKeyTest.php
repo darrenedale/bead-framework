@@ -22,18 +22,18 @@ class HasKeyTest extends TestCase
             public static bool $scrubStringCalled = false;
 
             use HasKey {
-            	scrubString as traitScrubString;
-			}
+                scrubString as traitScrubString;
+            }
 
-			private static function scrubString(string & $str): void
-			{
-				self::$scrubStringCalled = true;
-				self::traitScrubString($str);
-			}
+            private static function scrubString(string & $str): void
+            {
+                self::$scrubStringCalled = true;
+                self::traitScrubString($str);
+            }
         };
     }
 
-	/** Ensure we get the expected key. */
+    /** Ensure we get the expected key. */
     public function testKey1(): void
     {
         $instance = new XRay($this->instance);
@@ -41,7 +41,7 @@ class HasKeyTest extends TestCase
         self::assertEquals("something", $instance->key());
     }
 
-	/** Ensure key() throws when the key is empty. */
+    /** Ensure key() throws when the key is empty. */
     public function testKey2(): void
     {
         $instance = new XRay($this->instance);
@@ -50,15 +50,15 @@ class HasKeyTest extends TestCase
         $instance->key();
     }
 
-	/** Ensure the destructor scrubs the key. */
+    /** Ensure the destructor scrubs the key. */
     public function testDestructor1(): void
     {
-		/** @var class-string $instanceClass */
-		$instanceClass = $this->instance::class;
-		self::assertFalse($instanceClass::$scrubStringCalled);
+        /** @var class-string $instanceClass */
+        $instanceClass = $this->instance::class;
+        self::assertFalse($instanceClass::$scrubStringCalled);
         $instance = new XRay($this->instance);
         $instance->key = "something";
         unset($instance, $this->instance);
-		self::assertTrue($instanceClass::$scrubStringCalled);
+        self::assertTrue($instanceClass::$scrubStringCalled);
     }
 }

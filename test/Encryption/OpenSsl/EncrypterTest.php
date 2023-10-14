@@ -28,11 +28,11 @@ class EncrypterTest extends TestCase
      * @dataProvider dataForTestConstructor1
      */
     public function testConstructor1(string $algorithm): void
-	{
-		$crypter = new Encrypter($algorithm, self::EncryptionKey);
-		self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
-		self::assertEquals($algorithm, $crypter->algorithm());
-	}
+    {
+        $crypter = new Encrypter($algorithm, self::EncryptionKey);
+        self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
+        self::assertEquals($algorithm, $crypter->algorithm());
+    }
 
     public static function dataForTestConstructor2(): iterable
     {
@@ -41,38 +41,38 @@ class EncrypterTest extends TestCase
     }
 
     /**
-	 * Ensure constructor throws with a keys that are not long enough.
-	 *
-	 * @dataProvider dataForTestConstructor2
-	 */
-	public function testConstructor2(string $key): void
-	{
-		// get the first supported algorithm (fails test if there are none)
-		foreach (self::openSslSupportedAlgorithms() as $algorithm) {
-			// data provider provides array or args - algorithm is the first (and only) arg in each data set
-			$algorithm = $algorithm[0];
-			break;
-		}
+     * Ensure constructor throws with a keys that are not long enough.
+     *
+     * @dataProvider dataForTestConstructor2
+     */
+    public function testConstructor2(string $key): void
+    {
+        // get the first supported algorithm (fails test if there are none)
+        foreach (self::openSslSupportedAlgorithms() as $algorithm) {
+            // data provider provides array or args - algorithm is the first (and only) arg in each data set
+            $algorithm = $algorithm[0];
+            break;
+        }
 
-		self::expectException(EncryptionException::class);
-		self::expectExceptionMessage("Invalid encryption key");
-		new Encrypter($algorithm, $key);
-	}
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Invalid encryption key");
+        new Encrypter($algorithm, $key);
+    }
 
     public static function dataForTestConstructor3(): iterable
     {
-		yield from self::openSslUnsupportedAlgorithms();
+        yield from self::openSslUnsupportedAlgorithms();
     }
 
     /**
-	 * Ensure constructor throws with unsupported algorithms.
-	 *
-	 * @dataProvider dataForTestConstructor3
-	 */
-	public function testConstructor3(string $algorithm): void
-	{
-		self::expectException(EncryptionException::class);
-		self::expectExceptionMessage("Cipher algorithm '{$algorithm}' is not supported");
-		new Encrypter($algorithm, self::EncryptionKey);
-	}
+     * Ensure constructor throws with unsupported algorithms.
+     *
+     * @dataProvider dataForTestConstructor3
+     */
+    public function testConstructor3(string $algorithm): void
+    {
+        self::expectException(EncryptionException::class);
+        self::expectExceptionMessage("Cipher algorithm '{$algorithm}' is not supported");
+        new Encrypter($algorithm, self::EncryptionKey);
+    }
 }
