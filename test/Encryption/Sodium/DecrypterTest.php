@@ -11,14 +11,14 @@ use BeadTests\Framework\TestCase;
 
 class DecrypterTest extends TestCase
 {
-	use ProvidesInvalidKeys;
+    use ProvidesInvalidKeys;
 
     private const EncryptionKey = '-some-insecure-key-insecure-some';
 
-	/** Ensure we can construct a Decrypter with a valid key. */
+    /** Ensure we can construct a Decrypter with a valid key. */
     public function testConstructor1(): void
-	{
-		$crypter = new Decrypter(self::EncryptionKey);
+    {
+        $crypter = new Decrypter(self::EncryptionKey);
 		self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
 	}
 

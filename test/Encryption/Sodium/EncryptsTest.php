@@ -36,8 +36,8 @@ class EncryptsTest extends TestCase
         };
     }
 
-	public static function dataForTestEncrypt1(): iterable
-	{
+    public static function dataForTestEncrypt1(): iterable
+    {
 		yield "auto-serialization-string" => [self::RawData, SerializationMode::Auto, "MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1TpemMPGVdvhZEWHg8TV56ItML474D7l9Mg=="];
 		yield "auto-serialization-array" => [self::ArrayRawData, SerializationMode::Auto, "MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WeAelQVLV8IHIWXYsUXxm95ZfdnvELEzY1npRj1hPCebFKtX+vA11J5LQTo9qBPjRhbCQJe+XTtruh9E4rY="];
 		yield "forced-serialization-string" => [self::RawData, SerializationMode::On, "MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg="];

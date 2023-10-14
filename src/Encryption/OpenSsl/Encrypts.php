@@ -17,37 +17,37 @@ trait Encrypts
 
     public abstract function algorithm(): string;
 
-	private abstract function key(): string;
+    private abstract function key(): string;
 
-	private abstract function randomBytes(int $len): string;
+    private abstract function randomBytes(int $len): string;
 
-	public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string
-	{
-		$serialized = "N";
+    public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string
+    {
+        $serialized = "N";
 
-		switch ($serializationMode) {
-			case SerializationMode::Auto:
-				if (!is_string($data)) {
-					$serialized = "Y";
-					$data = serialize($data);
-				}
-				break;
+        switch ($serializationMode) {
+            case SerializationMode::Auto:
+                if (!is_string($data)) {
+                    $serialized = "Y";
+                    $data = serialize($data);
+                }
+                break;
 
-			case SerializationMode::On:
-				$serialized = "Y";
-				$data = serialize($data);
-				break;
+            case SerializationMode::On:
+                $serialized = "Y";
+                $data = serialize($data);
+                break;
 
-			case SerializationMode::Off:
-				break;
+            case SerializationMode::Off:
+                break;
 
-			default:
-				throw new EncryptionException("Invalid serialization mode");
-		};
+            default:
+                throw new EncryptionException("Invalid serialization mode");
+        };
 
         $algorithm = $this->algorithm();
         $ivLength = openssl_cipher_iv_length($algorithm);
-		$iv = $this->randomBytes($ivLength);
+        $iv = $this->randomBytes($ivLength);
 
         $encrypted = base64_encode(
             $iv .
@@ -61,6 +61,6 @@ trait Encrypts
 
         self::scrubString($data);
         self::scrubString($serialized);
-		return $encrypted;
-	}
+        return $encrypted;
+    }
 }

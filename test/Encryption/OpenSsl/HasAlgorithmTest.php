@@ -12,8 +12,8 @@ use LogicException;
 
 class HasAlgorithmTest extends TestCase
 {
-	use ProvidesOpenSslSupportedAlgorithms;
-	use ProvidesOpenSslUnsupportedAlgorithms;
+    use ProvidesOpenSslSupportedAlgorithms;
+    use ProvidesOpenSslUnsupportedAlgorithms;
 
     private object $instance;
 
@@ -24,7 +24,7 @@ class HasAlgorithmTest extends TestCase
         };
     }
 
-	/** Ensure the trait returns the expected algorithm. */
+    /** Ensure the trait returns the expected algorithm. */
     public function testAlgorithm1(): void
     {
         $xray = new XRay($this->instance);
@@ -32,7 +32,7 @@ class HasAlgorithmTest extends TestCase
         self::assertEquals("des-ede3-cbc", $this->instance->algorithm());
     }
 
-	/** Ensure algorithm() throws when the algorithm has not been set. */
+    /** Ensure algorithm() throws when the algorithm has not been set. */
     public function testAlgorithm2(): void
     {
         self::expectException(LogicException::class);

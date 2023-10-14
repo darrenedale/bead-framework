@@ -24,13 +24,13 @@ class ScrubsStringsTest extends TestCase
         };
     }
 
-	/** Ensure scrubString() calls rand() to generate bytes to overwrite the string's content. */
+    /** Ensure scrubString() calls rand() to generate bytes to overwrite the string's content. */
     public function testScrubString1(): void
     {
-		$sequence = 0;
+        $sequence = 0;
 
-		$this->mockFunction(
-			'rand',
+        $this->mockFunction(
+        	'rand',
 			function(int $low, int $high) use (&$sequence): int {
 				TestCase::assertEquals(0, $low);
 				TestCase::assertEquals(255, $high);

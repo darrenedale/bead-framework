@@ -13,16 +13,16 @@ use SodiumException;
 
 class CrypterTest extends TestCase
 {
-	use ProvidesInvalidKeys;
+    use ProvidesInvalidKeys;
 
     private const EncryptionKey = "-some-insecure-key-insecure-some";
 
-	/** Ensure we can construct a Crypter with a valid key. */
+    /** Ensure we can construct a Crypter with a valid key. */
     public function testConstructor1(): void
-	{
-		$crypter = new Crypter(self::EncryptionKey);
-		self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
-	}
+    {
+        $crypter = new Crypter(self::EncryptionKey);
+        self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
+    }
 
     public static function dataForTestConstructor2(): iterable
     {

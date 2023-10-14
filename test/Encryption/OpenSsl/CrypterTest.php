@@ -12,15 +12,15 @@ use BeadTests\Framework\TestCase;
 
 class CrypterTest extends TestCase
 {
-	use ProvidesOpenSslSupportedAlgorithms;
+    use ProvidesOpenSslSupportedAlgorithms;
 
     private const EncryptionKey = "-some-insecure-key-insecure-some";
 
-	public static function dataForTestConstructor1(): iterable
-	{
-		if (!function_exists('openssl_get_cipher_methods')) {
-			self::fail("OpenSSL extension doesn't appear to be loaded.");
-		}
+    public static function dataForTestConstructor1(): iterable
+    {
+        if (!function_exists('openssl_get_cipher_methods')) {
+            self::fail("OpenSSL extension doesn't appear to be loaded.");
+    	}
 
 		yield from self::openSslSupportedAlgorithms();
 	}

@@ -47,7 +47,7 @@ class DecryptsTest extends TestCase
         self::assertEquals($expected, $this->instance->decrypt($encrypted));
     }
 
-	/** Ensure decrypt() throws when the encrypted bse64 is not valid. */
+    /** Ensure decrypt() throws when the encrypted bse64 is not valid. */
     public function testDecrypt2(): void
     {
         self::expectException(EncryptionException::class);
@@ -55,7 +55,7 @@ class DecryptsTest extends TestCase
         $this->instance->decrypt("MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09===");
     }
 
-	/** Ensure decrypt() throws with truncated encrypted data. */
+    /** Ensure decrypt() throws with truncated encrypted data. */
     public function testDecrypt3(): void
     {
         self::expectException(EncryptionException::class);

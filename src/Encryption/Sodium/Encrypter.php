@@ -15,7 +15,7 @@ use Bead\Exceptions\EncryptionException;
 class Encrypter implements EncrypterContract
 {
 	use HasKey;
-    use ChecksKey;
+	use ChecksKey;
 	use Encrypts;
 	use GeneratesRandomBytes;
 
@@ -26,7 +26,7 @@ class Encrypter implements EncrypterContract
 	 */
 	public function __construct(string $key)
 	{
-        self::checkKey($key);
+		self::checkKey($key);
 		$this->key = $key;
 	}
 }

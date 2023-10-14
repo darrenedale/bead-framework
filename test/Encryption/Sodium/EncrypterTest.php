@@ -11,24 +11,24 @@ use BeadTests\Framework\TestCase;
 
 class EncrypterTest extends TestCase
 {
-	use ProvidesInvalidKeys;
+    use ProvidesInvalidKeys;
 
     private const EncryptionKey = "-some-insecure-key-insecure-some";
 
-	/** Ensure we can successfully construct an Encrypter with a valid key. */
+    /** Ensure we can successfully construct an Encrypter with a valid key. */
     public function testConstructor1(): void
-	{
-		$crypter = new Encrypter(self::EncryptionKey);
-		self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
-	}
+    {
+        $crypter = new Encrypter(self::EncryptionKey);
+        self::assertEquals(self::EncryptionKey, (new XRay($crypter))->key());
+    }
 
     public static function dataForTestConstructor2(): iterable
     {
-		yield from self::invalidKeys();
+        yield from self::invalidKeys();
     }
 
     /**
-	 * Ensure constructor throws with invalid keys.
+     * Ensure constructor throws with invalid keys.
 	 *
 	 * @dataProvider dataForTestConstructor2
 	 */

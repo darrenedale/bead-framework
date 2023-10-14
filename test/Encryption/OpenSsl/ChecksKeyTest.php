@@ -21,11 +21,11 @@ class ChecksKeyTest extends TestCase
         };
     }
 
-	/** Ensure the minimum key length is the expected value. */
-	public function testMinimumKeyLength1(): void
-	{
-		self::assertEquals(24, (new StaticXRay($this->instance::class))->minimumKeyLength());
-	}
+    /** Ensure the minimum key length is the expected value. */
+    public function testMinimumKeyLength1(): void
+    {
+        self::assertEquals(24, (new StaticXRay($this->instance::class))->minimumKeyLength());
+    }
 
     public static function dataForTestCheckKey1(): iterable
     {

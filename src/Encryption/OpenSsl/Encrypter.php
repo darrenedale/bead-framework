@@ -14,10 +14,10 @@ use Bead\Exceptions\EncryptionException;
  */
 class Encrypter implements EncrypterContract
 {
-    use ChecksKey;
+	use ChecksKey;
 	use Encrypts;
 	use GeneratesRandomBytes;
-    use HasAlgorithm;
+	use HasAlgorithm;
 	use HasKey;
 
 	/**

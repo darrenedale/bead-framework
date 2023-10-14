@@ -19,10 +19,10 @@ class HasKeyTest extends TestCase
     public function setUp(): void
     {
         $this->instance = new class {
-			public static bool $scrubStringCalled = false;
+            public static bool $scrubStringCalled = false;
 
             use HasKey {
-				scrubString as traitScrubString;
+            	scrubString as traitScrubString;
 			}
 
 			private static function scrubString(string & $str): void

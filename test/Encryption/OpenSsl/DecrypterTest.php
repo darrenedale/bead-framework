@@ -12,14 +12,14 @@ use BeadTests\Framework\TestCase;
 
 class DecrypterTest extends TestCase
 {
-	use ProvidesOpenSslSupportedAlgorithms;
-	use ProvidesOpenSslUnsupportedAlgorithms;
+    use ProvidesOpenSslSupportedAlgorithms;
+    use ProvidesOpenSslUnsupportedAlgorithms;
 
     private const EncryptionKey = "-some-insecure-key-insecure-some";
 
-	public static function dataForTestConstructor1(): iterable
-	{
-		yield from self::openSslSupportedAlgorithms();
+    public static function dataForTestConstructor1(): iterable
+    {
+        yield from self::openSslSupportedAlgorithms();
 	}
 
 	/** @dataProvider dataForTestConstructor1 */

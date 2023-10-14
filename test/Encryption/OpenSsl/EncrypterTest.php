@@ -12,21 +12,21 @@ use BeadTests\Framework\TestCase;
 
 class EncrypterTest extends TestCase
 {
-	use ProvidesOpenSslSupportedAlgorithms;
-	use ProvidesOpenSslUnsupportedAlgorithms;
+    use ProvidesOpenSslSupportedAlgorithms;
+    use ProvidesOpenSslUnsupportedAlgorithms;
 
     private const EncryptionKey = "-some-insecure-key-insecure-some";
 
-	public static function dataForTestConstructor1(): iterable
-	{
-		yield from self::openSslSupportedAlgorithms();
-	}
+    public static function dataForTestConstructor1(): iterable
+    {
+        yield from self::openSslSupportedAlgorithms();
+    }
 
-	/**
-	 * Ensure constructor sets algorithm and key as expected.
-	 *
-	 * @dataProvider dataForTestConstructor1
-	 */
+    /**
+     * Ensure constructor sets algorithm and key as expected.
+     *
+     * @dataProvider dataForTestConstructor1
+     */
     public function testConstructor1(string $algorithm): void
 	{
 		$crypter = new Encrypter($algorithm, self::EncryptionKey);

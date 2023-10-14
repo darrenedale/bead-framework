@@ -14,7 +14,7 @@ use Bead\Exceptions\EncryptionException;
 class Decrypter implements DecrypterContract
 {
 	use HasKey;
-    use ChecksKey;
+	use ChecksKey;
 	use Decrypts;
 
 	/**

@@ -15,7 +15,7 @@ use Bead\Exceptions\EncryptionException;
 class Crypter implements CrypterContract
 {
 	use HasKey;
-    use ChecksKey;
+	use ChecksKey;
 	use Encrypts;
 	use Decrypts;
 	use GeneratesRandomBytes;
