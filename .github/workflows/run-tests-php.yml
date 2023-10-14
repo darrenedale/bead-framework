@@ -1,4 +1,4 @@
-name: PHP 8.1 unit tests
+name: PHP unit tests
 
 on:
   push:
