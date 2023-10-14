@@ -10,22 +10,22 @@ trait ImplementsArrayAccess
     /**
      * Constrain trait users to provide a has() method.
      */
-    public abstract function has(string $key): bool;
+    abstract public function has(string $key): bool;
 
     /**
      * Constrain trait users to provide a get() method.
      */
-    public abstract function get(string $key): mixed;
+    abstract public function get(string $key): mixed;
 
     /**
      * Constrain trait users to provide a set() method.
      */
-    public abstract function set(string $key, mixed $value): void;
+    abstract public function set(string $key, mixed $value): void;
 
     /**
      * Constrain trait users to provide a remove() method.
      */
-    public abstract function remove(string $key): void;
+    abstract public function remove(string $key): void;
 
     /**
      * Check whether an offset exists.

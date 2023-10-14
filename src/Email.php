@@ -33,11 +33,11 @@ class Email
     private const LF = "\n";
 
     /** @var string The default delimiter to use between parts in the message body. */
-    const DefaultDelimiter = "--email-delimiter-16fbcac50765f150dc35716069dba9c9--";
+    protected const DefaultDelimiter = "--email-delimiter-16fbcac50765f150dc35716069dba9c9--";
 
     /* some old (< 2.9 AFAIK) versions of postfix need the line end to be this on *nix */
     /** @var string The line ending to use in the message body during transmission. */
-    const LineEnd = self::LF;
+    public const LineEnd = self::LF;
 
     /**
      * @var array|null The immutable headers for emails.
@@ -98,7 +98,7 @@ class Email
             foreach ($headers as $header) {
                 if ($header instanceof EmailHeader) {
                     $this->addHeader($header);
-                } else if (is_string($header)) {
+                } elseif (is_string($header)) {
                     $this->addHeaderLine($header);
                 }
             }
@@ -222,7 +222,7 @@ class Email
      *
      * @return bool `true` if the header was added successfully, `false` otherwise.
      */
-    private function _addHeaderObject(EmailHeader $header): bool
+    private function addHeaderObject(EmailHeader $header): bool
     {
         /* check for CRLF in either header or value  */
         $headerName = $header->name();
@@ -264,10 +264,10 @@ class Email
      *
      * @return bool `true` if the header was added successfully, `false` otherwise.
      */
-    private function _addHeaderStrings(string $header, string $value): bool
+    private function addHeaderStrings(string $header, string $value): bool
     {
         /* EmailHeader constructor handles validation */
-        return $this->_addHeaderObject(new EmailHeader($header, $value));
+        return $this->addHeaderObject(new EmailHeader($header, $value));
     }
 
     /**
@@ -285,9 +285,9 @@ class Email
     public function addHeader(string|EmailHeader $header, ?string $value = null): bool
     {
         if ($header instanceof EmailHeader) {
-            return $this->_addHeaderObject($header);
+            return $this->addHeaderObject($header);
         } else {
-            return $this->_addHeaderStrings($header, $value);
+            return $this->addHeaderStrings($header, $value);
         }
     }
 
@@ -298,7 +298,7 @@ class Email
      *
      * @param $headerName string is the name of the header to remove.
      */
-    private function _removeHeaderByName(string $headerName): void
+    private function removeHeaderByName(string $headerName): void
     {
         for ($i = 0; $i < count($this->m_headers); ++$i) {
             if (0 === strcasecmp($this->m_headers[$i]->name(), $headerName)) {
@@ -315,7 +315,7 @@ class Email
      *
      * @param $header EmailHeader The header to remove.
      */
-    private function _removeHeaderObject(EmailHeader $header): void
+    private function removeHeaderObject(EmailHeader $header): void
     {
         $headerName = $header->name();
         $headerValue = $header->value();
@@ -361,9 +361,9 @@ class Email
     public function removeHeader(string|EmailHeader $header): bool
     {
         if ($header instanceof EmailHeader) {
-            $this->_removeHeaderObject($header);
+            $this->removeHeaderObject($header);
         } else {
-            $this->_removeHeaderByName($header);
+            $this->removeHeaderByName($header);
         }
 
         return true;
@@ -400,7 +400,7 @@ class Email
      *
      * @return array[EmailHeader] The headers if found, or an empty array if not.
      */
-    private function _findAllHeadersByName(string $name): array
+    private function findAllHeadersByName(string $name): array
     {
         $ret = [];
 
@@ -427,7 +427,7 @@ class Email
         $retainedHeaders = [];
 
         foreach (Email::$s_specialHeaders as $headerName) {
-            $headers = $this->_findAllHeadersByName($headerName);
+            $headers = $this->findAllHeadersByName($headerName);
 
             foreach ($headers as $h) {
                 $retainedHeaders[] = $h;

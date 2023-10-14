@@ -111,7 +111,7 @@ class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Itera
 
     public function current(): LoggerContract
     {
-        assert ($this->valid(), new LogicException("Iteration reached invalid index {$this->loggerIndex}."));
+        assert($this->valid(), new LogicException("Iteration reached invalid index {$this->loggerIndex}."));
         return $this->loggers[$this->loggerIndex]["logger"];
     }
 

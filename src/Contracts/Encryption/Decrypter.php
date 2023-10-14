@@ -6,5 +6,5 @@ namespace Bead\Contracts\Encryption;
 
 interface Decrypter
 {
-	public function decrypt(string $data): mixed;
+    public function decrypt(string $data): mixed;
 }

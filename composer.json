@@ -9,6 +9,12 @@
       "email": "packagist@equit.dev"
     }
   ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/darrenedale/PHP_CodeSniffer"
+    }
+  ],
   "require": {
     "php": "^8",
     "ext-mbstring": "*",
@@ -28,6 +34,7 @@
   "require-dev": {
     "mockery/mockery": "^1.5",
     "phpunit/phpunit": "^9.5",
+    "squizlabs/php_codesniffer": "dev-allow-spacing-around-reference-operator-in-function-declarations",
     "ext-uopz": "^6||^7"
   },
   "autoload": {

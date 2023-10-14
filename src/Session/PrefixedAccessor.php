@@ -4,6 +4,7 @@ namespace Bead\Session;
 
 use InvalidArgumentException;
 use TypeError;
+
 use function Bead\Traversable\all;
 
 /**
@@ -73,7 +74,7 @@ class PrefixedAccessor implements DataAccessor
             throw new InvalidArgumentException("Keys for session data must be strings.");
         }
 
-        array_walk($keys, function(string & $key): void {
+        array_walk($keys, function (string & $key): void {
             $key = $this->prefixedKey($key);
         });
 
@@ -159,7 +160,7 @@ class PrefixedAccessor implements DataAccessor
      */
     public function all(): array
     {
-        return array_filter($this->m_parent->all(), function(string $key): bool {
+        return array_filter($this->m_parent->all(), function (string $key): bool {
             return str_starts_with($key, $this->m_prefix);
         }, ARRAY_FILTER_USE_KEY);
     }

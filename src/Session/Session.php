@@ -14,6 +14,7 @@ use Exception;
 use InvalidArgumentException;
 use RuntimeException;
 use TypeError;
+
 use function Bead\Traversable\all;
 
 /**
@@ -79,11 +80,11 @@ class Session implements DataAccessor
                 // expired and within the grace period, promote to the regenerated ID for the old session ID
                 $this->m_handler = self::createHandler($this->handler()->replacementId());
             }
-        } else if ($this->lastUsedAt() < time() - self::sessionIdleTimeoutPeriod()) {
+        } elseif ($this->lastUsedAt() < time() - self::sessionIdleTimeoutPeriod()) {
             // not used for too long
             $this->destroy();
             throw new SessionExpiredException($id, "The session with the provided ID has been unused for more than " . self::sessionIdleTimeoutPeriod() . " seconds.");
-        } else if ($this->handler()->idGeneratedAt() < time() - self::sessionIdRegenerationPeriod()) {
+        } elseif ($this->handler()->idGeneratedAt() < time() - self::sessionIdRegenerationPeriod()) {
             // due to expire but not so old that we don't trust it
             $this->regenerateId();
         }
@@ -204,15 +205,15 @@ class Session implements DataAccessor
         return $this->handler()->get($key) ?? $default;
     }
 
-	/**
-	 * Extract the data for one or more keys from the session.
-	 *
-	 * The keys extracted will be removed from the session data.
-	 *
-	 * @param $keys string|array<string> The key(s) to extract.
-	 *
-	 * @return mixed|array<string,mixed> The extracted data.
-	 */
+    /**
+     * Extract the data for one or more keys from the session.
+     *
+     * The keys extracted will be removed from the session data.
+     *
+     * @param $keys string|array<string> The key(s) to extract.
+     *
+     * @return mixed|array<string,mixed> The extracted data.
+     */
     public function extract(string|array $keys): mixed
     {
         if (is_string($keys)) {
@@ -241,11 +242,11 @@ class Session implements DataAccessor
         return $data;
     }
 
-	/**
-	 * Fetch all the session data.
-	 *
-	 * @return array<string, mixed> The session data.
-	 */
+    /**
+     * Fetch all the session data.
+     *
+     * @return array<string, mixed> The session data.
+     */
     public function all(): array
     {
         return $this->handler()->all();
@@ -307,13 +308,13 @@ class Session implements DataAccessor
      */
     public function pruneTransientData(): void
     {
-        $remove = array_filter($this->m_transientKeys, function(int $count): bool {
+        $remove = array_filter($this->m_transientKeys, function (int $count): bool {
             return 0 >= $count;
         });
 
         $this->remove($remove);
 
-        $this->m_transientKeys = array_filter($this->m_transientKeys, function(string $key) use ($remove): bool {
+        $this->m_transientKeys = array_filter($this->m_transientKeys, function (string $key) use ($remove): bool {
             return !in_array($key, $remove);
         });
 
@@ -343,10 +344,10 @@ class Session implements DataAccessor
     {
         if (is_string($keys)) {
             $keys = [$keys];
-        } else if (!all($keys, "is_string")) {
+        } elseif (!all($keys, "is_string")) {
             throw new InvalidArgumentException("Keys for session data to remove must be strings.");
         }
-        
+
         foreach ($keys as $key) {
             $this->handler()->remove($key);
         }

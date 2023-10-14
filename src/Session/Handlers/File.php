@@ -112,7 +112,7 @@ class File implements SessionHandler
      *
      * @return bool `true` if the directory is valid, `false` if not.
      */
-    protected static final function isValidSessionDirectory(string $dir): bool
+    final protected static function isValidSessionDirectory(string $dir): bool
     {
         return false === strpos($dir, ".");
     }
@@ -234,7 +234,7 @@ class File implements SessionHandler
      */
     public function all(): array
     {
-    $this->throwIfDestroyed();
+        $this->throwIfDestroyed();
         return $this->m_data;
     }
 
@@ -322,15 +322,19 @@ class File implements SessionHandler
         $this->throwIfDestroyed();
         $this->m_lastUsedAt = time();
 
-        if (false === file_put_contents(self::sessionDirectory() . "/{$this->id()}",
-            serialize([
-                "created_at" => $this->m_createdAt,
-                "last_used_at" => $this->m_lastUsedAt,
-                "id_created_at" => $this->m_idCreatedAt,
-                "id_expired_at" => $this->m_idExpiredAt,
-                "replacement_id" => $this->m_replacementId,
-                "data" => $this->m_data,
-            ]))) {
+        if (
+            false === file_put_contents(
+                self::sessionDirectory() . "/{$this->id()}",
+                serialize([
+                    "created_at" => $this->m_createdAt,
+                    "last_used_at" => $this->m_lastUsedAt,
+                    "id_created_at" => $this->m_idCreatedAt,
+                    "id_expired_at" => $this->m_idExpiredAt,
+                    "replacement_id" => $this->m_replacementId,
+                    "data" => $this->m_data,
+                ])
+            )
+        ) {
             throw new SessionFileSaveException(self::sessionDirectory() . "/{$this->id()}", "Failed to commit the session to the file '" . self::sessionDirectory() . "/{$this->id()}'");
         }
     }
