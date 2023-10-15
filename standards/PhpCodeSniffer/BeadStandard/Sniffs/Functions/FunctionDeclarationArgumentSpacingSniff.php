@@ -1,12 +1,13 @@
 <?php
 
 /**
- * Checks that arguments in function declarations are spaced correctly.
+ * PHPCS sniff to check the formatting of function declaration parameters.
  *
- * @author    Greg Sherwood <gsherwood@squiz.net>
- * @copyright 2006-2015 Squiz Pty Ltd (ABN 77 084 670 600)
- * @license   https://github.com/squizlabs/PHP_CodeSniffer/blob/master/licence.txt BSD Licence
+ * Both parameters and used variables from the parent scope are checked. Its default configuration is compatible with
+ * PSR12, but all aspects of its checks can be configured in the XML file.
  */
+
+declare(strict_types=1);
 
 namespace BeadStandards\PhpCodeSniffer\BeadStandard\Sniffs\Functions;
 
@@ -17,469 +18,354 @@ use PHP_CodeSniffer\Util\Tokens;
 
 class FunctionDeclarationArgumentSpacingSniff implements Sniff
 {
+    /** @var int When checking spacing, check before the token. */
+    protected const LocationBefore = -1;
+
+    /** @var int When checking spacing, check after the token. */
+    protected const LocationAfter = 1;
 
     /**
-     * How many spaces should surround the equals signs.
+     * How many spaces between the parentheses when there are no parameters.
      *
-     * @var integer
+     * @var int
      */
-    public $equalsSpacing = 1;
+    public $requiredSpacesInEmptyParameterList = 0;
 
     /**
      * How many spaces should follow the opening bracket.
      *
-     * @var integer
-     */
-    public $requiredSpacesBeforeOpen = 0;
-
-    /**
-     * How many spaces should follow the opening bracket.
-     *
-     * @var integer
+     * @var int
      */
     public $requiredSpacesAfterOpen = 0;
 
     /**
      * How many spaces should precede the closing bracket.
      *
-     * @var integer
+     * @var int
      */
     public $requiredSpacesBeforeClose = 0;
 
     /**
-     * How many spaces should precede the closing bracket.
-     *
-     * @var integer
+     * How many spaces should follow the parameter type.
+     * 
+     * @var int
      */
-    public $requiredSpacesAfterClose = 0;
+    public $requiredSpacesAfterType = 1;
 
     /**
      * How many spaces should follow the reference operator in by-reference parameter declarations.
      *
-     * @var integer
+     * @var int
      */
-    public $requiredSpacesAfterReferenceOperator = 1;
+    public $requiredSpacesAfterReferenceOperator = 0;
 
     /**
      * How many spaces should follow the variadic operator in variadic parameter declarations.
      *
-     * @var integer
+     * @var int
      */
-    public $requiredSpacesAfterVariadicOperator = 1;
+    public $requiredSpacesAfterVariadicOperator = 0;
 
     /**
-     * @var array<string,array<string,int>>
+     * How many spaces should precede the equals sign for default values.
+     *
+     * @var int
      */
-    private array $parenthesisSpacing = [
-        "opening" => [
-            "before" => 0,
-            "after" => 0,
-        ],
-        "closing" => [
-            "before" => 0,
-            "after" => 0,
-        ],
-    ];
+    public $requiredSpacesBeforeEquals = 1;
 
-    private array $parameterDeclarationSpacing = [
-        "reference" => 1,
-        "variadic" => 1,
-    ];
+    /**
+     * How many spaces should follow the equals sign for default values.
+     *
+     * @var int
+     */
+    public $requiredSpacesAfterEquals = 1;
+
+    /**
+     * How many spaces should precede each comma in the parameter list.
+     *
+     * @var int
+     */
+    public $requiredSpacesBeforeComma = 0;
+
+    /**
+     * How many spaces should follow each comma in the parameter list.
+     *
+     * @var int
+     */
+    public $requiredSpacesAfterComma = 1;
+
+    /** @var array|null Transient state, token storage while the sniff is processing a token. */
+    private ?array $tokens = null;
+
+    /** @var File|null Transient state, the file the sniff is currently processing. */
+    private ?File $file = null;
+
+    private function resetTransientState(): void
+    {
+        $this->tokens = null;
+        $this->file = null;
+    }
+
+    /** Ensure all values that might have been updated from the XML config file are typed correctly. */
+    private function cleanUpConfigValues(): void
+    {
+        $this->requiredSpacesBeforeEquals = (int) $this->requiredSpacesBeforeEquals;
+        $this->requiredSpacesAfterEquals  = (int) $this->requiredSpacesAfterEquals;
+        $this->requiredSpacesInEmptyParameterList = (int) $this->requiredSpacesInEmptyParameterList;
+        $this->requiredSpacesAfterReferenceOperator = (int) $this->requiredSpacesAfterReferenceOperator;
+        $this->requiredSpacesAfterVariadicOperator = (int) $this->requiredSpacesAfterVariadicOperator;
+    }
+
+    private function checkSpacing(int $stackPtr, int $location, int $spacingRequired, string $errorCode, string $errorMessage, array $errorParams): void
+    {
+        assert(self::LocationBefore === $location || self::LocationAfter === $location, new LogicException("\$location must be one of LocationBefore or LocationAfter class constants."));
+        $spacingFound = 0;
+
+        if ($this->tokens[$stackPtr + $location]["code"] === T_WHITESPACE) {
+            $spacingFound = $this->tokens[$stackPtr + $location]["length"];
+        }
+
+        if ($spacingFound !== $spacingRequired) {
+            foreach ($errorParams as & $errorParam) {
+                $errorParam = match($errorParam) {
+                    "{required}" => $spacingRequired,
+                    "{found}" => $spacingFound,
+                    default => $errorParam,
+                };
+            }
+
+            $shouldFix = $this->file->addFixableError($errorMessage, $stackPtr, $errorCode, $errorParams);
+
+            if ($shouldFix) {
+                $padding = str_repeat(" ", $spacingRequired);
+
+                if (0 === $spacingFound) {
+                    // if we have to insert padding where none exists ...
+                    if (self::LocationBefore > $location) {
+                        // ... put it before the current token if we're looking before
+                        $this->file->fixer->addContentBefore($stackPtr, $padding);
+                    } else {
+                        // ... or put it before the next token if we're looking after
+                        $this->file->fixer->addContentBefore($stackPtr + 1, $padding);
+                    }
+                } else {
+                    // replace the found whitespace with the correct amount
+                    $this->file->fixer->replaceToken($stackPtr + $location, $padding);
+                }
+            }
+        }
+    }
+
+    private function checkSpacingBefore(int $stackPtr, int $spacingRequired, string $errorCode, string $errorMessage = "Require %d space(s) before token, found %d", array $errorParams = ["{required}", "{found}",]): void
+    {
+        $this->checkSpacing($stackPtr, self::LocationBefore, $spacingRequired, $errorCode, $errorMessage, $errorParams);
+    }
+
+    private function checkSpacingAfter(int $stackPtr, int $spacingRequired, string $errorCode, string $errorMessage = "Require %d space(s) after token, found %d", array $errorParams = ["{required}", "{found}",]): void
+    {
+        $this->checkSpacing($stackPtr, self::LocationAfter, $spacingRequired, $errorCode, $errorMessage, $errorParams);
+    }
+
+    private function findUseStatement(int $fromPtr, int $toPtr): ?int
+    {
+        $use = $this->file->findNext(T_USE, $this->tokens[$fromPtr], $this->tokens[$toPtr]);
+        return (false === $use ? null : $use);
+    }
+
+    /**
+     * Processes the contents of a single parenthesised list.
+     *
+     * @param int $openingParenthesis The position of the opening parenthesis in the stack.
+     */
+    private function checkParameterList(int $openingParenthesis, int $closingParenthesis): void
+    {
+        $ownerStackPtr = $this->tokens[$openingParenthesis]["parenthesis_owner"] ?? $this->file->findPrevious(T_USE, $openingParenthesis - 1);
+        $params = $this->file->getMethodParameters($ownerStackPtr);
+
+        if (empty($params)) {
+            // check spacing between parentheses
+            $this->checkSpacingAfter(
+                $openingParenthesis,
+                $this->requiredSpacesInEmptyParameterList,
+                "SpacingBetween",
+                "Require %d space(s) between parentheses of function declaration with no parameters; %d found",
+                ["{required}", "{found}"]
+            );
+
+            // no params so no need to check their spacing
+            return;
+        }
+
+        $this->checkSpacingAfter(
+            $openingParenthesis,
+            $this->requiredSpacesAfterOpen,
+            "SpacingAfterOpen",
+            "Require %d space(s) after the opening parenthesis of function declaration; %d found",
+            ["{required}", "{found}"]
+        );
+
+        $this->checkParameters($params);
+
+        // only check spacing before closing parenthesis for single-line declarations
+        if (($this->tokens[$openingParenthesis]["line"] !== $this->tokens[$closingParenthesis]["line"])) {
+            return;
+        }
+
+        $this->checkSpacingBefore(
+            $closingParenthesis,
+            $this->requiredSpacesBeforeClose,
+            "SpacingBeforeClose",
+            "Require %d space(s) before the closing parenthesis of function declaration; %d found",
+            ["{required}", "{found}"]
+        );
+    }
+
+    /**
+     * @param array $params The parameters.
+     *
+     * @throws \PHP_CodeSniffer\Exceptions\RuntimeException
+     */
+    private function checkParameters(array $params): void
+    {
+        $previousParam =  null;
+
+        foreach ($params as $param) {
+            // check spacing after reference operator
+            if (true === $param["pass_by_reference"]) {
+                $this->checkSpacingAfter(
+                    $param["reference_token"],
+                    $this->requiredSpacesAfterReferenceOperator,
+                    "SpacingAfterReference",
+                    "Require %d space(s) after reference operator for parameter '%s', found %d",
+                    ["{required}", $param["name"], "{found}",]
+                );
+            }
+
+            // check spacing after variadic operator
+            if (true === $param["variable_length"]) {
+                $this->checkSpacingAfter(
+                    $param["variadic_token"],
+                    $this->requiredSpacesAfterVariadicOperator,
+                    "SpacingAfterVariadic",
+                    "Require %d space(s) after variadic operator for parameter '%s', found %d",
+                    ["{required}", $param["name"], "{found}",]
+                );
+            }
+
+            // check spacing around = for default value
+            if (isset($param["default_equal_token"])) {
+                $this->checkSpacingBefore(
+                    $param["default_equal_token"],
+                    $this->requiredSpacesBeforeEquals,
+                    "SpacingBeforeDefaultEquals",
+                    "Require %d space(s) before the equals sign for default value for parameter '%s', found %d",
+                    ["{required}", $param["name"], "{found}",]
+                );
+                $this->checkSpacingAfter(
+                    $param["default_equal_token"],
+                    $this->requiredSpacesAfterEquals,
+                    "SpacingAfterDefaultEquals",
+                    "Require %d space(s) after the equals sign for default value for parameter '%s', found %d",
+                    ["{required}", $param["name"], "{found}",]
+                );
+            }
+
+            // check spacing after type declaration
+            if ($param["type_hint_token"] !== false) {
+                $this->checkSpacingAfter(
+                    $param["type_hint_end_token"],
+                    $this->requiredSpacesAfterType,
+                    "SpacingAfterDefaultEquals",
+                    "Require %d space(s) after the type declaration for parameter '%s', found %d",
+                    ["{required}", $param["name"], "{found}",]
+                );
+            }
+
+            if (isset($previousParam) && $previousParam["comma_token"] !== false) {
+                $this->checkSpacingBefore(
+                    $previousParam["comma_token"],
+                    $this->requiredSpacesBeforeComma,
+                    "SpacingBeforeComma",
+                    "Require %d space(s) between parameter '%s' and comma; %d found",
+                    ["{required}", $previousParam["name"], "{found}",]
+                );
+
+                // find the next token that isn't whitespace
+                $next = $this->file->findNext(Tokens::$emptyTokens, ($commaToken + 1), null, true);
+
+                // if it's on the same line, check the spacing after the comma
+                if ($this->tokens[$next]["line"] === $this->tokens[$previousParam["comma_token"]]["line"]) {
+                    $typeDeclaration = "";
+
+                    if ($param["type_hint_token"]) {
+                        $typeDeclaration =
+                            " type declaration '"
+                            . ($param["nullable_type"] ? "?" : "")
+                            . $this->file->getTokensAsString($param["type_hint_token"], $param["type_hint_end_token"] - $param["type_hint_token"] + 1)
+                            . "' for";
+                    }
+
+                    $this->checkSpacingAfter(
+                        $previousParam["comma_token"],
+                        $this->requiredSpacesAfterComma,
+                        "SpacingAfterComma",
+                        "Require %d space(s) between comma and%s parameter '%s', %d found",
+                        ["{required}", $typeDeclaration, $param["name"], "{found}",]
+                    );
+                }
+            }
+
+            $previousParam = $param;
+        }
+    }
 
     /**
      * The tokens the sniff is listening for.
      *
      * @return string[]
      */
-    public function register()
+    public function register(): array
     {
-        return [
-            T_FUNCTION,
-            T_CLOSURE,
-            T_FN,
-        ];
+        return [T_FUNCTION, T_CLOSURE, T_FN,];
     }
-
 
     /**
      * Processes this test, when one of its tokens is encountered.
      *
      * @param \PHP_CodeSniffer\Files\File $phpcsFile The file being scanned.
-     * @param int                         $stackPtr  The position of the current token
-     *                                               in the stack.
-     *
-     * @return void
+     * @param int $stackPtr  The position of the current token in the stack.
      */
-    public function process(File $phpcsFile, $stackPtr)
+    public function process(File $phpcsFile, $stackPtr): void
     {
-        $tokens = $phpcsFile->getTokens();
+        assert(is_int($stackPtr), new LogicException("Invalid stack pointer provided to process()"));
+        $this->file = $phpcsFile;
+        $this->tokens = $phpcsFile->getTokens();
 
-        if (isset($tokens[$stackPtr]["parenthesis_opener"]) === false
-            || isset($tokens[$stackPtr]["parenthesis_closer"]) === false
-            || $tokens[$stackPtr]["parenthesis_opener"] === null
-            || $tokens[$stackPtr]["parenthesis_closer"] === null
+        // TODO this shouldn't happen, right?
+        if (!isset($this->tokens[$stackPtr]["parenthesis_opener"]) || !isset($this->tokens[$stackPtr]["parenthesis_closer"])) {
+            $this->resetTransientState();
+            return;
+        }
+
+        $this->cleanUpConfigValues();
+
+        $openingParenthesis = $this->tokens[$stackPtr]["parenthesis_opener"];
+        $closingParenthesis = $this->tokens[$openingParenthesis]["parenthesis_closer"];
+
+        $this->checkParameterList($openingParenthesis, $closingParenthesis);
+
+        if (
+            (
+                $this->tokens[$stackPtr]["code"] === T_CLOSURE
+                || $this->tokens[$stackPtr]["code"] !== T_FN
+            )
+            && is_int($use = $this->findUseStatement($this->tokens[$stackPtr]["parenthesis_closer"] + 1, $this->tokens[$stackPtr]["scope_opener"]))
         ) {
-            return;
+            $openingParenthesis = $phpcsFile->findNext(T_OPEN_PARENTHESIS, $use + 1, null);
+            $closingParenthesis = $this->tokens[$openingParenthesis]["parenthesis_closer"];
+            $this->checkParameterList($openingParenthesis, $closingParenthesis);
         }
 
-        $this->equalsSpacing = (int) $this->equalsSpacing;
-        $this->requiredSpacesAfterReferenceOperator = (int) $this->requiredSpacesAfterReferenceOperator;
-        $this->requiredSpacesAfterVariadicOperator = (int) $this->requiredSpacesAfterVariadicOperator;
-
-        $this->parenthesisSpacing = [
-            "opening" => [
-                "before" => (int) $this->requiredSpacesBeforeOpen,
-                "after" => (int) $this->requiredSpacesAfterOpen,
-            ],
-            "closing" => [
-                "before" => (int) $this->requiredSpacesBeforeClose,
-                "after" => (int) $this->requiredSpacesAfterClose,
-            ],
-        ];
-
-        $openingParenthesis = $tokens[$stackPtr]["parenthesis_opener"];
-        $closingParenthesis = $tokens[$openingParenthesis]["parenthesis_closer"];
-        $this->processParenthesisedList($phpcsFile, $openingParenthesis, $closingParenthesis);
-
-        if ($tokens[$stackPtr]["code"] === T_CLOSURE) {
-            $use = $phpcsFile->findNext(T_USE, ($tokens[$stackPtr]["parenthesis_closer"] + 1), $tokens[$stackPtr]["scope_opener"]);
-            if ($use !== false) {
-                $openBracket = $phpcsFile->findNext(T_OPEN_PARENTHESIS, ($use + 1), null);
-                $this->processParenthesisedList($phpcsFile, $openBracket);
-            }
-        }
-    }
-
-    /**
-     * Processes the contents of a single parenthesised list.
-     *
-     * @param \PHP_CodeSniffer\Files\File $phpcsFile The file being scanned.
-     * @param int $openingParenthesis The position of the opening parenthesis in the stack.
-     */
-    private function processParenthesisedList(File $phpcsFile, int $openingParenthesis, int $closingParenthesis): void
-    {
-        $tokens = $phpcsFile->getTokens();
-
-        if (isset($tokens[$openingParenthesis]["parenthesis_owner"])) {
-            $stackPtr = $tokens[$openingParenthesis]["parenthesis_owner"];
-        } else {
-            $stackPtr = $phpcsFile->findPrevious(T_USE, ($openingParenthesis - 1));
-        }
-
-        $params = $phpcsFile->getMethodParameters($stackPtr);
-
-        if (empty($params)) {
-            // Check spacing around opening parenthesis
-            $next = $phpcsFile->findNext(T_WHITESPACE, ($openingParenthesis + 1), $closingParenthesis, true);
-
-            if (false === $next) {
-                if (1 !== $closingParenthesis - $openingParenthesis) {
-                    if ($tokens[$openingParenthesis]["line"] !== $tokens[$closingParenthesis]["line"]) {
-                        $found = "newline";
-                    } else {
-                        $found = $tokens[($openingParenthesis + 1)]["length"];
-                    }
-
-                    $fix = $phpcsFile->addFixableError(
-                        "Expected 0 spaces between parenthesis of function declaration; %s found",
-                        $openingParenthesis,
-                        "SpacingBetween",
-                        [$found]
-                    );
-
-                    if ($fix) {
-                        $phpcsFile->fixer->replaceToken(($openingParenthesis + 1), "");
-                    }
-                }
-
-                // no params, so no need to check spacing between them
-                return;
-            }
-        }
-
-        $this->processParameters($phpcsFile, $params, $openingParenthesis, $closingParenthesis);
-
-        // only check spacing around closing parenthesis for single line definitions
-        if (($tokens[$openingParenthesis]["line"] !== $tokens[$closingParenthesis]["line"])) {
-            return;
-        }
-
-        $this->processParenthesis($phpcsFile, $closingParenthesis, "closing");
-    }
-
-    private function processParenthesis(File $phpcsFile, int $parenthesisStackPtr, string $parenthesisType): void
-    {
-        $tokens = $phpcsFile->getTokens();
-
-        // check spacing before and after parenthesis ($offset is token ptr offset from $parenthesisStackPtr
-        foreach (["before" => -1, "after" => 1,] as $where => $offset) {
-            $gap = 0;
-
-            if ($tokens[$parenthesisStackPtr + $offset]["code"] === T_WHITESPACE) {
-                $gap = $tokens[$parenthesisStackPtr + $offset]["length"];
-            }
-
-            if ($gap !== $this->parenthesisSpacing[$parenthesisType][$where]) {
-                $fix = $phpcsFile->addFixableError(
-                    "Expected %d spaces %s %s parenthesis; %d found",
-                    $parenthesisStackPtr,
-                    "SpacingBefore{$parenthesisType}",
-                    [
-                        $this->parenthesisSpacing[$parenthesisType][$where],
-                        $where,
-                        $parenthesisType,
-                        $gap,
-                    ]
-                );
-
-                if ($fix) {
-                    $padding = str_repeat(" ", $this->requiredSpacesBeforeClose);
-
-                    if (0 === $gap) {
-                        $phpcsFile->fixer->addContentBefore($parenthesisStackPtr, $padding);
-                    } else {
-                        $phpcsFile->fixer->replaceToken(($parenthesisStackPtr - 1), $padding);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * The helper that actually does the work of checking the spacing around a parameter declaration part.
-     *
-     * The stack pointer offset must not be 0. If it's positive, the token immediately after the declaration component
-     * will be checked; if it's negative the token immediately before is checked. The magnitute of the int is of no
-     * significance - it's trimmed to +1 or -1 internally.
-     *
-     * @param File $file The file being scanned.
-     * @param array $param The parameter data.
-     * @param int $tokenStackPtr The token stack pointer of the declaration component (e.g. type, reference operator, variadic operator).
-     * @param int $tokenStackPtrOffset A +ve int for checking the spacing after, -ve for before.
-     * @param int $spacingRequired How much spacing there should be.
-     * @param string $label How to refer to the component in an error notice.
-     */
-    private function processParameterDeclarationComponent(File $file, array $param, int $tokenStackPtr, int $tokenStackPtrOffset, int $spacingRequired, string $label): void
-    {
-        assert(0 !== $tokenStackPtrOffset, new LogicException("\$tokenStackPtrOffset must be positive or negative, not 0."));
-
-        if (0 < $tokenStackPtrOffset) {
-            $tokenStackPtrOffset = 1;
-            $where = "after";
-        } else {
-            $tokenStackPtrOffset = -1;
-            $where = "before";
-        }
-
-        $tokens = $file->getTokens();
-        $spacingFound = 0;
-
-        if ($tokens[$tokenStackPtr + $tokenStackPtrOffset]["code"] === T_WHITESPACE) {
-            $spacingFound = $tokens[$tokenStackPtr + $tokenStackPtrOffset]["length"];
-        }
-
-        if ($spacingFound !== $spacingRequired) {
-            $fix = $file->addFixableError(
-                "Expected %d %s %s %s for argument '%s'; %d found",
-                $tokenStackPtr,
-                "Spacing" . mb_convert_case($where, MB_CASE_TITLE, "UTF-8") . str_replace(" ", "", mb_convert_case($label, MB_CASE_TITLE, "UTF-8")),
-                [
-                    $spacingRequired,
-                    (1 === $spacingRequired ? "space" : "spaces"),
-                    $where,
-                    $label,
-                    $param["name"],
-                    $spacingFound,
-                ]
-            );
-
-            if ($fix) {
-                $padding = str_repeat(" ", $spacingRequired);
-
-                if (0 === $spacingFound) {
-                    // if we have to insert padding where none exists ...
-                    if (0 > $tokenStackPtrOffset) {
-                        // ... put it before the current token if we're looking before
-                        $file->fixer->addContentBefore($tokenStackPtr, $padding);
-                    } else {
-                        // ... or put it before the next token if we're looking after
-                        $file->fixer->addContentBefore($tokenStackPtr + 1, $padding);
-                    }
-                } else {
-                    // replace the found whitespace with the correct amount
-                    $file->fixer->replaceToken($tokenStackPtr + $tokenStackPtrOffset, $padding);
-                }
-            }
-        }
-    }
-
-    /**
-     * Helper to check the correct spacing after part of a parameter declaration.
-     *
-     * @param File $file The file being scanned.
-     * @param array $param The parameter data.
-     * @param int $tokenStackPtr The token stack pointer of the declaration component (e.g. type, reference operator, variadic operator).
-     * @param int $spacingRequired How much spacing there should be.
-     * @param string $label How to refer to the component in an error notice.
-     */
-    private function processParameterDeclarationComponentAfter(File $file, array $param, int $tokenStackPtr, int $spacingRequired, string $label): void
-    {
-        $this->processParameterDeclarationComponent($file, $param, $tokenStackPtr, 1, $spacingRequired, $label);
-    }
-
-    /**
-     * Helper to check the correct spacing before part of a parameter declaration.
-     *
-     * @param File $file The file being scanned.
-     * @param array $param The parameter data.
-     * @param int $tokenStackPtr The token stack pointer of the declaration component (e.g. type, reference operator, variadic operator).
-     * @param int $spacingRequired How much spacing there should be.
-     * @param string $label How to refer to the component in an error notice.
-     */
-    private function processParameterDeclarationComponentBefore(File $file, array $param, int $tokenStackPtr, int $spacingRequired, string $label): void
-    {
-        $this->processParameterDeclarationComponent($file, $param, $tokenStackPtr, -1, $spacingRequired, $label);
-    }
-
-    /**
-     * @param File $phpcsFile The file being scanned.
-     * @param array $params The parameters.
-     * @param int $parameterListStartPtr The token stack pointer for the opening parenthesis of the parameter list.
-     * @param int $parameterListEndPtr The token stack pointer for the closing parenthesis of the parameter list.
-     *
-     * @throws \PHP_CodeSniffer\Exceptions\RuntimeException
-     */
-    private function processParameters(File $phpcsFile, array $params, int $parameterListStartPtr, int $parameterListEndPtr): void
-    {
-        $tokens = $phpcsFile->getTokens();
-
-        foreach ($params as $idx => $param) {
-            // check spacing after reference operator
-            if (true === $param["pass_by_reference"]) {
-                $this->processParameterDeclarationComponentAfter($phpcsFile, $param, $param["reference_token"], $this->requiredSpacesAfterReferenceOperator, "reference operator");
-            }
-
-            // check spacing after variadic operator
-            if (true === $param["variable_length"]) {
-                $this->processParameterDeclarationComponentAfter($phpcsFile, $param, $param["variadic_token"], $this->requiredSpacesAfterReferenceOperator, "variadic operator");
-            }
-
-            // check spacing around = for default value
-            if (isset($param["default_equal_token"])) {
-                $this->processParameterDeclarationComponentBefore($phpcsFile, $param, $param["default_equal_token"], 1, "equals sign");
-                $this->processParameterDeclarationComponentAfter($phpcsFile, $param, $param["default_equal_token"], 1, "equals sign");
-            }
-
-            // check spacing after type declaration
-            if ($param["type_hint_token"] !== false) {
-                $this->processParameterDeclarationComponentAfter($phpcsFile, $param, $param["type_hint_end_token"], 1, "type declaration");
-            }
-
-            $commaToken = false;
-
-            if ($idx > 0 && $params[($idx - 1)]["comma_token"] !== false) {
-                $commaToken = $params[($idx - 1)]["comma_token"];
-            }
-
-            if (false !== $commaToken) {
-                if ($tokens[($commaToken - 1)]["code"] === T_WHITESPACE) {
-                    $fix = $phpcsFile->addFixableError(
-                        "Expected 0 spaces between argument '%s' and comma; %d found",
-                        $commaToken,
-                        "SpaceBeforeComma",
-                        [
-                            $params[($idx - 1)]["name"],
-                            $tokens[($commaToken - 1)]["length"],
-                        ]
-                    );
-
-                    if ($fix) {
-                        $phpcsFile->fixer->replaceToken(($commaToken - 1), "");
-                    }
-                }
-
-                // Don't check spacing after the comma if it is the last content on the line.
-                $checkComma = true;
-
-                if (($tokens[$parameterListStartPtr]["line"] !== $tokens[$parameterListEndPtr]["line"])) {
-                    $next = $phpcsFile->findNext(Tokens::$emptyTokens, ($commaToken + 1), $parameterListEndPtr, true);
-
-                    if ($tokens[$next]["line"] !== $tokens[$commaToken]["line"]) {
-                        $checkComma = false;
-                    }
-                }
-
-                if ($checkComma) {
-                    if ($param["type_hint_token"] === false) {
-                        $spacesAfter = 0;
-
-                        if ($tokens[($commaToken + 1)]["code"] === T_WHITESPACE) {
-                            $spacesAfter = $tokens[($commaToken + 1)]["length"];
-                        }
-
-                        if ($spacesAfter === 0) {
-                            $fix = $phpcsFile->addFixableError(
-                                "Expected 1 space between comma and argument '%s'; 0 found",
-                                $commaToken,
-                                "NoSpaceBeforeArg",
-                                [$param["name"]]
-                            );
-
-                            if ($fix) {
-                                $phpcsFile->fixer->addContent($commaToken, " ");
-                            }
-                        } else if ($spacesAfter !== 1) {
-                            $error = "Expected 1 space between comma and argument '%s'; %s found";
-                            $data  = [
-                                $param["name"],
-                                $spacesAfter,
-                            ];
-
-                            $fix = $phpcsFile->addFixableError($error, $commaToken, "SpacingBeforeArg", $data);
-                            if ($fix === true) {
-                                $phpcsFile->fixer->replaceToken(($commaToken + 1), " ");
-                            }
-                        }
-                    } else {
-                        $hint = $phpcsFile->getTokensAsString($param["type_hint_token"], (($param["type_hint_end_token"] - $param["type_hint_token"]) + 1));
-
-                        if ($param["nullable_type"] === true) {
-                            $hint = "?{$hint}";
-                        }
-
-                        if ($tokens[($commaToken + 1)]["code"] !== T_WHITESPACE) {
-                            $fix = $phpcsFile->addFixableError(
-                                "Expected 1 space between comma and type hint '%s'; 0 found",
-                                $commaToken,
-                                "NoSpaceBeforeHint",
-                                [$hint]
-                            );
-
-                            if ($fix) {
-                                $phpcsFile->fixer->addContent($commaToken, " ");
-                            }
-                        } else {
-                            $spacingFound = $tokens[($commaToken + 1)]["length"];
-
-                            if (1 !== $spacingFound) {
-                                $fix = $phpcsFile->addFixableError(
-                                    "Expected 1 space between comma and type hint '%s'; %d found",
-                                    $commaToken,
-                                    "SpacingBeforeHint",
-                                    [
-                                        $hint,
-                                        $spacingFound,
-                                    ]
-                                );
-
-                                if ($fix === true) {
-                                    $phpcsFile->fixer->replaceToken(($commaToken + 1), " ");
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        $this->resetTransientState();
     }
 }
