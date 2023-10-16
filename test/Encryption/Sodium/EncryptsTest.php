@@ -70,7 +70,7 @@ class EncryptsTest extends TestCase
     /** Ensure encrypt() throws when encryption fails. */
     public function testEncrypt4(): void
     {
-        self::mockFunction('sodium_bin2base64', fn(string $data): string => throw new SodiumException("Test exception."));
+        self::mockFunction("sodium_bin2base64", fn (string $data): string => throw new SodiumException("Test exception."));
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Exception encrypting data: Test exception.");
         $this->instance->encrypt(self::RawData);

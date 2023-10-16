@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace BeadTests\Util;
 
@@ -24,7 +24,7 @@ class StopwatchTest extends TestCase
 
     /** @var Stopwatch The stopwatch used for testing. */
     private Stopwatch $testStopwatch;
-    
+
     public function setUp(): void
     {
         $this->testStopwatch = new Stopwatch();
@@ -36,7 +36,7 @@ class StopwatchTest extends TestCase
             $this->testStopwatch->stop();
         }
 
-        unset ($this->testStopwatch);
+        unset($this->testStopwatch);
     }
 
     /**
@@ -67,7 +67,7 @@ class StopwatchTest extends TestCase
     public function testConstructorWithStartListener(): void
     {
         $called = false;
-        $onStart = function() use (&$called): void
+        $onStart = function () use (&$called): void
         {
             $called = true;
         };
@@ -82,7 +82,7 @@ class StopwatchTest extends TestCase
     public function testConstructorWithStopListener(): void
     {
         $called = false;
-        $onStop = function() use (&$called): void
+        $onStop = function () use (&$called): void
         {
             $called = true;
         };
@@ -97,7 +97,7 @@ class StopwatchTest extends TestCase
     public function testConstructorWithResetListener(): void
     {
         $called = false;
-        $onStop = function() use (&$called): void
+        $onStop = function () use (&$called): void
         {
             $called = true;
         };
@@ -163,7 +163,7 @@ class StopwatchTest extends TestCase
             $this->markTestSkipped("Timer failed to stop");
         }
 
-        self::assertEqualsWithDelta($duration,$this->testStopwatch->duration() * 1000, self::TestDurationTolerance, "Duration outside tolerance.");
+        self::assertEqualsWithDelta($duration, $this->testStopwatch->duration() * 1000, self::TestDurationTolerance, "Duration outside tolerance.");
     }
 
     /** Ensure duration returns null if the stopwatch is still running. */
@@ -240,9 +240,9 @@ class StopwatchTest extends TestCase
      */
     public function dataForTestAddListener(): iterable
     {
-        yield "typicalStartClosure" => [Stopwatch::EventStart, function() {},];
-        yield "typicalStopClosure" => [Stopwatch::EventStart, function() {},];
-        yield "typicalResetClosure" => [Stopwatch::EventStart, function() {},];
+        yield "typicalStartClosure" => [Stopwatch::EventStart, function () {},];
+        yield "typicalStopClosure" => [Stopwatch::EventStart, function () {},];
+        yield "typicalResetClosure" => [Stopwatch::EventStart, function () {},];
         yield "typicalAnonymousCallableStartListener" => [Stopwatch::EventStart, new class() {
             public function __invoke(): void {}
         },];
@@ -287,7 +287,7 @@ class StopwatchTest extends TestCase
     /** Ensure addListener() rejects invalid events. */
     public function testAddListenerThrows(): void
     {
-        $listener = fn() => null;
+        $listener = fn () => null;
         $this->expectException(LogicException::class);
         $this->testStopwatch->addListener(999, $listener);
     }

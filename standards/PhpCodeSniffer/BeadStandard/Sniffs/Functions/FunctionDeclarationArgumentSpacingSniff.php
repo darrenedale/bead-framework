@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace BeadStandards\PhpCodeSniffer\BeadStandard\Sniffs\Functions;
 
+use Bead\Util\ScopeGuard;
 use LogicException;
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
@@ -107,7 +108,7 @@ class FunctionDeclarationArgumentSpacingSniff implements Sniff
     }
 
     /** Ensure all values that might have been updated from the XML config file are typed correctly. */
-    private function cleanUpConfigValues(): void
+    private function sanitiseProperties(): void
     {
         $this->requiredSpacesBeforeEquals = (int) $this->requiredSpacesBeforeEquals;
         $this->requiredSpacesAfterEquals  = (int) $this->requiredSpacesAfterEquals;
@@ -291,7 +292,7 @@ class FunctionDeclarationArgumentSpacingSniff implements Sniff
                 );
 
                 // find the next token that isn't whitespace
-                $next = $this->file->findNext(Tokens::$emptyTokens, ($commaToken + 1), null, true);
+                $next = $this->file->findNext(Tokens::$emptyTokens, $previousParam["comma_token"] + 1, null, true);
 
                 // if it's on the same line, check the spacing after the comma
                 if ($this->tokens[$next]["line"] === $this->tokens[$previousParam["comma_token"]]["line"]) {
@@ -338,17 +339,13 @@ class FunctionDeclarationArgumentSpacingSniff implements Sniff
     public function process(File $phpcsFile, $stackPtr): void
     {
         assert(is_int($stackPtr), new LogicException("Invalid stack pointer provided to process()"));
+
+        // ensure we always reset the state however we leave this method
+        $guard = new ScopeGuard(fn() => $this->resetTransientState());
+        $this->sanitiseProperties();
+
         $this->file = $phpcsFile;
         $this->tokens = $phpcsFile->getTokens();
-
-        // TODO this shouldn't happen, right?
-        if (!isset($this->tokens[$stackPtr]["parenthesis_opener"]) || !isset($this->tokens[$stackPtr]["parenthesis_closer"])) {
-            $this->resetTransientState();
-            return;
-        }
-
-        $this->cleanUpConfigValues();
-
         $openingParenthesis = $this->tokens[$stackPtr]["parenthesis_opener"];
         $closingParenthesis = $this->tokens[$openingParenthesis]["parenthesis_closer"];
 
@@ -357,7 +354,7 @@ class FunctionDeclarationArgumentSpacingSniff implements Sniff
         if (
             (
                 $this->tokens[$stackPtr]["code"] === T_CLOSURE
-                || $this->tokens[$stackPtr]["code"] !== T_FN
+                || $this->tokens[$stackPtr]["code"] === T_FN
             )
             && is_int($use = $this->findUseStatement($this->tokens[$stackPtr]["parenthesis_closer"] + 1, $this->tokens[$stackPtr]["scope_opener"]))
         ) {
@@ -365,7 +362,5 @@ class FunctionDeclarationArgumentSpacingSniff implements Sniff
             $closingParenthesis = $this->tokens[$openingParenthesis]["parenthesis_closer"];
             $this->checkParameterList($openingParenthesis, $closingParenthesis);
         }
-
-        $this->resetTransientState();
     }
 }

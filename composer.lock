@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2b1d671f72b24b604d36f787d59c37f4",
+    "content-hash": "08928d68a3b8bf505a656ed1217c25ba",
     "packages": [
         {
             "name": "psr/container",
@@ -1984,16 +1984,16 @@
         },
         {
             "name": "squizlabs/php_codesniffer",
-            "version": "dev-allow-spacing-around-reference-operator-in-function-declarations",
+            "version": "3.7.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/darrenedale/PHP_CodeSniffer.git",
-                "reference": "b6bf6b1c82a707f1d2f838fa64a0accbdf008bd7"
+                "url": "https://github.com/squizlabs/PHP_CodeSniffer.git",
+                "reference": "ed8e00df0a83aa96acf703f8c2979ff33341f879"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/darrenedale/PHP_CodeSniffer/zipball/b6bf6b1c82a707f1d2f838fa64a0accbdf008bd7",
-                "reference": "b6bf6b1c82a707f1d2f838fa64a0accbdf008bd7",
+                "url": "https://api.github.com/repos/squizlabs/PHP_CodeSniffer/zipball/ed8e00df0a83aa96acf703f8c2979ff33341f879",
+                "reference": "ed8e00df0a83aa96acf703f8c2979ff33341f879",
                 "shasum": ""
             },
             "require": {
@@ -2015,6 +2015,7 @@
                     "dev-master": "3.x-dev"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "BSD-3-Clause"
             ],
@@ -2033,10 +2034,10 @@
             ],
             "support": {
                 "issues": "https://github.com/squizlabs/PHP_CodeSniffer/issues",
-                "wiki": "https://github.com/squizlabs/PHP_CodeSniffer/wiki",
-                "source": "https://github.com/squizlabs/PHP_CodeSniffer"
+                "source": "https://github.com/squizlabs/PHP_CodeSniffer",
+                "wiki": "https://github.com/squizlabs/PHP_CodeSniffer/wiki"
             },
-            "time": "2023-10-14T14:48:47+00:00"
+            "time": "2023-02-22T23:07:41+00:00"
         },
         {
             "name": "theseer/tokenizer",
@@ -2091,9 +2092,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "squizlabs/php_codesniffer": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

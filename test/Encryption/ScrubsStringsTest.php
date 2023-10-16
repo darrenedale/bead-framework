@@ -14,10 +14,11 @@ class ScrubsStringsTest extends TestCase
 
     public function setUp(): void
     {
-        $this->instance = new class {
+        $this->instance = new class
+        {
             use ScrubsStrings;
 
-            public static function callScrubString(string &$str): void
+            public static function callScrubString(string & $str): void
             {
                 self::scrubString($str);
             }
@@ -30,8 +31,8 @@ class ScrubsStringsTest extends TestCase
         $sequence = 0;
 
         $this->mockFunction(
-            'rand',
-            function(int $low, int $high) use (&$sequence): int {
+            "rand",
+            function (int $low, int $high) use (&$sequence): int {
                 TestCase::assertEquals(0, $low);
                 TestCase::assertEquals(255, $high);
                 return $sequence++;

@@ -9,8 +9,10 @@
     </rule>
 
     <rule ref="BeadStandard.Functions.FunctionDeclarationArgumentSpacing">
-        <property name="requiredSpacesAfterReferenceOperator" value="1" />
-        <property name="requiredSpacesAfterVariadicOperator" value="1" />
+        <properties>
+            <property name="requiredSpacesAfterReferenceOperator" value="1" />
+            <property name="requiredSpacesAfterVariadicOperator" value="1" />
+        </properties>
     </rule>
 
 </ruleset>

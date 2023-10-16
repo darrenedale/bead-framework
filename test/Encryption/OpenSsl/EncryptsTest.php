@@ -74,7 +74,7 @@ class EncryptsTest extends TestCase
     /** Ensure encrypt() throws when base64 encoding fails. */
     public function testEncrypt4(): void
     {
-        self::mockFunction('base64_encode', fn(string $data): string|false => false);
+        self::mockFunction("base64_encode", fn(string $data): string|false => false);
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Unable to encrypt data");
         $this->instance->encrypt(self::RawData);

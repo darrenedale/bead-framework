@@ -19,7 +19,8 @@ class DecryptsTest extends TestCase
 
     public function setUp(): void
     {
-        $this->instance = new class {
+        $this->instance = new class
+        {
             use Decrypts;
 
             public function algorithm(): string
@@ -75,7 +76,7 @@ class DecryptsTest extends TestCase
     /** Ensure decrypt() throws when OpenSSL fails. */
     public function testDecrypt5(): void
     {
-        $this->mockFunction("openssl_decrypt", fn(): bool => false);
+        $this->mockFunction("openssl_decrypt", fn (): bool => false);
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Unable to decrypt data");
         $this->instance->decrypt("MTExMTExMTFONVFWNVhvU2pqRVhuWTUyZS9UTHJBdz09");
@@ -84,7 +85,7 @@ class DecryptsTest extends TestCase
     /** Ensure decrypt() throws when unserialize() fails. */
     public function testDecrypt6(): void
     {
-        $this->mockFunction("unserialize", fn(): bool => false);
+        $this->mockFunction("unserialize", fn (): bool => false);
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("The decrypted data could not be unserialized");
         $this->instance->decrypt("MTExMTExMTFZNUlNYmY5ZUE4bC9xQmFBUmxBMFRkUT09");
