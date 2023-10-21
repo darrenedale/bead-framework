@@ -10,7 +10,7 @@ namespace Bead\Encryption;
 trait ScrubsStrings
 {
     /** Overwrite a string's content with random bytes. */
-    private static function scrubString(string &$str): void
+    private static function scrubString(string & $str): void
     {
         for ($idx = strlen($str) - 1; $idx >= 0; --$idx) {
             $str[$idx] = chr(rand(0, 255));

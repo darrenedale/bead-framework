@@ -81,9 +81,9 @@ abstract class Model
     private PDO $connection;
 
     /**
-	 * @var array The model instance's data. Always stored as the type comes out of the database, always contains keys
+     * @var array The model instance's data. Always stored as the type comes out of the database, always contains keys
      * for every property of the model and always in the order in which the properties are defined in `$properties`
-	 */
+     */
     protected array $data;
 
     /** @var array The loaded related models. */
@@ -176,9 +176,14 @@ abstract class Model
     {
         $columns = [];
 
-        foreach (array_filter(static::propertyNames(), function(string $property) use ($except): bool {
-            return !in_array($property, $except);
-        }) as $property) {
+        foreach (
+            array_filter(
+                static::propertyNames(),
+                function (string $property) use ($except): bool {
+                    return !in_array($property, $except);
+                }
+            ) as $property
+        ) {
             $columns[] = "`{$property}`";
         }
 
@@ -197,7 +202,7 @@ abstract class Model
      */
     protected function buildPropertyPlaceholderList(array $except = []): string
     {
-        return self::buildPlaceholderList(count(array_filter(static::propertyNames(), function(string $property) use ($except): bool {
+        return self::buildPlaceholderList(count(array_filter(static::propertyNames(), function (string $property) use ($except): bool {
             return !in_array($property, $except);
         })));
     }
@@ -331,15 +336,16 @@ abstract class Model
      */
     public function insert(): bool
     {
-		$primaryKeyProperty = static::primaryKey();
+        $primaryKeyProperty = static::primaryKey();
 
-        if ($this->connection()
-            ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([$primaryKeyProperty])}) VALUES ({$this->buildPropertyPlaceholderList([$primaryKeyProperty])})")
-            ->execute(array_values(array_filter($this->data, fn(string $key): bool => ($key !== $primaryKeyProperty), ARRAY_FILTER_USE_KEY)))) {
-
-			if (isset(static::$properties[$primaryKeyProperty])) {
-				$this->data[$primaryKeyProperty] = static::castInsertedKeyToPrimaryKey($this->connection()->lastInsertId());
-			}
+        if (
+            $this->connection()
+                ->prepare("INSERT INTO `" . static::table() . "` ({$this->buildColumnList([$primaryKeyProperty])}) VALUES ({$this->buildPropertyPlaceholderList([$primaryKeyProperty])})")
+                ->execute(array_values(array_filter($this->data, fn (string $key): bool => ($key !== $primaryKeyProperty), ARRAY_FILTER_USE_KEY)))
+        ) {
+            if (isset(static::$properties[$primaryKeyProperty])) {
+                $this->data[$primaryKeyProperty] = static::castInsertedKeyToPrimaryKey($this->connection()->lastInsertId());
+            }
 
             return true;
         }
@@ -384,107 +390,107 @@ abstract class Model
             ->execute([$this->{static::primaryKey()}]);
     }
 
-	/**
-	 * Create one or more instances of the model from provided data.
-	 *
-	 * Provide either the properties for a single model or an array containing the properties for several models. If
-	 * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
-	 * provided, an array of models is returned (even if the array of sets of properties contains only one set of
-	 * properties).
-	 *
-	 * For example, `User::create(["username" => "darren",])` will return a single model, whereas
-	 * `User::create([["username" => "darren",], ["username" => "susan",]])` and
-	 * `User::create([["username" => "darren",],])` will both return an array of models. (The first call will return an
-	 * array of 2 models, the second an array with just one model in it.)
-	 *
-	 * The models returned will have been inserted into the database.
-	 *
-	 * @param array $data The data for the instance(s) to create.
-	 *
-	 * @return Model|array<Model> The created model(s).
-	 */
-	public static function create(array $data)
-	{
-		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
-			$model = new static();
-			$model->populate($data);
-			$model->insert();
-			return $model;
-		}
+    /**
+     * Create one or more instances of the model from provided data.
+     *
+     * Provide either the properties for a single model or an array containing the properties for several models. If
+     * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
+     * provided, an array of models is returned (even if the array of sets of properties contains only one set of
+     * properties).
+     *
+     * For example, `User::create(["username" => "darren",])` will return a single model, whereas
+     * `User::create([["username" => "darren",], ["username" => "susan",]])` and
+     * `User::create([["username" => "darren",],])` will both return an array of models. (The first call will return an
+     * array of 2 models, the second an array with just one model in it.)
+     *
+     * The models returned will have been inserted into the database.
+     *
+     * @param array $data The data for the instance(s) to create.
+     *
+     * @return Model|array<Model> The created model(s).
+     */
+    public static function create(array $data)
+    {
+        if (!all(array_keys($data), fn ($key): bool => is_int($key))) {
+            $model = new static();
+            $model->populate($data);
+            $model->insert();
+            return $model;
+        }
 
-		$modelClass = static::class;
+        $modelClass = static::class;
 
-		return array_map(function(array $data) use ($modelClass) {
-			$model = new $modelClass();
-			$model->populate($data);
-			$model->insert();
-			return $model;
-		}, $data);
-	}
+        return array_map(function (array $data) use ($modelClass) {
+            $model = new $modelClass();
+            $model->populate($data);
+            $model->insert();
+            return $model;
+        }, $data);
+    }
 
-	/**
-	 * Make one or more instances of the model from provided data.
-	 *
-	 * Provide either the properties for a single model or an array containing the properties for several models. If
-	 * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
-	 * provided, an array of models is returned (even if the array of sets of properties contains only one set of
-	 * properties).
-	 *
-	 * For example, `User::make(["username" => "darren",])` will return a single model, whereas
-	 * `User::make([["username" => "darren",], ["username" => "susan",]])` and
-	 * `User::make([["username" => "darren",],])` will both return an array of models. (The first call will return an
-	 * array of 2 models, the second an array with just one model in it.)
-	 *
-	 * The models returned will NOT have been inserted into the database.
-	 *
-	 * @param array $data The data for the instance(s) to create.
-	 *
-	 * @return Model|array<Model> The created model(s).
-	 */
-	public static function make(array $data)
-	{
-		if (!all(array_keys($data), fn($key): bool => is_int($key))) {
-			$model = new static();
-			$model->populate($data);
-			return $model;
-		}
+    /**
+     * Make one or more instances of the model from provided data.
+     *
+     * Provide either the properties for a single model or an array containing the properties for several models. If
+     * the properties for a single model are provided, a single model is returned; if an array of sets of properties is
+     * provided, an array of models is returned (even if the array of sets of properties contains only one set of
+     * properties).
+     *
+     * For example, `User::make(["username" => "darren",])` will return a single model, whereas
+     * `User::make([["username" => "darren",], ["username" => "susan",]])` and
+     * `User::make([["username" => "darren",],])` will both return an array of models. (The first call will return an
+     * array of 2 models, the second an array with just one model in it.)
+     *
+     * The models returned will NOT have been inserted into the database.
+     *
+     * @param array $data The data for the instance(s) to create.
+     *
+     * @return Model|array<Model> The created model(s).
+     */
+    public static function make(array $data)
+    {
+        if (!all(array_keys($data), fn ($key): bool => is_int($key))) {
+            $model = new static();
+            $model->populate($data);
+            return $model;
+        }
 
-		$modelClass = static::class;
+        $modelClass = static::class;
 
-		return array_map(function(array $data) use ($modelClass) {
-			$model = new $modelClass();
-			$model->populate($data);
-			return $model;
-		}, $data);
-	}
+        return array_map(function (array $data) use ($modelClass) {
+            $model = new $modelClass();
+            $model->populate($data);
+            return $model;
+        }, $data);
+    }
 
-	/**
-	 * Cast a value provided by the database connection from an INSERT statuement to the correct primary key type.
-	 *
-	 * PDO provides `lastInsertId()` as a string. This method can be used to cast the provided last insert ID to the
-	 * correct type for the primary column. The default implementation converts strings to ints if required. Reimplement
-	 * in your model classes if you need conversion to other types.
-	 *
-	 * @param $value The value to cast.
-	 *
-	 * @return mixed The value to store in the model for the primary key.
-	 */
-	protected static function castInsertedKeyToPrimaryKey($value)
-	{
-		$primaryKeyProperty = static::primaryKey();
+    /**
+     * Cast a value provided by the database connection from an INSERT statuement to the correct primary key type.
+     *
+     * PDO provides `lastInsertId()` as a string. This method can be used to cast the provided last insert ID to the
+     * correct type for the primary column. The default implementation converts strings to ints if required. Reimplement
+     * in your model classes if you need conversion to other types.
+     *
+     * @param $value The value to cast.
+     *
+     * @return mixed The value to store in the model for the primary key.
+     */
+    protected static function castInsertedKeyToPrimaryKey($value)
+    {
+        $primaryKeyProperty = static::primaryKey();
 
-		if ("int" === static::$properties[$primaryKeyProperty]) {
-			$castValue = filter_var($value, FILTER_VALIDATE_INT, ["flags" => FILTER_NULL_ON_FAILURE,]);
+        if ("int" === static::$properties[$primaryKeyProperty]) {
+            $castValue = filter_var($value, FILTER_VALIDATE_INT, ["flags" => FILTER_NULL_ON_FAILURE,]);
 
-			if (!isset($castValue)) {
-				throw new ModelPropertyCastException(static::class, static::primaryKey(), "The value {$value} provided by the database for the primary key when inserting a " . static::table() . " row is not a valid int.");
-			}
+            if (!isset($castValue)) {
+                throw new ModelPropertyCastException(static::class, static::primaryKey(), "The value {$value} provided by the database for the primary key when inserting a " . static::table() . " row is not a valid int.");
+            }
 
-			return $castValue;
-		}
+            return $castValue;
+        }
 
-		return $value;
-	}
+        return $value;
+    }
 
     /**
      * Helper to cast a value from a Timestamp column to a PHP int.
@@ -572,11 +578,11 @@ abstract class Model
     protected static function castFromIntColumn($value, string $property): int
     {
         $intValue = filter_var($value, FILTER_VALIDATE_INT);
-        
+
         if (false === $intValue) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Could not create an int from the value {$value}.");
         }
-        
+
         return $intValue;
     }
 
@@ -592,11 +598,11 @@ abstract class Model
     protected static function castFromFloatColumn($value, string $property): float
     {
         $floatValue = filter_var($value, FILTER_VALIDATE_FLOAT);
-        
+
         if (false === $floatValue) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Could not create a float from the value {$value}.");
         }
-        
+
         return $floatValue;
     }
 
@@ -649,16 +655,16 @@ abstract class Model
     {
         if (is_bool($value)) {
             return $value;
-        } else if (is_int($value)) {
+        } elseif (is_int($value)) {
             return 0 !== $value;
-        } else if (is_float($value)) {
+        } elseif (is_float($value)) {
             return 0.0 != $value;
-        } else if (is_string($value)) {
+        } elseif (is_string($value)) {
             if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_INT, ["flags" => FILTER_NULL_ON_FAILURE]))) {
                 return 0 !== $validatedValue;
-            } else if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT, ["flags" => FILTER_NULL_ON_FAILURE]))) {
+            } elseif (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT, ["flags" => FILTER_NULL_ON_FAILURE]))) {
                 return 0.0 != $validatedValue;
-            } else if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE]))){
+            } elseif (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE]))) {
                 return $validatedValue;
             }
         }
@@ -698,15 +704,15 @@ abstract class Model
         if (is_string($value)) {
             return $value;
         }
-        
+
         if (is_callable([$value, "__toString"], false)) {
             return $value->__toString();
         }
-        
+
         if (is_int($value) || is_float($value)) {
             return "{$value}";
         }
-        
+
         if (is_bool($value)) {
             return ($value ? "1" : "0");
         }
@@ -868,47 +874,45 @@ abstract class Model
         return $json;
     }
 
-	/**
-	 * Helper to cast a set property value to the database representation for bool columns.
-	 *
-	 * For convenience, the string values of "true", "yes" and "on" will be accepted as `true` and "false", "no" and
-	 * "off" will be accepted as `false`. The value will be cast to an int since database engines often represent bools
-	 * as ints, or can cast from them. This also helps avoid the issue with PDO where it treats bound values as strings
-	 * by default, which coerces `false` to an empty string, which in turn is not recognised (e.g. by Postgres) as a
-	 * boolean `false`. Using 1 and 0, PDO will never convert a bool property value to an empty string.
-	 *
-	 * @param mixed $value The value set for the property.
-	 * @param string $property The property name.
-	 *
-	 * @return int 0 if the property represents `false`, 1 if it represents `true`.
-	 *
-	 * @throws ModelPropertyCastException
-	 */
-	protected static function castToBoolColumn($value, string $property): int
-	{
-		if (is_bool($value)) {
-			return $value ? 1 : 0;
-		} else if (is_int($value)) {
-			return (0 == $value ? 0 : 1);
-		} else if (is_float($value)) {
-			return (0.0 == $value ? 0 : 1);
-		} else if (is_string($value)) {
-			if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_INT))) {
-				return (0 === $validatedValue ? 0 : 1);
-			} else if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT))) {
-				return (0.0 == $validatedValue ? 0 : 1);
-			} else if (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]))) {
-				return ($validatedValue ? 1 : 0);
-			} else if (in_array(strtolower($value), ["true", "on", "yes"])) {
-				return 1;
-			} else if (in_array(strtolower($value), ["false", "off", "no"])) {
-				return 0;
-			}
-		}
-
-		throw new ModelPropertyCastException(static::class, $property, $value, "The provided value cannot be represented as a database boolean.");
-	}
-
+    /**
+     * Helper to cast a set property value to the database representation for bool columns.
+     *
+     * For convenience, the string values of "true", "yes" and "on" will be accepted as `true` and "false", "no" and
+     * "off" will be accepted as `false`. The value will be cast to an int since database engines often represent bools
+     * as ints, or can cast from them. This also helps avoid the issue with PDO where it treats bound values as strings
+     * by default, which coerces `false` to an empty string, which in turn is not recognised (e.g. by Postgres) as a
+     * boolean `false`. Using 1 and 0, PDO will never convert a bool property value to an empty string.
+     *
+     * @param mixed $value The value set for the property.
+     * @param string $property The property name.
+     *
+     * @return int 0 if the property represents `false`, 1 if it represents `true`.
+     *
+     * @throws ModelPropertyCastException
+     */
+    protected static function castToBoolColumn($value, string $property): int
+    {
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        } elseif (is_int($value)) {
+            return (0 == $value ? 0 : 1);
+        } elseif (is_float($value)) {
+            return (0.0 == $value ? 0 : 1);
+        } elseif (is_string($value)) {
+            if (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_INT))) {
+                return (0 === $validatedValue ? 0 : 1);
+            } elseif (false !== ($validatedValue = filter_var($value, FILTER_VALIDATE_FLOAT))) {
+                return (0.0 == $validatedValue ? 0 : 1);
+            } elseif (!is_null($validatedValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]))) {
+                return ($validatedValue ? 1 : 0);
+            } elseif (in_array(strtolower($value), ["true", "on", "yes"])) {
+                return 1;
+            } elseif (in_array(strtolower($value), ["false", "off", "no"])) {
+                return 0;
+            }
+        }
+        throw new ModelPropertyCastException(static::class, $property, $value, "The provided value cannot be represented as a database boolean.");
+    }
     /**
      * Fetch the value of a property or a relation for the model.
      *
@@ -919,25 +923,26 @@ abstract class Model
      * @param string $property The property being accessed.
      *
      * @return mixed|null The property value.
-     * 
+     *
+
      * @throws ModelPropertyCastException if the data retrieved from the database is not compatible with the declared
      * type of the column.
      * @throws LogicException if the property does not exist.
      */
     public function __get(string $property)
     {
-		static $accessors = [];
+        static $accessors = [];
 
         if (in_array($property, static::propertyNames())) {
-			$cacheKey = static::class . "::{$property}";
+            $cacheKey = static::class . "::{$property}";
 
-			if (!isset($accessors[$cacheKey])) {
-				$accessors[$cacheKey] = snakeToCamel("get_{$property}_property");
-			}
+            if (!isset($accessors[$cacheKey])) {
+                $accessors[$cacheKey] = snakeToCamel("get_{$property}_property");
+            }
 
-			if (method_exists($this, $accessors[$cacheKey])) {
-				return $this->{$accessors[$cacheKey]}();
-			}
+            if (method_exists($this, $accessors[$cacheKey])) {
+                return $this->{$accessors[$cacheKey]}();
+            }
 
             if (!isset($this->data[$property])) {
                 return null;
@@ -946,19 +951,19 @@ abstract class Model
             switch (static::$properties[$property]) {
                 case "timestamp":
                     return static::castFromTimestampColumn($this->data[$property], $property);
-                    
+
                 case "date":
                     return static::castFromDateColumn($this->data[$property], $property);
 
                 case "datetime":
                     return static::castFromDateTimeColumn($this->data[$property], $property);
-                    
+
                 case "time":
                     return static::castFromTimeColumn($this->data[$property], $property);
-                    
+
                 case "int":
                     return static::castFromIntColumn($this->data[$property], $property);
-                    
+
                 case "float":
                     return static::castFromFloatColumn($this->data[$property], $property);
 
@@ -986,7 +991,7 @@ abstract class Model
                 // requested property is not a relation method
             }
         }
-        
+
         throw new LogicException("The property {$property} does not exist on class " . static::class . ".");
     }
 
@@ -1000,25 +1005,25 @@ abstract class Model
      */
     public function __set(string $property, $value): void
     {
-		static $mutators = [];
+        static $mutators = [];
 
         if (in_array($property, static::propertyNames())) {
-			$cacheKey = static::class . "::{$property}";
+            $cacheKey = static::class . "::{$property}";
 
-			if (!isset($mutators[$cacheKey])) {
-				$mutators[$cacheKey] = snakeToCamel("set_{$property}_property");
-			}
+            if (!isset($mutators[$cacheKey])) {
+                $mutators[$cacheKey] = snakeToCamel("set_{$property}_property");
+            }
 
-			try {
-				if (method_exists($this, $mutators[$cacheKey])) {
-					$this->{$mutators[$cacheKey]}($value);
-					return;
-				}
+            try {
+                if (method_exists($this, $mutators[$cacheKey])) {
+                    $this->{$mutators[$cacheKey]}($value);
+                    return;
+                }
 
-				if (!isset($value)) {
-					$this->data[$property] = null;
-					return;
-				}
+                if (!isset($value)) {
+                    $this->data[$property] = null;
+                    return;
+                }
 
                 switch (static::$properties[$property]) {
                     case "timestamp":
@@ -1201,7 +1206,7 @@ abstract class Model
     protected static function makeModelsFromQuery(PDOStatement $stmt): array
     {
         $models = [];
-		$stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
         foreach ($stmt as $data) {
             $model = new static();
@@ -1273,7 +1278,7 @@ abstract class Model
      *
      * @return string The concatenated expressions, or an empty string if there are none.
      */
-    protected static final function fixedWhereExpressionsSql(string $tableAlias = null): string
+    final protected static function fixedWhereExpressionsSql(string $tableAlias = null): string
     {
         $fixedExpressions = static::fixedWhereExpressions($tableAlias);
 
@@ -1339,7 +1344,7 @@ abstract class Model
      *
      * @return array The models that match the query.
      */
-    protected static final function querySimpleComparison(string $property, string $operator, $value): array
+    final protected static function querySimpleComparison(string $property, string $operator, $value): array
     {
         $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)" . static::fixedWhereExpressionsSql());
         $stmt->execute([$value]);
@@ -1553,272 +1558,272 @@ abstract class Model
         throw new UnrecognisedQueryOperatorException($operator, "The operator {$operator} is not supported.");
     }
 
-	/**
-	 * Helper to remove rows that match all of a given set of terms.
-	 *
-	 * The search terms parameter expects an associative array of column => value pairs. A row must match all the terms
+    /**
+     * Helper to remove rows that match all of a given set of terms.
+     *
+     * The search terms parameter expects an associative array of column => value pairs. A row must match all the terms
      * in order to be removed. The operator for each of the terms is equals.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param array $terms The search terms.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	protected static function removeWhereAll(array $terms): bool
-	{
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param array $terms The search terms.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    protected static function removeWhereAll(array $terms): bool
+    {
         [$values, $where] = self::prepareEqualityWheres($terms);
-		$stmt = static::defaultConnection()
+        $stmt = static::defaultConnection()
             ->prepare("DELETE FROM `" . static::table() . "` WHERE " . implode(" AND ", $where));
-		return $stmt->execute($values);
-	}
+        return $stmt->execute($values);
+    }
 
-	/**
-	 * Helper to remove rows based on a simple comparison operator for a single property.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param string $operator The operator. Must be a valid SQL operator.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	protected static final function removeSimpleComparison(string $property, string $operator, $value): bool
-	{
-		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)");
-		return $stmt->execute([$value]);
-	}
+    /**
+     * Helper to remove rows based on a simple comparison operator for a single property.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param string $operator The operator. Must be a valid SQL operator.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    final protected static function removeSimpleComparison(string $property, string $operator, $value): bool
+    {
+        $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)");
+        return $stmt->execute([$value]);
+    }
 
-	/**
-	 * Remove models where a property is equal to a given value.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeEquals(string $property, $value): bool
-	{
+    /**
+     * Remove models where a property is equal to a given value.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeEquals(string $property, $value): bool
+    {
         if (is_null($value)) {
             $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NULL");
             return $stmt->execute();
         }
 
-		return self::removeSimpleComparison($property, "=", $value);
-	}
+        return self::removeSimpleComparison($property, "=", $value);
+    }
 
-	/**
-	 * Remove models where a property is not equal to a given value.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeNotEquals(string $property, $value): bool
-	{
+    /**
+     * Remove models where a property is not equal to a given value.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeNotEquals(string $property, $value): bool
+    {
         if (is_null($value)) {
             $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NOT NULL");
             return $stmt->execute();
         }
 
         return self::removeSimpleComparison($property, "<>", $value);
-	}
+    }
 
-	/**
-	 * Remove models where a property is greater than a given value.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeGreaterThan(string $property, $value): bool
-	{
-		return self::removeSimpleComparison($property, ">", $value);
-	}
+    /**
+     * Remove models where a property is greater than a given value.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeGreaterThan(string $property, $value): bool
+    {
+        return self::removeSimpleComparison($property, ">", $value);
+    }
 
-	/**
-	 * Remove models where a property is greater than or equal to a given value.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeGreaterThanEquals(string $property, $value): bool
-	{
-		return self::removeSimpleComparison($property, ">=", $value);
-	}
+    /**
+     * Remove models where a property is greater than or equal to a given value.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeGreaterThanEquals(string $property, $value): bool
+    {
+        return self::removeSimpleComparison($property, ">=", $value);
+    }
 
-	/**
-	 * Remove models where a property is less than a given value.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeLessThan(string $property, $value): bool
-	{
-		return self::removeSimpleComparison($property, "<", $value);
-	}
+    /**
+     * Remove models where a property is less than a given value.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeLessThan(string $property, $value): bool
+    {
+        return self::removeSimpleComparison($property, "<", $value);
+    }
 
-	/**
-	 * Remove models where a property is less than or equal to a given value.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeLessThanEquals(string $property, $value): bool
-	{
-		return self::removeSimpleComparison($property, "<=", $value);
-	}
+    /**
+     * Remove models where a property is less than or equal to a given value.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeLessThanEquals(string $property, $value): bool
+    {
+        return self::removeSimpleComparison($property, "<=", $value);
+    }
 
-	/**
-	 * Remove models where a property is like a given value.
-	 *
-	 * The value supports the SQL wildcards '%' and '_'.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeLike(string $property, $value): bool
-	{
-		return self::removeSimpleComparison($property, "LIKE", $value);
-	}
+    /**
+     * Remove models where a property is like a given value.
+     *
+     * The value supports the SQL wildcards '%' and '_'.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeLike(string $property, $value): bool
+    {
+        return self::removeSimpleComparison($property, "LIKE", $value);
+    }
 
-	/**
-	 * Remove models where a property is not like a given value.
-	 *
-	 * The value supports the SQL wildcards '%' and '_'.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $value The value to query for.
-	 *
-	 * @return bool Whether the removal succeeded.
-	 */
-	public static function removeNotLike(string $property, $value): bool
-	{
-		return self::removeSimpleComparison($property, "NOT LIKE", $value);
-	}
+    /**
+     * Remove models where a property is not like a given value.
+     *
+     * The value supports the SQL wildcards '%' and '_'.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $value The value to query for.
+     *
+     * @return bool Whether the removal succeeded.
+     */
+    public static function removeNotLike(string $property, $value): bool
+    {
+        return self::removeSimpleComparison($property, "NOT LIKE", $value);
+    }
 
-	/**
-	 * Remove models where a property is in a set of values.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $values The set of values to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeIn(string $property, array $values): bool
-	{
-		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")");
-		static::bindValues($stmt, $values);
-		return $stmt->execute();
-	}
+    /**
+     * Remove models where a property is in a set of values.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $values The set of values to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeIn(string $property, array $values): bool
+    {
+        $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")");
+        static::bindValues($stmt, $values);
+        return $stmt->execute();
+    }
 
-	/**
-	 * Remove models where a property is not in a set of values.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string $property The property to query on.
-	 * @param mixed $values The set of values to query for.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 */
-	public static function removeNotIn(string $property, array $values): bool
-	{
-		$stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")");
-		static::bindValues($stmt, $values);
-		return $stmt->execute();
-	}
+    /**
+     * Remove models where a property is not in a set of values.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string $property The property to query on.
+     * @param mixed $values The set of values to query for.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     */
+    public static function removeNotIn(string $property, array $values): bool
+    {
+        $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")");
+        static::bindValues($stmt, $values);
+        return $stmt->execute();
+    }
 
-	/**
-	 * Remove a set of model instances based on a query.
-	 *
-	 * Queries can use either an array of properties and values to match (in which case the matching models must meet
-	 * all the terms) or a single property and value to match. In the latter case, you can optionally provide an
-	 * operator, or use the default operator of equality matching.
-	 *
-	 * WARNING This is a destructive operation - the matched rows will be deleted from the database.
-	 *
-	 * @param string|array<string,mixed> $properties The property name or array of properties and values to match.
-	 * @param string|mixed|null $operator The operator to use to compare the value to the property.
-	 * @param mixed|null $value The value to match.
-	 *
-	 * @return bool `true` if the removal was successful, `false` otherwise.
-	 * @throws UnrecognisedQueryOperatorException
-	 */
-	public static function remove($properties, $operator = null, $value = null): bool
-	{
-		if (is_array($properties)) {
-			return static::removeWhereAll($properties);
-		}
+    /**
+     * Remove a set of model instances based on a query.
+     *
+     * Queries can use either an array of properties and values to match (in which case the matching models must meet
+     * all the terms) or a single property and value to match. In the latter case, you can optionally provide an
+     * operator, or use the default operator of equality matching.
+     *
+     * WARNING This is a destructive operation - the matched rows will be deleted from the database.
+     *
+     * @param string|array<string,mixed> $properties The property name or array of properties and values to match.
+     * @param string|mixed|null $operator The operator to use to compare the value to the property.
+     * @param mixed|null $value The value to match.
+     *
+     * @return bool `true` if the removal was successful, `false` otherwise.
+     * @throws UnrecognisedQueryOperatorException
+     */
+    public static function remove($properties, $operator = null, $value = null): bool
+    {
+        if (is_array($properties)) {
+            return static::removeWhereAll($properties);
+        }
 
-		if (!isset($value)) {
-			$value = $operator;
-			$operator = "=";
-		}
+        if (!isset($value)) {
+            $value = $operator;
+            $operator = "=";
+        }
 
-		switch (strtolower($operator)) {
-			case "=":
-			case "==":
-				return static::removeEquals($properties, $value);
+        switch (strtolower($operator)) {
+            case "=":
+            case "==":
+                return static::removeEquals($properties, $value);
 
-			case "!=":
-			case "<>":
-				return static::removeNotEquals($properties, $value);
+            case "!=":
+            case "<>":
+                return static::removeNotEquals($properties, $value);
 
-			case ">":
-				return static::removeGreaterThan($properties, $value);
+            case ">":
+                return static::removeGreaterThan($properties, $value);
 
-			case ">=":
-				return static::removeGreaterThanEquals($properties, $value);
+            case ">=":
+                return static::removeGreaterThanEquals($properties, $value);
 
-			case "<":
-				return static::removeLessThan($properties, $value);
+            case "<":
+                return static::removeLessThan($properties, $value);
 
-			case "<=":
-				return static::removeLessThanEquals($properties, $value);
+            case "<=":
+                return static::removeLessThanEquals($properties, $value);
 
-			case "like":
-				return static::removeLike($properties, $value);
+            case "like":
+                return static::removeLike($properties, $value);
 
-			case "not like":
-				return static::removeNotLike($properties, $value);
+            case "not like":
+                return static::removeNotLike($properties, $value);
 
-			case "in":
-				return static::removeIn($properties, $value);
+            case "in":
+                return static::removeIn($properties, $value);
 
-			case "not in":
-				return static::removeNotIn($properties, $value);
-		}
+            case "not in":
+                return static::removeNotIn($properties, $value);
+        }
 
-		throw new UnrecognisedQueryOperatorException($operator, "The operator {$operator} is not supported.");
-	}
+        throw new UnrecognisedQueryOperatorException($operator, "The operator {$operator} is not supported.");
+    }
 }

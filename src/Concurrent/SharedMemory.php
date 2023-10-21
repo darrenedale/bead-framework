@@ -55,7 +55,7 @@ class SharedMemory
      */
     private function __construct($handle, int $id, int $size, int $mode)
     {
-		assert(extension_loaded("shmop"), new RuntimeException("SharedMemory requires the 'shmop' extension to be loaded."));
+        assert(extension_loaded("shmop"), new RuntimeException("SharedMemory requires the 'shmop' extension to be loaded."));
         $this->m_id = $id;
         $this->m_size = $size;
         $this->m_handle = $handle;
@@ -138,7 +138,7 @@ class SharedMemory
     public static function open(int $id, int $mode = self::ModeRead): SharedMemory
     {
         assert(extension_loaded("shmop"), new SharedMemoryExtensionMissingException("Shared memory is not available - shmop extension si not loaded."));
-        assert ($mode === self::ModeRead || $mode === self::ModeReadWrite, new SharedMemoryException("Invalid open mode."));
+        assert($mode === self::ModeRead || $mode === self::ModeReadWrite, new SharedMemoryException("Invalid open mode."));
         $handle = @shmop_open($id, (self::ModeReadWrite === $mode ? "w" : "a"), 0, 0);
 
         if (false === $handle) {
@@ -240,15 +240,15 @@ class SharedMemory
         $this->m_size = 0;
         $this->m_mode = self::ModeRead;
     }
-    
+
     /**
      * Helper to perform all reading from the memory.
-     * 
+     *
      * Implements bounds checking to protect against overflows.
-     * 
+     *
      * @param int $offset The offset to read from. Must be >= 0 and <= the length of the memory block less read size.
      * @param int|null $size The size of the read. If null or not given, the read is to the end of the memory block.
-     * 
+     *
      * @return string The bytes read.
      */
     private function read(int $offset = 0, ?int $size = null): string

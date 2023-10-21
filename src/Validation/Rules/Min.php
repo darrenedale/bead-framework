@@ -56,7 +56,7 @@ class Min implements Rule
      */
     public function setMin($min)
     {
-        assert (is_int($min) || is_float($min),  (
+        assert(is_int($min) || is_float($min), (
         8 <= PHP_MAJOR_VERSION
             ? new TypeError("The minimum value must be numeric.")
             : "The minimum value must be numeric."
@@ -134,11 +134,11 @@ class Min implements Rule
     {
         if (is_int($data)) {
             return $this->intPasses($data);
-        } else if (is_float($data)) {
+        } elseif (is_float($data)) {
             return $this->floatPasses($data);
-        } else if (is_array($data)) {
+        } elseif (is_array($data)) {
             return $this->arrayPasses($data);
-        } else if (is_string($data)) {
+        } elseif (is_string($data)) {
             $intData = filter_var($data, FILTER_VALIDATE_INT);
 
             if (false !== $intData) {

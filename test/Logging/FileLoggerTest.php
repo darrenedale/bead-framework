@@ -32,7 +32,7 @@ final class FileLoggerTest extends TestCase
 
     public function tearDown(): void
     {
-        unset ($this->logger);
+        unset($this->logger);
         @unlink(self::logFilePathName());
         @unlink(self::logFilePathName(self::TestAltLogFileName));
         parent::tearDown();
@@ -41,13 +41,13 @@ final class FileLoggerTest extends TestCase
     /** Expect a given string to be written to the log file. */
     private function expectLogFileWrite(string $data): void
     {
-        $this->mockMethod(SplFileObject::class, "fwrite", fn(string $str) => TestCase::assertEquals($data, $str));
+        $this->mockMethod(SplFileObject::class, "fwrite", fn (string $str) => TestCase::assertEquals($data, $str));
     }
 
     /** Expect no string to be written to the log file. */
     private function expectNoLogFileWrite(): void
     {
-        $this->mockMethod(SplFileObject::class, "fwrite", fn(string $str) => TestCase::fail("Log message should not have been written."));
+        $this->mockMethod(SplFileObject::class, "fwrite", fn (string $str) => TestCase::fail("Log message should not have been written."));
     }
 
     /** Ensure log() writes the expected message to the file. */

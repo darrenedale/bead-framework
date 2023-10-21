@@ -62,7 +62,7 @@ use Bead\Contracts\Translator as TranslatorContract;
  *     function tr( $s, $file = '', $line = '' ) {
  *        global $translator;
  *
- *        if($translator instanceof Bead\Translator) {
+ *        if ($translator instanceof Bead\Translator) {
  *            $s = $translator->translate($s, basename($file), $line);
  *        }
  *
@@ -71,7 +71,7 @@ use Bead\Contracts\Translator as TranslatorContract;
  *        array_splice($args, 0, 3);
  *        $argc = count($args);
  *
- *        if(1 > $argc) {
+ *        if (1 > $argc) {
  *            return $s;
  *        }
  *
@@ -107,7 +107,7 @@ use Bead\Contracts\Translator as TranslatorContract;
  *     function tr( $s, $file = '', $line = '' ) {
  *        global $translator;
  *
- *        if($translator instanceof Bead\Translator) {
+ *        if ($translator instanceof Bead\Translator) {
  *            $s = $translator->translate($s, basename($file), $line);
  *        }
  *
@@ -116,7 +116,7 @@ use Bead\Contracts\Translator as TranslatorContract;
  *        array_splice($args, 0, 3);
  *        $argc = count($args);
  *
- *        if(1 > $argc) {
+ *        if (1 > $argc) {
  *            // no args for placeholders
  *            return $s;
  *        }
@@ -137,272 +137,272 @@ class Translator implements TranslatorContract
     /** @var string The default language. */
     protected const DefaultLanguage = "en";
 
-	/** @var int The column in the translation file that contains the file name. */
-	protected const FILE_COL = 0;
+    /** @var int The column in the translation file that contains the file name. */
+    protected const FileColumnIndex = 0;
 
-	/** @var int The column in the translation file that contains the line number. */
-	protected const LINE_COL = 1;
+    /** @var int The column in the translation file that contains the line number. */
+    protected const LineColumnIndex = 1;
 
-	/** @var int The column in the translation file that contains the original text. */
-	protected const ORIGINAL_COL = 2;
+    /** @var int The column in the translation file that contains the token being translated. */
+    protected const TokenColumnIndex = 2;
 
-	/** @var int The column in the translation file that contains the translated text. */
-	protected const TRANSLATION_COL = 3;
+    /** @var int The column in the translation file that contains the translated text. */
+    protected const TranslationColumnIndex = 3;
 
-	/** The translator's language. */
-	private string $m_lang;
+    /** The translator's language. */
+    private string $m_lang;
 
-	/** The cache of translated text. */
-	private array $m_cache = [];
+    /** The cache of translated text. */
+    private array $m_cache = [];
 
-	/** The paths to search for translation files. */
-	private array $m_searchPaths = [];
+    /** The paths to search for translation files. */
+    private array $m_searchPaths = [];
 
-	/**
-	 * Create a translator for a given language.
-	 *
-	 * @param $lang string _optional_ The language into which to translate.
-	 */
-	public function __construct(string $lang = self::DefaultLanguage)
+    /**
+     * Create a translator for a given language.
+     *
+     * @param $lang string _optional_ The language into which to translate.
+     */
+    public function __construct(string $lang = self::DefaultLanguage)
     {
-		$this->setLanguage($lang);
-	}
+        $this->setLanguage($lang);
+    }
 
-	/**
-	 * Fetch the target language of the translator.
-	 *
-	 * @return string The target language.
-	 */
-	public function language(): string
+    /**
+     * Fetch the target language of the translator.
+     *
+     * @return string The target language.
+     */
+    public function language(): string
     {
-		return $this->m_lang;
-	}
+        return $this->m_lang;
+    }
 
-	/**
-	 * Set the target language of the translator.
-	 *
-	 * The language provided should be an IETF language tag. These are generally modelled on the ISO language
-	 * specifications (though not tied to them) and are mostly of the form _&lt;lang&gt;[-&lt;region&gt;]_. The
-	 * language you provide here will be used to search for the translation file from which to retrieve translated
-	 * strings.
-	 *
-	 * @param $lang string|null The target language.
-	 */
-	public function setLanguage(string $lang): void
+    /**
+     * Set the target language of the translator.
+     *
+     * The language provided should be an IETF language tag. These are generally modelled on the ISO language
+     * specifications (though not tied to them) and are mostly of the form _&lt;lang&gt;[-&lt;region&gt;]_. The
+     * language you provide here will be used to search for the translation file from which to retrieve translated
+     * strings.
+     *
+     * @param $lang string|null The target language.
+     */
+    public function setLanguage(string $lang): void
     {
-		$this->m_lang = $lang;
-	}
+        $this->m_lang = $lang;
+    }
 
-	/**
-	 * Add a search path.
-	 *
-	 * Adds a search path to the set of paths the translator will scan for translation files. The paths added will be
-	 * scanned in the order in which they were added, and the scan will stop on the first file that matches the
-	 * translator's language.
-	 *
-	 * The path provided will be canonicalised before it is added. This helps ensure that translation files are not
-	 * sourced from invalid locations and that the same canonical path cannot be added more than once using different
-	 * path strings to the same destination.
-	 *
-	 * If a translation file for the current language has already been loaded, adding a new path will _not_ cause the
-	 * loaded file to be discarded.
-	 *
-	 * @param $path string The path to add.
-	 */
-	public function addSearchPath(string $path): void
+    /**
+     * Add a search path.
+     *
+     * Adds a search path to the set of paths the translator will scan for translation files. The paths added will be
+     * scanned in the order in which they were added, and the scan will stop on the first file that matches the
+     * translator's language.
+     *
+     * The path provided will be canonicalised before it is added. This helps ensure that translation files are not
+     * sourced from invalid locations and that the same canonical path cannot be added more than once using different
+     * path strings to the same destination.
+     *
+     * If a translation file for the current language has already been loaded, adding a new path will _not_ cause the
+     * loaded file to be discarded.
+     *
+     * @param $path string The path to add.
+     */
+    public function addSearchPath(string $path): void
     {
-		$path = realpath($path);
+        $path = realpath($path);
 
-		if($path && !in_array($path, $this->m_searchPaths)) {
-			$this->m_searchPaths[] = $path;
-		}
-	}
+        if ($path && !in_array($path, $this->m_searchPaths)) {
+            $this->m_searchPaths[] = $path;
+        }
+    }
 
-	/**
-	 * Remove a search path.
-	 *
-	 * Removes a search path from the set of paths the translator will scan for translation files. The path provided
-	 * will be canonicalised before it is removed.
-	 *
-	 * If a translation file for the current language has already been loaded from the removed path, removing the path
-	 * will _not_ cause the loaded file to be discarded.
-	 *
-	 * @param $path string The path to remove.
-	 */
-	public function removeSearchPath(string $path): void
+    /**
+     * Remove a search path.
+     *
+     * Removes a search path from the set of paths the translator will scan for translation files. The path provided
+     * will be canonicalised before it is removed.
+     *
+     * If a translation file for the current language has already been loaded from the removed path, removing the path
+     * will _not_ cause the loaded file to be discarded.
+     *
+     * @param $path string The path to remove.
+     */
+    public function removeSearchPath(string $path): void
     {
-		$path = realpath($path);
+        $path = realpath($path);
 
-		if($path) {
-			$newPaths = [];
+        if ($path) {
+            $newPaths = [];
 
-			foreach($this->m_searchPaths as $myPath) {
-				if($myPath != $path) {
-					$newPaths[] = $myPath;
-				}
-			}
+            foreach ($this->m_searchPaths as $myPath) {
+                if ($myPath != $path) {
+                    $newPaths[] = $myPath;
+                }
+            }
 
-			$this->m_searchPaths = $newPaths;
-		}
-	}
+            $this->m_searchPaths = $newPaths;
+        }
+    }
 
-	/**
-	 * Clear the list of search paths.
-	 *
-	 * Removes all search paths. Clearing all the search paths does not unload any translation files already loaded. It
-	 * does, however, render the translator unable to offer any translations into any languages other than those for
-	 * which it has already loaded a translation file. Translation files are loaded the first time they are needed -
-	 * i.e. when a new language is encountered in a call to either hasTranslation() or translate().
-	 */
-	public function clearSearchPaths(): void
+    /**
+     * Clear the list of search paths.
+     *
+     * Removes all search paths. Clearing all the search paths does not unload any translation files already loaded. It
+     * does, however, render the translator unable to offer any translations into any languages other than those for
+     * which it has already loaded a translation file. Translation files are loaded the first time they are needed -
+     * i.e. when a new language is encountered in a call to either hasTranslation() or translate().
+     */
+    public function clearSearchPaths(): void
     {
-		$this->m_searchPaths = [];
-	}
+        $this->m_searchPaths = [];
+    }
 
-	/**
-	 * Retrieve the list of search paths.
-	 *
-	 * The list of paths is provided in the order in which they will be scanned.
-	 *
-	 * @return array[string] The list of search paths.
-	 */
-	public function searchPaths(): array
+    /**
+     * Retrieve the list of search paths.
+     *
+     * The list of paths is provided in the order in which they will be scanned.
+     *
+     * @return array[string] The list of search paths.
+     */
+    public function searchPaths(): array
     {
-		return $this->m_searchPaths;
-	}
+        return $this->m_searchPaths;
+    }
 
-	/**
-	 * Check whether a translation file for the current language has been loaded.
-	 *
-	 * @return bool _true_ if the translation file has been loaded, _false_ if not.
-	 */
-	private function isLoaded(): bool
+    /**
+     * Check whether a translation file for the current language has been loaded.
+     *
+     * @return bool _true_ if the translation file has been loaded, _false_ if not.
+     */
+    private function isLoaded(): bool
     {
-		return is_string($this->m_lang) && array_key_exists($this->m_lang, $this->m_cache);
-	}
+        return is_string($this->m_lang) && array_key_exists($this->m_lang, $this->m_cache);
+    }
 
-	/**
-	 * Generate the key that locates a string's translation in the internal cache.
-	 *
-	 * @param $string string The string whose translation is sought.
-	 * @param $file string|null The file from which the string is being translated.
-	 * @param $line int|null The line in the file from which the string is being translated.
-	 *
-	 * @return string The key.
-	 */
-	private static function cacheKey(string $string, ?string $file, ?int $line): string
+    /**
+     * Generate the key that locates a string's translation in the internal cache.
+     *
+     * @param $string string The string whose translation is sought.
+     * @param $file string|null The file from which the string is being translated.
+     * @param $line int|null The line in the file from which the string is being translated.
+     *
+     * @return string The key.
+     */
+    private static function cacheKey(string $string, ?string $file, ?int $line): string
     {
-		if(empty($file)) {
-			$file = "~~NOFILE~~";
-		}
+        if (empty($file)) {
+            $file = "~~NOFILE~~";
+        }
 
-		if(empty($line)) {
-			$line = "~~NOLINE~~";
-		}
+        if (empty($line)) {
+            $line = "~~NOLINE~~";
+        }
 
-		return "__" . md5($string) . "__{$file}__{$line}__";
-	}
+        return "__" . md5($string) . "__{$file}__{$line}__";
+    }
 
-	/**
-	 * Attempt to find and load a translation file for the current language.
-	 *
-	 * This method will discard any existing loaded translation file for the current language and will attempt to find
-	 * and load another. The paths will be scanned in the order in which they were added, and the first translation file
-	 * for the current language that is encountered will be loaded. The scan will stop either when a file is loaded or
-	 * all the paths have been scanned, whichever occurs sooner.
-	 *
-	 * @return bool _true_ if a translation file for the current language was loaded, _false_ otherwise.
-	 */
-	private function load(): bool
+    /**
+     * Attempt to find and load a translation file for the current language.
+     *
+     * This method will discard any existing loaded translation file for the current language and will attempt to find
+     * and load another. The paths will be scanned in the order in which they were added, and the first translation file
+     * for the current language that is encountered will be loaded. The scan will stop either when a file is loaded or
+     * all the paths have been scanned, whichever occurs sooner.
+     *
+     * @return bool _true_ if a translation file for the current language was loaded, _false_ otherwise.
+     */
+    private function load(): bool
     {
-		if(!empty($this->m_lang)) {
-			foreach($this->m_searchPaths as $path) {
-				$filePath = "$path/{$this->m_lang}.csv";
+        if (!empty($this->m_lang)) {
+            foreach ($this->m_searchPaths as $path) {
+                $filePath = "{$path}/{$this->m_lang}.csv";
 
-				if(file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
-					$f = fopen($filePath, "r");
-					$this->m_cache[$this->m_lang] = [];
+                if (file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
+                    $f = fopen($filePath, "r");
+                    $this->m_cache[$this->m_lang] = [];
 
-					while(false !== ($line = fgetcsv($f))) {
-						$myFile  = empty($line[self::FILE_COL]) ? null : $line[self::FILE_COL];
-						$myLine  = empty($line[self::LINE_COL]) ? null : (intval($line[self::LINE_COL]) ?: null);
-						$myOrig  = $line[self::ORIGINAL_COL];
-						$myTrans = $line[self::TRANSLATION_COL];
+                    while (false !== ($line = fgetcsv($f))) {
+                        $myFile  = empty($line[self::FileColumnIndex]) ? null : $line[self::FileColumnIndex];
+                        $myLine  = empty($line[self::LineColumnIndex]) ? null : (intval($line[self::LineColumnIndex]) ?: null);
+                        $myOrig  = $line[self::TokenColumnIndex];
+                        $myTrans = $line[self::TranslationColumnIndex];
 
-						$this->m_cache[$this->m_lang][self::cacheKey($myOrig, $myFile, $myLine)] = $myTrans;
-					}
+                        $this->m_cache[$this->m_lang][self::cacheKey($myOrig, $myFile, $myLine)] = $myTrans;
+                    }
 
-					fclose($f);
-					return true;
-				}
-			}
-		}
+                    fclose($f);
+                    return true;
+                }
+            }
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	/**
-	 * Check whether a string has a translation.
-	 *
-	 * The file and line parameters are for disambiguation and can be omitted if a generic translation is OK. This
-	 * method _will not_ revert to more generic translations if the specific translation requested does not exist. This
-	 * behaviour is unlike that of the _translate()_ method.
-	 *
-	 * @param $string string The string to check for.
-	 * @param $file string|null _optional_ The source file of the string.
-	 * @param $line int|null _optional_ The line number of the string in the source file.
-	 *
-	 * @return bool _true_ if the requested translation is available, _false_ if not.
-	 */
-	public function hasTranslation(string $string, ?string $file = null, ?int $line = null): bool
+    /**
+     * Check whether a string has a translation.
+     *
+     * The file and line parameters are for disambiguation and can be omitted if a generic translation is OK. This
+     * method _will not_ revert to more generic translations if the specific translation requested does not exist. This
+     * behaviour is unlike that of the _translate()_ method.
+     *
+     * @param $string string The string to check for.
+     * @param $file string|null _optional_ The source file of the string.
+     * @param $line int|null _optional_ The line number of the string in the source file.
+     *
+     * @return bool _true_ if the requested translation is available, _false_ if not.
+     */
+    public function hasTranslation(string $string, ?string $file = null, ?int $line = null): bool
     {
-		if(!$this->isLoaded()) {
-			$this->load();
-		}
+        if (!$this->isLoaded()) {
+            $this->load();
+        }
 
-		$cacheKey = self::cacheKey($string, $file, $line);
-		return $this->isLoaded() && isset($this->m_cache[$this->m_lang][$cacheKey]) && !empty($this->m_cache[$this->m_lang][$cacheKey]);
-	}
+        $cacheKey = self::cacheKey($string, $file, $line);
+        return $this->isLoaded() && isset($this->m_cache[$this->m_lang][$cacheKey]) && !empty($this->m_cache[$this->m_lang][$cacheKey]);
+    }
 
-	/**
-	 * Translate a string.
-	 *
-	 * The file and line parameters are for disambiguation and can be omitted if you just want a generic translation.
-	 * This method _will_ provide a more generic translation if the specific translation requested is not available.
-	 * This behaviour is in contrast to the hasTranslation() method, which will not check for more generic translations.
-	 * This ensures that applications have a means of checking whether a specific translation is available, but also
-	 * means that different translators can provide just more generic translations where suitable for their language
-	 * without having to provide the same translation multiple times and the app will still pick up the correct
-	 * translation.
-	 *
-	 * @param $string string The string to translate.
-	 * @param $file string|null _optional_ The source file of the string.
-	 * @param $line int|null _optional_ The line number of the string in the source file.
-	 *
-	 * @return string The translated string, or the original string if no suitable translation can be found.
-	 */
-	public function translate(string $string, string $file = null, $line = null): string
+    /**
+     * Translate a string.
+     *
+     * The file and line parameters are for disambiguation and can be omitted if you just want a generic translation.
+     * This method _will_ provide a more generic translation if the specific translation requested is not available.
+     * This behaviour is in contrast to the hasTranslation() method, which will not check for more generic translations.
+     * This ensures that applications have a means of checking whether a specific translation is available, but also
+     * means that different translators can provide just more generic translations where suitable for their language
+     * without having to provide the same translation multiple times and the app will still pick up the correct
+     * translation.
+     *
+     * @param $string string The string to translate.
+     * @param $file string|null _optional_ The source file of the string.
+     * @param $line int|null _optional_ The line number of the string in the source file.
+     *
+     * @return string The translated string, or the original string if no suitable translation can be found.
+     */
+    public function translate(string $string, string $file = null, $line = null): string
     {
-		if (!$this->isLoaded()) {
-			$this->load();
-		}
+        if (!$this->isLoaded()) {
+            $this->load();
+        }
 
-		if ($this->isLoaded()) {
-			$keys = [
-				[$string, $file, $line],
-				[$string, $file, null],
-				[$string, null, null],
-			];
+        if ($this->isLoaded()) {
+            $keys = [
+                [$string, $file, $line],
+                [$string, $file, null],
+                [$string, null, null],
+            ];
 
-			foreach($keys as [$string, $file, $line]) {
-				$myKey = self::cacheKey($string, $file, $line);
+            foreach ($keys as [$string, $file, $line]) {
+                $myKey = self::cacheKey($string, $file, $line);
 
-				if(!empty($this->m_cache[$this->m_lang][$myKey])) {
-					return $this->m_cache[$this->m_lang][$myKey];
-				}
-			}
-		}
+                if (!empty($this->m_cache[$this->m_lang][$myKey])) {
+                    return $this->m_cache[$this->m_lang][$myKey];
+                }
+            }
+        }
 
-		return $string;
-	}
+        return $string;
+    }
 }

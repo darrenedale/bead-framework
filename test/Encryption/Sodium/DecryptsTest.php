@@ -75,7 +75,7 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
     /** Ensure decrypt throws an EncryptionException when Sodium throws. */
     public function testDecrypt5(): void
     {
-        $this->mockFunction("sodium_crypto_secretbox_open", function() {
+        $this->mockFunction("sodium_crypto_secretbox_open", function () {
             throw new SodiumException("The Sodium Exception");
         });
 
@@ -87,7 +87,7 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
     /** Ensure decrypt throws when Sodium fails. */
     public function testDecrypt6(): void
     {
-        $this->mockFunction("sodium_crypto_secretbox_open", fn(): bool => false);
+        $this->mockFunction("sodium_crypto_secretbox_open", fn (): bool => false);
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Unable to decrypt data");
         $this->instance->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");
@@ -96,7 +96,7 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
     /** Ensure decrypt throws when unserialization fails. */
     public function testDecrypt7(): void
     {
-        $this->mockFunction("unserialize", fn(): bool => false);
+        $this->mockFunction("unserialize", fn (): bool => false);
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("The decrypted data could not be unserialized");
         $this->instance->decrypt("MDAwMDExMTEyMjIyMzMzMzQ0NDQ1NTU1WQRXm7dZGM4UM/YhV554l2VLfdPvSaxhNk/+HXE6PGg=");

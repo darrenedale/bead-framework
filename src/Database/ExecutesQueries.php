@@ -19,7 +19,7 @@ trait ExecutesQueries
      * Fetch the connection to use when preparing and/or executing the query.
      * @return PDO The connection.
      */
-    public abstract function connection(): PDO;
+    abstract public function connection(): PDO;
 
     /**
      * Fetch a prepared statement for the query builder.

@@ -8,5 +8,5 @@ use Bead\Encryption\SerializationMode;
 
 interface Encrypter
 {
-	public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string;
+    public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string;
 }

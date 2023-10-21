@@ -23,11 +23,13 @@
   "suggest": {
     "ext-shmop": "*",
     "ext-openssl": "*",
-    "ext-sodium": "*"
+    "ext-sodium": "*",
+    "ext-uopz": "^6||^7"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
     "phpunit/phpunit": "^9.5",
+    "squizlabs/php_codesniffer": "^3.7",
     "ext-uopz": "^6||^7"
   },
   "autoload": {
@@ -44,7 +46,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "BeadTests\\": "test"
+      "BeadTests\\": "test",
+      "BeadStandards\\": "standards"
     }
   }
 }

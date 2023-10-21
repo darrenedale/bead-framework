@@ -17,8 +17,8 @@ class Php implements SessionHandler
     public function __construct(?string $id = null)
     {
         if (isset($id)) {
-			session_id($id);
-		} else {
+            session_id($id);
+        } else {
             $now = time();
             $_SESSION["__created_at"] = $now;
             $_SESSION["__last_used_at"] = $now;
@@ -39,21 +39,21 @@ class Php implements SessionHandler
     /** @inheritDoc */
     public function createdAt(): int
     {
-		assert(is_int($_SESSION["__created_at"] ?? null), new SessionException("Session created timestamp is not found or is corrupt."));
+        assert(is_int($_SESSION["__created_at"] ?? null), new SessionException("Session created timestamp is not found or is corrupt."));
         return $_SESSION["__created_at"];
     }
 
     /** @inheritDoc */
     public function lastUsedAt(): int
     {
-		assert(is_int($_SESSION["__last_used_at"] ?? null), new SessionException("Session last used timestamp is not found or is corrupt."));
+        assert(is_int($_SESSION["__last_used_at"] ?? null), new SessionException("Session last used timestamp is not found or is corrupt."));
         return $_SESSION["__last_used_at"];
     }
 
     /** @inheritDoc */
     public function idGeneratedAt(): int
     {
-		assert(is_int($_SESSION["__id_created_at"] ?? null), new SessionException("Session id generated timestamp is not found or is corrupt."));
+        assert(is_int($_SESSION["__id_created_at"] ?? null), new SessionException("Session id generated timestamp is not found or is corrupt."));
         return $_SESSION["__id_created_at"];
     }
 
@@ -62,7 +62,7 @@ class Php implements SessionHandler
     {
         $_SESSION["__last_used_at"] = $time ?? time();
     }
-    
+
     /**
      * The timestamp when the session was expired.
      * @return int|null

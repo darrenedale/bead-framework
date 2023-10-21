@@ -2,7 +2,8 @@
 
 namespace Bead\Util;
 
-interface TimestampInterval {
+interface TimestampInterval
+{
     /** Representation of the interval in seconds. */
     public function inSeconds(): int;
 }

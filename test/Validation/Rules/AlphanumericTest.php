@@ -73,8 +73,14 @@ class AlphanumericTest extends RuleTestCase
             "typicalInt" => ["field", 1, false,],
             "typicalFloat" => ["field", 1.5, false,],
             "typicalArray" => ["field", [1, 2, 3, 4, 5,], false,],
-            "typicalObject" => ["field", (object)["alpha",], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalObject" => ["field", (object) ["alpha",], false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalFalse" => ["field", false, false,],
             "typicalNull" => ["field", null, false,],
 

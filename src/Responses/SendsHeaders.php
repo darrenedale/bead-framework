@@ -13,22 +13,22 @@ trait SendsHeaders
     /**
      * Constrain the trait to classes that implement the headers() method.
      */
-	public abstract function headers(): array;
+    abstract public function headers(): array;
 
     /**
      * Constrain the trait to classes that implement the contentType() method.
      */
-	public abstract function contentType(): string;
+    abstract public function contentType(): string;
 
     /**
      * Send the headers.
      */
-	protected function sendHeaders(): void
-	{
-		foreach ($this->headers() as $header => $value) {
-			header("{$header}: {$value}", true);
-		}
+    protected function sendHeaders(): void
+    {
+        foreach ($this->headers() as $header => $value) {
+            header("{$header}: {$value}", true);
+        }
 
-		header("content-type: {$this->contentType()}", true);
-	}
+        header("content-type: {$this->contentType()}", true);
+    }
 }

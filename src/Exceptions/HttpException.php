@@ -6,11 +6,10 @@ use Bead\Contracts\Response;
 use Bead\Request;
 use Bead\Responses\DoesntHaveHeaders;
 use Bead\Responses\NaivelySendsContent;
-use Bead\Responses\SendsHeaders;
 use Bead\View;
 use Bead\WebApplication;
-use \Exception;
-use \Throwable;
+use Exception;
+use Throwable;
 
 /**
  * Base class for HTTP exceptions that can also act as responses.
@@ -20,47 +19,47 @@ use \Throwable;
  */
 abstract class HttpException extends Exception implements Response
 {
-	use DoesntHaveHeaders;
-	use NaivelySendsContent;
+    use DoesntHaveHeaders;
+    use NaivelySendsContent;
 
-	/** @var Request The request that triggered the HTTP exception. */
-	private Request $m_request;
+    /** @var Request The request that triggered the HTTP exception. */
+    private Request $m_request;
 
-	/**
-	 * @param Request $request The incoming request that triggered the exception.
-	 * @param string $message The message. This may be displayed in the response.
-	 * @param int $code The exception code. This is NOT the HTTP response code.
-	 * @param Throwable|null $previous The previous exception that occurred before this.
-	 */
-	public function __construct(Request $request, string $message = "", int $code = 0, Throwable $previous = null)
-	{
-		parent::__construct($message, $code, $previous);
-		$this->m_request = $request;
-	}
+    /**
+     * @param Request $request The incoming request that triggered the exception.
+     * @param string $message The message. This may be displayed in the response.
+     * @param int $code The exception code. This is NOT the HTTP response code.
+     * @param Throwable|null $previous The previous exception that occurred before this.
+     */
+    public function __construct(Request $request, string $message = "", int $code = 0, Throwable $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
+        $this->m_request = $request;
+    }
 
-	/**
-	 * Fetch the request that triggered the exception.
-	 *
-	 * @return Request The request.
-	 */
-	public function getRequest(): Request
-	{
-		return $this->m_request;
-	}
+    /**
+     * Fetch the request that triggered the exception.
+     *
+     * @return Request The request.
+     */
+    public function getRequest(): Request
+    {
+        return $this->m_request;
+    }
 
-	public function contentType(): string
-	{
-		return "text/html";
-	}
+    public function contentType(): string
+    {
+        return "text/html";
+    }
 
-	public function content(): string
-	{
-		$viewPath = WebApplication::instance()->config("app.http.error.view.path");
+    public function content(): string
+    {
+        $viewPath = WebApplication::instance()->config("app.http.error.view.path");
 
-		if (isset($viewPath) && View::exists("{$viewPath}.{$this->statusCode()}")) {
-			return (new View("{$viewPath}.{$this->statusCode()}", ["message" => $this->getMessage()]))->render();
-		}
+        if (isset($viewPath) && View::exists("{$viewPath}.{$this->statusCode()}")) {
+            return (new View("{$viewPath}.{$this->statusCode()}", ["message" => $this->getMessage()]))->render();
+        }
 
-		return "";
-	}
+        return "";
+    }
 }

@@ -13,7 +13,7 @@ class DecrypterTest extends TestCase
 {
     use ProvidesInvalidKeys;
 
-    private const EncryptionKey = '-some-insecure-key-insecure-some';
+    private const EncryptionKey = "-some-insecure-key-insecure-some";
 
     /** Ensure we can construct a Decrypter with a valid key. */
     public function testConstructor1(): void
@@ -39,4 +39,3 @@ class DecrypterTest extends TestCase
         new Decrypter($key);
     }
 }
-

@@ -7,4 +7,5 @@ namespace Bead\Exceptions;
 use RuntimeException;
 
 class EncryptionException extends RuntimeException
-{}
+{
+}

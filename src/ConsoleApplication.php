@@ -107,7 +107,7 @@ class ConsoleApplication extends Application
 
     public function confirm(string $prompt): bool
     {
-        $response = $this->read("$prompt [y|N] ", 1);
+        $response = $this->read("{$prompt} [y|N] ", 1);
         return "Y" === strtoupper($response);
     }
 
@@ -186,7 +186,7 @@ class ConsoleApplication extends Application
     {
         return $this->m_cmd;
     }
-    
+
     /**
      * Fetch all the command-line arguments.
      * @return array
@@ -211,9 +211,9 @@ class ConsoleApplication extends Application
     {
         if (1 === strlen($name)) {
             return "-{$name}";
-        } else if (2 === strlen($name) && "-" === $name[0] && "-" !== $name[1]) {
+        } elseif (2 === strlen($name) && "-" === $name[0] && "-" !== $name[1]) {
             return $name;
-        } else if (str_starts_with($name, "--")) {
+        } elseif (str_starts_with($name, "--")) {
             return $name;
         }
 

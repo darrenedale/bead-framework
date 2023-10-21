@@ -26,7 +26,7 @@ trait GeneratesRandomBytes
 
         if (function_exists("random_bytes")) {
             return random_bytes($len);
-        } else if (function_exists("openssl_random_pseudo_bytes")) {
+        } elseif (function_exists("openssl_random_pseudo_bytes")) {
             $strong = false;
             $bytes = openssl_random_pseudo_bytes($len, $strong);
 

@@ -372,7 +372,7 @@ class Validator
 
         // validated data contains only the data under validation - data for which there are no rules is not validated
         $fieldsUnderValidation = $this->fieldsUnderValidation();
-        $validatedData = array_filter($this->data(), fn(string $key):bool => in_array($key, $fieldsUnderValidation), ARRAY_FILTER_USE_KEY);
+        $validatedData = array_filter($this->data(), fn (string $key): bool => in_array($key, $fieldsUnderValidation), ARRAY_FILTER_USE_KEY);
 
         foreach ($this->rules() as $field => $rules) {
             if ($this->m_skipAll) {
@@ -585,8 +585,7 @@ class Validator
                 case "DateTime":
                     try {
                         $args[$idx] = new DateTime($args[$idx]);
-                    }
-                    catch (Exception $err) {
+                    } catch (Exception $err) {
                         throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter is not a valid DateTime.", 0, $err);
                     }
                     break;
@@ -625,7 +624,7 @@ class Validator
             $rule = array_shift($args);
 
             // unescape any escaped : chars in each arg
-            array_walk($args, function(string & $arg): void {
+            array_walk($args, function (string & $arg): void {
                 $arg = str_replace("\\:", ":", $arg);
             });
 
@@ -644,7 +643,7 @@ class Validator
             }
 
             $rule = new $ruleClass(...self::convertRuleConstructorArgs($args, $ruleClass));
-        } else if (!($rule instanceof Rule)) {
+        } elseif (!($rule instanceof Rule)) {
             throw new TypeError("Argument 2 \$rule must be a string or a Rule object.");
         }
 

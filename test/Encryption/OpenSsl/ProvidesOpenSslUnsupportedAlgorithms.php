@@ -11,7 +11,7 @@ trait ProvidesOpenSslUnsupportedAlgorithms
     {
         yield "empty" => [""];
 
-        if (!function_exists('openssl_get_cipher_methods')) {
+        if (!function_exists("openssl_get_cipher_methods")) {
             self::fail("OpenSSL extension doesn't appear to be loaded.");
         }
 
@@ -21,9 +21,10 @@ trait ProvidesOpenSslUnsupportedAlgorithms
             [
                 "nonsense", "this-method-is-not-available", "something-else", "aes-127-cbc", "bluefish", "foo", "bar",
                 "7", " ", "-",
-            ] as $algorithm) {
+            ] as $algorithm
+        ) {
             if (in_array($algorithm, $algorithms)) {
-                # only test with algorithms known to be invalid
+                // only test with algorithms known to be invalid
                 continue;
             }
 

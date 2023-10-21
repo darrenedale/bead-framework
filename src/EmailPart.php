@@ -10,13 +10,13 @@ namespace Bead;
 class EmailPart
 {
     /** @var string The default content type for email message parts. */
-    const DefaultContentType = "text/plain";
+    protected const DefaultContentType = "text/plain";
 
     /** @var string The default character encoding for email message parts. */
-    const DefaultTextCharset = "utf-8";
+    protected const DefaultTextCharset = "utf-8";
 
     /** @var string The default content encoding for email message parts. */
-    const DefaultContentEncoding = "quoted-printable";
+    protected const DefaultContentEncoding = "quoted-printable";
 
     /** @var EmailHeader[] The part's headers. */
     protected array $m_headers = [];
@@ -37,7 +37,7 @@ class EmailPart
      * @param $contentType string The content type for the message part.
      * @param $contentEncoding string The content encoding.
      */
-    function __construct(string $content = "", string $contentType = EmailPart::DefaultContentType, string $contentEncoding = EmailPart::DefaultContentEncoding)
+    public function __construct(string $content = "", string $contentType = EmailPart::DefaultContentType, string $contentEncoding = EmailPart::DefaultContentEncoding)
     {
         // setContentType() and setContentEncoding() can fail with invalid values, so we ensure here that the object
         // is initialised with defaults that are known to be valid: a quoted-printable-encoded text/plain body part
@@ -91,7 +91,7 @@ class EmailPart
 
         // TODO trigger_error() instead?
         if (!preg_match($rxMimeHeader, $header, $captures)) {
-            AppLog::error("invalid header line provided (\"$header\")");
+            AppLog::error("invalid header line provided (\"{$header}\")");
             return false;
         }
 
@@ -106,7 +106,7 @@ class EmailPart
      *
      * @return bool `true` if the header was added successfully, `false` otherwise.
      */
-    private function _addHeaderObject(EmailHeader $header): bool
+    private function addHeaderObject(EmailHeader $header): bool
     {
         // check for <cr><lf> in either header or value
         $headerName = $header->name();
@@ -144,10 +144,10 @@ class EmailPart
      *
      * @return bool `true` if the header was added successfully, `false` otherwise.
      */
-    private function _addHeaderStrings(string $header, string $value): bool
+    private function addHeaderStrings(string $header, string $value): bool
     {
         // EmailHeader constructor handles validation
-        return $this->_addHeaderObject(new EmailHeader($header, $value));
+        return $this->addHeaderObject(new EmailHeader($header, $value));
     }
 
     /**
@@ -165,9 +165,9 @@ class EmailPart
     public function addHeader(EmailHeader|string $header, string $value = ""): bool
     {
         if ($header instanceof EmailHeader) {
-            return $this->_addHeaderObject($header);
+            return $this->addHeaderObject($header);
         } else {
-            return $this->_addHeaderStrings($header, $value);
+            return $this->addHeaderStrings($header, $value);
         }
     }
 
@@ -246,7 +246,7 @@ class EmailPart
      *
      * @return EmailHeader|null The header object if found, or `null` if not or on error.
      */
-    private function _findHeaderByName(string $name): ?EmailHeader
+    private function findHeaderByName(string $name): ?EmailHeader
     {
         foreach ($this->headers() as $header) {
             if (0 === strcasecmp($header->name(), $name)) {
@@ -264,7 +264,7 @@ class EmailPart
      */
     public function contentType(): ?string
     {
-        $header = $this->_findHeaderByName("Content-Type");
+        $header = $this->findHeaderByName("Content-Type");
 
         if (isset($header)) {
             return $header->value();
@@ -326,17 +326,17 @@ class EmailPart
         if ("*/*" != $contentType) {
             // can't initialise static $rxMimeType with non-const content so have to do it this way
             if (is_null($rxMimeType)) {
-                $rxMimeType = "#^([a-z]+|x-$token)/(?:($token)( *; *$token *= *(?:$token|$quotedString))*)$#";
+                $rxMimeType = "#^([a-z]+|x-{$token})/(?:({$token})( *; *{$token} *= *(?:{$token}|{$quotedString}))*)$#";
             }
 
             // for now we don't use the expression captures, but 1 = type, 2 = subtype, 3 = params
             if (!preg_match($rxMimeType, $contentType)) {
-                AppLog::error("content type \"$contentType\" is not valid");
+                AppLog::error("content type \"{$contentType}\" is not valid");
                 return false;
             }
         }
 
-        $header = $this->_findHeaderByName("Content-Type");
+        $header = $this->findHeaderByName("Content-Type");
 
         if ($header instanceof EmailHeader) {
             $header->setValue($contentType);
@@ -354,7 +354,7 @@ class EmailPart
      */
     public function contentEncoding(): ?string
     {
-        $header = $this->_findHeaderByName("Content-Transfer-Encoding");
+        $header = $this->findHeaderByName("Content-Transfer-Encoding");
 
         if (isset($header)) {
             return $header->value();
@@ -380,13 +380,13 @@ class EmailPart
         /* validate the content encoding: x-gzip | x-compress | token */
         if ("x-gzip" != $contentEncoding && "x-compress" != $contentEncoding) {
             /* FIXME validate the content-encoding properly */
-            if ('' == trim($contentEncoding)) {
-                AppLog::error("content encoding provided (\"$contentEncoding\") is not valid");
+            if ("" == trim($contentEncoding)) {
+                AppLog::error("content encoding provided (\"{$contentEncoding}\") is not valid");
                 return false;
             }
         }
 
-        $header = $this->_findHeaderByName("Content-Transfer-Encoding");
+        $header = $this->findHeaderByName("Content-Transfer-Encoding");
 
         if ($header instanceof EmailHeader) {
             $header->setValue($contentEncoding);

@@ -136,7 +136,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
             return;
         }
 
-        $crypter = match($cryptConfig["driver"]) {
+        $crypter = match ($cryptConfig["driver"]) {
             "openssl" => new OpenSslCrypter($cryptConfig["algorithm"] ?? "", $cryptConfig["key"] ?? ""),
             "sodium" => new SodiumCrypter($cryptConfig["key"] ?? ""),
             default => throw new RuntimeException("Invalid crypto driver {$cryptConfig["driver"]}"),
@@ -347,16 +347,16 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /**
      * Fetch the application's translator.
-	 *
-	 * The application's translator handles translation of strings into the user's chosen language. Client code
-	 * should never need to use this method: it is far simpler to use the tr() function.
-	 *
-	 * @return TranslatorContract|null The translator.
-	 */
-	public function translator(): ?TranslatorContract
-	{
-		return $this->m_translator;
-	}
+     *
+     * The application's translator handles translation of strings into the user's chosen language. Client code
+     * should never need to use this method: it is far simpler to use the tr() function.
+     *
+     * @return TranslatorContract|null The translator.
+     */
+    public function translator(): ?TranslatorContract
+    {
+        return $this->m_translator;
+    }
 
     /**
      * Fetch the current language.
@@ -410,10 +410,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
     public function setErrorHandler(ErrorHandler $handler): void
     {
         $this->m_errorHandler = $handler;
-        set_error_handler(function(int $type, string $message, string $file, int $line ) use ($handler): void {
+        set_error_handler(function (int $type, string $message, string $file, int $line) use ($handler): void {
             $handler->handleError($type, $message, $file, $line);
         });
-        set_exception_handler(function(Throwable $err) use ($handler): void {
+        set_exception_handler(function (Throwable $err) use ($handler): void {
             $handler->handleException($err);
         });
     }
@@ -472,7 +472,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @return bool _true_ if the event was emitted successfully, _false_ otherwise. An event that is valid but
      * happens to have no connected callbacks returns _true_.
      */
-    public function emitEvent(string $event, ...$eventArgs): bool
+    public function emitEvent(string $event, ... $eventArgs): bool
     {
         if (!is_string($event)) {
             AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);

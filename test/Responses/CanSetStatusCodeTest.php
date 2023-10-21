@@ -8,8 +8,6 @@ use PHPUnit\Framework\TestCase;
 
 final class CanSetStatusCodeTest extends TestCase
 {
-
-
     /** Helper to create a new instance of a class that imports the trait under test. */
     private function createInstance(): mixed
     {
