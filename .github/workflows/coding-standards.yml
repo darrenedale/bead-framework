@@ -14,6 +14,7 @@ jobs:
       matrix:
         directory:
           - "src"
+          - "standards"
           - "test"
 
     steps:
@@ -39,4 +40,4 @@ jobs:
           composer install
 
       - name: Run phpcs
-        run: ./vendor/bin/phpcs --standard=PSR12 --exclude=Generic.NamingConventions.UpperCaseConstantName --exclude=Generic.Files.LineLength.TooLong "${{ matrix.directory }}/"
+        run: ./vendor/bin/phpcs "${{ matrix.directory }}/"
