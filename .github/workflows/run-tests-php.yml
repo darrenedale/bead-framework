@@ -8,6 +8,7 @@ on:
 
 jobs:
   run-tests:
+    name: Run unit tests
     runs-on: ubuntu-22.04
 
     strategy:
