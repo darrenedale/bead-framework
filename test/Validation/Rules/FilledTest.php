@@ -42,7 +42,7 @@ class FilledTest extends RuleTestCase
                 new class
                 {
                 },
-                false,
+                true,
             ],
             "extremeFilledFalse" => ["field", false, true,],
             "extremeFilledInt0" => ["field", 0, true,],
