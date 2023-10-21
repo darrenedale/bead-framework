@@ -107,7 +107,7 @@ class ConsoleApplication extends Application
 
     public function confirm(string $prompt): bool
     {
-        $response = $this->read("$prompt [y|N] ", 1);
+        $response = $this->read("{$prompt} [y|N] ", 1);
         return "Y" === strtoupper($response);
     }
 

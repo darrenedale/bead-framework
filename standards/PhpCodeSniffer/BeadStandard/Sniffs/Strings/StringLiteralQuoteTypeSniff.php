@@ -7,6 +7,9 @@ namespace BeadStandards\PhpCodeSniffer\BeadStandard\Sniffs\Strings;
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
 
+/**
+ * Sniff to report and fix string literals that use single-quotes instead of double-quotes.
+ */
 class StringLiteralQuoteTypeSniff implements Sniff
 {
     private const ActionNone = 0;
@@ -18,7 +21,7 @@ class StringLiteralQuoteTypeSniff implements Sniff
     /**
      * Convert a single-quoted string to its double-quoted equivalent.
      *
-     * The string must contain only the content of the source string literal - the opening and closing single quotes
+     * The string provided must contain only the content of the string literal - the opening and closing single quotes
      * must not be present.
      *
      * @param string $str The string to convert.
@@ -73,6 +76,11 @@ class StringLiteralQuoteTypeSniff implements Sniff
         return $str;
     }
 
+    /**
+     * The tokens the sniff is listening for.
+     *
+     * @return string[]
+     */
     public function register(): array
     {
         return [
@@ -80,6 +88,12 @@ class StringLiteralQuoteTypeSniff implements Sniff
         ];
     }
 
+    /**
+     * Processes this test, when one of its tokens is encountered.
+     *
+     * @param \PHP_CodeSniffer\Files\File $phpcsFile The file being scanned.
+     * @param int $stackPtr  The position of the current token in the stack.
+     */
     public function process(File $phpcsFile, $stackPtr): void
     {
         $tokens = $phpcsFile->getTokens();

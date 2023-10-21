@@ -7,11 +7,15 @@ namespace BeadStandards\PhpCodeSniffer\BeadStandard\Sniffs\Comments;
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
 
+/**
+ * Sniff to locate # comments, and fix them with // comments
+ */
 class NoHashCommentsSniff implements Sniff
 {
-
     /**
-     * @inheritDoc
+     * The tokens the sniff is listening for.
+     *
+     * @return string[]
      */
     public function register(): array
     {
@@ -21,7 +25,10 @@ class NoHashCommentsSniff implements Sniff
     }
 
     /**
-     * @inheritDoc
+     * Processes this test, when one of its tokens is encountered.
+     *
+     * @param \PHP_CodeSniffer\Files\File $phpcsFile The file being scanned.
+     * @param int $stackPtr  The position of the current token in the stack.
      */
     public function process(File $phpcsFile, $stackPtr)
     {

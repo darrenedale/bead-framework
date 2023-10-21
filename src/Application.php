@@ -472,7 +472,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @return bool _true_ if the event was emitted successfully, _false_ otherwise. An event that is valid but
      * happens to have no connected callbacks returns _true_.
      */
-    public function emitEvent(string $event, ...$eventArgs): bool
+    public function emitEvent(string $event, ... $eventArgs): bool
     {
         if (!is_string($event)) {
             AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);

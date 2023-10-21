@@ -56,7 +56,7 @@ namespace
          * function.
          *
          */
-        function tr(string $str, ?string $file = null, ?int $line = null, ...$args): string
+        function tr(string $str, ?string $file = null, ?int $line = null, ... $args): string
         {
             return namespacedTr($str, $file, $line, ...$args);
         }

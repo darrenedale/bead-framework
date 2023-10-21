@@ -439,13 +439,13 @@ trait BuildsQueries
                 [$table, $column] = self::extractTableAndColumn($lhs);
 
                 if (empty($table)) {
-                    $lhs = "{$alias}.$lhs";
+                    $lhs = "{$alias}.{$lhs}";
                 }
 
                 [$table, $column] = self::extractTableAndColumn($rhs);
 
                 if (empty($table)) {
-                    $rhs = "{$local}.$rhs";
+                    $rhs = "{$local}.{$rhs}";
                 }
 
                 return [
@@ -550,13 +550,13 @@ trait BuildsQueries
                 [$table, $column] = self::extractTableAndColumn($lhs);
 
                 if (empty($table)) {
-                    $lhs = "{$alias}.$lhs";
+                    $lhs = "{$alias}.{$lhs}";
                 }
 
                 [$table, $column] = self::extractTableAndColumn($rhs);
 
                 if (empty($table)) {
-                    $rhs = "{$local}.$rhs";
+                    $rhs = "{$local}.{$rhs}";
                 }
 
                 return [

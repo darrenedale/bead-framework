@@ -1,12 +1,5 @@
 <?php
 
-/**
- * PHPCS sniff to check the formatting of function declaration parameters.
- *
- * Both parameters and used variables from the parent scope are checked. Its default configuration is compatible with
- * PSR12, but all aspects of its checks can be configured in the XML file.
- */
-
 declare(strict_types=1);
 
 namespace BeadStandards\PhpCodeSniffer\BeadStandard\Sniffs\Functions;
@@ -17,6 +10,12 @@ use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
 
+/**
+ * PHPCS sniff to check the formatting of function declaration parameters.
+ *
+ * Both parameters and used variables from the parent scope are checked. Its default configuration is compatible with
+ * PSR12, but all aspects of its checks can be configured in the XML file.
+ */
 class FunctionDeclarationArgumentSpacingSniff implements Sniff
 {
     /** @var int When checking spacing, check before the token. */
@@ -48,7 +47,7 @@ class FunctionDeclarationArgumentSpacingSniff implements Sniff
 
     /**
      * How many spaces should follow the parameter type.
-     * 
+     *
      * @var int
      */
     public $requiredSpacesAfterType = 1;
@@ -128,7 +127,7 @@ class FunctionDeclarationArgumentSpacingSniff implements Sniff
 
         if ($spacingFound !== $spacingRequired) {
             foreach ($errorParams as & $errorParam) {
-                $errorParam = match($errorParam) {
+                $errorParam = match ($errorParam) {
                     "{required}" => $spacingRequired,
                     "{found}" => $spacingFound,
                     default => $errorParam,
@@ -341,7 +340,7 @@ class FunctionDeclarationArgumentSpacingSniff implements Sniff
         assert(is_int($stackPtr), new LogicException("Invalid stack pointer provided to process()"));
 
         // ensure we always reset the state however we leave this method
-        $guard = new ScopeGuard(fn() => $this->resetTransientState());
+        $guard = new ScopeGuard(fn () => $this->resetTransientState());
         $this->sanitiseProperties();
 
         $this->file = $phpcsFile;

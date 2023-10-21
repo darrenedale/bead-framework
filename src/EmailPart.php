@@ -91,7 +91,7 @@ class EmailPart
 
         // TODO trigger_error() instead?
         if (!preg_match($rxMimeHeader, $header, $captures)) {
-            AppLog::error("invalid header line provided (\"$header\")");
+            AppLog::error("invalid header line provided (\"{$header}\")");
             return false;
         }
 
@@ -326,12 +326,12 @@ class EmailPart
         if ("*/*" != $contentType) {
             // can't initialise static $rxMimeType with non-const content so have to do it this way
             if (is_null($rxMimeType)) {
-                $rxMimeType = "#^([a-z]+|x-$token)/(?:($token)( *; *$token *= *(?:$token|$quotedString))*)$#";
+                $rxMimeType = "#^([a-z]+|x-{$token})/(?:({$token})( *; *{$token} *= *(?:{$token}|{$quotedString}))*)$#";
             }
 
             // for now we don't use the expression captures, but 1 = type, 2 = subtype, 3 = params
             if (!preg_match($rxMimeType, $contentType)) {
-                AppLog::error("content type \"$contentType\" is not valid");
+                AppLog::error("content type \"{$contentType}\" is not valid");
                 return false;
             }
         }
@@ -380,8 +380,8 @@ class EmailPart
         /* validate the content encoding: x-gzip | x-compress | token */
         if ("x-gzip" != $contentEncoding && "x-compress" != $contentEncoding) {
             /* FIXME validate the content-encoding properly */
-            if ('' == trim($contentEncoding)) {
-                AppLog::error("content encoding provided (\"$contentEncoding\") is not valid");
+            if ("" == trim($contentEncoding)) {
+                AppLog::error("content encoding provided (\"{$contentEncoding}\") is not valid");
                 return false;
             }
         }

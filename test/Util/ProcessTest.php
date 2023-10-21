@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use TypeError;
 use Bead\Process;
 use BeadTests\Framework\TestCase;
+use Stringable;
 
 /**
  * Unit test for the Process class.

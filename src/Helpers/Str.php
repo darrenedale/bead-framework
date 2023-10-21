@@ -153,7 +153,7 @@ function html(string $str)
  *
  * @return string The populated string.
  */
-function build(string $template, mixed ...$args): string
+function build(string $template, mixed ... $args): string
 {
     $argc = count($args);
 
@@ -172,7 +172,7 @@ function build(string $template, mixed ...$args): string
          * written into the placeholder string, which is what we want. this
          * slightly obscure way of doing it just saves one integer addition
          * or subtraction operation */
-        $placeholders[$i] = '%' . sprintf('%d', $i--);
+        $placeholders[$i] = "%" . sprintf("%d", $i--);
     }
 
     return str_replace($placeholders->toArray(), $args, $template);

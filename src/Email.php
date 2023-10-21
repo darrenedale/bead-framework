@@ -30,14 +30,14 @@ use function Bead\Helpers\Iterable\all;
 class Email
 {
     /** @var string A single linefeed character. */
-    private const LF = "\n";
+    private const LineFeed = "\n";
 
     /** @var string The default delimiter to use between parts in the message body. */
     protected const DefaultDelimiter = "--email-delimiter-16fbcac50765f150dc35716069dba9c9--";
 
     /* some old (< 2.9 AFAIK) versions of postfix need the line end to be this on *nix */
     /** @var string The line ending to use in the message body during transmission. */
-    public const LineEnd = self::LF;
+    public const LineEnd = self::LineFeed;
 
     /**
      * @var array|null The immutable headers for emails.
@@ -132,8 +132,8 @@ class Email
     public function headers(): array
     {
         $ret = Email::$s_immutableHeaders;
-        $contentType = new EmailHeader('Content-Type', 'multipart/mixed');
-        $contentType->setParameter('boundary', '"' . $this->m_bodyPartDelimiter . '"');
+        $contentType = new EmailHeader("Content-Type", "multipart/mixed");
+        $contentType->setParameter("boundary", "\"" . $this->m_bodyPartDelimiter . "\"");
         $ret[] = $contentType;
         return array_merge($ret, $this->m_headers);
     }
@@ -207,7 +207,7 @@ class Email
         $header = explode(":", $header, 2);
 
         if (2 != count($header)) {
-            AppLog::error("invalid header line provided (\"$header\")");
+            AppLog::error("invalid header line provided (\"{$header}\")");
             return false;
         }
 
@@ -472,7 +472,7 @@ class Email
             $ret .= self::LineEnd . $part->content() . self::LineEnd;
         }
 
-        return "$ret--{$this->m_bodyPartDelimiter}--";
+        return "{$ret}--{$this->m_bodyPartDelimiter}--";
     }
 
     /**
@@ -783,7 +783,7 @@ class Email
     public function addAttachment(string $content, string $contentType, string $contentEncoding, string $filename): void
     {
         $newPart = new EmailPart($content);
-        $newPart->setContentType("$contentType; name=\"$filename\"");
+        $newPart->setContentType("{$contentType}; name=\"{$filename}\"");
         $newPart->setContentEncoding($contentEncoding);
         $newPart->addHeader("Content-Disposition", "attachment");
 

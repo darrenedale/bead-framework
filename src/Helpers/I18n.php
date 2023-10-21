@@ -31,7 +31,7 @@ use function Bead\Helpers\Str\build;
  *
  * @return string The translated string.
  */
-function tr(string $str, string $file = null, int $line = null, ...$args): string
+function tr(string $str, string $file = null, int $line = null, ... $args): string
 {
     $app = Application::instance();
 

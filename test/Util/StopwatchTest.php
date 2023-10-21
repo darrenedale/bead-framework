@@ -67,8 +67,7 @@ class StopwatchTest extends TestCase
     public function testConstructorWithStartListener(): void
     {
         $called = false;
-        $onStart = function () use (&$called): void
-        {
+        $onStart = function () use (&$called): void {
             $called = true;
         };
 
@@ -82,8 +81,7 @@ class StopwatchTest extends TestCase
     public function testConstructorWithStopListener(): void
     {
         $called = false;
-        $onStop = function () use (&$called): void
-        {
+        $onStop = function () use (&$called): void {
             $called = true;
         };
 
@@ -97,8 +95,7 @@ class StopwatchTest extends TestCase
     public function testConstructorWithResetListener(): void
     {
         $called = false;
-        $onStop = function () use (&$called): void
-        {
+        $onStop = function () use (&$called): void {
             $called = true;
         };
 
@@ -231,8 +228,9 @@ class StopwatchTest extends TestCase
 
     /** Dummy method for use when testing addListener(). */
     public static function dummyListener(): void
-    {}
-    
+    {
+    }
+
     /**
      * Data provider for testAddListener().
      *
@@ -240,34 +238,95 @@ class StopwatchTest extends TestCase
      */
     public function dataForTestAddListener(): iterable
     {
-        yield "typicalStartClosure" => [Stopwatch::EventStart, function () {},];
-        yield "typicalStopClosure" => [Stopwatch::EventStart, function () {},];
-        yield "typicalResetClosure" => [Stopwatch::EventStart, function () {},];
-        yield "typicalAnonymousCallableStartListener" => [Stopwatch::EventStart, new class() {
-            public function __invoke(): void {}
-        },];
-        yield "typicalAnonymousCallableStopListener" => [Stopwatch::EventStop, new class() {
-            public function __invoke(): void {}
-        },];
-        yield "typicalAnonymousCallableResetListener" => [Stopwatch::EventReset, new class() {
-            public function __invoke(): void {}
-        },];
+        yield "typicalStartClosure" => [
+            Stopwatch::EventStart,
+            function () {
+            },
+        ];
 
-        yield "typicalMethodStartListener" => [Stopwatch::EventReset, [new class() {
-            public function listener(): void {}
-        }, "listener"],];
+        yield "typicalStopClosure" => [
+            Stopwatch::EventStart,
+            function () {
+            },
+        ];
 
-        yield "typicalMethodStopListener" => [Stopwatch::EventReset, [new class() {
-            public function listener(): void {}
-        }, "listener"],];
+        yield "typicalResetClosure" => [
+            Stopwatch::EventStart,
+            function () {
+            },
+        ];
 
-        yield "typicalMethodResetListener" => [Stopwatch::EventReset, [new class() {
-            public function listener(): void {}
-        }, "listener"],];
+        yield "typicalAnonymousCallableStartListener" => [
+            Stopwatch::EventStart,
+            new class
+            {
+                public function __invoke(): void
+                {
+                }
+            },
+        ];
 
-        yield "typicalStaticMethodStartListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],];
-        yield "typicalStaticMethodStopListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],];
-        yield "typicalStaticMethodResetListener" => [Stopwatch::EventReset, [self::class, "dummyListener"],];
+        yield "typicalAnonymousCallableStopListener" => [
+            Stopwatch::EventStop,
+            new class
+            {
+                public function __invoke(): void
+                {
+                }
+            },
+        ];
+
+        yield "typicalAnonymousCallableResetListener" => [
+            Stopwatch::EventReset, new class
+            {
+                public function __invoke(): void
+                {
+                }
+            },
+        ];
+
+        yield "typicalMethodStartListener" => [
+            Stopwatch::EventReset,
+            [
+                new class
+                {
+                    public function listener(): void
+                    {
+                    }
+                },
+                "listener",
+            ],
+        ];
+
+        yield "typicalMethodStopListener" => [
+            Stopwatch::EventReset,
+            [
+                new class
+                {
+                    public function listener(): void
+                    {
+                    }
+                },
+                "listener",
+            ],
+        ];
+
+        yield "typicalMethodResetListener" => [
+            Stopwatch::EventReset,
+            [
+                new class
+                {
+                    public function listener(): void
+                    {
+                    }
+                },
+                "listener",
+            ],
+        ];
+
+        yield "typicalStaticMethodStartListener" => [Stopwatch::EventReset, [self::class, "dummyListener",],];
+        yield "typicalStaticMethodStopListener" => [Stopwatch::EventReset, [self::class, "dummyListener",],];
+        yield "typicalStaticMethodResetListener" => [Stopwatch::EventReset, [self::class, "dummyListener",],];
     }
 
     /**
@@ -291,7 +350,7 @@ class StopwatchTest extends TestCase
         $this->expectException(LogicException::class);
         $this->testStopwatch->addListener(999, $listener);
     }
-    
+
     /**
      * Basic test for start, stop and reset events.
      */

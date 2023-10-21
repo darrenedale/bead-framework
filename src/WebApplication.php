@@ -219,7 +219,7 @@ class WebApplication extends Application
         }
 
         if (!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $dir)) {
-            AppLog::error("invalid plugins path: \"$dir\"", __FILE__, __LINE__, __FUNCTION__);
+            AppLog::error("invalid plugins path: \"{$dir}\"", __FILE__, __LINE__, __FUNCTION__);
             return false;
         }
 
@@ -337,7 +337,7 @@ class WebApplication extends Application
     protected function pluginClassNameForPath(string $path): string
     {
         $className = basename($path, ".php");
-        return "{$this->pluginsNamespace()}\\$className";
+        return "{$this->pluginsNamespace()}\\{$className}";
     }
 
     /**

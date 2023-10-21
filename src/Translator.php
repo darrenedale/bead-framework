@@ -138,16 +138,16 @@ class Translator implements TranslatorContract
     protected const DefaultLanguage = "en";
 
     /** @var int The column in the translation file that contains the file name. */
-    protected const FILE_COL = 0;
+    protected const FileColumnIndex = 0;
 
     /** @var int The column in the translation file that contains the line number. */
-    protected const LINE_COL = 1;
+    protected const LineColumnIndex = 1;
 
-    /** @var int The column in the translation file that contains the original text. */
-    protected const ORIGINAL_COL = 2;
+    /** @var int The column in the translation file that contains the token being translated. */
+    protected const TokenColumnIndex = 2;
 
     /** @var int The column in the translation file that contains the translated text. */
-    protected const TRANSLATION_COL = 3;
+    protected const TranslationColumnIndex = 3;
 
     /** The translator's language. */
     private string $m_lang;
@@ -317,17 +317,17 @@ class Translator implements TranslatorContract
     {
         if (!empty($this->m_lang)) {
             foreach ($this->m_searchPaths as $path) {
-                $filePath = "$path/{$this->m_lang}.csv";
+                $filePath = "{$path}/{$this->m_lang}.csv";
 
                 if (file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
                     $f = fopen($filePath, "r");
                     $this->m_cache[$this->m_lang] = [];
 
                     while (false !== ($line = fgetcsv($f))) {
-                        $myFile  = empty($line[self::FILE_COL]) ? null : $line[self::FILE_COL];
-                        $myLine  = empty($line[self::LINE_COL]) ? null : (intval($line[self::LINE_COL]) ?: null);
-                        $myOrig  = $line[self::ORIGINAL_COL];
-                        $myTrans = $line[self::TRANSLATION_COL];
+                        $myFile  = empty($line[self::FileColumnIndex]) ? null : $line[self::FileColumnIndex];
+                        $myLine  = empty($line[self::LineColumnIndex]) ? null : (intval($line[self::LineColumnIndex]) ?: null);
+                        $myOrig  = $line[self::TokenColumnIndex];
+                        $myTrans = $line[self::TranslationColumnIndex];
 
                         $this->m_cache[$this->m_lang][self::cacheKey($myOrig, $myFile, $myLine)] = $myTrans;
                     }

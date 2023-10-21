@@ -301,7 +301,7 @@ class Request
      */
     public function hasUrlParameter(string $key): bool
     {
-        $key = mb_strtolower($key, 'UTF-8');
+        $key = mb_strtolower($key, "UTF-8");
         return array_key_exists($key, $this->m_urlParams);
     }
 
@@ -374,7 +374,7 @@ class Request
      */
     public function hasPostData(string $key): bool
     {
-        $key = mb_strtolower($key, 'UTF-8');
+        $key = mb_strtolower($key, "UTF-8");
         return array_key_exists($key, $this->m_postData);
     }
 
@@ -416,7 +416,7 @@ class Request
      */
     public function postData(string $key)
     {
-        $key = mb_strtolower($key, 'UTF-8');
+        $key = mb_strtolower($key, "UTF-8");
 
         if (array_key_exists($key, $this->m_postData)) {
             return $this->m_postData[$key];
@@ -535,7 +535,7 @@ class Request
     public function isAjax(): bool
     {
         // FE frameworks need to set this header. equit.js does so, as do many popular frameworks
-        return "XMLHttpRequest" == $this->header('x_requested_with');
+        return "XMLHttpRequest" == $this->header("x_requested_with");
     }
 
     /**

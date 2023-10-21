@@ -24,6 +24,7 @@ use Bead\Exceptions\Database\OrphanedJoinException;
 use InvalidArgumentException;
 use Mockery;
 use PDO;
+use Stringable;
 use TypeError;
 
 /**
@@ -116,19 +117,19 @@ class QueryBuilderTest extends TestCase
 
     public function dataForTestSetConnection(): iterable
     {
-        yield "typical" => [Mockery::mock(PDO::class),],
-        yield "invalidString" => [PDO::class, TypeError::class,],
-        yield "invalidInt" => [42, TypeError::class,],
-        yield "invalidFloat" => [3.1415926, TypeError::class,],
-        yield "invalidBool" => [true, TypeError::class,],
+        yield "typical" => [Mockery::mock(PDO::class),];
+        yield "invalidString" => [PDO::class, TypeError::class,];
+        yield "invalidInt" => [42, TypeError::class,];
+        yield "invalidFloat" => [3.1415926, TypeError::class,];
+        yield "invalidBool" => [true, TypeError::class,];
         yield "invalidObject" => [
             new class
             {
             },
             TypeError::class,
-        ],
-        yield "invalidArray" => [[Mockery::mock(PDO::class)], TypeError::class,],
-        yield "invalidNull" => [null, TypeError::class,],
+        ];
+        yield "invalidArray" => [[Mockery::mock(PDO::class)], TypeError::class,];
+        yield "invalidNull" => [null, TypeError::class,];
     }
 
     /**
@@ -2427,7 +2428,7 @@ class QueryBuilderTest extends TestCase
                     "foo" => 42,
                     "bar" => new class implements Stringable
                     {
-                        public function __string(): string
+                        public function __toString(): string
                         {
                             return "42";
                         }
@@ -3331,7 +3332,7 @@ class QueryBuilderTest extends TestCase
                     "foo" => 42,
                     "bar" => new class implements Stringable
                     {
-                        public function __string(): string
+                        public function __toString(): string
                         {
                             return "42";
                         }

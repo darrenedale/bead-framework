@@ -81,7 +81,7 @@ final class Retry
      * @return mixed The value returned from the last attempt, or null if no attempts passed the exit callback. If no exit callback is set,
      * the value of the last attempt is returned.
      */
-    public function __invoke(...$args)
+    public function __invoke(mixed ... $args)
     {
         $this->m_attemptsTaken = 0;
 

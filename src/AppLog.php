@@ -155,16 +155,16 @@ class AppLog
             return true;
         }
 
-        if (!is_string($this->m_fileName) || '' == $this->m_fileName) {
-            AppLog::error('invalid log file name', __FILE__, __LINE__, __FUNCTION__);
+        if (!is_string($this->m_fileName) || "" == $this->m_fileName) {
+            AppLog::error("invalid log file name", __FILE__, __LINE__, __FUNCTION__);
             return false;
         }
 
-        $this->m_fileHandle = fopen($this->m_fileName, 'a');
+        $this->m_fileHandle = fopen($this->m_fileName, "a");
 
         if (!$this->m_fileHandle) {
             $this->m_fileHandle = null;
-            AppLog::error('failed to open log file "' . $this->m_fileName . '"', __FILE__, __LINE__, __FUNCTION__);
+            AppLog::error("failed to open log file \"{$this->m_fileName}\"", __FILE__, __LINE__, __FUNCTION__);
             return false;
         }
 
@@ -231,9 +231,9 @@ class AppLog
     private static function buildMessage(string $msg, ?string $file, ?int $line, ?string $fn): string
     {
         return date("Y-m-d H:i:s ")
-            . (isset($fn) ? "$fn() in " : "")
+            . (isset($fn) ? "{$fn}() in " : "")
             . (isset($file) ? basename($file) : "??")
-            . (isset($line) ? "($line)" : "(??)") . " $msg\n";
+            . (isset($line) ? "({$line})" : "(??)") . " {$msg}\n";
     }
 
     /**
@@ -256,7 +256,7 @@ class AppLog
             return false;
         }
 
-        return self::$s_messageLog->write(self::buildMessage(self::MessagePrefix . " $msg", $file, $line, $fn));
+        return self::$s_messageLog->write(self::buildMessage(self::MessagePrefix . " {$msg}", $file, $line, $fn));
     }
 
     /**
@@ -279,7 +279,7 @@ class AppLog
             return false;
         }
 
-        return self::$s_warningLog->write(self::buildMessage(self::WarningPrefix . ' ' . $msg, $file, $line, $fn));
+        return self::$s_warningLog->write(self::buildMessage(self::WarningPrefix . " " . $msg, $file, $line, $fn));
     }
 
     /** Write a message to the default error log.
@@ -301,6 +301,6 @@ class AppLog
             return false;
         }
 
-        return self::$s_errorLog->write(self::buildMessage(self::ErrorPrefix . " $msg", $file, $line, $fn));
+        return self::$s_errorLog->write(self::buildMessage(self::ErrorPrefix . " {$msg}", $file, $line, $fn));
     }
 }

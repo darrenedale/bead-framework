@@ -82,7 +82,7 @@ class EmailHeader
             $name = trim($name);
 
             if (!preg_match("/^[\\!#\\\$%&'\\*\\+\\-0-9A-Z\\^_`a-z\\|~]+\$/", $name)) {
-                AppLog::error("invalid name \"$name\"");
+                AppLog::error("invalid name \"{$name}\"");
                 return false;
             }
         }
@@ -198,10 +198,10 @@ class EmailHeader
         $value = $this->value();
 
         if (is_string($name) && is_string($value)) {
-            $ret = "$name: $value";
+            $ret = "{$name}: {$value}";
 
             foreach ($this->parameters() as $key => $value) {
-                $ret .= ("; $key=$value");
+                $ret .= ("; {$key}={$value}");
             }
         }
 
