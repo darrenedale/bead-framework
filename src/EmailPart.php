@@ -326,7 +326,7 @@ class EmailPart
         if ("*/*" != $contentType) {
             // can't initialise static $rxMimeType with non-const content so have to do it this way
             if (is_null($rxMimeType)) {
-                $rxMimeType = "#^([a-z]+|x-{$token})/(?:({$token})( *; *{$token} *= *(?:{$token}|{$quotedString}))*)$#";
+                $rxMimeType = "#^([a-z]+|x-{$token})/({$token})( *; *{$token} *= *(?:{$token}|{$quotedString}))*$#";
             }
 
             // for now we don't use the expression captures, but 1 = type, 2 = subtype, 3 = params

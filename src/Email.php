@@ -204,15 +204,15 @@ class Email
         // FIXME this currently leaves any parameters with the value ( which should still work OK for now)
         // Note Don't use structured decomposition because explode() might return an array of length 1, which would
         // trigger an E_NOTICE
-        $header = explode(":", $header, 2);
+        $headerParts = explode(":", $header, 2);
 
-        if (2 != count($header)) {
+        if (2 != count($headerParts)) {
             AppLog::error("invalid header line provided (\"{$header}\")");
             return false;
         }
 
         /* EmailHeader constructor handles validation */
-        return $this->addHeader(new EmailHeader(trim($header[0]), trim($header[1])));
+        return $this->addHeader(new EmailHeader(trim($headerParts[0]), trim($headerParts[1])));
     }
 
     /**
