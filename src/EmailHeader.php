@@ -2,6 +2,8 @@
 
 namespace Bead;
 
+use Bead\Facades\Log;
+
 /**
  * A class encapsulating a header for an email message.
  *
@@ -82,7 +84,7 @@ class EmailHeader
             $name = trim($name);
 
             if (!preg_match("/^[\\!#\\\$%&'\\*\\+\\-0-9A-Z\\^_`a-z\\|~]+\$/", $name)) {
-                AppLog::error("invalid name \"{$name}\"");
+                Log::error("invalid name \"{$name}\"");
                 return false;
             }
         }

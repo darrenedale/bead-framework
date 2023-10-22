@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace BeadTests;
 
-use Bead\AppLog;
-use BeadTests\Framework\TestCase;
+use Bead\Application;
+use Bead\Contracts\Logger as LoggerContract;
+use Bead\Facades\Log;
+use Bead\Logging\NullLogger;
 use Bead\UploadedFile;
+use BeadTests\Framework\TestCase;
+use Mockery;
 use ReflectionClass;
 use SplFileInfo;
 
@@ -301,8 +305,17 @@ class UploadedFileTest extends TestCase
 
     public function testData(): void
     {
-        // force the autoloader to load the AppLog class before we mock the fs functions
-        AppLog::message("");
+        // set up a mock application as the data() method uses the Log facade
+        $app = Mockery::mock(Application::class);
+        $this->mockMethod(Application::class, "instance", $app);
+
+        $app->shouldReceive("get")
+            ->with(LoggerContract::class)
+            ->andReturn(new NullLogger())
+            ->byDefault();
+
+        // force the autoloader to load the Log class before we mock the fs functions
+        Log::info("");
 
         // test successful read
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName]));

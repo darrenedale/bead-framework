@@ -2,6 +2,7 @@
 
 namespace Bead;
 
+use Bead\Facades\Log;
 use InvalidArgumentException;
 
 use function Bead\Helpers\Iterable\all;
@@ -191,13 +192,13 @@ class Email
         $header = trim($header);
 
         if (empty($header)) {
-            AppLog::error("empty header line provided");
+            Log::error("empty header line provided");
             return false;
         }
 
         /* check for attempt to add multiple header lines  */
         if (preg_match("/\\r\\n[^\\t]/", $header)) {
-            AppLog::error("header provided contains more than one header");
+            Log::error("header provided contains more than one header");
             return false;
         }
 
@@ -207,7 +208,7 @@ class Email
         $headerParts = explode(":", $header, 2);
 
         if (2 != count($headerParts)) {
-            AppLog::error("invalid header line provided (\"{$header}\")");
+            Log::error("invalid header line provided (\"{$header}\")");
             return false;
         }
 
@@ -229,12 +230,12 @@ class Email
         $headerValue = $header->value();
 
         if (!(is_string($headerName)) || !(is_string($headerValue))) {
-            AppLog::error("invalid header - missing header name or value (or both)");
+            Log::error("invalid header - missing header name or value (or both)");
             return false;
         }
 
         if (false !== strpos(self::LineEnd, $headerName)) {
-            AppLog::error("invalid header - might contain more than one header line");
+            Log::error("invalid header - might contain more than one header line");
             return false;
         }
 
@@ -398,7 +399,7 @@ class Email
      *
      * @param $name string is the name of the headers to find.
      *
-     * @return array[EmailHeader] The headers if found, or an empty array if not.
+     * @return array<EmailHeader> The headers if found, or an empty array if not.
      */
     private function findAllHeadersByName(string $name): array
     {
@@ -463,7 +464,7 @@ class Email
                 $myHeader = $header->generate();
 
                 if (empty($myHeader)) {
-                    AppLog::error("invalid header: \"" . $header->name() . ": " . $header->value() . "\"");
+                    Log::error("invalid header: \"{$header->name()}: {$header->value()}\"");
                 } else {
                     $ret .= $myHeader . self::LineEnd;
                 }
@@ -478,7 +479,7 @@ class Email
     /**
      * Get the parts for the message body.
      *
-     * @return array[EmailPart] The parts, or `null` on error.
+     * @return array<EmailPart> The parts, or `null` on error.
      */
     public function parts(): array
     {
@@ -811,7 +812,7 @@ class Email
             $myHeader = $header->generate();
 
             if (empty($myHeader)) {
-                AppLog::error("invalid header: \"" . $header->name() . ": " . $header->value() . "\"");
+                Log::error("invalid header: \"" . $header->name() . ": " . $header->value() . "\"");
             } else {
                 $headerString .= $myHeader . self::LineEnd;
             }

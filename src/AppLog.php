@@ -5,33 +5,7 @@ namespace Bead;
 /**
  * Debug logging class.
  *
- * This is a general purpose logging class that can easily be imported into PHP applications to provide comfortable
- * logging. It provides the ability to have message, warning and error logs separated or integrated, direct access to
- * write messages verbatim to any log or comfortable methods to format messages with date, time, file, line and log
- * level (message, error, warning) information.
- *
- * This class has no dependencies so it can easily be used in projects that do not use the full framework.
- *
- * ### Events
- * This module does not emit any events.
- *
- * ### Connections
- * This module does not connect to any events.
- *
- * ### Settings
- * This module does not read any settings.
- *
- * ### Session Data
- * This module does not create a session context.
- *
- * @class AppLog
- * @author Darren Edale
- * @package bead-framework
- *
- * @events _None_
- * @connections _None_
- * @settings _None_
- * @session _None_
+ * @deprecated AppLog will be removed in Bead V1. Use the Log facade instead.
  */
 class AppLog
 {
@@ -41,19 +15,20 @@ class AppLog
 
     public const ErrorPrefix = "ERR";
 
-    /** @var null|string The name and handle for the log file. */
-    private $m_fileName = null;
+    /** @var null|string The name for the log file. */
+    private ?string $m_fileName = null;
 
+    /** @var null|resource The  handle for the log file  */
     private $m_fileHandle = null;
 
     /** @var AppLog|null The message log. */
-    private static $s_messageLog = null;
+    private static ?AppLog $s_messageLog = null;
 
     /** @var AppLog|null The warning log. */
-    private static $s_warningLog = null;
+    private static ?AppLog $s_warningLog = null;
 
     /** @var AppLog|null The error log. */
-    private static $s_errorLog = null;
+    private static ?AppLog $s_errorLog = null;
 
     /** Create a new AppLog.
      *

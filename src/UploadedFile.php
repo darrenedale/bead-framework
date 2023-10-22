@@ -2,6 +2,7 @@
 
 namespace Bead;
 
+use Bead\Facades\Log;
 use SplFileInfo;
 
 /**
@@ -125,7 +126,7 @@ final class UploadedFile
      *
      * @param string $path The destination for the file.
      *
-     * @return SplFileInfo The moved file, or null if the file could not be moved.
+     * @return SplFileInfo|null The moved file, or null if the file could not be moved.
      */
     public function moveTo(string $path): ?SplFileInfo
     {
@@ -160,7 +161,7 @@ final class UploadedFile
      * This is reported by the user agent and may not be accurate. It will be an empty string if the user agent did not
      * supply a MIME type.
      *
-     * @return string The MIME type.
+     * @return string|null The MIME type.
      */
     public function mimeType(): ?string
     {
@@ -208,9 +209,9 @@ final class UploadedFile
     {
         if (!isset($this->m_fileData) && $this->isValid()) {
             if (!is_file($this->m_tempFile)) {
-                AppLog::error("file \"{$this->m_tempFile}\" is not a file");
+                Log::error("file \"{$this->m_tempFile}\" is not a file");
             } elseif (!is_readable($this->m_tempFile)) {
-                AppLog::error("file \"{$this->m_tempFile}\" is not readable");
+                Log::error("file \"{$this->m_tempFile}\" is not readable");
             } else {
                 $this->m_fileData = file_get_contents($this->m_tempFile);
             }

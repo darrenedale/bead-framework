@@ -4,6 +4,7 @@ namespace Bead;
 
 use Bead\Contracts\ErrorHandler as ErrorHandlerContract;
 use Bead\Contracts\Response;
+use Bead\Facades\Log;
 use Bead\Responses\AbstractResponse;
 use Error;
 use Throwable;
@@ -212,7 +213,7 @@ HTML;
      */
     protected function report(Throwable $error): void
     {
-        AppLog::error($error->getMessage(), $error->getFile(), $error->getLine());
+        Log::critical("Exception in %1[%2]: {$error->getMessage()}", [$error->getFile(), $error->getLine(),]);
     }
 
     /**

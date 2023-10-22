@@ -2,6 +2,8 @@
 
 namespace Bead;
 
+use Bead\Facades\Log;
+
 /**
  * Class representing a part of a multipart email message.
  *
@@ -77,13 +79,13 @@ class EmailPart
         $header = trim($header);
 
         if (empty($header)) {
-            AppLog::error("empty header line provided");
+            Log::error("empty header line provided");
             return false;
         }
 
         /* check for attempt to add multiple header lines  */
         if (strpos($header, Email::LineEnd) !== false) {
-            AppLog::error("header provided contains more than one header");
+            Log::error("header provided contains more than one header");
             return false;
         }
 
@@ -91,7 +93,13 @@ class EmailPart
 
         // TODO trigger_error() instead?
         if (!preg_match($rxMimeHeader, $header, $captures)) {
-            AppLog::error("invalid header line provided (\"{$header}\")");
+            Log::error("invalid header line provided (\"{$header}\")");
+            return false;
+        }
+
+        // TODO trigger_error() instead?
+        if (!preg_match($rxMimeHeader, $header, $captures)) {
+            Log::error("invalid header line provided (\"{$header}\")");
             return false;
         }
 
@@ -113,12 +121,12 @@ class EmailPart
         $headerValue = $header->value();
 
         if (!isset($headerName) || !isset($headerValue)) {
-            AppLog::error("invalid header or value (or both)");
+            Log::error("invalid header or value (or both)");
             return false;
         }
 
         if (false !== strpos(Email::LineEnd, $headerName) || false !== strpos(Email::LineEnd, $headerValue)) {
-            AppLog::error("possible multi-header object");
+            Log::error("possible multi-header object");
             return false;
         }
 
@@ -199,7 +207,6 @@ class EmailPart
         return true;
     }
 
-
     /**
      * Retrieves the value(s) associated with a header.
      *
@@ -271,7 +278,7 @@ class EmailPart
         }
 
         // This should never happen
-        AppLog::error("Content-Type header not found");
+        Log::error("Content-Type header not found");
         return null;
     }
 
@@ -331,7 +338,7 @@ class EmailPart
 
             // for now we don't use the expression captures, but 1 = type, 2 = subtype, 3 = params
             if (!preg_match($rxMimeType, $contentType)) {
-                AppLog::error("content type \"{$contentType}\" is not valid");
+                Log::error("content type \"{$contentType}\" is not valid");
                 return false;
             }
         }
@@ -360,7 +367,7 @@ class EmailPart
             return $header->value();
         }
 
-        AppLog::error("Content-Transfer-Encoding header not found");
+        Log::error("Content-Transfer-Encoding header not found");
         return null;
     }
 
@@ -381,7 +388,7 @@ class EmailPart
         if ("x-gzip" != $contentEncoding && "x-compress" != $contentEncoding) {
             /* FIXME validate the content-encoding properly */
             if ("" == trim($contentEncoding)) {
-                AppLog::error("content encoding provided (\"{$contentEncoding}\") is not valid");
+                Log::error("content encoding provided (\"{$contentEncoding}\") is not valid");
                 return false;
             }
         }

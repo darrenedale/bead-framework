@@ -16,7 +16,7 @@ use ArrayAccess;
 use Countable;
 use DirectoryIterator;
 use Bead\Application;
-use Bead\AppLog;
+use Bead\Facades\Log;
 use Exception;
 use Iterator;
 use JsonException;
@@ -200,7 +200,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
             }
 
             if (!$file->isFile()) {
-                AppLog::error("Unexpected entry in ResultsCache cache directory: \"{$file->getPathname()}\".", __FILE__, __LINE__, __FUNCTION__);
+                Log::error("Unexpected entry in ResultsCache cache directory: \"{$file->getPathname()}\".", __FILE__, __LINE__, __FUNCTION__);
                 continue;
             }
 
@@ -215,7 +215,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
             $fileTime = $file->getATime();
 
             if (false === $fileTime) {
-                AppLog::error("Could not determine last access time for ResultsCache file: \"{$file->getPathname()}\".", __FILE__, __LINE__, __FUNCTION__);
+                Log::error("Could not determine last access time for ResultsCache file: \"{$file->getPathname()}\".", __FILE__, __LINE__, __FUNCTION__);
                 continue;
             }
 
@@ -234,7 +234,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
     {
         foreach (glob(static::cacheDirectory() . "/resultscache-{$id}.*", GLOB_NOSORT) as $cacheFilePath) {
             if (!@unlink($cacheFilePath)) {
-                AppLog::error("Could not delete ResultsCache cache file: \"{$cacheFilePath}\"", __FILE__, __LINE__, __FUNCTION__);
+                Log::error("Could not delete ResultsCache cache file: \"{$cacheFilePath}\"", __FILE__, __LINE__, __FUNCTION__);
             }
         }
     }
