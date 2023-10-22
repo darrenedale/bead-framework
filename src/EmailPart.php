@@ -98,7 +98,7 @@ class EmailPart
         }
         // TODO trigger_error() instead?
         if (!preg_match($rxMimeHeader, $header, $captures)) {
-            AppLog::error("invalid header line provided (\"{$header}\")");
+            Log::error("invalid header line provided (\"{$header}\")");
             return false;
         }
 

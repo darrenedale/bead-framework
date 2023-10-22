@@ -5,7 +5,7 @@ namespace Bead;
 /**
  * Debug logging class.
  *
- * @deprecated Use the Log facade instead.
+ * @deprecated AppLog will be removed in Bead V1. Use the Log facade instead.
  */
 class AppLog
 {
@@ -16,19 +16,19 @@ class AppLog
     public const ErrorPrefix = "ERR";
 
 	/** @var null|string The name for the log file. */
-	private $m_fileName = null;
+	private ?string $m_fileName = null;
 
     /** @var null|resource The  handle for the log file  */
 	private $m_fileHandle = null;
 
     /** @var AppLog|null The message log. */
-    private static $s_messageLog = null;
+    private static ?AppLog $s_messageLog = null;
 
     /** @var AppLog|null The warning log. */
-    private static $s_warningLog = null;
+    private static ?AppLog $s_warningLog = null;
 
     /** @var AppLog|null The error log. */
-    private static $s_errorLog = null;
+    private static ?AppLog $s_errorLog = null;
 
     /** Create a new AppLog.
      *

@@ -812,7 +812,7 @@ class Email
             $myHeader = $header->generate();
 
             if (empty($myHeader)) {
-                AppLog::error("invalid header: \"" . $header->name() . ": " . $header->value() . "\"");
+                Log::error("invalid header: \"" . $header->name() . ": " . $header->value() . "\"");
             } else {
                 $headerString .= $myHeader . self::LineEnd;
             }
