@@ -10,7 +10,6 @@ use Bead\Exceptions\InvalidPluginException;
 use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
-use Bead\Exceptions\Logging\LoggerException;
 use Bead\Exceptions\NotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
