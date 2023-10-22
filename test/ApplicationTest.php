@@ -12,7 +12,7 @@ class ApplicationTest extends TestCase
 
     public function setUp(): void
     {
-        $this->m_app = new class() extends Application
+        $this->m_app = new class extends Application
         {
             public function __construct()
             {

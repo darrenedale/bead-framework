@@ -24,8 +24,6 @@ use Bead\Facades\Log;
  *
  * The full string representation of the header, suitable for inclusion in an email message header section, can be
  * fetched by calling `generate()`.
- *
- * @package bead-framework
  */
 class EmailHeader
 {
@@ -41,8 +39,8 @@ class EmailHeader
     /**
      * Create a new email message header.
      *
-     * @param string|null $name The name for the header.
-     * @param string|null $value The value for the header.
+     * @param $name string|null The name for the header.
+     * @param $value string|null The value for the header.
      */
     public function __construct(?string $name = null, ?string $value = null)
     {
@@ -53,7 +51,7 @@ class EmailHeader
     /**
      * Get the value of the header.
      *
-     * @return string|null The header name, or _null_ on error.
+     * @return string|null The header name, or `null` on error.
      */
     public function name(): ?string
     {
@@ -63,7 +61,7 @@ class EmailHeader
     /**
      * Get the value of the header.
      *
-     * @return string|null The header value, or _null_ on error.
+     * @return string|null The header value, or `null` on error.
      */
     public function value(): ?string
     {
@@ -73,12 +71,12 @@ class EmailHeader
     /**
      * Set the name of the header.
      *
-     * The name must be a UTF-8 encoded string. It may not be empty. It may be _null_ to indicate that the header name
+     * The name must be a UTF-8 encoded string. It may not be empty. It may be `null` to indicate that the header name
      * is not set.
      *
      * @param $name string|null The name for the header.
      *
-     * @return bool _true_ if the name was set, _false_ otherwise.
+     * @return bool `true` if the name was set, `false` otherwise.
      */
     public function setName(?string $name): bool
     {
@@ -86,7 +84,7 @@ class EmailHeader
             $name = trim($name);
 
             if (!preg_match("/^[\\!#\\\$%&'\\*\\+\\-0-9A-Z\\^_`a-z\\|~]+\$/", $name)) {
-                Log::error("invalid name \"$name\"");
+                Log::error("invalid name \"{$name}\"");
                 return false;
             }
         }
@@ -98,7 +96,7 @@ class EmailHeader
     /**
      * Set the value of the header.
      *
-     * The value may be an empty string. It may also be _null_ to indicate that the value is not set.
+     * The value may be an empty string. It may also be `null` to indicate that the value is not set.
      *
      * @param $value string|null The value for the header.
      */
@@ -112,7 +110,7 @@ class EmailHeader
      *
      * @param $name string the name of the parameter to check.
      *
-     * @return bool _true_ if the parameter is set, _false_ otehrwise.
+     * @return bool `true` if the parameter is set, `false` otehrwise.
      */
     public function hasParameter(string $name): bool
     {
@@ -135,7 +133,7 @@ class EmailHeader
      *
      * @param $name string The name of the parameter to get.
      *
-     * @return string|null The value for the parameter, or _null_ if the parameter is not set or an error occurred.
+     * @return string|null The value for the parameter, or `null` if the parameter is not set or an error occurred.
      */
     public function parameter(string $name): ?string
     {
@@ -151,7 +149,7 @@ class EmailHeader
      *
      * @param $name string The name of the parameter to remove.
      *
-     * @return bool _true_ if the parameter was found and removed, _false_ otherwise.
+     * @return bool `true` if the parameter was found and removed, `false` otherwise.
      */
     public function clearParameter(string $name): bool
     {
@@ -193,7 +191,7 @@ class EmailHeader
      * <cr><lf> but other protocols, including protocols that are yet to be created, may use other delimiters. For this
      * reason, it is up to the protocol handler to add the appropriate delimiter.
      *
-     * @return string|null The header line, or _null_ if it is not valid.
+     * @return string|null The header line, or `null` if it is not valid.
      */
     public function generate(): ?string
     {
@@ -202,10 +200,10 @@ class EmailHeader
         $value = $this->value();
 
         if (is_string($name) && is_string($value)) {
-            $ret = "$name: $value";
+            $ret = "{$name}: {$value}";
 
             foreach ($this->parameters() as $key => $value) {
-                $ret .= ("; $key=$value");
+                $ret .= ("; {$key}={$value}");
             }
         }
 

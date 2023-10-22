@@ -36,7 +36,7 @@ class RequiredUnless implements DatasetAwareRule
      */
     public function __construct(string $otherField, array $values)
     {
-        assert (!empty($values), (
+        assert(!empty($values), (
             8 <= PHP_MAJOR_VERSION
             ? new InvalidArgumentException("Argument for parameter \$values must not be an empty array.")
             : "Argument for parameter \$values must not be an empty array."

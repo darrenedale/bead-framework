@@ -14,7 +14,7 @@ trait ConvertsPsr3LogLevels
             return $level;
         }
 
-        return match((string) $level) {
+        return match ((string) $level) {
             LogLevel::EMERGENCY => LoggerContract::EmergencyLevel,
             LogLevel::ALERT => LoggerContract::AlertLevel,
             LogLevel::CRITICAL => LoggerContract::CriticalLevel,

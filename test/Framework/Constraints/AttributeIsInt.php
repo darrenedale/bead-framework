@@ -35,8 +35,7 @@ class AttributeIsInt extends Constraint
 
         try {
             $refAttr = new ReflectionProperty($object, $attr);
-        }
-        catch (ReflectionException $err) {
+        } catch (ReflectionException $err) {
             throw new InvalidArgumentException("the property {$attr} does not exist in class " . get_class($object), 0, $err);
         }
 

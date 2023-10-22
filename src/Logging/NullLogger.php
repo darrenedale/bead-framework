@@ -23,5 +23,6 @@ class NullLogger extends PsrAbstractLogger implements LoggerContract
      * @param array $context The message context, if any.
      */
     public function log($level, string | Stringable $message, array $context = []): void
-    {}
+    {
+    }
 }

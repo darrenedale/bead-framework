@@ -199,13 +199,13 @@ class XRay
     {
         if ($this->isPublicMethod($method)) {
             return $this->m_subject->$method(...$args);
-        } else if ($this->isXRayedMethod($method)) {
+        } elseif ($this->isXRayedMethod($method)) {
             try {
                 return $this->m_xRayedMethods[$method]->invoke($this->subject(), ...$args);
             } catch (ReflectionException $err) {
                 throw new BadMethodCallException("Method '{$method}' could not be invoked on instance of class '{$this->className()}'.", 0, $err);
             }
-        } else if (method_exists($this->m_subject, "__call")) {
+        } elseif (method_exists($this->m_subject, "__call")) {
             return $this->m_subject->__call($method, $args);
         }
 
@@ -224,9 +224,9 @@ class XRay
     {
         if ($this->isPublicProperty($property)) {
             return $this->m_subject->$property;
-        } else if ($this->isXRayedProperty($property)) {
+        } elseif ($this->isXRayedProperty($property)) {
             return $this->m_xRayedProperties[$property]->getValue($this->subject());
-        } else if (method_exists($this->m_subject, "__get")) {
+        } elseif (method_exists($this->m_subject, "__get")) {
             return $this->m_subject->__get($property);
         }
 
@@ -246,10 +246,10 @@ class XRay
         if ($this->isPublicProperty($property)) {
             $this->m_subject->$property = $value;
             return;
-        } else if ($this->isXRayedProperty($property)) {
+        } elseif ($this->isXRayedProperty($property)) {
             $this->m_xRayedProperties[$property]->setValue($this->subject(), $value);
             return;
-        } else if (method_exists($this->m_subject, "__set")) {
+        } elseif (method_exists($this->m_subject, "__set")) {
             $this->m_subject->__set($property, $value);
             return;
         }

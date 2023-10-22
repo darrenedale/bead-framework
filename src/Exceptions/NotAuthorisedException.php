@@ -7,12 +7,12 @@ namespace Bead\Exceptions;
  */
 class NotAuthorisedException extends HttpException
 {
-	/**
-	 * The HTTP status code.
-	 * @return int 403
-	 */
-	public function statusCode(): int
-	{
-		return 403;
-	}
+    /**
+     * The HTTP status code.
+     * @return int 403
+     */
+    public function statusCode(): int
+    {
+        return 403;
+    }
 }

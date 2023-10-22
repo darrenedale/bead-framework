@@ -2,10 +2,15 @@
 
 namespace Bead;
 
+use Bead\Contracts\Encryption\Crypter;
+use Bead\Contracts\Encryption\Decrypter;
+use Bead\Contracts\Encryption\Encrypter;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Database\Connection;
+use Bead\Encryption\OpenSsl\Crypter as OpenSslCrypter;
+use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
 use Bead\ErrorHandler as BeadErrorHandler;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -16,8 +21,6 @@ use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
 use Throwable;
-
-use function Bead\Helpers\Str\stringify;
 
 /**
  * Abstract base class for all applications.
@@ -90,6 +93,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
         $this->m_appRoot = $realAppRoot;
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->setupTranslator();
+        $this->setupCrypter();
         $this->setDatabase($db);
     }
 
@@ -120,6 +124,28 @@ abstract class Application implements ServiceContainer, ContainerInterface
         $this->m_translator->setLanguage($this->config("app.language", "en-GB"));
 
         $this->bindService(TranslatorContract::class, $this->m_translator);
+    }
+
+    /**
+     * Helper to bind the configured crypter to the encryption interfaces.
+     */
+    private function setupCrypter(): void
+    {
+        $cryptConfig = $this->config("crypto");
+
+        if (!isset($cryptConfig["driver"])) {
+            return;
+        }
+
+        $crypter = match ($cryptConfig["driver"]) {
+            "openssl" => new OpenSslCrypter($cryptConfig["algorithm"] ?? "", $cryptConfig["key"] ?? ""),
+            "sodium" => new SodiumCrypter($cryptConfig["key"] ?? ""),
+            default => throw new RuntimeException("Invalid crypto driver {$cryptConfig["driver"]}"),
+        };
+
+        $this->bindService(Decrypter::class, $crypter);
+        $this->bindService(Encrypter::class, $crypter);
+        $this->bindService(Crypter::class, $crypter);
     }
 
     /**
@@ -253,19 +279,19 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Replace a service already bound to the Application instance.
      *
      * @param string $service The service identifier to bind to.
-     * @param mixed $object The service instance.
+     * @param mixed $instance The service instance.
      *
      * @return mixed The previously-bound service.
      * @throws ServiceNotFoundException If no instance is currently bound to the identified service.
      */
-    public function replaceService(string $service, $object)
+    public function replaceService(string $service, mixed $instance): mixed
     {
         if (!$this->serviceIsBound($service)) {
             throw new ServiceNotFoundException($service, "The service '{$service}' is not bound to the Application instance.");
         }
 
         $previous = $this->m_services[$service];
-        $this->m_services[$service] = $object;
+        $this->m_services[$service] = $instance;
         return $previous;
     }
 
@@ -289,10 +315,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @return mixed The service.
      * @throws ServiceNotFoundException If no service is bound to the identifier.
      */
-    public function service(string $service)
+    public function service(string $service): mixed
     {
         if (!array_key_exists($service, $this->m_services)) {
-            throw new ServiceNotFoundException("The service {$service} was not found in the container.");
+            throw new ServiceNotFoundException($service, "The service {$service} was not found in the container.");
         }
 
         return $this->m_services[$service];
@@ -323,16 +349,16 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /**
      * Fetch the application's translator.
-	 *
-	 * The application's translator handles translation of strings into the user's chosen language. Client code
-	 * should never need to use this method: it is far simpler to use the tr() function.
-	 *
-	 * @return TranslatorContract|null The translator.
-	 */
-	public function translator(): ?TranslatorContract
-	{
-		return $this->m_translator;
-	}
+     *
+     * The application's translator handles translation of strings into the user's chosen language. Client code
+     * should never need to use this method: it is far simpler to use the tr() function.
+     *
+     * @return TranslatorContract|null The translator.
+     */
+    public function translator(): ?TranslatorContract
+    {
+        return $this->m_translator;
+    }
 
     /**
      * Fetch the current language.
@@ -386,10 +412,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
     public function setErrorHandler(ErrorHandler $handler): void
     {
         $this->m_errorHandler = $handler;
-        set_error_handler(function(int $type, string $message, string $file, int $line ) use ($handler): void {
+        set_error_handler(function (int $type, string $message, string $file, int $line) use ($handler): void {
             $handler->handleError($type, $message, $file, $line);
         });
-        set_exception_handler(function(Throwable $err) use ($handler): void {
+        set_exception_handler(function (Throwable $err) use ($handler): void {
             $handler->handleException($err);
         });
     }
@@ -448,7 +474,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @return bool _true_ if the event was emitted successfully, _false_ otherwise. An event that is valid but
      * happens to have no connected callbacks returns _true_.
      */
-    public function emitEvent(string $event, ...$eventArgs): bool
+    public function emitEvent(string $event, ... $eventArgs): bool
     {
         $event = strtolower($event);
 

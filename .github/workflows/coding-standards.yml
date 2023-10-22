@@ -1,4 +1,4 @@
-name: PHP 8.0 unit tests
+name: Coding standards
 
 on:
   push:
@@ -7,8 +7,16 @@ on:
     branches: ["production"]
 
 jobs:
-  run-tests:
+  coding-standards:
+    name: Coding Standards
     runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        directory:
+          - "src"
+          - "standards"
+          - "test"
 
     steps:
       - name: Checkout branch
@@ -32,5 +40,5 @@ jobs:
           rm -rf vendor
           composer install
 
-      - name: Run unit tests
-        run: ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
+      - name: Run phpcs
+        run: ./vendor/bin/phpcs "${{ matrix.directory }}/"

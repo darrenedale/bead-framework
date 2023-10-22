@@ -33,7 +33,7 @@ final class LogTest extends TestCase
 
     public function tearDown(): void
     {
-        unset ($this->app, $this->logger);
+        unset($this->app, $this->logger);
         Mockery::close();
         parent::tearDown();
     }
@@ -47,15 +47,15 @@ final class LogTest extends TestCase
      */
     private static function createStringable(string $string = self::TestMessage): \Stringable
     {
-        return new class($string) implements Stringable
+        return new class ($string) implements Stringable
         {
             private string $string;
-            
+
             public function __construct(string $string)
             {
                 $this->string = $string;
             }
-            
+
             public function __toString(): string
             {
                 return $this->string;

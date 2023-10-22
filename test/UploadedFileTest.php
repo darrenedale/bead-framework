@@ -14,32 +14,17 @@ use function uopz_get_mock;
 use function uopz_set_mock;
 use function uopz_unset_mock;
 
-class MockSplFileInfo extends SplFileInfo
-{
-    public function __construct($filename)
-    {
-        parent::__construct($filename);
-    }
-
-    public function getSize(): int
-    {
-        if (UploadedFileTest::TempFileName === $this->getPathname()) {
-            return UploadedFileTest::TempFileSize;
-        }
-
-        return parent::getSize();
-    }
-}
-
 class UploadedFileTest extends TestCase
 {
     public const TempFileName = "/tmp/uploaded-file.txt";
+
     public const DestinationFileName = "/var/www/uploads/uploaded-file.txt";
+
     public const TempFileSize = 2048;
 
     private array $callCounts = [];
 
-    public static final function tempFileContents(): string
+    final public static function tempFileContents(): string
     {
         static $content = null;
 
@@ -207,8 +192,7 @@ class UploadedFileTest extends TestCase
 
         $this->mockFunction(
             "file_exists",
-            function (string $file) use (&$callCounts): bool
-            {
+            function (string $file) use (&$callCounts): bool {
                 if ($file === UploadedFileTest::TempFileName) {
                     $callCounts["file_exists"] = ($callCounts["file_exists"] ?? 0) + 1;
                     return true;
@@ -220,8 +204,7 @@ class UploadedFileTest extends TestCase
 
         $this->mockFunction(
             "is_file",
-            function (string $file) use (&$callCounts): bool
-            {
+            function (string $file) use (&$callCounts): bool {
                 if ($file === UploadedFileTest::TempFileName) {
                     $callCounts["is_file"] = ($callCounts["is_file"] ?? 0) + 1;
                     return true;
@@ -233,8 +216,7 @@ class UploadedFileTest extends TestCase
 
         $this->mockFunction(
             "is_readable",
-            function (string $file) use (&$callCounts): bool
-            {
+            function (string $file) use (&$callCounts): bool {
                 if ($file === UploadedFileTest::TempFileName) {
                     $callCounts["is_readable"] = ($callCounts["is_readable"] ?? 0) + 1;
                     return true;
@@ -246,8 +228,7 @@ class UploadedFileTest extends TestCase
 
         $this->mockFunction(
             "file_get_contents",
-            function (string $file) use (&$callCounts): string
-            {
+            function (string $file) use (&$callCounts): string {
                 if ($file === UploadedFileTest::TempFileName) {
                     $callCounts["file_get_contents"] = ($callCounts["file_get_contents"] ?? 0) + 1;
                     return UploadedFileTest::tempFileContents();
@@ -259,8 +240,7 @@ class UploadedFileTest extends TestCase
 
         $this->mockFunction(
             "move_uploaded_file",
-            function (string $file, string $destination) use (&$callCounts): bool
-            {
+            function (string $file, string $destination) use (&$callCounts): bool {
                 if (UploadedFileTest::TempFileName === $file && UploadedFileTest::DestinationFileName === $destination) {
                     $callCounts["move_uploaded_file"] = ($callCounts["move_uploaded_file"] ?? 0) + 1;
                     return true;
@@ -272,8 +252,7 @@ class UploadedFileTest extends TestCase
 
         $this->mockFunction(
             "unlink",
-            function (string $file) use (&$callCounts): bool
-            {
+            function (string $file) use (&$callCounts): bool {
                 if ($file === UploadedFileTest::TempFileName) {
                     $callCounts["unlink"] = ($callCounts["unlink"] ?? 0) + 1;
                     return true;
@@ -283,6 +262,7 @@ class UploadedFileTest extends TestCase
             }
         );
 
+        require_once __DIR__ . "/MockSplFileInfo.php";
         uopz_set_mock(SplFileInfo::class, MockSplFileInfo::class);
     }
 
@@ -335,21 +315,21 @@ class UploadedFileTest extends TestCase
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName]));
         self::assertTrue($file->isValid());
         $this->mockFilesystemFunctions();
-        $this->mockFunction("is_readable", fn(string $fileName) => false);
+        $this->mockFunction("is_readable", fn (string $fileName) => false);
         self::assertNull($file->data());
 
         // test with non-file
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName]));
         self::assertTrue($file->isValid());
         $this->mockFilesystemFunctions();
-        $this->mockFunction("is_file", fn(string $fileName) => false, true);
+        $this->mockFunction("is_file", fn (string $fileName) => false, true);
         self::assertNull($file->data());
 
         // test with non-existent file
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName]));
         self::assertTrue($file->isValid());
         $this->mockFilesystemFunctions();
-        $this->mockFunction("is_file", fn(string $fileName) => false, true);
+        $this->mockFunction("is_file", fn (string $fileName) => false, true);
         self::assertNull($file->data());
     }
 
@@ -368,20 +348,20 @@ class UploadedFileTest extends TestCase
 
         // ensure non-existent temp file is an invalid file
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName, "error" => 1]));
-        $this->mockFunction("file_exists", fn($fileName) => false);
+        $this->mockFunction("file_exists", fn ($fileName) => false);
         self::assertFalse($file->isValid());
 
         // ensure non-file temp file is an invalid file
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName, "error" => 1]));
-        $this->mockFunction("file_exists", fn($fileName) => true);
-        $this->mockFunction("is_file", fn($fileName) => false);
+        $this->mockFunction("file_exists", fn ($fileName) => true);
+        $this->mockFunction("is_file", fn ($fileName) => false);
         self::assertFalse($file->isValid());
 
         // ensure unreadable temp file is an invalid file
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName, "error" => 1]));
-        $this->mockFunction("file_exists", fn($fileName) => true);
-        $this->mockFunction("is_file", fn($fileName) => true);
-        $this->mockFunction("is_readable", fn($fileName) => false);
+        $this->mockFunction("file_exists", fn ($fileName) => true);
+        $this->mockFunction("is_file", fn ($fileName) => true);
+        $this->mockFunction("is_readable", fn ($fileName) => false);
         self::assertFalse($file->isValid());
     }
 
@@ -396,7 +376,7 @@ class UploadedFileTest extends TestCase
         self::assertEquals(1, $this->callCounts["unlink"]);
 
         // test discard failing doesn't invalidate uploaded file
-        $this->mockFunction("unlink", fn($fileName) => false);
+        $this->mockFunction("unlink", fn ($fileName) => false);
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName]));
         self::assertTrue($file->isValid());
         self::assertFalse($file->discard());
@@ -415,7 +395,7 @@ class UploadedFileTest extends TestCase
         self::assertEquals(1, $this->callCounts["move_uploaded_file"]);
 
         // test move failing doesn't invalidate uploaded file
-        $this->mockFunction("move_uploaded_file", fn(string $fileName, string $destination) => false);
+        $this->mockFunction("move_uploaded_file", fn (string $fileName, string $destination) => false);
         $file = self::createUploadedFile(self::createFileMap(["tmp_name" => self::TempFileName]));
         self::assertTrue($file->isValid());
         self::assertNull($file->moveTo(self::DestinationFileName));

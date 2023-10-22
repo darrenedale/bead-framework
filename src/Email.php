@@ -3,6 +3,9 @@
 namespace Bead;
 
 use Bead\Facades\Log;
+use InvalidArgumentException;
+
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Class encapsulating an email message.
@@ -24,20 +27,18 @@ use Bead\Facades\Log;
  * methods. The first two are generally more appropriate for content that is to be displayed inline; the latter is
  * for adding traditional file attachments to the message.
  *
- * @package bead-framework
  */
 class Email
 {
-//		private const CRLF = "\r\n";
     /** @var string A single linefeed character. */
-    private const LF = "\n";
+    private const LineFeed = "\n";
 
     /** @var string The default delimiter to use between parts in the message body. */
-    const DefaultDelimiter = "--email-delimiter-16fbcac50765f150dc35716069dba9c9--";
+    protected const DefaultDelimiter = "--email-delimiter-16fbcac50765f150dc35716069dba9c9--";
 
     /* some old (< 2.9 AFAIK) versions of postfix need the line end to be this on *nix */
     /** @var string The line ending to use in the message body during transmission. */
-    const LineEnd = self::LF;
+    public const LineEnd = self::LineFeed;
 
     /**
      * @var array|null The immutable headers for emails.
@@ -66,26 +67,26 @@ class Email
     /**
      * Constructor.
      *
-     * The recipient and sender of the message may each be _null_ to indicate that the recipient or sender is not
-     * set. The recipient may not be an array of destination addresses: to add more addresses, use the _addTo()_,
-     * _addCc()_ or _addBcc()_ methods.
+     * The recipient and sender of the message may each be `null` to indicate that the recipient or sender is not
+     * set. The recipient may not be an array of destination addresses: to add more addresses, use the `addTo()`,
+     * `addCc()` or `addBcc()` methods.
      *
      * The subject is a special header which is handled independently of the other headers. It must be a string, or
-     * _null_ to indicate that the subject is not set.
+     * `null` to indicate that the subject is not set.
      *
-     * If the message body is _null_ (default), an empty email will be created.
+     * If the message body is `null` (default), an empty email will be created.
      *
-     * The headers may be either an array of properly formatted mail header strings without the trailing _CRLF_, or
-     * an array of _EmailHeader_ objects. If it is an array of strings, they will be encapsulated within
-     * _EmailHeader_ objects internally. If _null_ (default), no headers will be set. Note that should you
+     * The headers may be either an array of properly formatted mail header strings without the trailing `CRLF`, or
+     * an array of `EmailHeader` objects. If it is an array of strings, they will be encapsulated within
+     * `EmailHeader` objects internally. If `null` (default), no headers will be set. Note that should you
      * successfully set the message sender or subject in this way, they will be over-written with the sender and/or
-     * subject set with the specific parameters for those headers, even if they are _null_.
+     * subject set with the specific parameters for those headers, even if they are `null`.
      *
      * @param $to string|null The destination address for the message.
      * @param $subject string|null The subject for the message.
      * @param $msg string|null The initial body content for the message.
      * @param $from string The sender of the message.
-     * @param $headers array<string|EmailHeader> The initial set of headers for the message.
+     * @param $headers array<string|EmailHeader>|null The initial set of headers for the message.
      */
     public function __construct(?string $to = null, ?string $subject = "", ?string $msg = null, string $from = "", ?array $headers = null)
     {
@@ -98,7 +99,7 @@ class Email
             foreach ($headers as $header) {
                 if ($header instanceof EmailHeader) {
                     $this->addHeader($header);
-                } else if (is_string($header)) {
+                } elseif (is_string($header)) {
                     $this->addHeaderLine($header);
                 }
             }
@@ -124,7 +125,7 @@ class Email
     /**
      * Gets the headers for the message.
      *
-     * The headers for the message are always returned as an array of _EmailHeader_ objects. If there are none set, an
+     * The headers for the message are always returned as an array of `EmailHeader` objects. If there are none set, an
      * empty array will be returned.
      *
      * @return array[EmailHeader] The headers for the message.
@@ -132,8 +133,8 @@ class Email
     public function headers(): array
     {
         $ret = Email::$s_immutableHeaders;
-        $contentType = new EmailHeader('Content-Type', 'multipart/mixed');
-        $contentType->setParameter('boundary', '"' . $this->m_bodyPartDelimiter . '"');
+        $contentType = new EmailHeader("Content-Type", "multipart/mixed");
+        $contentType->setParameter("boundary", "\"" . $this->m_bodyPartDelimiter . "\"");
         $ret[] = $contentType;
         return array_merge($ret, $this->m_headers);
     }
@@ -141,13 +142,13 @@ class Email
     /**
      * Gets the value(s) associated with a header key.
      *
-     * There may be multiple instances of the same header in an email message (e.g. the _CC_ header), hence an array is
+     * There may be multiple instances of the same header in an email message (e.g. the `CC` header), hence an array is
      * returned rather than just a string. If the header requested contains just one value, an array with a single
      * element is returned.
      *
      * @param $headerName string is the name of the header whose value/s is/are sought.
      *
-     * @return array[string] All the values assigned to the specified header, or _null_ if an error occurred. The array
+     * @return array[string] All the values assigned to the specified header, or `null` if an error occurred. The array
      * will be empty if the header is not specified.
      */
     public function headerValues(string $headerName): array
@@ -171,8 +172,8 @@ class Email
      *
      *     <key>:<value><cr><lf>
      *
-     * This function will allow headers to be added either with or without the trailing _<cr><lf>_; in either case, the
-     * resulting headers retrieved using _headers()_ will be correctly formatted.
+     * This function will allow headers to be added either with or without the trailing `<cr><lf>`; in either case, the
+     * resulting headers retrieved using `headers()` will be correctly formatted.
      *
      * Headers that do not contain the **:** delimiter will be rejected. Only the first instance of **:** is considered
      * a delimiter; anything after is treated as the value of the header. Multiple headers may not be added using a
@@ -184,7 +185,7 @@ class Email
      *
      * @param $header string The header line to add.
      *
-     * @return bool _true_ if the header was successfully added to the message, _false_ otherwise.
+     * @return bool `true` if the header was successfully added to the message, `false` otherwise.
      */
     public function addHeaderLine(string $header): bool
     {
@@ -216,13 +217,13 @@ class Email
     }
 
     /**
-     * Add a header from an _EmailHeader_ object.
+     * Add a header from an `EmailHeader` object.
      *
      * @param $header EmailHeader The header object.
      *
-     * @return bool _true_ if the header was added successfully, _false_ otherwise.
+     * @return bool `true` if the header was added successfully, `false` otherwise.
      */
-    private function _addHeaderObject(EmailHeader $header): bool
+    private function addHeaderObject(EmailHeader $header): bool
     {
         /* check for CRLF in either header or value  */
         $headerName = $header->name();
@@ -249,12 +250,6 @@ class Email
                 $this->setSubject($headerValue);
                 return true;
 
-// 			case "content-type":
-// 				return $this->setContentType($value);
-// 				
-// 			case "content-transfer-encoding":
-// 				return $this->setContentEncoding($value);
-
             default:
                 $this->m_headers[] = $header;
         }
@@ -268,12 +263,12 @@ class Email
      * @param $header string The name of the header.
      * @param $value string The value for the header.
      *
-     * @return bool _true_ if the header was added successfully, _false_ otherwise.
+     * @return bool `true` if the header was added successfully, `false` otherwise.
      */
-    private function _addHeaderStrings(string $header, string $value): bool
+    private function addHeaderStrings(string $header, string $value): bool
     {
         /* EmailHeader constructor handles validation */
-        return $this->_addHeaderObject(new EmailHeader($header, $value));
+        return $this->addHeaderObject(new EmailHeader($header, $value));
     }
 
     /**
@@ -281,25 +276,20 @@ class Email
      *
      * ### Note
      * This method cannot be used to set the subject, content-type, content-encoding or sender of the message. See the
-     * _setSubject()_ and _setFrom()_ methods. The _content-type_ and _content-encoding_ headers are fixed.
+     * `setSubject()` and `setFrom()` methods. The `content-type` and `content-encoding` headers are fixed.
      *
      * @param $header string|EmailHeader The header to add.
-     * @param $value string _optional_ is the value for the header.
+     * @param $value string|null is the value for the header. Only used if $header is a string.
      *
-     * @return bool _true_ if the header was added, _false_ otherwise.
+     * @return bool `true` if the header was added, `false` otherwise.
      */
-    public function addHeader($header, ?string $value = null): bool
+    public function addHeader(string|EmailHeader $header, ?string $value = null): bool
     {
         if ($header instanceof EmailHeader) {
-            return $this->_addHeaderObject($header);
+            return $this->addHeaderObject($header);
         } else {
-            if (is_string($header)) {
-                return $this->_addHeaderStrings($header, $value);
-            }
+            return $this->addHeaderStrings($header, $value);
         }
-
-        Log::error("received invalid argument for \$header: " . stringify($header));
-        trigger_error(tr("Internal error creating email message headers (%1).", __FILE__, __LINE__, "ERR_EMAIL_ADDHEADER_INVALID_HEADER"), E_USER_ERROR);
     }
 
     /**
@@ -309,7 +299,7 @@ class Email
      *
      * @param $headerName string is the name of the header to remove.
      */
-    private function _removeHeaderByName(string $headerName): void
+    private function removeHeaderByName(string $headerName): void
     {
         for ($i = 0; $i < count($this->m_headers); ++$i) {
             if (0 === strcasecmp($this->m_headers[$i]->name(), $headerName)) {
@@ -326,7 +316,7 @@ class Email
      *
      * @param $header EmailHeader The header to remove.
      */
-    private function _removeHeaderObject(EmailHeader $header): void
+    private function removeHeaderObject(EmailHeader $header): void
     {
         $headerName = $header->name();
         $headerValue = $header->value();
@@ -361,28 +351,23 @@ class Email
     /**
      * Remove a header.
      *
-     * Supplying a string will remove all headers with that name; providing an _EmailHeader_ object will attempt to
+     * Supplying a string will remove all headers with that name; providing an `EmailHeader` object will attempt to
      * remove a header that matches it precisely - including the header value and any parameters. If the header does not
      * match precisely any header in the message, no headers will be removed.
      *
      * @param $header string|EmailHeader The header to remove.
      *
-     * @return bool _true_ if the header has been removed or did not exist, _false_ if an error occurred.
+     * @return bool `true` if the header has been removed or did not exist, `false` if an error occurred.
      */
-    public function removeHeader($header): bool
+    public function removeHeader(string|EmailHeader $header): bool
     {
         if ($header instanceof EmailHeader) {
-            $this->_removeHeaderObject($header);
-            return true;
+            $this->removeHeaderObject($header);
         } else {
-            if (is_string($header)) {
-                $this->_removeHeaderByName($header);
-                return true;
-            }
+            $this->removeHeaderByName($header);
         }
 
-        Log::error("received invalid argument for \$header: " . stringify($header));
-        trigger_error(tr("Internal error creating email message headers (%1).", __FILE__, __LINE__, "ERR_EMAIL_REMOVEHEADER_INVALID_HEADER"), E_USER_ERROR);
+        return true;
     }
 
     /**
@@ -393,7 +378,7 @@ class Email
      *
      * @param $name string The name of the header to find.
      *
-     * @return EmailHeader|null The header if found, or _null_ if not or on error.
+     * @return EmailHeader|null The header if found, or `null` if not or on error.
      */
     private function findHeaderByName(string $name): ?EmailHeader
     {
@@ -414,9 +399,9 @@ class Email
      *
      * @param $name string is the name of the headers to find.
      *
-     * @return array[EmailHeader] The headers if found, or an empty array if not.
+     * @return array<EmailHeader> The headers if found, or an empty array if not.
      */
-    private function _findAllHeadersByName(string $name): array
+    private function findAllHeadersByName(string $name): array
     {
         $ret = [];
 
@@ -432,7 +417,7 @@ class Email
     /**
      * Clears all headers from the email message.
      *
-     * The required headers _Content-Type_, _To_, _Cc_, _Bcc_, _From_, _Subject_ and _Content-Transfer-Encoding_ will be
+     * The required headers `Content-Type`, `To`, `Cc`, `Bcc`, `From`, `Subject` and `Content-Transfer-Encoding` will be
      * retained - these headers cannot be cleared. If you want to reset the content type and content encoding to their
      * default values you must make the following calls, respectively:
      * - $part->setContentType(EmailPart::DEFAULT_CONTENT_TYPE);
@@ -443,7 +428,7 @@ class Email
         $retainedHeaders = [];
 
         foreach (Email::$s_specialHeaders as $headerName) {
-            $headers = $this->_findAllHeadersByName($headerName);
+            $headers = $this->findAllHeadersByName($headerName);
 
             foreach ($headers as $h) {
                 $retainedHeaders[] = $h;
@@ -458,7 +443,7 @@ class Email
      * Gets the body of the message.
      *
      * The body of the message is formatted in a way that complies with RFC2045. Briefly, this means that the content of
-     * message parts is split using _LineEnd_ into lines of no more than 76 characters. An exception to this is any
+     * message parts is split using `LineEnd` into lines of no more than 76 characters. An exception to this is any
      * message part that has a content type of *text/plain*, which is inserted into the message's main body as is
      * without any modification.
      *
@@ -479,7 +464,7 @@ class Email
                 $myHeader = $header->generate();
 
                 if (empty($myHeader)) {
-                    Log::error("invalid header: \"" . $header->name() . ": " . $header->value() . "\"");
+                    Log::error("invalid header: \"{$header->name()}: {$header->value()}\"");
                 } else {
                     $ret .= $myHeader . self::LineEnd;
                 }
@@ -488,13 +473,13 @@ class Email
             $ret .= self::LineEnd . $part->content() . self::LineEnd;
         }
 
-        return "$ret--{$this->m_bodyPartDelimiter}--";
+        return "{$ret}--{$this->m_bodyPartDelimiter}--";
     }
 
     /**
      * Get the parts for the message body.
      *
-     * @return array[EmailPart] The parts, or _null_ on error.
+     * @return array<EmailPart> The parts, or `null` on error.
      */
     public function parts(): array
     {
@@ -578,7 +563,7 @@ class Email
      *
      * @param $address string the new recipient address.
      *
-     * @return bool _true_ if the address was valid and was added to the recipient list, _false_ otherwise.
+     * @return bool `true` if the address was valid and was added to the recipient list, `false` otherwise.
      */
     public function addTo(string $address): bool
     {
@@ -593,26 +578,19 @@ class Email
      * any address in the provided array is found to be invalid for any reason, none of the addresses in the array
      * will be added.
      *
-     * Any non-string addresses trigger a fatal error.
+     * @param $addresses string[] the new recipient addresses.
      *
-     * @param $addresses array[string] the new recipient address.
-     *
-     * @return bool _true_ if all addresses were added successfully, _false_ if any address was found to be invalid.
+     * @throws InvalidArgumentException if any of the provided addresses is not a string.
      */
-    public function addToAddresses(array $addresses): bool
+    public function addToAddresses(array $addresses): void
     {
-        foreach ($addresses as $addr) {
-            if (!is_string($addr)) {
-                Log::error("invalid address found in provided array (expected string, found " . stringify($addr) . ")");
-                trigger_error(tr("Internal error adding email recipients (%1).", __FILE__, __LINE__, "ERR_EMAIL_ADDTOADDRESSES_INVALID_ADDRESS"), E_USER_ERROR);
-            }
+        if (!all($addresses, "is_string")) {
+            throw new InvalidArgumentException("Addresses provided to addToAddresses() must all be strings.");
         }
 
         foreach ($addresses as $addr) {
             $this->m_headers[] = new EmailHeader("To", $addr);
         }
-
-        return true;
     }
 
     /**
@@ -623,7 +601,7 @@ class Email
      *
      * @param $address string the new recipient.
      *
-     * @return bool _true_ if the address was valid and was added to the recipient list, _false_ otherwise.
+     * @return bool `true` if the address was valid and was added to the recipient list, `false` otherwise.
      */
     public function addCc(string $address): bool
     {
@@ -638,26 +616,19 @@ class Email
      * any address in the provided array is found to be invalid for any reason, none of the addresses in the array
      * will be added.
      *
-     * Any non-string addresses trigger a fatal error.
+     * @param $addresses string[] the new recipient addresses.
      *
-     * @param $addresses array[string] the new recipient addresses.
-     *
-     * @return bool _true_ if all addresses were added successfully, _false_ if any address was found to be invalid.
+     * @throws InvalidArgumentException if any of the provided addresses is not a string.
      */
-    public function addCcAddresses(array $addresses): bool
+    public function addCcAddresses(array $addresses): void
     {
-        foreach ($addresses as $addr) {
-            if (!is_string($addr)) {
-                Log::error("invalid address found in provided array (expected string, found " . stringify($addr) . ")");
-                trigger_error(tr("Internal error adding email recipients (%1).", __FILE__, __LINE__, "ERR_EMAIL_ADDCCADDRESSES_INVALID_ADDRESS"), E_USER_ERROR);
-            }
+        if (!all($addresses, "is_string")) {
+            throw new InvalidArgumentException("Addresses provided to addToAddresses() must all be strings.");
         }
 
         foreach ($addresses as $addr) {
             $this->m_headers[] = new EmailHeader("Cc", $addr);
         }
-
-        return true;
     }
 
     /**
@@ -668,7 +639,7 @@ class Email
      *
      * @param $address string the new recipient.
      *
-     * @return bool _true_ if the address was valid and was added to the recipient list, _false_ otherwise.
+     * @return bool `true` if the address was valid and was added to the recipient list, `false` otherwise.
      */
     public function addBcc(string $address): bool
     {
@@ -683,24 +654,19 @@ class Email
      * address in the provided array is found to be invalid for any reason, none of the addresses in the array will
      * be added.
      *
-     * @param $addresses array[string] the new recipient addresses.
+     * @param $addresses string[] the new recipient addresses.
      *
-     * @return bool _true_ if all addresses were added successfully, _false_ if any address was found to be invalid.
+     * @throws InvalidArgumentException if any of the provided addresses is not a string.
      */
-    public function addBccAddresses(array $addresses): bool
+    public function addBccAddresses(array $addresses): void
     {
-        foreach ($addresses as $addr) {
-            if (!is_string($addr)) {
-                Log::error("invalid address found in provided array (expected string, found " . stringify($addr) . ")");
-                trigger_error(tr("Internal error adding email recipients (%1).", __FILE__, __LINE__, "ERR_EMAIL_ADDBCCADDRESSES_INVALID_ADDRESS"), E_USER_ERROR);
-            }
+        if (!all($addresses, "is_string")) {
+            throw new InvalidArgumentException("Addresses provided to addToAddresses() must all be strings.");
         }
 
         foreach ($addresses as $addr) {
             $this->m_headers[] = new EmailHeader("Bcc", $addr);
         }
-
-        return true;
     }
 
     /**
@@ -726,7 +692,7 @@ class Email
      *
      * @param $sender string the new sender of the message.
      *
-     * @return bool _true_ if the sender was set, _false_ otherwise.
+     * @return bool `true` if the sender was set, `false` otherwise.
      */
     public function setFrom(string $sender): bool
     {
@@ -787,8 +753,8 @@ class Email
      * and transfer encoding specified. No checks, translations or conversions will be carried out.
      *
      * @param $content string the content part to add.
-     * @param $contentType string _optional_ is the MIME type of the content part to add.
-     * @param $contentEncoding string _optional_ is the transfer encoding of the part to add.
+     * @param $contentType string is the MIME type of the content part to add.
+     * @param $contentEncoding string is the transfer encoding of the part to add.
      */
     public function addBodyPartContent(string $content, string $contentType = "text/plain; charset=\"utf-8\"", string $contentEncoding = "quoted-printable"): void
     {
@@ -818,7 +784,7 @@ class Email
     public function addAttachment(string $content, string $contentType, string $contentEncoding, string $filename): void
     {
         $newPart = new EmailPart($content);
-        $newPart->setContentType("$contentType; name=\"$filename\"");
+        $newPart->setContentType("{$contentType}; name=\"{$filename}\"");
         $newPart->setContentEncoding($contentEncoding);
         $newPart->addHeader("Content-Disposition", "attachment");
 
@@ -828,9 +794,9 @@ class Email
     /**
      * Send the message.
      *
-     * Send the message using the internal PHP function _mail()_.
+     * Send the message using the internal PHP function `mail()`.
      *
-     * @return bool _true_ if the message was submitted for delivery, false otherwise.
+     * @return bool `true` if the message was submitted for delivery, false otherwise.
      */
     public function send(): bool
     {
@@ -846,7 +812,7 @@ class Email
             $myHeader = $header->generate();
 
             if (empty($myHeader)) {
-                Log::error("invalid header: \"" . $header->name() . ": " . $header->value() . "\"");
+                AppLog::error("invalid header: \"" . $header->name() . ": " . $header->value() . "\"");
             } else {
                 $headerString .= $myHeader . self::LineEnd;
             }

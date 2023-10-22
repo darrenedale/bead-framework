@@ -101,7 +101,7 @@ abstract class Relation
      * the same set each time relatedModels() is called. This method can be called to force a reload of the related
      * models from the database.
      */
-    public abstract function reload(): void;
+    abstract public function reload(): void;
 
     /**
      * Returns the models for the relation.
@@ -112,5 +112,5 @@ abstract class Relation
      *
      * @return Model|array|null
      */
-    public abstract function relatedModels();
+    abstract public function relatedModels();
 }

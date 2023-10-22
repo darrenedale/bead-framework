@@ -7,7 +7,7 @@
  * Time: 10:18
  */
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace BeadTests;
 
@@ -201,11 +201,11 @@ class HtmlCleanerTest extends TestCase
     public function testTagMode(): void
     {
         $oldMode = $this->testCleaner->tagMode();
-        
+
         if ($oldMode === HtmlCleaner::DenyListMode) {
             self::markTestSkipped("Test cleaner's existing tag mode is the same as the mode we're testing with.");
         }
-        
+
         $this->testCleaner->setTagMode(HtmlCleaner::DenyListMode);
         self::assertEquals(HtmlCleaner::DenyListMode, $this->testCleaner->tagMode());
     }
@@ -213,11 +213,11 @@ class HtmlCleanerTest extends TestCase
     public function testIdMode(): void
     {
         $oldMode = $this->testCleaner->idMode();
-        
+
         if ($oldMode === HtmlCleaner::DenyListMode) {
             self::markTestSkipped("Test cleaner's existing id mode is the same as the mode we're testing with.");
         }
-        
+
         $this->testCleaner->setIdMode(HtmlCleaner::DenyListMode);
         self::assertEquals(HtmlCleaner::DenyListMode, $this->testCleaner->IdMode());
     }
@@ -225,11 +225,11 @@ class HtmlCleanerTest extends TestCase
     public function testClassMode(): void
     {
         $oldMode = $this->testCleaner->classMode();
-        
+
         if ($oldMode === HtmlCleaner::DenyListMode) {
             self::markTestSkipped("Test cleaner's existing class mode is the same as the mode we're testing with.");
         }
-        
+
         $this->testCleaner->setClassMode(HtmlCleaner::DenyListMode);
         self::assertEquals(HtmlCleaner::DenyListMode, $this->testCleaner->ClassMode());
     }
@@ -386,8 +386,8 @@ class HtmlCleanerTest extends TestCase
     }
 
     /**
-     * Provides invalid data for ID list tests. 
-     * 
+     * Provides invalid data for ID list tests.
+     *
      * @return iterable The test data.
      */
     public function dataForTestIdsThrows(): iterable
@@ -700,7 +700,7 @@ class HtmlCleanerTest extends TestCase
 
         yield "allowedDenyModeWithNoDenyList" => ["some-class", ["some-other-class",], [], HtmlCleaner::DenyListMode, true,];
         yield "forbiddenDenyModeWithNoAllowList" => ["some-class", [], ["some-class",], HtmlCleaner::DenyListMode, false,];
-        
+
         yield "allowedMaultipleClassesCombinedWithNoDenyList" => ["some-class some-other-class", ["some-class", "some-other-class"], [], HtmlCleaner::CombinedMode, true,];
         yield "forbiddenMaultipleClassesCombinedWithNoDenyList" => ["forbidden-class some-class", ["some-class",], [], HtmlCleaner::CombinedMode, false,];
         yield "forbiddenMaultipleClassesCombinedWithNoAllowList" => ["some-class some-other-class", [], ["some-class",], HtmlCleaner::CombinedMode, false,];
@@ -1177,8 +1177,7 @@ class HtmlCleanerTest extends TestCase
             $this->testCleaner->setClassMode($config->classes->mode);
             $this->testCleaner->allowClasses($config->classes->allowList);
             $this->testCleaner->denyClasses($config->classes->denyList);
-        }
-        catch (InvalidArgumentException $err) {
+        } catch (InvalidArgumentException $err) {
             $this->markTestSkipped("Exception {$err} configuring cleaner - check config in test data");
         }
 
@@ -1189,7 +1188,7 @@ class HtmlCleanerTest extends TestCase
     /** Ensure clean() throws when the HTML can't be parsed. */
     public function testCleanThrows(): void
     {
-        $this->mockMethod(DOMDocument::class, 'loadXml', false);
+        $this->mockMethod(DOMDocument::class, "loadXml", false);
         self::expectException(RuntimeException::class);
         $this->testCleaner->clean("");
     }

@@ -134,11 +134,11 @@ class Max implements Rule
     {
         if (is_int($data)) {
             return $this->intPasses($data);
-        } else if (is_float($data)) {
+        } elseif (is_float($data)) {
             return $this->floatPasses($data);
-        } else if (is_array($data)) {
+        } elseif (is_array($data)) {
             return $this->arrayPasses($data);
-        } else if (is_string($data)) {
+        } elseif (is_string($data)) {
             $intData = filter_var($data, FILTER_VALIDATE_INT);
 
             if (false !== $intData) {

@@ -25,7 +25,7 @@ final class ConvertsPsr3LogLevelsTest extends TestCase
 
     public function tearDown(): void
     {
-        unset ($this->instance);
+        unset($this->instance);
         parent::tearDown();
     }
 
@@ -38,15 +38,15 @@ final class ConvertsPsr3LogLevelsTest extends TestCase
      */
     private static function createStringable(string $string): Stringable
     {
-        return new class($string) implements Stringable
+        return new class ($string) implements Stringable
         {
             private string $string;
-            
+
             public function __construct(string $string)
             {
                 $this->string = $string;
             }
-            
+
             public function __toString(): string
             {
                 return $this->string;
@@ -78,7 +78,7 @@ final class ConvertsPsr3LogLevelsTest extends TestCase
         yield "psr3NoticeStringable" => [self::createStringable(LogLevel::NOTICE), LoggerContract::NoticeLevel,];
         yield "psr3InformationStringable" => [self::createStringable(LogLevel::INFO), LoggerContract::InformationLevel,];
         yield "psr3DebugStringable" => [self::createStringable(LogLevel::DEBUG), LoggerContract::DebugLevel,];
-        
+
         yield "beadEmergencyInt" => [LoggerContract::EmergencyLevel, LoggerContract::EmergencyLevel,];
         yield "beadAlertInt" => [LoggerContract::AlertLevel, LoggerContract::AlertLevel,];
         yield "beadCriticalInt" => [LoggerContract::CriticalLevel, LoggerContract::CriticalLevel,];

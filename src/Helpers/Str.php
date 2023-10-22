@@ -40,43 +40,42 @@ use function unpack;
  */
 function camelToSnake(string $str, ?string $encoding = null): string
 {
-	if(empty($str)) {
-		return $str;
-	}
+    if (empty($str)) {
+        return $str;
+    }
 
-	if (isset($encoding)) {
-		$oldEncoding = mb_regex_encoding();
-		mb_regex_encoding($encoding);
-	}
+    if (isset($encoding)) {
+        $oldEncoding = mb_regex_encoding();
+        mb_regex_encoding($encoding);
+    }
 
-	$pattern = "([[:upper:]])";
-	$replacement = "_";
+    $pattern = "([[:upper:]])";
+    $replacement = "_";
 
-	if (isset($encoding) && "UTF-8" !== $encoding) {
-		$pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
-		$replacement = mb_convert_encoding($replacement, $encoding, "UTF-8");
-	}
+    if (isset($encoding) && "UTF-8" !== $encoding) {
+        $pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
+        $replacement = mb_convert_encoding($replacement, $encoding, "UTF-8");
+    }
 
-	# use mb_substr to get first char as it could be multibyte
-	$ret =
-		mb_strtolower(
-			mb_substr($str, 0, 1, $encoding),
-			$encoding
-		) .
-		mb_strtolower(mb_ereg_replace_callback(
-			$pattern,
-			function(array $matches) use ($replacement): string
-			{
-				return "{$replacement}{$matches[1]}";
-			},
-			mb_substr($str, 1, null, $encoding),
-		), $encoding);
+    // use mb_substr to get first char as it could be multibyte
+    $ret =
+        mb_strtolower(
+            mb_substr($str, 0, 1, $encoding),
+            $encoding
+        ) .
+        mb_strtolower(mb_ereg_replace_callback(
+            $pattern,
+            function (array $matches) use ($replacement): string {
+                return "{$replacement}{$matches[1]}";
+            },
+            mb_substr($str, 1, null, $encoding),
+        ), $encoding);
 
-	if (isset($oldEncoding)) {
-		mb_regex_encoding($oldEncoding);
-	}
+    if (isset($oldEncoding)) {
+        mb_regex_encoding($oldEncoding);
+    }
 
-	return $ret;
+    return $ret;
 }
 
 /**
@@ -92,33 +91,33 @@ function camelToSnake(string $str, ?string $encoding = null): string
  */
 function snakeToCamel(string $str, ?string $encoding = null): string
 {
-	if (isset($encoding)) {
-		$oldEncoding = mb_regex_encoding();
-		mb_regex_encoding($encoding);
-	}
+    if (isset($encoding)) {
+        $oldEncoding = mb_regex_encoding();
+        mb_regex_encoding($encoding);
+    }
 
-	// ignore all leading _ chars (to avoid upper-casing the first non-underscore)
-	$trim = 0;
+    // ignore all leading _ chars (to avoid upper-casing the first non-underscore)
+    $trim = 0;
 
-	while ($trim < (strlen($str) - $trim) && "_" === $str[$trim]) {
-		++$trim;
-	}
+    while ($trim < (strlen($str) - $trim) && "_" === $str[$trim]) {
+        ++$trim;
+    }
 
-	$pattern = "_+(.)";
+    $pattern = "_+(.)";
 
-	if (isset($encoding) && "UTF-8" !== $encoding) {
-		$pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
-	}
+    if (isset($encoding) && "UTF-8" !== $encoding) {
+        $pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
+    }
 
-	$ret = mb_ereg_replace_callback($pattern, function (array $matches) use ($encoding): string {
-		return mb_strtoupper($matches[1], $encoding ?? "UTF-8");
-	}, mb_substr($str, $trim));
+    $ret = mb_ereg_replace_callback($pattern, function (array $matches) use ($encoding): string {
+        return mb_strtoupper($matches[1], $encoding ?? "UTF-8");
+    }, mb_substr($str, $trim));
 
-	if (isset($oldEncoding)) {
-		mb_regex_encoding($oldEncoding);
-	}
+    if (isset($oldEncoding)) {
+        mb_regex_encoding($oldEncoding);
+    }
 
-	return $ret;
+    return $ret;
 }
 
 /**
@@ -134,7 +133,7 @@ function snakeToCamel(string $str, ?string $encoding = null): string
  */
 function html(string $str)
 {
-	return htmlentities($str, ENT_COMPAT, "UTF-8");
+    return htmlentities($str, ENT_COMPAT, "UTF-8");
 }
 
 /**
@@ -156,27 +155,27 @@ function html(string $str)
  */
 function build(string $template, mixed ... $args): string
 {
-	$argc = count($args);
+    $argc = count($args);
 
-	if (0 == $argc) {
-		/* avoid pointlessly executing the rest */
-		return $template;
-	}
+    if (0 == $argc) {
+        /* avoid pointlessly executing the rest */
+        return $template;
+    }
 
-	/* set up the array of placeholders */
-	$placeholders = new SplFixedArray($argc);
+    /* set up the array of placeholders */
+    $placeholders = new SplFixedArray($argc);
 
-	for ($i = $argc; $i > 0;) {
-		/* NOTE the sprintf() is called before $placeholders[$i] is set, so
-		 * when it's set the post-decrement of $i has already been done. so
-		 * the index set in $placeholders is one less than the number
-		 * written into the placeholder string, which is what we want. this
-		 * slightly obscure way of doing it just saves one integer addition
-		 * or subtraction operation */
-		$placeholders[$i] = '%' . sprintf('%d', $i--);
-	}
+    for ($i = $argc; $i > 0;) {
+        /* NOTE the sprintf() is called before $placeholders[$i] is set, so
+         * when it's set the post-decrement of $i has already been done. so
+         * the index set in $placeholders is one less than the number
+         * written into the placeholder string, which is what we want. this
+         * slightly obscure way of doing it just saves one integer addition
+         * or subtraction operation */
+        $placeholders[$i] = "%" . sprintf("%d", $i--);
+    }
 
-	return str_replace($placeholders->toArray(), $args, $template);
+    return str_replace($placeholders->toArray(), $args, $template);
 }
 
 /**
@@ -191,17 +190,17 @@ function build(string $template, mixed ... $args): string
  */
 function toCodePoints(string $str, string $encoding): array
 {
-	// convert the string to UTF32LE, where each character is represented by four bytes, each of which is a 32-bit
-	// LE int, the Unicode code point
-	if ("UTF-32LE" !== $encoding) {
-		$str = mb_convert_encoding($str, "UTF-32LE", $encoding);
-	}
+    // convert the string to UTF32LE, where each character is represented by four bytes, each of which is a 32-bit
+    // LE int, the Unicode code point
+    if ("UTF-32LE" !== $encoding) {
+        $str = mb_convert_encoding($str, "UTF-32LE", $encoding);
+    }
 
-	// then split it into chunks of four chars so that we have the four bytes of the code point for each character
-	// in an array of four-byte strings; then map that array by unpacking each four-byte string to an int value
-	return array_map(function (string $codePointBytes): int {
-		return unpack("V", $codePointBytes)[1];
-	}, str_split($str, 4));
+    // then split it into chunks of four chars so that we have the four bytes of the code point for each character
+    // in an array of four-byte strings; then map that array by unpacking each four-byte string to an int value
+    return array_map(function (string $codePointBytes): int {
+        return unpack("V", $codePointBytes)[1];
+    }, str_split($str, 4));
 }
 
 /**
@@ -218,8 +217,8 @@ function toCodePoints(string $str, string $encoding): array
  */
 function random(int $length): string
 {
-	assert (0 <= $length, new InvalidArgumentException("Can't produce a random string of < 0 characters in length."));
-	$str = "";
+    assert(0 <= $length, new InvalidArgumentException("Can't produce a random string of < 0 characters in length."));
+    $str = "";
 
     try {
         while (0 < $length) {
@@ -232,5 +231,5 @@ function random(int $length): string
         throw new RuntimeException("Cryptographically-secure random strings are not available.");
     }
 
-	return $str;
+    return $str;
 }

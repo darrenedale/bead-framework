@@ -8,19 +8,17 @@ use Bead\Facades\Log;
  * Class representing a part of a multipart email message.
  *
  * Objects of this class can be used as parts in a multipart email message.
- *
- * @package bead-framework
  */
 class EmailPart
 {
     /** @var string The default content type for email message parts. */
-    const DefaultContentType = "text/plain";
+    protected const DefaultContentType = "text/plain";
 
     /** @var string The default character encoding for email message parts. */
-    const DefaultTextCharset = "utf-8";
+    protected const DefaultTextCharset = "utf-8";
 
     /** @var string The default content encoding for email message parts. */
-    const DefaultContentEncoding = "quoted-printable";
+    protected const DefaultContentEncoding = "quoted-printable";
 
     /** @var EmailHeader[] The part's headers. */
     protected array $m_headers = [];
@@ -41,7 +39,7 @@ class EmailPart
      * @param $contentType string The content type for the message part.
      * @param $contentEncoding string The content encoding.
      */
-    function __construct(string $content = "", string $contentType = EmailPart::DefaultContentType, string $contentEncoding = EmailPart::DefaultContentEncoding)
+    public function __construct(string $content = "", string $contentType = EmailPart::DefaultContentType, string $contentEncoding = EmailPart::DefaultContentEncoding)
     {
         // setContentType() and setContentEncoding() can fail with invalid values, so we ensure here that the object
         // is initialised with defaults that are known to be valid: a quoted-printable-encoded text/plain body part
@@ -62,7 +60,7 @@ class EmailPart
      *     <key>:<value><cr><lf>
      *
      * This function will allow headers to be added either with or without the trailing <cr><lf>; in either case, the
-     * resulting headers retrieved using _headers()_ will be correctly formatted.
+     * resulting headers retrieved using `headers()` will be correctly formatted.
      *
      * Headers that do not contain the **:** delimiter will be rejected. Only the first instance of **:** is considered
      * a delimiter; anything after is treated as the value of the header. Multiple headers may not be added using a
@@ -74,7 +72,7 @@ class EmailPart
      *
      * @param $header string The header line to add.
      *
-     * @return bool _true_ if the header was successfully added to the message part, _false_ otherwise.
+     * @return bool `true` if the header was successfully added to the message part, `false` otherwise.
      */
     public function addHeaderLine(string $header): bool
     {
@@ -98,6 +96,11 @@ class EmailPart
             Log::error("invalid header line provided (\"$header\")");
             return false;
         }
+        // TODO trigger_error() instead?
+        if (!preg_match($rxMimeHeader, $header, $captures)) {
+            AppLog::error("invalid header line provided (\"{$header}\")");
+            return false;
+        }
 
         /* EmailHeader constructor handles validation */
         return $this->addHeader(new EmailHeader($captures[0], $captures[1]));
@@ -108,9 +111,9 @@ class EmailPart
      *
      * @param $header EmailHeader The header object.
      *
-     * @return bool _true_ if the header was added successfully, _false_ otherwise.
+     * @return bool `true` if the header was added successfully, `false` otherwise.
      */
-    private function _addHeaderObject(EmailHeader $header): bool
+    private function addHeaderObject(EmailHeader $header): bool
     {
         // check for <cr><lf> in either header or value
         $headerName = $header->name();
@@ -146,12 +149,12 @@ class EmailPart
      * @param $header string The name of the header.
      * @param $value string The value for the header.
      *
-     * @return bool _true_ if the header was added successfully, _false_ otherwise.
+     * @return bool `true` if the header was added successfully, `false` otherwise.
      */
-    private function _addHeaderStrings(string $header, string $value): bool
+    private function addHeaderStrings(string $header, string $value): bool
     {
         // EmailHeader constructor handles validation
-        return $this->_addHeaderObject(new EmailHeader($header, $value));
+        return $this->addHeaderObject(new EmailHeader($header, $value));
     }
 
     /**
@@ -162,22 +165,17 @@ class EmailPart
      * also be a string. PHP strings are always assumed to be encoded using UTF-8.
      *
      * @param $header EmailHeader|string The header to add.
-     * @param $value string _optional_ is the value for the header.
+     * @param $value string is the value for the header.
      *
-     * @return bool _true_ if the header was added, _false_ otherwise.
+     * @return bool `true` if the header was added, `false` otherwise.
      */
-    public function addHeader($header, string $value = ""): bool
+    public function addHeader(EmailHeader|string $header, string $value = ""): bool
     {
         if ($header instanceof EmailHeader) {
-            return $this->_addHeaderObject($header);
+            return $this->addHeaderObject($header);
         } else {
-            if (is_string($header)) {
-                return $this->_addHeaderStrings($header, $value);
-            }
+            return $this->addHeaderStrings($header, $value);
         }
-
-        Log::error("received invalid \$header argument: " . stringify($header));
-        trigger_error(tr("Internal error updating email message headers (%1).", __FILE__, __LINE__, "ERR_EMAILPART_ADDHEADER_INVALID_HEADER"), E_USER_ERROR);
     }
 
     /**
@@ -189,7 +187,7 @@ class EmailPart
      * - `$part->setContentType(EmailPart::DefaultContentType);`
      * - `$part->setContentEncoding(EmailPart::DefaultContentEncoding);`
      *
-     * @return bool _true_ if the headers were cleared, _false_ otherwise.
+     * @return bool `true` if the headers were cleared, `false` otherwise.
      */
     public function clearHeaders(): bool
     {
@@ -252,9 +250,9 @@ class EmailPart
      *
      * @param $name string is the name of the header object to find.
      *
-     * @return EmailHeader|null The header object if found, or _null_ if not or on error.
+     * @return EmailHeader|null The header object if found, or `null` if not or on error.
      */
-    private function _findHeaderByName(string $name): ?EmailHeader
+    private function findHeaderByName(string $name): ?EmailHeader
     {
         foreach ($this->headers() as $header) {
             if (0 === strcasecmp($header->name(), $name)) {
@@ -268,11 +266,11 @@ class EmailPart
     /**
      * Gets the *Content-Type* for the message part.
      *
-     * @return string The value of the *Content-Type* header, or _null_ on error.
+     * @return string|null The value of the *Content-Type* header, or `null` on error.
      */
     public function contentType(): ?string
     {
-        $header = $this->_findHeaderByName("Content-Type");
+        $header = $this->findHeaderByName("Content-Type");
 
         if (isset($header)) {
             return $header->value();
@@ -288,7 +286,7 @@ class EmailPart
      *
      * @param $contentType string The content type for the message part.
      *
-     * @return bool _true_ if the *Content-Type* header was set, _false_ otherwise.
+     * @return bool `true` if the *Content-Type* header was set, `false` otherwise.
      */
     public function setContentType(string $contentType): bool
     {
@@ -334,7 +332,7 @@ class EmailPart
         if ("*/*" != $contentType) {
             // can't initialise static $rxMimeType with non-const content so have to do it this way
             if (is_null($rxMimeType)) {
-                $rxMimeType = "#^([a-z]+|x-$token)/(?:($token)( *; *$token *= *(?:$token|$quotedString))*)$#";
+                $rxMimeType = "#^([a-z]+|x-{$token})/(?:({$token})( *; *{$token} *= *(?:{$token}|{$quotedString}))*)$#";
             }
 
             // for now we don't use the expression captures, but 1 = type, 2 = subtype, 3 = params
@@ -344,7 +342,7 @@ class EmailPart
             }
         }
 
-        $header = $this->_findHeaderByName("Content-Type");
+        $header = $this->findHeaderByName("Content-Type");
 
         if ($header instanceof EmailHeader) {
             $header->setValue($contentType);
@@ -358,11 +356,11 @@ class EmailPart
     /**
      * Gets the Content-Transfer-Encoding for the message part.
      *
-     * @return string The *Content-Transfer-Encoding* header value, or _null_ on error.
+     * @return string|null The *Content-Transfer-Encoding* header value, or `null` on error.
      */
     public function contentEncoding(): ?string
     {
-        $header = $this->_findHeaderByName("Content-Transfer-Encoding");
+        $header = $this->findHeaderByName("Content-Transfer-Encoding");
 
         if (isset($header)) {
             return $header->value();
@@ -381,20 +379,20 @@ class EmailPart
      *
      * @param $contentEncoding string is the content encoding. It is assumed to be a UTF-8 string.
      *
-     * @return bool _true_ if the encoding was set, _false_ otherwise.
+     * @return bool `true` if the encoding was set, `false` otherwise.
      */
     public function setContentEncoding(string $contentEncoding): bool
     {
         /* validate the content encoding: x-gzip | x-compress | token */
         if ("x-gzip" != $contentEncoding && "x-compress" != $contentEncoding) {
             /* FIXME validate the content-encoding properly */
-            if ('' == trim($contentEncoding)) {
-                Log::error("content encoding provided (\"$contentEncoding\") is not valid");
+            if ("" == trim($contentEncoding)) {
+                Log::error("content encoding provided (\"{$contentEncoding}\") is not valid");
                 return false;
             }
         }
 
-        $header = $this->_findHeaderByName("Content-Transfer-Encoding");
+        $header = $this->findHeaderByName("Content-Transfer-Encoding");
 
         if ($header instanceof EmailHeader) {
             $header->setValue($contentEncoding);
@@ -413,9 +411,9 @@ class EmailPart
      * chunk up the data if required. The php function *chunk_split()* serves this purpose well.
      *
      * On a successful call, the content provided is always a byte sequence represented as a PHP string. It will be the
-     * exact content provided either in the constructor or to _setContent()_ if used after construction.
+     * exact content provided either in the constructor or to `setContent()` if used after construction.
      *
-     * @return string The part content, as provided in the call to _setContent()_.
+     * @return string The part content, as provided in the call to `setContent()`.
      */
     public function content(): string
     {

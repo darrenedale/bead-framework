@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Bead\Database;
@@ -80,7 +81,7 @@ trait BuildsQueries
     {
         $names = explode(".", $name);
 
-        if (some($names, fn(string $name): bool => empty($name))) {
+        if (some($names, fn (string $name): bool => empty($name))) {
             throw new InvalidColumnNameException($name, "The column {$name} has an empty table and/or column name.");
         }
 
@@ -166,13 +167,13 @@ trait BuildsQueries
     {
         if (is_string($arg)) {
             return self::wrapString($arg);
-        } else if ($arg instanceof DateTime) {
+        } elseif ($arg instanceof DateTime) {
             return "'{$arg->format("Y-m-d H:i:s")}'";
-        } else if (is_null($arg)) {
+        } elseif (is_null($arg)) {
             return "NULL";
-        } else if (is_int($arg) || is_float($arg)) {
+        } elseif (is_int($arg) || is_float($arg)) {
             return "{$arg}";
-        } else if (is_bool($arg)) {
+        } elseif (is_bool($arg)) {
             return ($arg ? "1" : "0");
         }
 
@@ -347,7 +348,7 @@ trait BuildsQueries
      */
     protected function tableNameOrAliasIsInUse(string $name): bool
     {
-        return isset($this->tables[$name]) || some($this->joins, fn(array $join) => ($name === $join["alias"]));
+        return isset($this->tables[$name]) || some($this->joins, fn (array $join) => ($name === $join["alias"]));
     }
 
     /**
@@ -422,7 +423,7 @@ trait BuildsQueries
             ];
         }
 
-        if (!isset ($this->joins[$local])) {
+        if (!isset($this->joins[$local])) {
             $this->joins[$local] = [
                 "left" => [],
                 "right" => [],
@@ -434,17 +435,17 @@ trait BuildsQueries
             "foreignOrSubquery" => $foreign,
             "alias" => $alias,
             "combine" => $combine,
-            "expressions" => array_map(function(string $lhs, string $rhs) use ($local, $alias, $operatorOrCombine): array {
+            "expressions" => array_map(function (string $lhs, string $rhs) use ($local, $alias, $operatorOrCombine): array {
                 [$table, $column] = self::extractTableAndColumn($lhs);
 
                 if (empty($table)) {
-                    $lhs = "{$alias}.$lhs";
+                    $lhs = "{$alias}.{$lhs}";
                 }
 
                 [$table, $column] = self::extractTableAndColumn($rhs);
 
                 if (empty($table)) {
-                    $rhs = "{$local}.$rhs";
+                    $rhs = "{$local}.{$rhs}";
                 }
 
                 return [
@@ -533,7 +534,7 @@ trait BuildsQueries
             ];
         }
 
-        if (!isset ($this->joins[$local])) {
+        if (!isset($this->joins[$local])) {
             $this->joins[$local] = [
                 "left" => [],
                 "right" => [],
@@ -545,17 +546,17 @@ trait BuildsQueries
             "foreignOrSubquery" => $expression,
             "alias" => $alias,
             "combine" => $combine,
-            "expressions" => array_map(function(string $lhs, string $rhs) use ($local, $alias, $operatorOrCombine): array {
+            "expressions" => array_map(function (string $lhs, string $rhs) use ($local, $alias, $operatorOrCombine): array {
                 [$table, $column] = self::extractTableAndColumn($lhs);
 
                 if (empty($table)) {
-                    $lhs = "{$alias}.$lhs";
+                    $lhs = "{$alias}.{$lhs}";
                 }
 
                 [$table, $column] = self::extractTableAndColumn($rhs);
 
                 if (empty($table)) {
-                    $rhs = "{$local}.$rhs";
+                    $rhs = "{$local}.{$rhs}";
                 }
 
                 return [
@@ -863,8 +864,8 @@ trait BuildsQueries
         if ($column instanceof Closure) {
             $this->whereGroupStack[] = [];
             $column($this);
-            $this->addWhereGroup("AND",  array_pop($this->whereGroupStack));
-        } else if (is_array($column)) {
+            $this->addWhereGroup("AND", array_pop($this->whereGroupStack));
+        } elseif (is_array($column)) {
             foreach ($column as $lhs => $rhs) {
                 $this->addWhere("AND", self::wrapNames($lhs), "=", self::sqlifyValue($rhs));
             }
@@ -872,7 +873,7 @@ trait BuildsQueries
             if (!isset($value)) {
                 $value = $operatorOrValue;
                 $operatorOrValue = "=";
-            } else if (empty($operatorOrValue)) {
+            } elseif (empty($operatorOrValue)) {
                 throw new InvalidOperatorException($operatorOrValue, "The operator must not be empty.");
             }
 
@@ -899,8 +900,8 @@ trait BuildsQueries
         if ($column instanceof Closure) {
             $this->whereGroupStack[] = [];
             $column($this);
-            $this->addWhereGroup("OR",  array_pop($this->whereGroupStack));
-        } else if (is_array($column)) {
+            $this->addWhereGroup("OR", array_pop($this->whereGroupStack));
+        } elseif (is_array($column)) {
             foreach ($column as $lhs => $rhs) {
                 $this->addWhere("OR", self::wrapNames($lhs), "=", self::sqlifyValue($rhs));
             }
@@ -908,7 +909,7 @@ trait BuildsQueries
             if (!isset($value)) {
                 $value = $operatorOrValue;
                 $operatorOrValue = "=";
-            } else if (empty($operatorOrValue)) {
+            } elseif (empty($operatorOrValue)) {
                 throw new InvalidOperatorException($operatorOrValue, "The operator must not be empty.");
             }
 
@@ -936,7 +937,7 @@ trait BuildsQueries
         }
 
         foreach ($columns as $column) {
-            $this->addWhere("AND", self::wrapNames($column),"IS NOT", "NULL");
+            $this->addWhere("AND", self::wrapNames($column), "IS NOT", "NULL");
         }
 
         $this->compiledWheres = null;
@@ -960,7 +961,7 @@ trait BuildsQueries
         }
 
         foreach ($columns as $column) {
-            $this->addWhere("OR", self::wrapNames($column),"IS NOT", "NULL");
+            $this->addWhere("OR", self::wrapNames($column), "IS NOT", "NULL");
         }
 
         $this->compiledWheres = null;
@@ -1854,7 +1855,7 @@ trait BuildsQueries
     protected function compileSelects(): string
     {
         if (!isset($this->compiledSelects)) {
-            $selects = array_map(function(string $expression, string $alias): string {
+            $selects = array_map(function (string $expression, string $alias): string {
                 return ($alias === $expression ? $expression : "{$expression} AS {$alias}");
             }, $this->selects, array_keys($this->selects));
             $this->compiledSelects = "SELECT " . implode(",", $selects);
@@ -1882,9 +1883,9 @@ trait BuildsQueries
         if (!isset($this->joins[$table])) {
             return "";
         }
-        
+
         $sql = "";
-        
+
         foreach ($this->joins[$table] as $type => $joins) {
             $type = strtoupper($type);
 
@@ -1895,7 +1896,7 @@ trait BuildsQueries
                     $sql .= " AS {$join["alias"]}";
                 }
 
-                $ons = array_map(function(array $on): string {
+                $ons = array_map(function (array $on): string {
                     return "{$on["lhs"]}{$on["operator"]}{$on["rhs"]}";
                 }, $join["expressions"]);
 
@@ -1903,7 +1904,7 @@ trait BuildsQueries
                 $sql .= $this->compileJoinsOn($join["alias"]);
             }
         }
-        
+
         return $sql;
     }
 

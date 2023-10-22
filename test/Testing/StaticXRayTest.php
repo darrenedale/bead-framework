@@ -25,7 +25,7 @@ final class StaticXRayTest extends TestCase
     {
         $this->m_tracker = new CallTracker();
 
-        $testObject = new class($this->m_tracker)
+        $testObject = new class ($this->m_tracker)
         {
             private static CallTracker $callTracker;
             private static string $privateStaticProperty = "private-static-property";
@@ -70,10 +70,10 @@ final class StaticXRayTest extends TestCase
                 return "{$arg1} {$arg2}";
             }
 
-			private static function privateStaticMethodThatThrows(): void
-			{
-				throw new ReflectionException("Test exception.");
-			}
+            private static function privateStaticMethodThatThrows(): void
+            {
+                throw new ReflectionException("Test exception.");
+            }
 
             private function privateMethod(): string
             {
@@ -241,12 +241,12 @@ final class StaticXRayTest extends TestCase
         self::assertEquals(1, $this->m_tracker->callCount());
     }
 
-	public function testXRayedPrivateStaticMethodThatThrows(): void
-	{
-		self::expectException(BadMethodCallException::class);
-		self::expectExceptionMessage("Static method 'privateStaticMethodThatThrows' could not be invoked on class '" . $this->m_xRay->className() . "'.");
-		$this->m_xRay->privateStaticMethodThatThrows();
-	}
+    public function testXRayedPrivateStaticMethodThatThrows(): void
+    {
+        self::expectException(BadMethodCallException::class);
+        self::expectExceptionMessage("Static method 'privateStaticMethodThatThrows' could not be invoked on class '" . $this->m_xRay->className() . "'.");
+        $this->m_xRay->privateStaticMethodThatThrows();
+    }
 
     public function testPublicMethod(): void
     {
