@@ -46,8 +46,8 @@ class Process
     /** @var array<string,string|float|int>|null The process environment. */
     private ?array $m_environment = null;
 
-	/** @var resource|null The process handle, `null` while the process is not running. */
-	private $m_proc = null;
+    /** @var resource|null The process handle, `null` while the process is not running. */
+    private $m_proc = null;
 
     /** @var int|null The process's PID while running. */
     private ?int $m_pid = null;
@@ -64,20 +64,20 @@ class Process
     /** @var Closure|null The callback to notify when error output is available. */
     private ?Closure $m_errorNotifier;
 
-	/**
-	 * Initialise a new DriverProcess with a given command-line and working directory.
-	 * @param string $command The command to run.
-	 * @param array<string|int|float> $args The command line arguments.
-	 * @param string|null $workingDirectory The working directory in which to run the command.
-	 */
-	public function __construct(string $command, array $args = [], ?string $workingDirectory = null, ?Closure $outputNotifier = null, ?Closure $errorNotifier = null)
-	{
-		$this->setCommand($command);
-		$this->setArguments($args);
-		$this->setWorkingDirectory($workingDirectory);
-		$this->setOutputNotifier($outputNotifier);
-		$this->setErrorNotifier($errorNotifier);
-	}
+    /**
+     * Initialise a new DriverProcess with a given command-line and working directory.
+     * @param string $command The command to run.
+     * @param array<string|int|float> $args The command line arguments.
+     * @param string|null $workingDirectory The working directory in which to run the command.
+     */
+    public function __construct(string $command, array $args = [], ?string $workingDirectory = null, ?Closure $outputNotifier = null, ?Closure $errorNotifier = null)
+    {
+        $this->setCommand($command);
+        $this->setArguments($args);
+        $this->setWorkingDirectory($workingDirectory);
+        $this->setOutputNotifier($outputNotifier);
+        $this->setErrorNotifier($errorNotifier);
+    }
 
     /**
      * Destroy the process.
@@ -94,11 +94,11 @@ class Process
                 usleep(self::TimeoutPollInterval);
             }
 
-			if ($this->isRunning()) {
-				Log::error("Process {$this->pid()} [{$this->command()}] could not be stopped.");
-			}
-		}
-	}
+            if ($this->isRunning()) {
+                Log::error("Process {$this->pid()} [{$this->command()}] could not be stopped.");
+            }
+        }
+    }
 
     /**
      * Helper to build a command line from a command and arguments.
@@ -209,20 +209,20 @@ class Process
         return $this->m_command;
     }
 
-	/**
-	 * Set the command line arguments of the process.
-	 *
-	 * The command-line arguments can't be set while the process is running.
-	 *
-	 * @param array<string|float|int> $arguments The command line arguments to set.
-	 *
-	 * @throws RuntimeException if the process is running.
-	 */
-	public function setArguments(array $arguments): void
-	{
-		if ($this->isRunning()) {
-			throw new RuntimeException("Can't change the command-line arguments of a running process.");
-		}
+    /**
+     * Set the command line arguments of the process.
+     *
+     * The command-line arguments can't be set while the process is running.
+     *
+     * @param array<string|float|int> $arguments The command line arguments to set.
+     *
+     * @throws RuntimeException if the process is running.
+     */
+    public function setArguments(array $arguments): void
+    {
+        if ($this->isRunning()) {
+            throw new RuntimeException("Can't change the command-line arguments of a running process.");
+        }
 
         if (!all($arguments, fn ($arg): bool => is_string($arg) || is_int($arg) || is_float($arg))) {
             throw new InvalidArgumentException("All arguments must be strings or numbers.");
@@ -231,15 +231,15 @@ class Process
         $this->m_arguments = $arguments;
     }
 
-	/**
-	 * Fetch the command-line arguments of the process.
-	 *
-	 * @return array<string|int|float> The command line arguments.
-	 */
-	public function arguments(): array
-	{
-		return $this->m_arguments;
-	}
+    /**
+     * Fetch the command-line arguments of the process.
+     *
+     * @return array<string|int|float> The command line arguments.
+     */
+    public function arguments(): array
+    {
+        return $this->m_arguments;
+    }
 
     /**
      * Fetch the command-line of the process.

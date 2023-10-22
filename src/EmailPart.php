@@ -93,9 +93,10 @@ class EmailPart
 
         // TODO trigger_error() instead?
         if (!preg_match($rxMimeHeader, $header, $captures)) {
-            Log::error("invalid header line provided (\"$header\")");
+            Log::error("invalid header line provided (\"{$header}\")");
             return false;
         }
+
         // TODO trigger_error() instead?
         if (!preg_match($rxMimeHeader, $header, $captures)) {
             Log::error("invalid header line provided (\"{$header}\")");
@@ -337,7 +338,7 @@ class EmailPart
 
             // for now we don't use the expression captures, but 1 = type, 2 = subtype, 3 = params
             if (!preg_match($rxMimeType, $contentType)) {
-                Log::error("content type \"$contentType\" is not valid");
+                Log::error("content type \"{$contentType}\" is not valid");
                 return false;
             }
         }

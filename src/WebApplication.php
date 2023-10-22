@@ -202,22 +202,22 @@ class WebApplication extends Application
         return $this->m_isRunning;
     }
 
-	/**
-	 * Set the plugins directory.
-	 *
-	 * The plugins directory can only be set before `exec()` is called. If `exec()` has been called, calling
-	 * `setPluginsDirectory()` will fail.
-	 *
-	 * @param string $dir The directory to load plugins from.
+    /**
+     * Set the plugins directory.
+     *
+     * The plugins directory can only be set before `exec()` is called. If `exec()` has been called, calling
+     * `setPluginsDirectory()` will fail.
+     *
+     * @param string $dir The directory to load plugins from.
      *
      * @throws LogicException if the app is already running
      * @throws InvalidPluginsDirectoryException if the provided directory is not valid.
-	 */
-	public function setPluginsDirectory(string $dir): void
-	{
-		if ($this->isRunning()) {
+     */
+    public function setPluginsDirectory(string $dir): void
+    {
+        if ($this->isRunning()) {
             throw new LogicException("Can't set plugins path while application is running");
-		}
+        }
 
         if (!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $dir)) {
             throw new InvalidPluginsDirectoryException($dir, "Plugin directories must be composed entirely of path segments that are alphanumeric plus _ and -.");

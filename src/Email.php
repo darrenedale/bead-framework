@@ -208,7 +208,7 @@ class Email
         $header = explode(":", $header, 2);
 
         if (2 != count($header)) {
-            Log::error("invalid header line provided (\"$header\")");
+            Log::error("invalid header line provided (\"{$header}\")");
             return false;
         }
 

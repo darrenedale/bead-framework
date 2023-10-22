@@ -15,11 +15,11 @@ class AppLog
 
     public const ErrorPrefix = "ERR";
 
-	/** @var null|string The name for the log file. */
-	private ?string $m_fileName = null;
+    /** @var null|string The name for the log file. */
+    private ?string $m_fileName = null;
 
     /** @var null|resource The  handle for the log file  */
-	private $m_fileHandle = null;
+    private $m_fileHandle = null;
 
     /** @var AppLog|null The message log. */
     private static ?AppLog $s_messageLog = null;
