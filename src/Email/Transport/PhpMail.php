@@ -10,12 +10,8 @@ use Bead\Exceptions\Email\TransportException;
 
 class PhpMail implements TransportContract
 {
-    /**
-     * some old (< 2.9 AFAIK) versions of postfix need the line end to be this on *nix
-     *
-     * @var string The line ending to use in the message body during transmission.
-     */
-    private const LineEnd = "\n";
+    /** @var string The line ending to use in the message body during transmission. */
+    private const LineEnd = "\r\n";
 
     public function send(MessageContract $message): void
     {
