@@ -24,7 +24,7 @@ class HeaderTest extends TestCase
     }
 
     /** Ensure we can create a header. */
-    public function testConstructor(): void
+    public function testConstructor1(): void
     {
         $header = new Header("name", "value");
         self::assertEquals("name", $header->name());
@@ -33,7 +33,7 @@ class HeaderTest extends TestCase
     }
 
     /** Ensure we can create a header with parameters. */
-    public function testConstructorWithParameters(): void
+    public function testConstructor2(): void
     {
         $header = new Header("name", "value", ["parameter-name" => "parameter-value",]);
         self::assertEquals("name", $header->name());
@@ -42,7 +42,7 @@ class HeaderTest extends TestCase
     }
 
     /** Ensure constructor throws with invalid header name. */
-    public function testConstructorThrowsWithInvalidName(): void
+    public function testConstructor3(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage("Invalid header name \"\".");
@@ -50,174 +50,177 @@ class HeaderTest extends TestCase
     }
 
     /** Ensure constructor throws with invalid parameter name. */
-    public function testConstructorThrowsWithInvalidParameterName(): void
+    public function testConstructor4(): void
     {
+        if ("1" !== ini_get("zend.assertions")) {
+            $this->markTestSkipped("Assertions are not enabled, Header constructor must fail an assertion for this test.");
+        }
+
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage("All header parameter names must be strings.");
         new Header("name", "value", ["parameter-value",]);
     }
 
     /** Ensure constructor throws with invalid parameter name. */
-    public function testConstructorThrowsWithInvalidParameterValue(): void
+    public function testConstructor5(): void
     {
+        if ("1" !== ini_get("zend.assertions")) {
+            $this->markTestSkipped("Assertions are not enabled, Header constructor must fail an assertion for this test.");
+        }
+
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage("All header parameters must be strings.");
         new Header("name", "value", ["parameter-name" => 42,]);
     }
 
     /** Ensure we can set the header name. */
-    public function testSetName(): void
+    public function testWithName(): void
     {
-        self::assertNotEquals("other-header-name", $this->header->name());
-        $this->header->setName("other-header-name");
-        self::assertEquals("other-header-name", $this->header->name());
+        $originalName = $this->header->name();
+        self::assertNotEquals("other-header-name", $originalName);
+        $header = $this->header->withName("other-header-name");
+        self::assertNotSame($this->header, $header);
+        self::assertEquals($originalName, $this->header->name());
+        self::assertEquals("other-header-name", $header->name());
     }
 
-    /** Ensure setName() throws with an invalid name. */
-    public function testSetNameThrows(): void
+    /** Ensure withName() throws with an invalid name. */
+    public function testWithName2(): void
     {
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage("Invalid header name \"\".");
-        $this->header->setName("");
+        $this->header->withName("");
     }
 
     /** Ensure we can retrieve the header name. */
-    public function testName(): void
+    public function testName1(): void
     {
         self::assertEquals("header-name", $this->header->name());
     }
 
     /** Ensure we can set the header value. */
-    public function testSetValue(): void
+    public function testWithValue1(): void
     {
-        self::assertNotEquals("other-header-value", $this->header->value());
-        $this->header->setValue("other-header-value");
-        self::assertEquals("other-header-value", $this->header->value());
+        $originalValue = $this->header->value();
+        self::assertNotEquals("other-header-value", $originalValue);
+        $header = $this->header->withValue("other-header-value");
+        self::assertNotSame($this->header, $header);
+        self::assertEquals($originalValue, $this->header->value());
+        self::assertEquals("other-header-value", $header->value());
     }
 
     /** Ensure we can retrieve the header value. */
-    public function testValue(): void
+    public function testValue1(): void
     {
         self::assertEquals("header-value", $this->header->value());
     }
 
     /** Ensure we can set a header parameter. */
-    public function testSetParameter(): void
+    public function testWithParameter1(): void
     {
         self::assertNull($this->header->parameter("parameter-name"));
-        $this->header->setParameter("parameter-name", "parameter-value");
-        self::assertEquals("parameter-value", $this->header->parameter("parameter-name"));
+        $header = $this->header->withParameter("parameter-name", "parameter-value");
+        self::assertNotSame($this->header, $header);
+        self::assertNull($this->header->parameter("parameter-name"));
+        self::assertEquals("parameter-value", $header->parameter("parameter-name"));
     }
 
     /** Ensure we can retrieve a header parameter value. */
-    public function testParameter(): void
+    public function testParameter1(): void
     {
-        $this->header->setParameter("parameter-name", "parameter-value");
-        self::assertEquals("parameter-value", $this->header->parameter("parameter-name"));
+        $header = $this->header->withParameter("parameter-name", "parameter-value");
+        self::assertEquals("parameter-value", $header->parameter("parameter-name"));
     }
 
-    /** Ensure we retrieve null when asking for header parameter value that isn't set. */
-    public function testParameterWithUnset(): void
+    /** Ensure we retrieve null when asking for the value for a header parameter that isn't set. */
+    public function testParameter2(): void
     {
         self::assertNull($this->header->parameter("parameter-name"));
     }
 
     /** Ensure we can retrieve the correct parameter count. */
-    public function testParameterCount(): void
+    public function testParameterCount1(): void
     {
         self::assertEquals(0, $this->header->parameterCount());
-        $this->header->setParameter("parameter-name", "parameter-value");
-        self::assertEquals(1, $this->header->parameterCount());
+        $header = $this->header->withParameter("parameter-name", "parameter-value");
+        self::assertEquals(1, $header->parameterCount());
     }
 
     /** Ensure we receive true when checking for an existing parameter. */
-    public function testHasParameter(): void
+    public function testHasParameter1(): void
     {
-        $this->header->setParameter("parameter-name", "parameter-value");
-        self::assertTrue($this->header->hasParameter("parameter-name"));
+        $header = $this->header->withParameter("parameter-name", "parameter-value");
+        self::assertTrue($header->hasParameter("parameter-name"));
     }
 
     /** Ensure we receive false when checking for a parameter that isn't set. */
-    public function testHasParameterWithUnset(): void
+    public function testHasParameter2(): void
     {
-        $this->header->setParameter("parameter-name", "parameter-value");
-        self::assertFalse($this->header->hasParameter("other-parameter-name"));
+        $header = $this->header->withParameter("parameter-name", "parameter-value");
+        self::assertFalse($header->hasParameter("other-parameter-name"));
     }
 
     /** Ensure we can retrieve the parameters. */
-    public function testParameters(): void
+    public function testParameters1(): void
     {
-        $this->header->setParameter("parameter-name", "parameter-value");
-        self::assertEqualsCanonicalizing(["parameter-name" => "parameter-value",], $this->header->parameters());
+        $header = $this->header->withParameter("parameter-name", "parameter-value");
+        self::assertEqualsCanonicalizing(["parameter-name" => "parameter-value",], $header->parameters());
     }
 
     /** Ensure we get an empty array when there are no parameters. */
-    public function testParametersEmpty(): void
+    public function testParameters2(): void
     {
         self::assertEquals([], $this->header->parameters());
     }
 
     /** Ensure we can remove parameters. */
-    public function testRemoveParameter(): void
+    public function testWithoutParameter1(): void
     {
         self::assertEquals([], $this->header->parameters());
-        $this->header->setParameter("parameter-name-1", "parameter-value-1");
-        $this->header->setParameter("parameter-name-2", "parameter-value-2");
-        self::assertEqualsCanonicalizing(["parameter-name-1" => "parameter-value-1", "parameter-name-2" => "parameter-value-2",], $this->header->parameters());
-        $this->header->removeParameter("parameter-name-1");
-        self::assertEqualsCanonicalizing(["parameter-name-2" => "parameter-value-2",], $this->header->parameters());
+
+        $header = $this->header
+            ->withParameter("parameter-name-1", "parameter-value-1")
+            ->withParameter("parameter-name-2", "parameter-value-2");
+
+        self::assertEqualsCanonicalizing(["parameter-name-1" => "parameter-value-1", "parameter-name-2" => "parameter-value-2",], $header->parameters());
+        $header = $header->withoutParameter("parameter-name-1");
+        self::assertEqualsCanonicalizing(["parameter-name-2" => "parameter-value-2",], $header->parameters());
     }
 
     /** Ensure removing a parameter that is not set does not alter parameters. */
-    public function testRemoveParameterNotSet(): void
+    public function testWithoutParameter2(): void
     {
         self::assertEquals([], $this->header->parameters());
-        $this->header->setParameter("parameter-name-1", "parameter-value-1");
-        $this->header->setParameter("parameter-name-2", "parameter-value-2");
-        self::assertEqualsCanonicalizing(["parameter-name-1" => "parameter-value-1", "parameter-name-2" => "parameter-value-2",], $this->header->parameters());
-        $this->header->removeParameter("parameter-name-3");
-        self::assertEqualsCanonicalizing(["parameter-name-1" => "parameter-value-1", "parameter-name-2" => "parameter-value-2",], $this->header->parameters());
+
+        $header = $this->header
+            ->withParameter("parameter-name-1", "parameter-value-1")
+            ->withParameter("parameter-name-2", "parameter-value-2");
+
+        self::assertEqualsCanonicalizing(["parameter-name-1" => "parameter-value-1", "parameter-name-2" => "parameter-value-2",], $header->parameters());
+        $header = $header->withoutParameter("parameter-name-3");
+        self::assertEqualsCanonicalizing(["parameter-name-1" => "parameter-value-1", "parameter-name-2" => "parameter-value-2",], $header->parameters());
     }
 
     /** Ensure we get the expected header line when casting the header to a string. */
-    public function testToString(): void
+    public function testToString1(): void
     {
         self::assertEquals("header-name: header-value", (string) $this->header);
-        $this->header->setParameter("parameter-1", "value-1");
-        $this->header->setParameter("parameter-2", "value-2");
-        self::assertEquals("header-name: header-value; parameter-1=value-1; parameter-2=value-2", (string) $this->header);
+        $header = $this->header
+            ->withParameter("parameter-1", "value-1")
+            ->withParameter("parameter-2", "value-2");
+
+        self::assertEquals("header-name: header-value; parameter-1=value-1; parameter-2=value-2", (string) $header);
     }
 
     /** Ensure we generate the correct header line. */
-    public function testGenerate(): void
+    public function testLine1(): void
     {
-        self::assertEquals("header-name: header-value", $this->header->generate());
-        $this->header->setParameter("parameter-1", "value-1");
-        $this->header->setParameter("parameter-2", "value-2");
-        self::assertEquals("header-name: header-value; parameter-1=value-1; parameter-2=value-2", $this->header->generate());
-    }
+        self::assertEquals("header-name: header-value", $this->header->line());
 
-    /**
-     * Test data for testIsValidName().
-     *
-     * @return iterable The test data.
-     */
-    public function dataForTestIsValidName(): iterable
-    {
-        yield ["header-name", true,];
-        yield ["", false,];
-    }
+        $header = $this->header
+            ->withParameter("parameter-1", "value-1")
+            ->withParameter("parameter-2", "value-2");
 
-    /**
-     * Ensure isValidName() correctly identifies valid and invalid header names.
-     *
-     * @dataProvider dataForTestIsValidName
-     *
-     * @param string $name The name to test.
-     * @param bool $expected The expected outcome.
-     */
-    public function testIsValidName(string $name, bool $expected): void
-    {
-        self::assertEquals($expected, Header::isValidName($name));
+        self::assertEquals("header-name: header-value; parameter-1=value-1; parameter-2=value-2", $header->line());
     }
 }

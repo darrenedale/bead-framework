@@ -45,77 +45,136 @@ class PartTest extends TestCase
     }
 
     /** Ensure we can initialise a part with the expected default state. */
-    public function testDefaultConstructor(): void
+    public function testConstructor1(): void
     {
         $part = new Part();
-        self::assertEquals("", $part->content());
+        self::assertEquals("", $part->body());
         self::assertEquals("text/plain", $part->contentType());
         self::assertEquals("quoted-printable", $part->contentEncoding());
     }
 
     /** Ensure we can initialise a part with content. */
-    public function testConstructorWithContent(): void
+    public function testConstructor2(): void
     {
         $part = new Part(self::PlainTextContent);
-        self::assertEquals(self::PlainTextContent, $part->content());
+        self::assertEquals(self::PlainTextContent, $part->body());
         self::assertEquals("text/plain", $part->contentType());
         self::assertEquals("quoted-printable", $part->contentEncoding());
     }
 
     /** Ensure we can initialise a part with content and content-type. */
-    public function testConstructorWithContentType(): void
+    public function testConstructor3(): void
     {
-        $part = new Part(self::HtmlContent, 'text/html');
-        self::assertEquals(self::HtmlContent, $part->content());
+        $part = new Part(self::HtmlContent, "text/html");
+        self::assertEquals(self::HtmlContent, $part->body());
         self::assertEquals("text/html", $part->contentType());
         self::assertEquals("quoted-printable", $part->contentEncoding());
     }
 
     /** Ensure we can initialise a part with content, content-type and transfer encoding. */
-    public function testConstructorWithContentEncoding(): void
+    public function testConstructor4(): void
     {
-        $part = new Part(self::HtmlContent, 'text/html', "8-bit");
-        self::assertEquals(self::HtmlContent, $part->content());
+        $part = new Part(self::HtmlContent, "text/html", "8-bit");
+        self::assertEquals(self::HtmlContent, $part->body());
         self::assertEquals("text/html", $part->contentType());
         self::assertEquals("8-bit", $part->contentEncoding());
     }
 
     /** Ensure we can set the content type. */
-    public function testSetContentType(): void
+    public function testWithContentType(): void
     {
         self::assertNotEquals("text/html", $this->part->contentType());
-        $this->part->setContentType("text/html");
-        self::assertEquals("text/html", $this->part->contentType());
+        $part = $this->part->withContentType("text/html");
+        self::assertNotSame($this->part, $part);
+        self::assertEquals("text/plain", $this->part->contentType());
+        self::assertEquals("text/html", $part->contentType());
     }
 
-    /** Ensure setting an invalid content type throws. */
-    public function testSetContentTypeThrows(): void
+    public static function dataForTestWithContentType2(): iterable
+    {
+        yield "invalid" => ["invalid-content-type"];
+        yield "nearly-valid" => ["application/x- something"];
+        yield "empty" => [""];
+    }
+
+    /**
+     * Ensure setting an invalid content type throws.
+     *
+     * @dataProvider dataForTestWithContentType2
+     */
+    public function testWithContentType2(string $contentType): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage("Content type \"invalid-content-type\" is not valid.");
-        $this->part->setContentType("invalid-content-type");
+        self::expectExceptionMessage("Content type \"{$contentType}\" is not valid.");
+        $this->part->withContentType($contentType);
+    }
+
+    /** Ensure leading and trailing whitespace is trimmed from content types. */
+    public function testWithContentType3(): void
+    {
+        $part = $this->part->withContentType("  application/x-bead-test  ");
+        self::assertEquals("application/x-bead-test", $part->contentType());
     }
 
     /** Ensure we can fetch the content type. */
-    public function testContentType(): void
+    public function testContentType1(): void
     {
         self::assertEquals("text/plain", $this->part->contentType());
     }
 
-    /** Ensure we can retrieve the content encoding. */
-    public function testSetContentEncoding(): void
+    public static function dataForTestWithContentEncoding1(): iterable
     {
-        self::assertNotEquals("8-bit", $this->part->contentEncoding());
-        $this->part->setContentEncoding("8-bit");
-        self::assertEquals("8-bit", $this->part->contentEncoding());
+        yield "7bit" => ["7bit"];
+        yield "7bit-variable-case" => ["7BiT"];
+        yield "7bit-upper-case" => ["7BIT"];
+        yield "8bit" => ["8bit"];
+        yield "8bit-variable-case" => ["8BiT"];
+        yield "8bit-upper-case" => ["8BIT"];
+        yield "quoted-printable" => ["quoted-printable"];
+        yield "quoted-printable-variable-case" => ["qUoteD-PRintABLE"];
+        yield "quoted-printable-upper-case" => ["QUOTED-PRINTABLE"];
+        yield "binary" => ["binary"];
+        yield "binary-variable-case" => ["BInarY"];
+        yield "binary-upper-case" => ["BINARY"];
+        yield "base64" => ["base64"];
+        yield "base64-upper-case" => ["bASe64"];
+        yield "base64-variable-case" => ["BASE64"];
+        yield "x-token" => ["x-bead-encoding"];
+        yield "x-token-variable-case" => ["x-bEaD-ENcoDIng"];
+        yield "x-token-upper-case" => ["X-BEAD-ENCODING"];
     }
 
-    /** Ensure setting an invalid content encoding throws. */
-    public function testSetContentEncodingThrows(): void
+    /** 
+     * Ensure we can set the content encoding successfully.
+     *
+     * @dataProvider dataForTestWithContentEncoding1
+     */
+    public function testWithContentEncoding1(string $encoding): void
+    {
+        $originalEncoding = $this->part->contentEncoding();
+        $part = $this->part->withContentEncoding($encoding);
+        self::assertNotSame($this->part, $part);
+        self::assertEquals($originalEncoding, $this->part->contentEncoding());
+        self::assertEquals($encoding, $part->contentEncoding());
+    }
+
+    public static function dataForTestWithContentEncoding2(): iterable
+    {
+        yield "invalid" => ["invalid-encoding"];
+        yield "almost-valid" => ["7-bit"];
+        yield "almost-valid-x-token" => ["x- bead-encoding"];
+    }
+
+    /**
+     * Ensure setting an invalid content encoding throws.
+     *
+     * @dataProvider dataForTestWithContentEncoding2
+     */
+    public function testWithContentEncoding2(string $encoding): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage("Content encoding \"\" is not valid.");
-        $this->part->setContentEncoding("");
+        self::expectExceptionMessage("Content encoding \"{$encoding}\" is not valid.");
+        $this->part->withContentEncoding($encoding);
     }
 
     /** Ensure the content transfer encoding can be retrieved. */
@@ -124,87 +183,80 @@ class PartTest extends TestCase
         self::assertEquals("quoted-printable", $this->part->contentEncoding());
     }
 
-    /** Ensure the content can be set. */
-    public function testSetContent(): void
+    /** Ensure the body can be set. */
+    public function testWithBody(): void
     {
-        self::assertNotEquals(self::PlainTextContent, $this->part->content());
-        $this->part->setContent(self::PlainTextContent);
-        self::assertEquals(self::PlainTextContent, $this->part->content());
+        $originalBody = $this->part->body();
+        self::assertNotEquals(self::PlainTextContent, $this->part->body());
+        $part = $this->part->withBody(self::PlainTextContent);
+        self::assertNotSame($this->part, $part);
+        self::assertEquals($originalBody, $this->part->body());
+        self::assertEquals(self::PlainTextContent, $part->body());
     }
 
-    /** Ensure the part content can be retrieved. */
-    public function testContent(): void
+    /** Ensure the part body can be retrieved. */
+    public function testBody(): void
     {
-        self::assertEquals(self::TestContent, $this->part->content());
+        self::assertEquals(self::TestContent, $this->part->body());
     }
 
     /** Ensure a header can be added using name and value. */
-    public function testAddHeaderNameValue(): void
+    public function testWithHeader1(): void
     {
-        self::assertArrayNotHasEntry("header-1", "value-1", $this->part->headers());
-        $this->part->addHeader("header-1", "value-1");
-        self::assertArrayHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
+        self::assertArrayNotHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
+        $part = $this->part->withHeader("header-1", "value-1");
+        self::assertNotSame($this->part, $part);
+        self::assertArrayNotHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
+        self::assertArrayHasEntry("header-1", "value-1", self::headersToAssociativeArray($part->headers()));
     }
 
     /** Ensure a Header object can be added. */
-    public function testAddHeader(): void
+    public function testWithHeader2(): void
     {
-        self::assertArrayNotHasEntry("header-1", "value-1", $this->part->headers());
-        $this->part->addHeader(new Header("header-1", "value-1"));
-        self::assertArrayHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
+        self::assertArrayNotHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
+        $part = $this->part->withHeader(new Header("header-1", "value-1"));
+        self::assertNotSame($this->part, $part);
+        self::assertArrayNotHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
+        self::assertArrayHasEntry("header-1", "value-1", self::headersToAssociativeArray($part->headers()));
     }
 
     /** Ensure adding content-type header by name and value sets the content type. */
-    public function testAddHeaderContentTypeNameValue(): void
+    public function testWithHeader3(): void
     {
-        self::assertNotEquals("text/html", $this->part->contentType());
-        $this->part->addHeader("content-type", "text/html");
-        self::assertEquals("text/html", $this->part->contentType());
+        $originalContentType = $this->part->contentType();
+        self::assertNotEquals("text/html", $originalContentType);
+        $part = $this->part->withHeader("content-type", "text/html");
+        self::assertEquals($originalContentType, $this->part->contentType());
+        self::assertEquals("text/html", $part->contentType());
     }
 
-    /** Ensure adding content-type Header sets the content type. */
-    public function testAddHeaderContentType(): void
+    /** Ensure adding content-type Header object sets the content type. */
+    public function testWithHeader4(): void
     {
-        self::assertNotEquals("text/html", $this->part->contentType());
-        $this->part->addHeader(new Header("content-type", "text/html"));
-        self::assertEquals("text/html", $this->part->contentType());
+        $originalContentType = $this->part->contentType();
+        self::assertNotEquals("text/html", $originalContentType);
+        $part = $this->part->withHeader(new Header("content-type", "text/html"));
+        self::assertEquals($originalContentType, $this->part->contentType());
+        self::assertEquals("text/html", $part->contentType());
     }
 
     /** Ensure adding content-transfer-encoding header by name and value sets the content encoding. */
-    public function testAddHeaderContentEncodingNameValue(): void
+    public function testWithHeader5(): void
     {
-        self::assertNotEquals("8-bit", $this->part->contentEncoding());
-        $this->part->addHeader("content-transfer-encoding", "8-bit");
-        self::assertEquals("8-bit", $this->part->contentEncoding());
+        $originalContentEncoding = $this->part->contentEncoding();
+        self::assertNotEquals("8bit", $originalContentEncoding);
+        $part = $this->part->withHeader("content-transfer-encoding", "8bit");
+        self::assertEquals($originalContentEncoding, $this->part->contentEncoding());
+        self::assertEquals("8bit", $part->contentEncoding());
     }
 
-    /** Ensure adding content-transfer-encoding Header sets the content encoding. */
-    public function testAddHeaderContentEncoding(): void
+    /** Ensure adding content-transfer-encoding Header object sets the content encoding. */
+    public function testWithHeader6(): void
     {
-        self::assertNotEquals("8-bit", $this->part->contentEncoding());
-        $this->part->addHeader(new Header("content-transfer-encoding", "8-bit"));
-        self::assertEquals("8-bit", $this->part->contentEncoding());
-    }
-
-    /** Ensure headers can be cleared. */
-    public function testClearHeaders(): void
-    {
-        self::assertArrayNotHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
-        $this->part->addHeader("header-1", "value-1");
-        self::assertArrayHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
-        $this->part->clearHeaders();
-        self::assertArrayNotHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
-    }
-
-    /** Ensure clearing headers retains content-type and content-transfer-encoding. */
-    public function testClearHeadersRetains(): void
-    {
-        self::assertArrayNotHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
-        $this->part->addHeader("header-1", "value-1");
-        self::assertArrayHasEntry("header-1", "value-1", self::headersToAssociativeArray($this->part->headers()));
-        $this->part->clearHeaders();
-        $headers = array_map(fn(Header $header): string => strtolower($header->name()), $this->part->headers());
-        self::assertContains("content-type", $headers);
-        self::assertContains("content-transfer-encoding", $headers);
+        $originalContentEncoding = $this->part->contentEncoding();
+        self::assertNotEquals("8bit", $originalContentEncoding);
+        $part = $this->part->withHeader(new Header("content-transfer-encoding", "8bit"));
+        self::assertEquals($originalContentEncoding, $this->part->contentEncoding());
+        self::assertEquals("8bit", $part->contentEncoding());
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Email;
 
+use Bead\Contracts\Email\Header as HeaderContract;
 use InvalidArgumentException;
 use Stringable;
 
@@ -37,7 +38,7 @@ use function Bead\Helpers\Iterable\all;
  * The full string representation of the header, suitable for inclusion in an email message header section, can be
  * fetched by calling `generate()` or casting to a `string`.
  */
-class Header implements Stringable
+class Header implements HeaderContract, Stringable
 {
     /** @var string The name of the header. */
     private string $name;
@@ -54,33 +55,26 @@ class Header implements Stringable
      * @param $name string The name for the header.
      * @param $value string The value for the header.
      * @param $params array<string,string> The parameters for the header.
+     *
+     * @throws InvalidArgumentException if the header name is not valid or any provided parameter is not valid.
      */
     public function __construct(string $name, string $value, array $params = [])
     {
         assert(all(array_keys($params), fn($name): bool => is_string($name) && "" !== trim($name)), new InvalidArgumentException("All header parameter names must be strings."));
-        assert(all($params, 'is_string'), new InvalidArgumentException("All header parameters must be strings."));
-        $this->setName($name);
-        $this->setValue($value);
+        assert(all($params, "is_string"), new InvalidArgumentException("All header parameters must be strings."));
+        $name = trim($name);
+        self::checkName($name);
 
-        foreach ($params as $paramName => $paramValue) {
-            $this->setParameter($paramName, $paramValue);
-        }
+        $this->name = $name;
+        $this->value = $value;
+        $this->params = $params;
     }
 
-    /**
-     * Check whether a string contains a valid header name.
-     *
-     * Valid names are UTF-8 encoded strings composed entirely of characters from the set:
-     *
-     *     !#$%&'*+-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZZ^_`abcdefghijklmnopqrstuvwxyz|~
-     *
-     * @param string $name The name to test.
-     *
-     * @return bool `true` if the name is valid `false` if not.
-     */
-    public static function isValidName(string $name): bool
+    private static function checkName(string $name): void
     {
-        return 1 === preg_match("/^[!#$%&'*+\\-0-9A-Z^_`a-z|~]+\$/", trim($name));
+        if (!Mime::isValidHeaderName($name)) {
+            throw new InvalidArgumentException("Invalid header name \"{$name}\".");
+        }
     }
 
     /**
@@ -90,15 +84,13 @@ class Header implements Stringable
      *
      * @throws InvalidArgumentException If the name is not valid.
      */
-    final public function setName(string $name): void
+    final public function withName(string $name): self
     {
         $name = trim($name);
-
-        if (!self::isValidName($name)) {
-            throw new InvalidArgumentException("Invalid header name \"$name\".");
-        }
-
-        $this->name = $name;
+        self::checkName($name);
+        $ret = clone $this;
+        $ret->name = $name;
+        return $ret;
     }
 
     /**
@@ -118,9 +110,11 @@ class Header implements Stringable
      *
      * @param $value string The value for the header.
      */
-    public function setValue(string $value): void
+    public function withValue(string $value): self
     {
-        $this->value = $value;
+        $ret = clone $this;
+        $ret->value = $value;
+        return $ret;
     }
 
     /**
@@ -139,9 +133,11 @@ class Header implements Stringable
      * @param $name string The name of the parameter to set.
      * @param $value string The value for the parameter.
      */
-    public function setParameter(string $name, string $value): void
+    public function withParameter(string $name, string $value): self
     {
-        $this->params[$name] = $value;
+        $ret = clone $this;
+        $ret->params[$name] = $value;
+        return $ret;
     }
 
     /**
@@ -186,13 +182,16 @@ class Header implements Stringable
      *
      * @param $name string The name of the parameter to remove.
      */
-    public function removeParameter(string $name): void
+    public function withoutParameter(string $name): self
     {
+        $ret = clone $this;
+
         if (!$this->hasParameter($name)) {
-            return;
+            return $ret;
         }
 
-        unset($this->params[$name]);
+        unset($ret->params[$name]);
+        return $ret;
     }
 
     /**
@@ -214,7 +213,7 @@ class Header implements Stringable
      *
      * @return string The header line.
      */
-    public function generate(): string
+    public function line(): string
     {
         $header = "{$this->name()}: {$this->value()}";
 
@@ -232,6 +231,6 @@ class Header implements Stringable
      */
     public function __toString(): string
     {
-        return $this->generate();
+        return $this->line();
     }
 }
