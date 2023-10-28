@@ -6,8 +6,6 @@ namespace Bead\Contracts\Email;
 
 interface Transport
 {
-    /**
-     * Attempt to deliver a message.
-     */
+    /** Attempt to deliver a message. */
     public function send(Message $message): void;
 }

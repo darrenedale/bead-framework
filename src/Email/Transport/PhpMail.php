@@ -6,6 +6,7 @@ namespace Bead\Email\Transport;
 
 use Bead\Contracts\Email\Message as MessageContract;
 use Bead\Contracts\Email\Transport as TransportContract;
+use Bead\Exceptions\Email\TransportException;
 
 class PhpMail implements TransportContract
 {
@@ -34,8 +35,7 @@ class PhpMail implements TransportContract
             $message->body(),
             $headers
         )) {
-            // TODO MailTransportException
-            throw new \RuntimeException("Failed to transport message");
+            throw new TransportException("Failed to transport message with subject \"{$message->subject()}\"");
         }
     }
 }
