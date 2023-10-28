@@ -2,7 +2,7 @@
 
 A basic MVC application framework for PHP.
 
-[![PHP unit tests](https://github.com/darrenedale/bead-framework/actions/workflows/run-tests-php.yml/badge.svg)](https://github.com/darrenedale/bead-framework/actions/workflows/run-tests-php.yml)
+[![PHP unit tests](https://github.com/darrenedale/bead-framework/actions/workflows/run-tests.yml/badge.svg)](https://github.com/darrenedale/bead-framework/actions/workflows/run-tests.yml)
 
 ## Introduction
 
