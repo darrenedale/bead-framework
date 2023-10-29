@@ -6,13 +6,11 @@ namespace Bead\Email\Transport;
 
 use Bead\Contracts\Email\Message as MessageContract;
 use Bead\Contracts\Email\Transport as TransportContract;
+use Bead\Email\Mime;
 use Bead\Exceptions\Email\TransportException;
 
 class PhpMail implements TransportContract
 {
-    /** @var string The line ending to use in the message body during transmission. */
-    private const LineEnd = "\r\n";
-
     public function send(MessageContract $message): void
     {
         $headers = "";
@@ -22,7 +20,7 @@ class PhpMail implements TransportContract
                 continue;
             }
 
-            $headers .= $header->line() . self::LineEnd;
+            $headers .= $header->line() . Mime::Rfc822LineEnd;
         }
 
         if (!mail(

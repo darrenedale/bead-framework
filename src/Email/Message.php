@@ -29,9 +29,6 @@ class Message implements MultipartMessageContract
     /** @var string The possible characters to use in the randomly-generated portion of the mulitpart delimiter. */
     private const DelimiterAlphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-    /** @var string The line ending to use in the message body during transmission. */
-    private const LineEnd = "\r\n";
-
     /** @var PartContract[] The parts of the email body. */
     protected array $parts = [];
 
@@ -76,7 +73,7 @@ class Message implements MultipartMessageContract
 
             // if the caller provides a multipart content type, ensure it has the correct boundary string
             if ("content-type" === $headerName && str_starts_with(strtolower($header->value()), "multipart/")) {
-                $header = $header->withParameter("boundary", $this->multipartBoundary);
+                $header = $header->withParameter("boundary", "\"{$this->multipartBoundary}\"");
             }
 
             if (!array_key_exists($headerName, $singleUseHeaders)) {
@@ -101,15 +98,15 @@ class Message implements MultipartMessageContract
         $this->headers = $headers;
 
         // fill in defaults for any missing headers that we require
-        if (!($singleUseHeaders['content-type'] ?? false)) {
+        if (!($singleUseHeaders["content-type"] ?? false)) {
             $this->headers[] = (new Header("content-type", "multipart/mixed"))->withParameter("boundary", "\"{$this->multipartBoundary}\"");
         }
 
-        if (!($singleUseHeaders['mime-version'] ?? false)) {
+        if (!($singleUseHeaders["mime-version"] ?? false)) {
             $this->headers[] = new Header("mime-version", "1.0");
         }
 
-        if (!($singleUseHeaders['content-transfer-encoding'] ?? false)) {
+        if (!($singleUseHeaders["content-transfer-encoding"] ?? false)) {
             $this->headers[] = new Header("content-transfer-encoding", "7bit");
         }
 
@@ -320,14 +317,14 @@ class Message implements MultipartMessageContract
         $ret = "";
 
         foreach ($this->parts() as $part) {
-            $ret .= self::LineEnd . "--{$this->multipartBoundary}" . self::LineEnd;
+            $ret .= Mime::Rfc822LineEnd . "--{$this->multipartBoundary}" . Mime::Rfc822LineEnd;
 
             /* output the part headers  */
             foreach ($part->headers() as $header) {
-                $ret .= $header->line() . self::LineEnd;
+                $ret .= $header->line() . Mime::Rfc822LineEnd;
             }
 
-            $ret .= self::LineEnd . $part->body() . self::LineEnd;
+            $ret .= Mime::Rfc822LineEnd . $part->body() . Mime::Rfc822LineEnd;
         }
 
         return "{$ret}--{$this->multipartBoundary}--";

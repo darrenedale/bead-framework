@@ -9,6 +9,9 @@ namespace Bead\Email;
  */
 final class Mime
 {
+    /** @var string CRLF as defined in RFC-822. */
+    public const Rfc822LineEnd = "\r\n";
+
     /**
      * PCRE pattern to identify valid RFC-2045 tokens.
      *
