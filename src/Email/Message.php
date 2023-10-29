@@ -131,11 +131,11 @@ class Message implements MultipartMessageContract
      *
      * @return self The clone of the Message, with the header set/added.
      */
-    public function withHeader(Header|string $header, ?string $value = null): self
+    public function withHeader(Header|string $header, ?string $value = null, array $parameters = []): self
     {
         if (is_string($header)) {
             assert(is_string($value), new InvalidArgumentException("\$value must be provided when \$header is a string"));
-            $header = new Header($header, $value);
+            $header = new Header($header, $value, $parameters);
         }
 
         // ensure we always use the correct boundary
@@ -143,7 +143,7 @@ class Message implements MultipartMessageContract
             $header = $header->withParameter("boundary", "\"{$this->multipartBoundary}\"");
         }
 
-        return $this->traitWithHeader($header, $value);
+        return $this->traitWithHeader($header);
     }
 
     /**
@@ -187,7 +187,7 @@ class Message implements MultipartMessageContract
     {
         if (is_array($address)) {
             if (!all($address, "is_string")) {
-                throw new InvalidArgumentException("Addresses provided to addTo() must all be strings.");
+                throw new InvalidArgumentException("Addresses provided to withTo() must all be strings.");
             }
         } else {
             $address = [$address];
@@ -226,7 +226,7 @@ class Message implements MultipartMessageContract
     {
         if (is_array($address)) {
             if (!all($address, "is_string")) {
-                throw new InvalidArgumentException("Addresses provided to addCc() must all be strings.");
+                throw new InvalidArgumentException("Addresses provided to withCc() must all be strings.");
             }
         } else {
             $address = [$address];
@@ -265,7 +265,7 @@ class Message implements MultipartMessageContract
     {
         if (is_array($address)) {
             if (!all($address, "is_string")) {
-                throw new InvalidArgumentException("Addresses provided to addBcc() must all be strings.");
+                throw new InvalidArgumentException("Addresses provided to withBcc() must all be strings.");
             }
         } else {
             $address = [$address];
@@ -274,7 +274,7 @@ class Message implements MultipartMessageContract
         $clone = clone $this;
 
         foreach ($address as $addr) {
-            $this->withHeader("bcc", $addr);
+            $clone = $clone->withHeader("bcc", $addr);
         }
 
         return $clone;
@@ -331,6 +331,23 @@ class Message implements MultipartMessageContract
     }
 
     /**
+     * Sets the body of the message from a string.
+     *
+     * ### Note Using this function replaces all existing message body parts with a single plain text body part.
+     *
+     * @param $body string|null The string to use as the body of the message, or `null` to clear the current parts.
+     */
+    public function withBody(?string $body): self
+    {
+        $clone = clone $this;
+
+        // by default parts have content-type text/plain, content-transfer-encoding: quoted-printable
+        $clone->parts = is_string($body) ? [new Part($body)] : [];
+
+        return $clone;
+    }
+
+    /**
      * Get the parts for the message body.
      *
      * @return PartContract[] The parts, or `null` on error.
@@ -351,23 +368,6 @@ class Message implements MultipartMessageContract
     }
 
     /**
-     * Sets the body of the message from a string.
-     *
-     * ### Note Using this function replaces all existing message body parts with a single plain text body part.
-     *
-     * @param $body string|null The string to use as the body of the message, or `null` to clear the current parts.
-     */
-    public function withBody(?string $body): self
-    {
-        $clone = clone $this;
-
-        // by default parts have content-type text/plain, content-transfer-encoding: quoted-printable
-        $clone->parts = is_string($body) ? [new Part($body)] : [];
-
-        return $clone;
-    }
-
-    /**
      * Add a body part to the email message.
      *
      * Parts are always added to the end of the message. When adding unwrapped part content to the email, if no type or
@@ -382,9 +382,7 @@ class Message implements MultipartMessageContract
     public function withPart(PartContract|string $part, ?string $contentType = null, ?string $contentEncoding = null): self
     {
         if (is_string($part)) {
-            $part = new Part($part);
-            $part->withContentType((string) $contentType);
-            $part->withContentEncoding((string) $contentEncoding);
+            $part = new Part($part, (string) $contentType, (string) $contentEncoding);
         }
 
         $clone = clone $this;
@@ -412,13 +410,16 @@ class Message implements MultipartMessageContract
      */
     public function withAttachment(string $content, string $contentType, string $contentEncoding, string $filename): self
     {
-        $newPart = new Part($content);
-        $newPart->withContentType($contentType);
-        $newPart->withContentEncoding($contentEncoding);
-        $newPart->withHeader(
+        $dispositionHeader = new Header(
             "content-disposition",
-            "attachment; filename=\"" . str_replace("\"", "\\\"", $filename) . "\""
+            "attachment",
+            ["filename" => "\"" . str_replace("\"", "\\\"", $filename) . "\""]
         );
+
+        $newPart = (new Part($content))
+            ->withContentType($contentType)
+            ->withContentEncoding($contentEncoding)
+            ->withHeader($dispositionHeader);
 
         return $this->withPart($newPart);
     }

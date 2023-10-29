@@ -93,7 +93,9 @@ trait HasHeaders
             "mime-version",
             "content-type",
             "content-transfer-encoding",
+            "content-disposition",
             "from",
+            "subject",
         ];
     }
 

@@ -9,6 +9,8 @@ use InvalidArgumentException;
 
 class PartTest extends TestCase
 {
+    use ConvertsHeadersToMaps;
+
     /** @var string Content for the test fixture. */
     private const TestContent = "Test content.";
 
@@ -20,18 +22,6 @@ class PartTest extends TestCase
 
     /** @var Part The Part under test. */
     private Part $part;
-
-    /** Extract an array of headers to key-value pairs in an associative array. */
-    private static function headersToAssociativeArray(array $headers): array
-    {
-        $arr = [];
-
-        foreach ($headers as $header) {
-            $arr[$header->name()] = $header->value();
-        }
-
-        return $arr;
-    }
 
     public function setUp(): void
     {
