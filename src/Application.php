@@ -225,7 +225,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
         }
 
         return $this->m_config[$key] ?? $default;
-
     }
 
     /** Fetch the application's title.
