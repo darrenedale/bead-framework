@@ -12,8 +12,8 @@ use Stringable;
 
 final class ConvertsPsr3LogLevelsTest extends TestCase
 {
-    /** @var ConvertsPsr3LogLevels A test instance of the trait. */
-    private mixed $instance;
+    /** @var object An anonymouser class instane that utilises the trait. */
+    private object $instance;
 
     public function setUp(): void
     {

@@ -56,8 +56,14 @@ abstract class HttpException extends Exception implements Response
     {
         $viewPath = WebApplication::instance()->config("app.http.error.view.path");
 
-        if (isset($viewPath) && View::exists("{$viewPath}.{$this->statusCode()}")) {
-            return (new View("{$viewPath}.{$this->statusCode()}", ["message" => $this->getMessage()]))->render();
+        if (isset($viewPath)) {
+            try {
+                return (new View("{$viewPath}.{$this->statusCode()}", ["message" => $this->getMessage()]))->render();
+            } catch (ViewNotFoundException $err) {
+                // TODO implement fallback
+            } catch (ViewRenderingException $err) {
+                // TODO implement fallback
+            }
         }
 
         return "";

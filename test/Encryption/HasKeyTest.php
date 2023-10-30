@@ -13,7 +13,7 @@ use LogicException;
 
 class HasKeyTest extends TestCase
 {
-    /** @var HasKey */
+    /** @var object $instance Instance of an anonymous class that utilises the HasKey trait. */
     private object $instance;
 
     public function setUp(): void

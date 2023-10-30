@@ -18,7 +18,6 @@ use Bead\Exceptions\Database\InvalidTableNameException;
 use Bead\Exceptions\Database\OrphanedJoinException;
 use InvalidArgumentException;
 use PDO;
-use TypeError;
 
 use function Bead\Helpers\Iterable\some;
 
@@ -163,7 +162,7 @@ trait BuildsQueries
      *
      * @return string The SQL-ified value.
      */
-    protected static function sqlifyValue($arg): string
+    protected static function sqlifyValue(string|int|float|DateTime|bool|null $arg): string
     {
         if (is_string($arg)) {
             return self::wrapString($arg);
@@ -176,20 +175,18 @@ trait BuildsQueries
         } elseif (is_bool($arg)) {
             return ($arg ? "1" : "0");
         }
-
-        throw new TypeError("Where condition arguments must be string, numeric, bool, DateTime or null.");
     }
 
     /**
      * Replace the query builder's selects with a new one/set.
      *
-     * @param $columns
+     * @param array|string $columns
      *
      * @return $this The QueryBuilder instance for further method chaining.
      * @throws DuplicateColumnNameException If an array of columns contains a duplicate name or alias.
      * @throws InvalidColumnNameException If any column in the selects is not a valid SQL column.
      */
-    public function select($columns): self
+    public function select(array|string $columns): self
     {
         $this->selects = [];
         $this->compiledSelects = null;
@@ -203,14 +200,10 @@ trait BuildsQueries
      * @throws DuplicateColumnNameException
      * @throws InvalidColumnNameException
      */
-    public function addSelect($columns): self
+    public function addSelect(array|string $columns): self
     {
         if (is_string($columns)) {
             $columns = [$columns];
-        }
-
-        if (!is_array($columns)) {
-            throw new TypeError("Selects must be a single column or an array of columns.");
         }
 
         foreach ($columns as $alias => $column) {
@@ -262,14 +255,10 @@ trait BuildsQueries
      * @throws InvalidColumnNameException
      * @throws InvalidTableNameException
      */
-    public function from($table, ?string $alias = null): self
+    public function from(array|string $table, ?string $alias = null): self
     {
         if (is_string($table)) {
             $table = [($alias ?? $table) => $table];
-        }
-
-        if (!is_array($table)) {
-            throw new TypeError("The table must be a string or an array of table names.");
         }
 
         foreach ($table as $alias => $tableName) {
@@ -308,14 +297,10 @@ trait BuildsQueries
      * @throws InvalidColumnNameException
      * @throws InvalidTableNameException
      */
-    public function rawFrom($expression, ?string $alias = null): self
+    public function rawFrom(array|string $expression, ?string $alias = null): self
     {
         if (is_string($expression)) {
             $expression = [$alias => $expression,];
-        }
-
-        if (!is_array($expression)) {
-            throw new TypeError("The raw FROM expression must be a string or an array of strings.");
         }
 
         foreach ($expression as $alias => $aliasExpression) {
@@ -380,8 +365,7 @@ trait BuildsQueries
      * @param string $operatorOrCombine
      * @param string|null $expr2
      *
-     * @return void
-     * @throws InvalidColumnNameException
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws InvalidTableNameException if either table or the alias is not a valid SQL table name.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
      */
@@ -436,13 +420,13 @@ trait BuildsQueries
             "alias" => $alias,
             "combine" => $combine,
             "expressions" => array_map(function (string $lhs, string $rhs) use ($local, $alias, $operatorOrCombine): array {
-                [$table, $column] = self::extractTableAndColumn($lhs);
+                [$table,] = self::extractTableAndColumn($lhs);
 
                 if (empty($table)) {
                     $lhs = "{$alias}.{$lhs}";
                 }
 
-                [$table, $column] = self::extractTableAndColumn($rhs);
+                [$table,] = self::extractTableAndColumn($rhs);
 
                 if (empty($table)) {
                     $rhs = "{$local}.{$rhs}";
@@ -489,9 +473,8 @@ trait BuildsQueries
      * @param string $operatorOrCombine
      * @param string|null $expr2
      *
-     * @return void
-     * @throws InvalidColumnNameException
      * @throws InvalidTableNameException if either table or the alias is not a valid SQL table name.
+     * @throws InvalidColumnNameException if the either column is not valid.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
      * @throws InvalidQueryExpressionException if the expression to join is empty.
      */
@@ -547,13 +530,13 @@ trait BuildsQueries
             "alias" => $alias,
             "combine" => $combine,
             "expressions" => array_map(function (string $lhs, string $rhs) use ($local, $alias, $operatorOrCombine): array {
-                [$table, $column] = self::extractTableAndColumn($lhs);
+                [$table,] = self::extractTableAndColumn($lhs);
 
                 if (empty($table)) {
                     $lhs = "{$alias}.{$lhs}";
                 }
 
-                [$table, $column] = self::extractTableAndColumn($rhs);
+                [$table,] = self::extractTableAndColumn($rhs);
 
                 if (empty($table)) {
                     $rhs = "{$local}.{$rhs}";
@@ -597,6 +580,7 @@ trait BuildsQueries
      *
      * @return $this
      * @throws InvalidTableNameException If either table is not a valid SQL table name.
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws DuplicateTableNameException if the foreign table is already in use in a FROM or JOIN.
      */
     public function leftJoin(string $foreign, string $local, $expr1OrExpressions, ?string $operatorOrExpr2 = "AND", ?string $expr2 = null): self
@@ -608,8 +592,6 @@ trait BuildsQueries
     /**
      * Add a right join to the query.
      *
-     * @see leftJoin() for examples of how to add joins.
-     *
      * @param string $foreign The table to join.
      * @param string $local The table in the query to join it to.
      * @param string|array<string,string> $expr1OrExpressions The LHS of the join expression, or an array of ON clause
@@ -620,8 +602,12 @@ trait BuildsQueries
      * @param string|null $expr2 The RHS of the ON expression. Ignored if `$expr1OrExpressions` is an array.
      *
      * @return $this The QueryBuilder for further method chaining.
+     *
      * @throws InvalidTableNameException If either table is not a valid SQL table name.
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws DuplicateTableNameException if the foreign table is already in use in a FROM or JOIN.
+     * @see leftJoin() for examples of how to add joins.
+     *
      */
     public function rightJoin(string $foreign, string $local, $expr1OrExpressions, ?string $operatorOrExpr2 = "AND", ?string $expr2 = null): self
     {
@@ -632,8 +618,6 @@ trait BuildsQueries
     /**
      * Add an inner join to the query.
      *
-     * @see leftJoin() for examples of how to add joins.
-     *
      * @param string $foreign The table to join.
      * @param string $local The table in the query to join it to.
      * @param string|array<string,string> $expr1OrExpressions The LHS of the join expression, or an array of ON clause
@@ -644,8 +628,12 @@ trait BuildsQueries
      * @param string|null $expr2 The RHS of the ON expression. Ignored if `$expr1OrExpressions` is an array.
      *
      * @return $this The QueryBuilder for further method chaining.
+     *
      * @throws InvalidTableNameException If either table is not a valid SQL table name.
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws DuplicateTableNameException if the foreign table is already in use in a FROM or JOIN.
+     *
+     * @see leftJoin() for examples of how to add joins.
      */
     public function innerJoin(string $foreign, string $local, $expr1OrExpressions, ?string $operatorOrExpr2 = "AND", ?string $expr2 = null): self
     {
@@ -656,8 +644,6 @@ trait BuildsQueries
     /**
      * Add a left join to the query with a table alias.
      *
-     * @see leftJoin() for examples of how to add joins.
-     *
      * @param string $foreign The table to join.
      * @param string $alias The alias to use for the table to join.
      * @param string $local The table in the query to join it to.
@@ -669,8 +655,12 @@ trait BuildsQueries
      * @param string|null $expr2 The RHS of the ON expression. Ignored if `$expr1OrExpressions` is an array.
      *
      * @return $this The QueryBuilder for further method chaining.
+     *
      * @throws InvalidTableNameException If either table, or the alias, is not a valid SQL table name.
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
+     *
+     * @see leftJoin() for examples of how to add joins.
      */
     public function leftJoinAs(string $foreign, string $alias, string $local, $expr1OrExpressions, ?string $operatorOrExpr2 = "AND", ?string $expr2 = null): self
     {
@@ -681,8 +671,6 @@ trait BuildsQueries
     /**
      * Add a right join to the query with a table alias.
      *
-     * @see leftJoin() for examples of how to add joins.
-     *
      * @param string $foreign The table to join.
      * @param string $alias The alias to use for the table to join.
      * @param string $local The table in the query to join it to.
@@ -694,8 +682,12 @@ trait BuildsQueries
      * @param string|null $expr2 The RHS of the ON expression. Ignored if `$expr1OrExpressions` is an array.
      *
      * @return $this The QueryBuilder for further method chaining.
+     *
      * @throws InvalidTableNameException If either table, or the alias, is not a valid SQL table name.
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
+     *
+     * @see leftJoin() for examples of how to add joins.
      */
     public function rightJoinAs(string $foreign, string $alias, string $local, $expr1OrExpressions, ?string $operatorOrExpr2 = "AND", ?string $expr2 = null): self
     {
@@ -717,9 +709,12 @@ trait BuildsQueries
      * @param string|null $expr2 The RHS of the ON expression. Ignored if `$expr1OrExpressions` is an array.
      *
      * @return $this The QueryBuilder for further method chaining.
-     * @see leftJoin() for examples of how to add joins.
+     *
      * @throws InvalidTableNameException If either table, or the alias, is not a valid SQL table name.
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
+     *
+     * @see leftJoin() for examples of how to add joins.
      */
     public function innerJoinAs(string $foreign, string $alias, string $local, $expr1OrExpressions, ?string $operatorOrExpr2 = "AND", ?string $expr2 = null): self
     {
@@ -744,7 +739,9 @@ trait BuildsQueries
      * @param string|null $expr2 The RHS of the ON expression. Ignored if `$expr1OrExpressions` is an array.
      *
      * @return $this The QueryBuilder for further method chaining.
+     *
      * @throws InvalidTableNameException If either table, or the alias, is not a valid SQL table name.
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
      * @throws InvalidQueryExpressionException if the expression to join is empty.
      */
@@ -771,7 +768,9 @@ trait BuildsQueries
      * @param string|null $expr2 The RHS of the ON expression. Ignored if `$expr1OrExpressions` is an array.
      *
      * @return $this The QueryBuilder for further method chaining.
+     *
      * @throws InvalidTableNameException If either table, or the alias, is not a valid SQL table name.
+     * @throws InvalidColumnNameException if either column is not valid.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
      * @throws InvalidQueryExpressionException if the expression to join is empty.
      */
@@ -799,6 +798,7 @@ trait BuildsQueries
      *
      * @return $this The QueryBuilder for further method chaining.
      * @throws InvalidTableNameException If either table, or the alias, is not a valid SQL table name.
+     * @throws InvalidColumnNameException if the expression to join is empty.
      * @throws DuplicateTableNameException if the alias is already in use in a FROM or JOIN.
      * @throws InvalidQueryExpressionException if the expression to join is empty.
      */
@@ -859,9 +859,9 @@ trait BuildsQueries
      * @throws InvalidColumnNameException If any field is not valid.
      * @throws InvalidOperatorException If the operator is provided and is empty.
      */
-    public function where($column, $operatorOrValue = null, $value = null): self
+    public function where(string|array|callable $column, string|int|float|DateTime|bool|null $operatorOrValue = null, string|int|float|DateTime|bool|null $value = null): self
     {
-        if ($column instanceof Closure) {
+        if (is_callable($column)) {
             $this->whereGroupStack[] = [];
             $column($this);
             $this->addWhereGroup("AND", array_pop($this->whereGroupStack));
@@ -894,10 +894,11 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidOperatorException if the operator is not valid.
      */
-    public function orWhere($column, $operatorOrValue = null, $value = null): self
+    public function orWhere(string|array|callable $column, string|int|float|DateTime|null $operatorOrValue = null, string|int|float|DateTime|null $value = null): self
     {
-        if ($column instanceof Closure) {
+        if (is_callable($column)) {
             $this->whereGroupStack[] = [];
             $column($this);
             $this->addWhereGroup("OR", array_pop($this->whereGroupStack));
@@ -925,8 +926,9 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If one of the columns provided is not a valid SQL column name.
+     * @throws InvalidArgumentException if an empty array of columns is provided.
      */
-    public function whereNotNull($columns): self
+    public function whereNotNull(string|array $columns): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
@@ -949,8 +951,9 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If one of the columns provided is not a valid SQL column name.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereNotNull($columns): self
+    public function orWhereNotNull(string|array $columns): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
@@ -973,8 +976,9 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of columns is provided.
      */
-    public function whereNull($columns): self
+    public function whereNull(string|array $columns): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
@@ -997,8 +1001,9 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereNull($columns): self
+    public function orWhereNull(string|array $columns): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
@@ -1029,18 +1034,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereContains($columns, ?string $value = null): self
+    public function whereContains(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1065,18 +1067,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereContains($columns, ?string $value = null): self
+    public function orWhereContains(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1101,18 +1100,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereNotContains($columns, ?string $value = null): self
+    public function whereNotContains(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1137,18 +1133,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereNotContains($columns, ?string $value = null): self
+    public function orWhereNotContains(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1173,18 +1166,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereStartsWith($columns, ?string $value = null): self
+    public function whereStartsWith(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1209,18 +1199,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereStartsWith($columns, ?string $value = null): self
+    public function orWhereStartsWith(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1245,18 +1232,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereNotStartsWith($columns, ?string $value = null): self
+    public function whereNotStartsWith(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1281,18 +1265,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereNotStartsWith($columns, ?string $value = null): self
+    public function orWhereNotStartsWith(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1317,18 +1298,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereEndsWith($columns, ?string $value = null): self
+    public function whereEndsWith(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1353,18 +1331,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereEndsWith($columns, ?string $value = null): self
+    public function orWhereEndsWith(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1389,18 +1364,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereNotEndsWith($columns, ?string $value = null): self
+    public function whereNotEndsWith(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1425,18 +1397,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereNotEndsWith($columns, ?string $value = null): self
+    public function orWhereNotEndsWith(string|array $columns, ?string $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1461,18 +1430,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereIn($columns, ?array $value = null): self
+    public function whereIn(string|array $columns, ?array $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1509,18 +1475,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereIn($columns, ?array $value = null): self
+    public function orWhereIn(string|array $columns, ?array $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1557,18 +1520,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereNotIn($columns, ?array $value = null): self
+    public function whereNotIn(string|array $columns, ?array $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1605,18 +1565,15 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function orWhereNotIn($columns, ?array $value = null): self
+    public function orWhereNotIn(string|array $columns, ?array $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
                 throw new InvalidArgumentException("WHERE conditions cannot be added with an empty array of columns.");
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => $value];
         }
 
@@ -1650,8 +1607,9 @@ trait BuildsQueries
      *
      * @return $this The query builder for further method chaining.
      * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidArgumentException if an empty array of conditions is provided.
      */
-    public function whereLength($columns, $operatorOrValue = null, $value = null): self
+    public function whereLength(string|array $columns, string|int|null $operatorOrValue = null, ?int $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
@@ -1660,23 +1618,19 @@ trait BuildsQueries
 
             foreach ($columns as $column => $length) {
                 if (!is_int($length)) {
-                    throw new TypeError("Constraints for LENGTH-based WHERE clauses must be ints.");
+                    throw new InvalidArgumentException("Constraints for LENGTH-based WHERE clauses must be ints.");
                 }
 
                 $this->addWhere("AND", "LENGTH(" . self::wrapNames($column) . ")", "=", self::sqlifyValue($length));
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             if (!isset($value)) {
                 $value = $operatorOrValue;
                 $operatorOrValue = "=";
-            }
 
-            if (!is_int($value)) {
-                throw new TypeError("Constraints for LENGTH-based WHERE clauses must be ints.");
+                if (!is_int($value)) {
+                    throw new InvalidArgumentException("Constraints for LENGTH-based WHERE clauses must be ints.");
+                }
             }
 
             $this->addWhere("AND", "LENGTH(" . self::wrapNames($columns) . ")", $operatorOrValue, self::sqlifyValue($value));
@@ -1695,9 +1649,10 @@ trait BuildsQueries
      * @param int|null $value The length if `$columns` is a string.
      *
      * @return $this The query builder for further method chaining.
-     * @throws InvalidColumnNameException If any field is not valid.
+     * @throws InvalidColumnNameException If any field or length is not valid when woring with an array of columns.
+     * @throws InvalidArgumentException if $columns in an empty array or any of the lengths therein is not an int.
      */
-    public function orWhereLength($columns, $operatorOrValue = null, $value = null): self
+    public function orWhereLength(string|array $columns, string|int|null $operatorOrValue = null, ?int $value = null): self
     {
         if (is_array($columns)) {
             if (empty($columns)) {
@@ -1706,23 +1661,19 @@ trait BuildsQueries
 
             foreach ($columns as $column => $length) {
                 if (!is_int($length)) {
-                    throw new TypeError("Constraints for LENGTH-based WHERE clauses must be ints.");
+                    throw new InvalidArgumentException("Constraints for LENGTH-based WHERE clauses must be ints.");
                 }
 
                 $this->addWhere("OR", "LENGTH(" . self::wrapNames($column) . ")", "=", self::sqlifyValue($length));
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             if (!isset($value)) {
                 $value = $operatorOrValue;
                 $operatorOrValue = "=";
-            }
 
-            if (!is_int($value)) {
-                throw new TypeError("Constraints for LENGTH-based WHERE clauses must be ints.");
+                if (!is_int($value)) {
+                    throw new InvalidArgumentException("Constraints for LENGTH-based WHERE clauses must be ints.");
+                }
             }
 
             $this->addWhere("OR", "LENGTH(" . self::wrapNames($columns) . ")", $operatorOrValue, self::sqlifyValue($value));
@@ -1744,7 +1695,7 @@ trait BuildsQueries
      * @throws InvalidColumnNameException If any field is not valid.
      * @throws InvalidOrderByDirectionException If any field's ORDER BY direction is not valid.
      */
-    public function orderBy($columns, ?string $direction = null): self
+    public function orderBy(string|array $columns, ?string $direction = null): self
     {
         static $validDirections = ["ASC", "DESC",];
 
@@ -1753,10 +1704,6 @@ trait BuildsQueries
                 $columns = array_combine($columns, array_fill(0, count($columns), $direction ?? "ASC"));
             }
         } else {
-            if (!is_string($columns)) {
-                throw new TypeError("Argument #1 \$columns to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $columns = [$columns => ($direction ?? "ASC")];
         }
 
@@ -1787,7 +1734,7 @@ trait BuildsQueries
      * @return $this The query builder for further method chaining.
      * @throws InvalidOrderByDirectionException if any expression is paired with an invalid ORDER BY direction.
      */
-    public function rawOrderBy($expressions, ?string $direction = "ASC"): self
+    public function rawOrderBy(string|array $expressions, ?string $direction = "ASC"): self
     {
         static $validDirections = ["ASC", "DESC",];
 
@@ -1796,10 +1743,6 @@ trait BuildsQueries
                 $expressions = array_combine($expressions, array_fill(0, count($expressions), $direction ?? "ASC"));
             }
         } else {
-            if (!is_string($expressions)) {
-                throw new TypeError("Argument #1 \$expressions to " . __FUNCTION__ . " must be a string or array.");
-            }
-
             $expressions = [$expressions => ($direction ?? "ASC")];
         }
 
@@ -2004,7 +1947,6 @@ trait BuildsQueries
      * compiled clause will be returned.
      *
      * @return string The compiled WHERE clause.
-     * @throws InvalidOrderByDirectionException if any of the ORDER BY clauses contains a direction that is neither ASC nor DESC.
      */
     protected function compileOrderBys(): string
     {
@@ -2049,15 +1991,14 @@ trait BuildsQueries
      * Fetch the SQL for the query.
      *
      * @return string The SQL.
-     * @throws InvalidOrderByDirectionException
-     * @throws OrphanedJoinException
+     * @throws OrphanedJoinException if any of the configured joins references a non-existent table or alias.
      */
     public function sql(): string
     {
-        $sql      = "{$this->compileSelects()} {$this->compileFrom()}";
-        $wheres   = $this->compileWheres();
+        $sql = "{$this->compileSelects()} {$this->compileFrom()}";
+        $wheres = $this->compileWheres();
         $orderBys = $this->compileOrderBys();
-        $limit    = $this->compileLimit();
+        $limit = $this->compileLimit();
 
         foreach ([$wheres, $orderBys, $limit] as $clause) {
             if (!empty($clause)) {

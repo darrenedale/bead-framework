@@ -15,7 +15,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use TypeError;
 
-use function Bead\Traversable\all;
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Class encapsulating session data.
@@ -66,6 +66,8 @@ class Session implements DataAccessor
      * @throws SessionNotFoundException If the ID provided does not identify an existing session.
      * @throws ExpiredSessionIdUsedException If the ID provided is for a session that has had its ID cycled.
      * @throws SessionExpiredException If the session identified hasn't been used for more than the threshold duration.
+     * @throws InvalidSessionHandlerException if the session handler specified in the configuration file is not
+     * recognised.
      */
     public function __construct(?string $id = null)
     {
@@ -213,6 +215,8 @@ class Session implements DataAccessor
      * @param $keys string|array<string> The key(s) to extract.
      *
      * @return mixed|array<string,mixed> The extracted data.
+     *
+     * @throws InvalidArgumentException if $keys is an array that contains one or more non-string elements.
      */
     public function extract(string|array $keys): mixed
     {
@@ -257,6 +261,8 @@ class Session implements DataAccessor
      *
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
+     *
+     * @throws InvalidArgumentException if $keyOrData is an array with one or more non-string keys.
      */
     public function set(string|array $keyOrData, mixed $data = null): void
     {
@@ -281,6 +287,8 @@ class Session implements DataAccessor
      *
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
+     *
+     * @throws InvalidArgumentException if $keyOrData is an array that contains one or more non-string keys.
      */
     public function transientSet(string|array $keyOrData, mixed $data = null): void
     {
@@ -312,6 +320,10 @@ class Session implements DataAccessor
             return 0 >= $count;
         });
 
+        /**
+         * @psalm-suppress MissingThrowsDocblock $remove is an array of strings which won't trigger
+         * remove() to throw.
+         */
         $this->remove($remove);
 
         $this->m_transientKeys = array_filter($this->m_transientKeys, function (string $key) use ($remove): bool {
@@ -338,7 +350,9 @@ class Session implements DataAccessor
     /**
      * Remove one or more keys from the session data.
      *
-     * @param array<string>|string $keys The key or keys to remove.
+     * @param array<string>|string $key The key or keys to remove.
+     *
+     * @throws InvalidArgumentException if $keys is an array that contains any non-string elements.
      */
     public function remove(string|array $keys): void
     {
@@ -402,7 +416,7 @@ class Session implements DataAccessor
      * The type of handler is determined by the session config file.
      *
      * @throws SessionNotFoundException if the session handler for the identified session can't be created.
-     * @throws Exception if the session handler specified in the configuration file is not recognised.
+     * @throws InvalidSessionHandlerException if the session handler specified in the configuration file is not recognised.
      */
     protected static function createHandler(?string $id): SessionHandler
     {
@@ -425,6 +439,8 @@ class Session implements DataAccessor
      *
      * @param string $key The session array to add to.
      * @param mixed $data The data to add.
+     *
+     * @throws RuntimeException if the session data identified by $key is not an array.
      */
     public function push(string $key, mixed $data): void
     {
@@ -436,6 +452,8 @@ class Session implements DataAccessor
      *
      * @param string $key The session array to add to.
      * @param array $data The items to add.
+     *
+     * @throws RuntimeException if the data stored in the session for the identified session key is not an array.
      */
     public function pushAll(string $key, array $data): void
     {
@@ -446,6 +464,7 @@ class Session implements DataAccessor
         }
 
         $arr = array_merge($arr, $data);
+        /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
         $this->set($key, $arr);
     }
 
@@ -456,6 +475,8 @@ class Session implements DataAccessor
      * @param int $n The number of items to pop.
      *
      * @return array|mixed|null
+     *
+     * @throws RuntimeException if the data stored in the session for the identified session key is not an array.
      */
     public function pop(string $key, int $n = 1): mixed
     {
@@ -471,6 +492,7 @@ class Session implements DataAccessor
             $value = array_splice($arr, -$n);
         }
 
+        /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
         $this->set($key, $arr);
         return $value;
     }

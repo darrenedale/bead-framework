@@ -21,6 +21,12 @@ trait Encrypts
 
     abstract private function randomBytes(int $len): string;
 
+    /**
+     * @throws EncryptionException if:
+     * - OpenSSL is unable to encrypt the data; or
+     * - a cryptographically-secure source of randomness is not available; or
+     * - an invalid serialization mode is provided.
+     */
     public function encrypt(mixed $data, int $serializationMode = SerializationMode::Auto): string
     {
         $serialized = "N";

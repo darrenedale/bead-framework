@@ -16,7 +16,7 @@ class EncryptsTest extends TestCase
 
     private const ArrayRawData = ["the-data", "more-data"];
 
-    /** @var Encrypts */
+    /** @var object $instance An instance of an anonymous class that utilises the trait. */
     private object $instance;
 
     public function setUp(): void
@@ -70,6 +70,7 @@ class EncryptsTest extends TestCase
     /** Ensure encrypt() throws when encryption fails. */
     public function testEncrypt4(): void
     {
+        /** @psalm-suppress NoValue */
         self::mockFunction("sodium_bin2base64", fn (string $data): string => throw new SodiumException("Test exception."));
         self::expectException(EncryptionException::class);
         self::expectExceptionMessage("Exception encrypting data: Test exception.");

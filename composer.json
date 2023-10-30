@@ -30,7 +30,8 @@
     "mockery/mockery": "^1.5",
     "phpunit/phpunit": "^9.5",
     "squizlabs/php_codesniffer": "^3.7",
-    "ext-uopz": "^6||^7"
+    "ext-uopz": "^6||^7",
+    "vimeo/psalm": "^5.15"
   },
   "autoload": {
     "psr-4": {

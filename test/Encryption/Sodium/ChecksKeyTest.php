@@ -11,7 +11,7 @@ use BeadTests\Framework\TestCase;
 
 class ChecksKeyTest extends TestCase
 {
-    /** @var ChecksKey */
+    /** @var object $instance Instance of an anonymous class that utilises the ChecksKey trait. */
     private object $instance;
 
     public function setUp(): void

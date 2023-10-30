@@ -2,6 +2,8 @@
 
 namespace Bead\Contracts;
 
+use DateTimeInterface;
+
 /**
  * Interface for imlementations of signed URI generators.
  */
@@ -37,7 +39,7 @@ interface UriSigner
      *
      * @return string The signed URI.
      */
-    public function sign(string $uri, array $parameters, $expires): string;
+    public function sign(string $uri, array $parameters, int|DateTimeInterface $expires): string;
 
     /**
      * Verify a signed URI.
@@ -48,5 +50,5 @@ interface UriSigner
      *
      * @return bool `true` if it's verified, `false` if not.
      */
-    public function verify(string $signedUri, $at = null): bool;
+    public function verify(string $signedUri, int|DateTimeInterface|null $at = null): bool;
 }

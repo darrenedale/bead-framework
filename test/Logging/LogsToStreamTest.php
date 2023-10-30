@@ -17,7 +17,7 @@ class LogsToStreamTest extends TestCase
     /** @var string[] The test error context. */
     private const TestContext = ["test-context"];
 
-    /** @var LogsToStream */
+    /** @var PsrAbstractLogger */
     private mixed $instance;
 
     public function setUp(): void

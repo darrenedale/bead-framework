@@ -8,13 +8,14 @@ use Bead\Encryption\SerializationMode;
 use Bead\Facades\Crypt;
 use BeadTests\Framework\TestCase;
 use Mockery;
+use Mockery\MockInterface;
 
 final class CryptTest extends TestCase
 {
-    /** @var Application&Mockery\MockInterface The test Application instance. */
+    /** @var Application&MockInterface The test Application instance. */
     private Application $app;
 
-    /** @var CrypterContract&Mockery\MockInterface The test crypter instance bound into the application. */
+    /** @var CrypterContract&MockInterface The test crypter instance bound into the application. */
     private CrypterContract $crypter;
 
     public function setUp(): void

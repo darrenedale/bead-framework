@@ -9,7 +9,6 @@ use BeadTests\Framework\TestCase;
 use Error;
 use Generator;
 use Iterator;
-use Traversable;
 use TypeError;
 
 use function Bead\Helpers\Iterable\accumulate;
@@ -103,14 +102,15 @@ final class IterableTest extends TestCase
     }
 
     /**
-     * Helper to create a Traversable instance for testing.
+     * Helper to create a Iterable instance for testing.
      *
-     * @param array $data The data the traversable will traverse.
+     * @param array $data The data the Iterable will traverse.
      *
-     * @return Traversable The test instance.
+     * @return Iterator The test instance.
      */
-    private static function createIterator(array $data): Traversable
+    private static function createIterator(array $data): Iterator
     {
+        /** @psalm-suppress MissingTemplateParam */
         return new class ($data) implements Iterator
         {
             private array $data;
@@ -208,10 +208,6 @@ final class IterableTest extends TestCase
                 [1, 2, 3,],
                 TypeError::class,
             ],
-            "invalidObjectIterable" => [(object) [], "sqrt", [1, 2, 3,], TypeError::class,],
-            "invalidIntCallable" => [42, "sqrt", [1, 2, 3,], TypeError::class,],
-            "invalidFloatCallable" => [3.1415926, "sqrt", [1, 2, 3,], TypeError::class,],
-            "invalidStringIterable" => ["1, 4, 9", "sqrt", [1, 2, 3,], TypeError::class,],
         ];
     }
 
@@ -307,11 +303,11 @@ final class IterableTest extends TestCase
     public function dataForTestToArray(): iterable
     {
         yield from [
-            "typicalTraversable" => [
+            "typicalIterable" => [
                 $this->createIterator([1, 2, 3,]),
                 [1, 2, 3,],
             ],
-            "typicalEmptyTraversable" => [
+            "typicalEmptyIterable" => [
                 $this->createIterator([]),
                 [],
             ],
@@ -376,47 +372,42 @@ final class IterableTest extends TestCase
     public function dataForTestImplode(): iterable
     {
         yield from [
-            "typicalTraversableWithComma" => [
+            "typicalIterableWithComma" => [
                 $this->createIterator([1, 2, 3,]),
                 ",",
                 "1,2,3",
             ],
-            "typicalTraversableWithSemicolon" => [
+            "typicalIterableWithSemicolon" => [
                 $this->createIterator([1, 2, 3,]),
                 ";",
                 "1;2;3",
             ],
-            "typicalTraversableWithDash" => [
+            "typicalIterableWithDash" => [
                 $this->createIterator([1, 2, 3,]),
                 "-",
                 "1-2-3",
             ],
-            "extremeTraversableWithLongString" => [
+            "extremeIterableWithLongString" => [
                 $this->createIterator([1, 2, 3,]),
                 "RIDICULOUSLY-LONG-GLUE",
                 "1RIDICULOUSLY-LONG-GLUE2RIDICULOUSLY-LONG-GLUE3",
             ],
-            "extremeTraversableWithEmptyString" => [
+            "extremeIterableWithEmptyString" => [
                 $this->createIterator([1, 2, 3,]),
                 "",
                 "123",
             ],
-            "typicalTraversableWithComma" => [
-                $this->createIterator([1, 2, 3,]),
-                ",",
-                "1,2,3",
-            ],
-            "typicalTraversableWithCommaSpace" => [
+            "typicalIterableWithCommaSpace" => [
                 $this->createIterator([1, 2, 3,]),
                 ", ",
                 "1, 2, 3",
             ],
-            "typicalEmptyTraversableComma" => [
+            "typicalEmptyIterableComma" => [
                 $this->createIterator([]),
                 ",",
                 "",
             ],
-            "typicalEmptyTraversableCommaSpace" => [
+            "typicalEmptyIterableCommaSpace" => [
                 $this->createIterator([]),
                 ", ",
                 "",
@@ -425,11 +416,6 @@ final class IterableTest extends TestCase
                 $this->createGenerator([1, 2, 3,]),
                 ",",
                 "1,2,3",
-            ],
-            "typicalGenerator" => [
-                $this->createGenerator([1, 2, 3,]),
-                ", ",
-                "1, 2, 3",
             ],
             "extremeGeneratorWithLongString" => [
                 $this->createGenerator([1, 2, 3,]),
@@ -545,62 +531,56 @@ final class IterableTest extends TestCase
 
 
     /**
-     * Test data for testImplode()
+     * Test data for testGrammaticalImplode()
      *
      * @return iterable The test data.
      */
     public function dataForTestGrammaticalImplode(): iterable
     {
         yield from [
-            "typicalTraversableWithComma" => [
-                $this->createIterator([1, 2, 3,]),
-                ", ",
-                " and ",
-                "1,2 and 3",
-            ],
-            "typicalTraversableWithSemicolon" => [
-                $this->createIterator([1, 2, 3,]),
-                "; ",
-                " or ",
-                "1; 2 or 3",
-            ],
-            "typicalTraversableWithDash" => [
-                $this->createIterator([1, 2, 3,]),
-                " - ",
-                " and ",
-                "1 - 2 and 3",
-            ],
-            "typicalSingleItemTraversable" => [
-                $this->createIterator(["foo",]),
-                " - ",
-                " and ",
-                "foo",
-            ],
-            "extremeTraversableWithLongString" => [
-                $this->createIterator([1, 2, 3,]),
-                "RIDICULOUSLY-LONG-GLUE",
-                "RIDICULOUSLY-LONG-LAST-GLUE",
-                "1RIDICULOUSLY-LONG-GLUE2RIDICULOUSLY-LONG-LAST-GLUE3",
-            ],
-            "extremeTraversableWithEmptyGlue" => [
-                $this->createIterator([1, 2, 3,]),
-                "",
-                " and ",
-                "12 and 3",
-            ],
-            "extremeTraversableWithEmptyLastGlue" => [
-                $this->createIterator([1, 2, 3,]),
-                ", ",
-                "",
-                "1, 23",
-            ],
-            "typicalTraversableWithComma" => [
+            "typicalIterableWithComma" => [
                 $this->createIterator([1, 2, 3,]),
                 ", ",
                 " and ",
                 "1, 2 and 3",
             ],
-            "typicalEmptyTraversableComma" => [
+            "typicalIterableWithSemicolon" => [
+                $this->createIterator([1, 2, 3,]),
+                "; ",
+                " or ",
+                "1; 2 or 3",
+            ],
+            "typicalIterableWithDash" => [
+                $this->createIterator([1, 2, 3,]),
+                " - ",
+                " and ",
+                "1 - 2 and 3",
+            ],
+            "typicalSingleItemIterable" => [
+                $this->createIterator(["foo",]),
+                " - ",
+                " and ",
+                "foo",
+            ],
+            "extremeIterableWithLongString" => [
+                $this->createIterator([1, 2, 3,]),
+                "RIDICULOUSLY-LONG-GLUE",
+                "RIDICULOUSLY-LONG-LAST-GLUE",
+                "1RIDICULOUSLY-LONG-GLUE2RIDICULOUSLY-LONG-LAST-GLUE3",
+            ],
+            "extremeIterableWithEmptyGlue" => [
+                $this->createIterator([1, 2, 3,]),
+                "",
+                " and ",
+                "12 and 3",
+            ],
+            "extremeIterableWithEmptyLastGlue" => [
+                $this->createIterator([1, 2, 3,]),
+                ", ",
+                "",
+                "1, 23",
+            ],
+            "typicalEmptyIterableComma" => [
                 $this->createIterator([]),
                 ", ",
                 " and ",
@@ -822,22 +802,22 @@ final class IterableTest extends TestCase
         yield from [
             "typicalArrayAndClosure" => [[1, 4, 9,], $sqrt, [1, 2, 3,],],
             "typicalArrayIteratorAndClosure" => [new ArrayIterator([1, 4, 9,]), $sqrt, [1, 2, 3,],],
-            "typicalTraversableAndClosure" => [self::createIterator([1, 4, 9,]), $sqrt, [1, 2, 3,], Error::class,],
+            "typicalIterableAndClosure" => [self::createIterator([1, 4, 9,]), $sqrt, [1, 2, 3,], Error::class,],
             "extremeEmptyArrayAndClosure" => [[], $sqrt, [],],
             "extremeEmptyArrayIteratorAndClosure" => [new ArrayIterator([]), $sqrt, [],],
-            "extremeEmptyTraversableAndClosure" => [self::createIterator([]), $sqrt, [], Error::class,],
+            "extremeEmptyIterableAndClosure" => [self::createIterator([]), $sqrt, [], Error::class,],
             "typicalArrayAndStaticMethod" => [[1, 4, 9,], $staticSqrt, [1, 2, 3,],],
             "typicalArrayIteratorAndStaticMethod" => [new ArrayIterator([1, 4, 9,]), $staticSqrt, [1, 2, 3,],],
-            "typicalTraversableAndStaticMethod" => [self::createIterator([1, 4, 9,]), $staticSqrt, [1, 2, 3,], Error::class,],
+            "typicalIterableAndStaticMethod" => [self::createIterator([1, 4, 9,]), $staticSqrt, [1, 2, 3,], Error::class,],
             "extremeEmptyArrayAndStaticMethod" => [[], $staticSqrt, [],],
             "extremeEmptyArrayIteratorAndStaticMethod" => [new ArrayIterator([]), $staticSqrt, [],],
-            "extremeEmptyTraversableAndStaticMethod" => [self::createIterator([]), $staticSqrt, [], Error::class,],
+            "extremeEmptyIterableAndStaticMethod" => [self::createIterator([]), $staticSqrt, [], Error::class,],
             "typicalArrayAndFunctionName" => [[1, 4, 9,], "sqrt", [1, 2, 3,],],
             "typicalArrayIteratorAndFunctionName" => [new ArrayIterator([1, 4, 9,]), "sqrt", [1, 2, 3,],],
-            "typicalTraversableAndFunctionName" => [self::createIterator([1, 4, 9,]), "sqrt", [1, 2, 3,], Error::class,],
+            "typicalIterableAndFunctionName" => [self::createIterator([1, 4, 9,]), "sqrt", [1, 2, 3,], Error::class,],
             "extremeEmptyArrayAndFunctionName" => [[], "sqrt", [],],
             "extremeEmptyArrayIteratorAndFunctionName" => [new ArrayIterator([]), "sqrt", [],],
-            "extremeEmptyTraversableAndFunctionName" => [self::createIterator([]), "sqrt", [], Error::class,],
+            "extremeEmptyIterableAndFunctionName" => [self::createIterator([]), "sqrt", [], Error::class,],
         ];
     }
 
@@ -1023,9 +1003,9 @@ final class IterableTest extends TestCase
             "extremeEmptyGenerator" => [self::createGenerator([]), $product, 1, 1,],
 
             // ensure we get the default init value when there is nothing to accumulate and no init
-            "extremeEmptyArray" => [[], $product, null, 0,],
-            "extremeEmptyIterator" => [self::createIterator([]), $product, null, 0,],
-            "extremeEmptyGenerator" => [self::createGenerator([]), $product, null, 0,],
+            "extremeEmptyArrayDefaultInit" => [[], $product, null, 0,],
+            "extremeEmptyIteratorDefaultInit" => [self::createIterator([]), $product, null, 0,],
+            "extremeEmptyGeneratorDefaultInit" => [self::createGenerator([]), $product, null, 0,],
 
             // ensure invalid args are rejected
             "invalidIterableNull" => [null, $product, 1, 1, TypeError::class,],

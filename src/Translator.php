@@ -186,11 +186,11 @@ class Translator implements TranslatorContract
      * language you provide here will be used to search for the translation file from which to retrieve translated
      * strings.
      *
-     * @param $lang string|null The target language.
+     * @param $language string|null The target language.
      */
-    public function setLanguage(string $lang): void
+    public function setLanguage(string $language): void
     {
-        $this->m_lang = $lang;
+        $this->m_lang = $language;
     }
 
     /**

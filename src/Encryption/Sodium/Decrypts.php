@@ -15,6 +15,12 @@ trait Decrypts
     /** Classes utilising the trait must provide an encryption key. */
     abstract private function key(): string;
 
+    /**
+     * @throws EncryptionException if:
+     * - the provided encrypted data is not valid
+     * - Sodium throws during decryption or is unable to decrypt the data; or
+     * - the encrypted data is serailized but cannot be unserialized
+     */
     public function decrypt(string $data): mixed
     {
         try {

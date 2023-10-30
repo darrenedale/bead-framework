@@ -20,13 +20,15 @@ use function Bead\Helpers\I18n\tr;
  */
 class Min implements Rule
 {
-    /** @var int | float The minimum value. */
-    private $m_min;
+    /** @var int|float The minimum value. */
+    private int|float $m_min;
 
     /**
-     * @param int|float $min
+     * @param int|float|string $min
+     *
+     * @throws TypeError if $min is given as a string and is not a numeric value.
      */
-    public function __construct($min)
+    public function __construct(int|float|string $min)
     {
         $numericMin = filter_var($min, FILTER_VALIDATE_INT);
 

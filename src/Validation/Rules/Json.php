@@ -34,6 +34,7 @@ class Json implements Rule
             return false;
         }
         try {
+            /** @psalm-suppress UnusedFunctionCall we're using this to validate - it throws on invalid JSON */
             json_decode($data, false, 512, JSON_THROW_ON_ERROR);
         } catch (Throwable $err) {
             return false;

@@ -15,7 +15,7 @@ class EncryptsTest extends TestCase
 
     private const ArrayRawData = ["the-data", "more-data"];
 
-    /** @var Encrypts */
+    /** @var object $instance Instance of an anonymous class that utilises the Encrypts trait. */
     private object $instance;
 
     public function setUp(): void

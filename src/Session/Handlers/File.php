@@ -13,6 +13,7 @@ use Bead\Facades\Log;
 use Bead\Session\Session;
 use DirectoryIterator;
 use Exception;
+use RuntimeException;
 use SplFileInfo;
 
 use function Bead\Helpers\Str\random;
@@ -59,14 +60,14 @@ class File implements SessionHandler
      * @throws InvalidSessionFileException if the session file contains invalid content.
      * @throws SessionFileSaveException if the session requires ID regeneration and the new session file can't be
      * written.
-     * @noinspection PhpDocMissingThrowsInspection Can't throw SessionDestroyedException.
+     * @throws RuntimeException if a cryptographically secure session ID cannot be generated.
      */
     public function __construct(?string $id = null)
     {
         if (!isset($id)) {
             $this->m_id = self::createId();
             $this->m_createdAt = $this->m_idCreatedAt = $this->m_lastUsedAt = time();
-            /** @noinspection PhpUnhandledExceptionInspection Can't throw SessionDestroyedException. */
+            /** @psalm-suppress MissingThrowsDocblock Can't throw SessionDestroyedException. */
             $this->commit();
         } else {
             $info = new SplFileInfo(self::sessionDirectory() . "/{$id}");
@@ -84,7 +85,7 @@ class File implements SessionHandler
             }
 
             $this->m_id = $id;
-            /** @noinspection PhpUnhandledExceptionInspection Can't throw SessionDestroyedException. */
+            /** @psalm-suppress MissingThrowsDocblock Can't throw SessionDestroyedException. */
             $this->reload();
         }
     }
@@ -95,12 +96,11 @@ class File implements SessionHandler
      * @throws InvalidSessionDirectoryException if the configured session directory is not valid.
      * @throws SessionFileSaveException if the session cannot be committed either to the file for the old ID or the
      * file for the new ID.
-     * @noinspection PhpDocMissingThrowsInspection Can't throw SessionDestroyedException.
      */
     public function __destruct()
     {
         if (!$this->m_destroyed) {
-            /** @noinspection PhpUnhandledExceptionInspection Can't throw SessionDestroyedException. */
+            /** @psalm-suppress MissingThrowsDocblock Can't throw SessionDestroyedException. */
             $this->commit();
         }
     }
@@ -142,6 +142,7 @@ class File implements SessionHandler
      *
      * @return string The ID.
      * @throws InvalidSessionDirectoryException if the configured session directory is not valid.
+     * @throws RuntimeException if a cryptographically-secure session ID can't be generated.
      */
     protected static function createId(): string
     {
@@ -276,6 +277,7 @@ class File implements SessionHandler
      * @throws SessionDestroyedException if the session has been destroyed
      * @throws SessionFileSaveException if the session cannot be committed either to the file for the old ID or the
      * file for the new ID.
+     * @throws RuntimeException if a cryptographically-secure session ID can't be generated.
      */
     public function regenerateId(): string
     {

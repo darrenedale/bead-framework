@@ -7,6 +7,8 @@ use Bead\Validation\Rules\Nullable;
 use Bead\Validation\ValidatorAwareRule;
 use Bead\Validation\Validator;
 use Mockery;
+use Mockery\MockInterface;
+use PHPUnit\Framework\SyntheticSkippedError;
 
 class NullableTest extends TestCase
 {

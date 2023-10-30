@@ -20,12 +20,12 @@ trait ImplementsArrayAccess
     /**
      * Constrain trait users to provide a set() method.
      */
-    abstract public function set(string $key, mixed $value): void;
+    abstract public function set(string|array $keyOrData, mixed $data = null): void;
 
     /**
      * Constrain trait users to provide a remove() method.
      */
-    abstract public function remove(string $key): void;
+    abstract public function remove(string|array $keys): void;
 
     /**
      * Check whether an offset exists.
@@ -63,13 +63,17 @@ trait ImplementsArrayAccess
      * @param mixed $offset The offset to set.
      * @param mixed $value The value to set.
      */
-    public function offsetSet(mixed $offset, mixed $value): void
+    public function offsetSet(mixed $offset, mixed $data): void
     {
         if (!is_string($offset)) {
             return;
         }
 
-        $this->set($offset, $value);
+        /**
+         * @psalm-suppress MissingThrowsDocblock $offset is definitely a valid key so set() won't throw
+         * InvalidArgumentException
+         */
+        $this->set($offset, $data);
     }
 
     /**
@@ -85,6 +89,10 @@ trait ImplementsArrayAccess
             return;
         }
 
+        /**
+         * @psalm-suppress MissingThrowsDocblock $offset is definitely a valid key so remove() won't throw
+         * InvalidArgumentException
+         */
         $this->remove($offset);
     }
 }

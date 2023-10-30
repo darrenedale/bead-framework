@@ -12,14 +12,14 @@ class AttributeIsInt extends Constraint
     /**
      * Check that an attribute of an object is an int.
      *
-     * @param array $objectAndAttr the object whose attribute needs to be tested as the first element and the name of
-     * the attribute as the second.
+     * @param array $other the object whose attribute needs to be tested as the first element and the name of the
+     * attribute as the second.
      *
      * @return bool `true` if the attribute is an int, `false` if not.
      */
-    public function matches($objectAndAttr): bool
+    public function matches($other): bool
     {
-        [$object, $attr] = $objectAndAttr;
+        [$object, $attr] = $other;
 
         if (!is_object($object)) {
             throw new InvalidArgumentException("the 'object' to match was not an object type");

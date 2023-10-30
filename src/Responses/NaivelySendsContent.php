@@ -2,6 +2,8 @@
 
 namespace Bead\Responses;
 
+use Bead\Exceptions\HttpException;
+
 /**
  * Trait for responses that simply send the status, headers and content without any further transformation.
  */
@@ -35,6 +37,8 @@ trait NaivelySendsContent
 
     /**
      * Send the response.
+     *
+     * @throws HttpException
      */
     public function send(): void
     {

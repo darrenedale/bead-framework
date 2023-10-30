@@ -13,7 +13,8 @@ namespace Bead\Validation\Rules;
 use Bead\Validation\DatasetAwareRule;
 use InvalidArgumentException;
 
-use function Bead\Traversable\some;
+use function Bead\Helpers\Iterable\some;
+use function Bead\Helpers\Iterable\grammaticalImplode;
 use function Bead\Helpers\I18n\tr;
 
 /**

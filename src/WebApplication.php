@@ -11,6 +11,10 @@ use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
 use Bead\Exceptions\NotFoundException;
+use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
+use Bead\Exceptions\Session\InvalidSessionHandlerException;
+use Bead\Exceptions\Session\SessionExpiredException;
+use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
 use Bead\Session\DataAccessor as SessionDataAccessor;
@@ -272,6 +276,14 @@ class WebApplication extends Application
 
     /**
      * Initialise the application session data.
+     *
+     * @throws ExpiredSessionIdUsedException if the session ID has timed out
+     * @throws RuntimeException if the CSRF token needs to be refereshed but fails
+     * @throws LogicException if the session has already been started
+     * @throws SessionExpiredException if the current session has expired
+     * @throws SessionNotFoundException If the ID provided does not identify an existing session.
+     * @throws InvalidSessionHandlerException if the session handler specified in the configuration file is not
+     * recognised.
      */
     private function initialiseSession(): void
     {
@@ -518,6 +530,7 @@ class WebApplication extends Application
 
                 try {
                     // isolate the context of the included routes file
+                    /** @psalm-suppress UnusedVariable $app and $router are made available to the included route file */
                     (function () use ($app, $router, $routeFile) {
                         include $routeFile;
                     })();
@@ -547,6 +560,8 @@ class WebApplication extends Application
      * @param $name string The class name of the plugin.
      *
      * @return Plugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
+     * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
+     * @throws InvalidPluginException if the plugins path can't be read for some reason.
      */
     public function pluginByName(string $name): ?Plugin
     {
@@ -558,6 +573,8 @@ class WebApplication extends Application
      * Send a response to the client.
      *
      * @param Response $response The response to send.
+     *
+     * @throws RuntimeException if the output buffer was not empty and could not be cleaned.
      */
     public function sendResponse(Response $response): void
     {
@@ -586,6 +603,8 @@ class WebApplication extends Application
      * Fetch the current CSRF token.
      *
      * @return string The token.
+     *
+     * @throws RuntimeException
      */
     public function csrf(): string
     {
@@ -600,6 +619,8 @@ class WebApplication extends Application
      * Force the CSRF token to be regenerated.
      *
      * By default a 64-character random string is generated.
+     *
+     * @throws RuntimeException
      */
     public function regenerateCsrf(): void
     {
@@ -679,6 +700,7 @@ class WebApplication extends Application
      * @return Response An optional Response to send to the client. For legacy support, if no response is returned
      * exec() assumes that content has been added to the Page instance and that is output instead.
      * @throws CsrfTokenVerificationException if the request requires CSRF verification and fails
+     * @throws NotFoundException if the request can't be routed
      */
     public function handleRequest(Request $request): Response
     {
@@ -713,6 +735,9 @@ class WebApplication extends Application
      * @throws InvalidPluginsDirectoryException
      * @throws InvalidRoutesDirectoryException
      * @throws InvalidRoutesFileException
+     * @throws RuntimeException
+     * @throws CsrfTokenVerificationException
+     * @throws NotFoundException
      */
     public function exec(): int
     {
