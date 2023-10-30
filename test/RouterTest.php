@@ -347,133 +347,133 @@ class RouterTest extends TestCase
         yield "typicalRootMethodOptionsMethodArray" => ["/", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
         yield "typicalRootMethodConnectMethodArray" => ["/", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"],];
         yield "typicalRootMethodAnyMethodArray" => ["/", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"],];
-        
+
         yield "typicalRootClosureGetMethodString" => [
             "/",
             RouterContract::GetMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosurePostMethodString" => [
             "/",
             RouterContract::PostMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosurePutMethodString" => [
             "/",
             RouterContract::PutMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosurePatchMethodString" => [
             "/",
             RouterContract::PatchMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureHeadMethodString" => [
             "/",
             RouterContract::HeadMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureDeleteMethodString" => [
             "/",
             RouterContract::DeleteMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureOptionsMethodString" => [
             "/",
             RouterContract::GetMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureConnectMethodString" => [
             "/",
             RouterContract::ConnectMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureAnyMethodString" => [
             "/",
             RouterContract::AnyMethod,
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureGetMethodArray" => [
             "/",
             [RouterContract::GetMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootClosurePostMethodArray" => [
             "/",
             [RouterContract::PostMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootClosurePutMethodArray" => [
             "/",
             [RouterContract::PutMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootClosurePatchMethodArray" => [
             "/",
             [RouterContract::PatchMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureHeadMethodArray" => [
             "/",
             [RouterContract::HeadMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureDeleteMethodArray" => [
             "/",
             [RouterContract::DeleteMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureOptionsMethodArray" => [
             "/",
             [RouterContract::GetMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureConnectMethodArray" => [
             "/",
             [RouterContract::ConnectMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootClosureAnyMethodArray" => [
             "/",
             [RouterContract::AnyMethod,],
             function () {
             },
         ];
-        
+
         yield "typicalRootFunctionNameGetMethodString" => [
             "/",
             RouterContract::GetMethod,
@@ -522,7 +522,7 @@ class RouterTest extends TestCase
             [],
             InvalidArgumentException::class,
         ];
-        
+
         yield "invalidRootEmptyArrayPostMethodString" => [
             "/",
             RouterContract::PostMethod,
@@ -1836,7 +1836,7 @@ class RouterTest extends TestCase
             },
             InvalidRouteParameterNameException::class,
         ];
-        
+
         yield "invalidBadParameterNameEmptyRouteFunctionNameGetMethodString" => ["/account/{}/user/home", RouterContract::GetMethod, "phpinfo", InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameEmptyRouteFunctionNamePostMethodString" => ["/account/{}/user/home", RouterContract::PostMethod, "phpinfo", InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameEmptyRouteFunctionNamePutMethodString" => ["/account/{}/user/home", RouterContract::PutMethod, "phpinfo", InvalidRouteParameterNameException::class,];
@@ -2145,7 +2145,7 @@ class RouterTest extends TestCase
 
         yield "invalidBadParameterNameInvalidFirstCharacterRouteClosurePutMethodString" => [
             "/account/{-account_id}/user/home", RouterContract::PutMethod, function () {
-        }, InvalidRouteParameterNameException::class,];
+            }, InvalidRouteParameterNameException::class,];
 
         yield "invalidBadParameterNameInvalidFirstCharacterRouteClosurePatchMethodString" => [
             "/accoun/{-account_id}/user/home",

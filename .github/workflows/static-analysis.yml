@@ -40,4 +40,4 @@ jobs:
           composer install
 
       - name: Run psalm
-        run: ./vendor/bin/psalm --long-progress --no-diff --threads=$(nproc) --no-cache --no-file-cache --config=./analysis/psalm-"${{ matrix.directory }}".xml
+        run: ./vendor/bin/psalm --long-progress --no-diff --no-cache --no-file-cache --config=./analysis/psalm-"${{ matrix.directory }}".xml
