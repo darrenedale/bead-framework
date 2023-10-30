@@ -2,7 +2,7 @@
 
 namespace Bead\Contracts;
 
-use \Closure;
+use Closure;
 use DateTime;
 
 interface QueryBuilder
