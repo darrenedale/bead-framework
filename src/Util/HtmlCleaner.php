@@ -290,8 +290,8 @@ class HtmlCleaner
      * guard this during testing/development. All items will be converted to lower case and duplicate items will not
      * end up in the target list.
      *
-     * @param array $list Reference to the list to add to.
-     * @param array|string $items The items to add.
+     * @param array<int,string> $list Reference to the list to add to.
+     * @param array<int,string>|string $items The items to add.
      * @param callable $validator A function to use to validate the items before they are added to the list.
      *
      * @throws InvalidArgumentException if $items is not a string or array, or if it contains an invalid entry for the
@@ -311,7 +311,9 @@ class HtmlCleaner
             $item = mb_strtolower($item, $this->userCharset);
         });
 
-        $list = array_unique([...$list, ...$items]);
+        /** @var array<int,string> $items Hint for Psalm that array_walk doesn't change the type of $items */
+
+        $list = array_unique([...$list, ...$items,]);
     }
 
     /**

@@ -317,6 +317,8 @@ abstract class Model
      * If it's already in the database it's updated; otherwise it's inserted. All related models are also
      *
      * @return bool `true` if the model was saved, `false` otherwise.
+     *
+     * @throws ModelPropertyCastException if a row needs to be inserted and the primary key is not of the correct type.
      */
     public function save(): bool
     {
@@ -333,6 +335,8 @@ abstract class Model
      * A new record will be inserted into the table, and the model will have its primary key updated to the new one.
      *
      * @return bool `true` if the record was inserted successfully, `false` otherwise.
+     *
+     * @throws ModelPropertyCastException if the primary key for the inserted row is not of the correct type.
      */
     public function insert(): bool
     {
@@ -408,6 +412,10 @@ abstract class Model
      * @param array $data The data for the instance(s) to create.
      *
      * @return Model|array<Model> The created model(s).
+     *
+     * @throws LogicException if any of the properties in the array does not exist on the model type.
+     * @throws TypeError if any of the property values provided is not of the correct type for the property.
+     * @throws ModelPropertyCastException if the primary key for the inserted row is not of the correct type.
      */
     public static function create(array $data)
     {
@@ -418,10 +426,8 @@ abstract class Model
             return $model;
         }
 
-        $modelClass = static::class;
-
-        return array_map(function (array $data) use ($modelClass) {
-            $model = new $modelClass();
+        return array_map(function (array $data) {
+            $model = new static();
             $model->populate($data);
             $model->insert();
             return $model;
@@ -446,6 +452,9 @@ abstract class Model
      * @param array $data The data for the instance(s) to create.
      *
      * @return Model|array<Model> The created model(s).
+     *
+     * @throws LogicException if any of the properties in the array does not exist on the model type.
+     * @throws TypeError if any of the property values provided is not of the correct type for the property.
      */
     public static function make(array $data)
     {
@@ -455,10 +464,8 @@ abstract class Model
             return $model;
         }
 
-        $modelClass = static::class;
-
-        return array_map(function (array $data) use ($modelClass) {
-            $model = new $modelClass();
+        return array_map(function (array $data) {
+            $model = new static();
             $model->populate($data);
             return $model;
         }, $data);
@@ -471,11 +478,13 @@ abstract class Model
      * correct type for the primary column. The default implementation converts strings to ints if required. Reimplement
      * in your model classes if you need conversion to other types.
      *
-     * @param $value The value to cast.
+     * @param mixed $value The value to cast.
      *
      * @return mixed The value to store in the model for the primary key.
+     *
+     * @throws ModelPropertyCastException if the primary key type is int but the value is not
      */
-    protected static function castInsertedKeyToPrimaryKey($value)
+    protected static function castInsertedKeyToPrimaryKey(mixed $value)
     {
         $primaryKeyProperty = static::primaryKey();
 
@@ -857,6 +866,7 @@ abstract class Model
     {
         if (is_string($value)) {
             try {
+                /** @psalm-suppress UnusedFunctionCall result not needed, only the exception if it's not valid json */
                 json_decode($value, false, 512, JSON_THROW_ON_ERROR);
             } catch (JsonException $err) {
                 throw new ModelPropertyCastException(static::class, $property, $value, "The provided string is not valid JSON.");
@@ -937,6 +947,7 @@ abstract class Model
             $cacheKey = static::class . "::{$property}";
 
             if (!isset($accessors[$cacheKey])) {
+                /** @psalm-suppress MissingThrowsDocblock RuntimeException won't be thrown using default encoding */
                 $accessors[$cacheKey] = snakeToCamel("get_{$property}_property");
             }
 
@@ -1002,6 +1013,7 @@ abstract class Model
      * @param mixed $value The value to assign to the property.
      *
      * @throws TypeError if the provided value is not a valid type for the property.
+     * @throws LogicException if the property does not exist on the class.
      */
     public function __set(string $property, $value): void
     {
@@ -1011,6 +1023,7 @@ abstract class Model
             $cacheKey = static::class . "::{$property}";
 
             if (!isset($mutators[$cacheKey])) {
+                /** @psalm-suppress MissingThrowsDocblock RuntimeException won't be thrown using default encoding */
                 $mutators[$cacheKey] = snakeToCamel("set_{$property}_property");
             }
 
@@ -1475,6 +1488,8 @@ abstract class Model
     public static function queryIn(string $property, array $values): array
     {
         $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")" . static::fixedWhereExpressionsSql());
+
+        /** @psalm-suppress MissingThrowsDocblock PDOException won't be thrown - values and placeholders always agree */
         static::bindValues($stmt, $values);
         $stmt->execute();
         return static::makeModelsFromQuery($stmt);
@@ -1491,6 +1506,8 @@ abstract class Model
     public static function queryNotIn(string $property, array $values): array
     {
         $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")" . static::fixedWhereExpressionsSql());
+
+        /** @psalm-suppress MissingThrowsDocblock PDOException won't be thrown - values and placeholders always agree */
         static::bindValues($stmt, $values);
         $stmt->execute();
         return static::makeModelsFromQuery($stmt);
@@ -1742,6 +1759,8 @@ abstract class Model
     public static function removeIn(string $property, array $values): bool
     {
         $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")");
+
+        /** @psalm-suppress MissingThrowsDocblock PDOException won't be thrown - values and placeholders always agree */
         static::bindValues($stmt, $values);
         return $stmt->execute();
     }
@@ -1759,6 +1778,8 @@ abstract class Model
     public static function removeNotIn(string $property, array $values): bool
     {
         $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")");
+
+        /** @psalm-suppress MissingThrowsDocblock PDOException won't be thrown - values and placeholders always agree */
         static::bindValues($stmt, $values);
         return $stmt->execute();
     }

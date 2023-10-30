@@ -69,11 +69,18 @@ class Process
      * @param string $command The command to run.
      * @param array<string|int|float> $args The command line arguments.
      * @param string|null $workingDirectory The working directory in which to run the command.
+     *
+     * @throws InvalidArgumentException if one or more arguments for the process is not valid.
      */
     public function __construct(string $command, array $args = [], ?string $workingDirectory = null, ?Closure $outputNotifier = null, ?Closure $errorNotifier = null)
     {
+        /** @psalm-suppress MissingThrowsDocblock RuntimeException won't be thrown by any of these */
         $this->setCommand($command);
+
+        /** @psalm-suppress MissingThrowsDocblock RuntimeException won't be thrown by any of these */
         $this->setArguments($args);
+
+        /** @psalm-suppress MissingThrowsDocblock RuntimeException won't be thrown by any of these */
         $this->setWorkingDirectory($workingDirectory);
         $this->setOutputNotifier($outputNotifier);
         $this->setErrorNotifier($errorNotifier);
@@ -110,7 +117,7 @@ class Process
      */
     protected static function buildCommandLine(string $command, array $args): string
     {
-        array_walk($args, fn (& $arg, $key) => escapeshellarg($arg));
+        array_walk($args, fn (& $arg) => escapeshellarg($arg));
         return escapeshellcmd($command) . " " . implode(" ", $args);
     }
 
@@ -131,12 +138,14 @@ class Process
      * default this is 30 seconds.
      *
      * @param int|null $timeout The timeout in seconds or `null` to revert to the default.
+     *
+     * @throws InvalidArgumentException if the timeout is invalid.
      */
     public static function setCleanupTimeout(?int $timeout): void
     {
         if (isset($timeout)) {
             if (0 > $timeout) {
-                throw new \InvalidArgumentException("The cleanup timeout must be >= 0.");
+                throw new InvalidArgumentException("The cleanup timeout must be >= 0.");
             }
 
             static::$cleanupTimeout = $timeout;
@@ -217,6 +226,7 @@ class Process
      * @param array<string|float|int> $arguments The command line arguments to set.
      *
      * @throws RuntimeException if the process is running.
+     * @throws InvalidArgumentException if one or more arguments for the process is not valid.
      */
     public function setArguments(array $arguments): void
     {
@@ -255,6 +265,8 @@ class Process
      * Set the working directory for the process.
      *
      * @param string|null $path The working directory. Provide `null` to reset to the PHP process's working directory.
+     *
+     * @throws RuntimeException if the process is currently running.
      */
     public function setWorkingDirectory(?string $path): void
     {
@@ -283,6 +295,9 @@ class Process
      * names are valid shell variable names.
      *
      * @param array<string,string|int|float>|null $env
+     *
+     * @throws RuntimeException if the process is currently running.
+     * @throws InvalidArgumentException if one or more environment variable names or values is invalid
      */
     public function setEnvironment(?array $env): void
     {
@@ -481,6 +496,8 @@ class Process
      * Throws if the process is already running.
      *
      * @return bool `true` if the process was started successfully, `false` if not.
+     *
+     * @throws RuntimeException if the process is already running or the command is empty
      */
     public function start(): bool
     {
@@ -534,6 +551,9 @@ class Process
      * If the timeout expires the call returns and the process continues running.
      *
      * @param int|null $timeout How long to wait before returning if the process does not terminate.
+     *
+     * @throws RuntimeException if the process is not running
+     * @throws InvalidArgumentException if the timeout is invalid.
      */
     public function wait(?int $timeout = null): void
     {
@@ -542,7 +562,7 @@ class Process
         }
 
         if (0 > $timeout) {
-            throw new \InvalidArgumentException("The timeout must be >= 0.");
+            throw new InvalidArgumentException("The timeout must be >= 0.");
         }
 
         $timeout = (isset($timeout) ? microtime(true) + $timeout : null);
@@ -560,6 +580,9 @@ class Process
      * to the timeout specified by `cleanupTimeout()`).
      *
      * @param int $timeout How long to wait before terminating the process.
+     *
+     * @throws RuntimeException if the process is not running
+     * @throws InvalidArgumentException if the timeout is invalid.
      */
     public function waitOrStop(int $timeout): void
     {
@@ -568,7 +591,7 @@ class Process
         }
 
         if (0 > $timeout) {
-            throw new \InvalidArgumentException("The timeout must be >= 0.");
+            throw new InvalidArgumentException("The timeout must be >= 0.");
         }
 
         $timeout += microtime(true);

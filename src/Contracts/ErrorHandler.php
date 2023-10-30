@@ -19,7 +19,7 @@ interface ErrorHandler
     /**
      * Handle an exception for the application.
      *
-     * @param Throwable $err The thrown exception.
+     * @param Throwable $error The thrown exception.
      */
-    public function handleException(Throwable $err): void;
+    public function handleException(Throwable $error): void;
 }

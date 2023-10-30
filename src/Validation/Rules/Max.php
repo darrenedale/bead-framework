@@ -20,11 +20,13 @@ use function Bead\Helpers\I18n\tr;
  */
 class Max implements Rule
 {
-    /** @var int | float The maximum value. */
-    private $m_max;
+    /** @var int|float The maximum value. */
+    private int|float $m_max;
 
     /**
-     * @param int|float $max
+     * @param int|float|string $max
+     *
+     * @throws TypeError if $max is given as a string and is not a numeric value.
      */
     public function __construct($max)
     {

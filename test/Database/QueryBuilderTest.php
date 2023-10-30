@@ -115,35 +115,10 @@ class QueryBuilderTest extends TestCase
         self::assertSame($connection, $builder->connection());
     }
 
-    public function dataForTestSetConnection(): iterable
+    /** Ensure we can set the connection. */
+    public function testSetConnection(): void
     {
-        yield "typical" => [Mockery::mock(PDO::class),];
-        yield "invalidString" => [PDO::class, TypeError::class,];
-        yield "invalidInt" => [42, TypeError::class,];
-        yield "invalidFloat" => [3.1415926, TypeError::class,];
-        yield "invalidBool" => [true, TypeError::class,];
-        yield "invalidObject" => [
-            new class
-            {
-            },
-            TypeError::class,
-        ];
-        yield "invalidArray" => [[Mockery::mock(PDO::class)], TypeError::class,];
-        yield "invalidNull" => [null, TypeError::class,];
-    }
-
-    /**
-     * @dataProvider dataForTestSetConnection
-     *
-     * @param $connection mixed The value to test the mutator with.
-     * @param string|null $exceptionClass The class of the expected exception, if any.
-     */
-    public function testSetConnection($connection, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
+        $connection = Mockery::mock(PDO::class);
         $builder = new QueryBuilder();
         $builder->setConnection($connection);
         self::assertSame($connection, $builder->connection());
@@ -1603,10 +1578,6 @@ class QueryBuilderTest extends TestCase
      */
     public function testWhereWithClosure($closure, string $sqlWhere): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where($closure);
@@ -1643,20 +1614,6 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [
-                new class implements Stringable {
-                    public function __toString(): string
-                    {
-                        return "foobar.foo";
-                    }
-                },
-                "",
-                TypeError::class,
-            ],
-            "invalidIntField" => [42, "", TypeError::class,],
-            "invalidFloatField" => [3.1415927, "", TypeError::class,],
-            "invalidNullField" => [null, "", TypeError::class,],
-            "invalidBoolField" => [true, "", TypeError::class,],
         ];
     }
 
@@ -2382,47 +2339,10 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], 42, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", 42, "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => 42,], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [
-                new class implements Stringable
-                {
-                    public function __toString(): string
-                    {
-                        return "foobar.foo";
-                    }
-                },
-                42,
-                "",
-                TypeError::class,
-            ],
-            "invalidIntField" => [42, 42, "", TypeError::class,],
-            "invalidFloatField" => [3.1415927, 42, "", TypeError::class,],
-            "invalidNullField" => [null, 42, "", TypeError::class,],
-            "invalidBoolField" => [true, 42, "", TypeError::class,],
 
-            "invalidStringLength" => ["foo", "42", "", TypeError::class,],
-            "invalidEmptyStringLength" => ["foo", "", "", TypeError::class,],
-            "invalidIntArrayLength" => ["foo", [42,], "", TypeError::class,],
-            "invalidEmptyArrayLength" => ["foo", [], "", TypeError::class,],
-            "invalidStringableLength" => [
-                "foo",
-                new class implements Stringable
-                {
-                    public function __toString(): string
-                    {
-                        return "42";
-                    }
-                },
-                "",
-                TypeError::class,
-            ],
-            "invalidClosureLength" => ["foo", fn (): int => 42, "", TypeError::class,],
-            "invalidFloatLength" => ["foo", 3.1415927, "", TypeError::class,],
-            "invalidNullLength" => ["foo", null, "", TypeError::class,],
-            "invalidBoolLength" => ["foo", true, "", TypeError::class,],
-
-            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", TypeError::class,],
-            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", TypeError::class,],
-            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", TypeError::class,],
+            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", InvalidArgumentException::class,],
             "invalidArrayOneStringableLength" => [
                 [
                     "foo" => 42,
@@ -2436,12 +2356,12 @@ class QueryBuilderTest extends TestCase
                 ],
                 null,
                 "",
-                TypeError::class,
+                InvalidArgumentException::class,
             ],
-            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn (): int => 42,], null, "", TypeError::class,],
-            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", TypeError::class,],
-            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", TypeError::class,],
-            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", TypeError::class,],
+            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn (): int => 42,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", InvalidArgumentException::class,],
         ];
     }
 
@@ -2453,7 +2373,7 @@ class QueryBuilderTest extends TestCase
      * @param string $sqlWhere The expected WHERE clause.
      * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testWhereLength($columnOrPairs, $length, string $sqlWhere, ?string $exceptionClass = null): void
+    public function testWhereLength(string|array $columnOrPairs, int|null $length, string $sqlWhere, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
@@ -2543,32 +2463,17 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [
-                new class implements Stringable
-                {
-                    public function __toString(): string
-                    {
-                        return "foobar.foo";
-                    }
-                },
-                "",
-                TypeError::class,
-            ],
-            "invalidIntField" => [42, "", TypeError::class,],
-            "invalidFloatField" => [3.1415927, "", TypeError::class,],
-            "invalidNullField" => [null, "", TypeError::class,],
-            "invalidBoolField" => [true, "", TypeError::class,],
         ];
     }
 
     /**
      * @dataProvider dataForTestOrWhereNull
      *
-     * @param mixed $columns The test field(s) to provide to the orWhereNull() method.
+     * @param string|array $columns The test field(s) to provide to the orWhereNull() method.
      * @param string $sqlWhere The expected SQL WHERE clause.
      * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testOrWhereNull($columns, string $sqlWhere, ?string $exceptionClass = null): void
+    public function testOrWhereNull(string|array $columns, string $sqlWhere, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
@@ -3286,47 +3191,10 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], 42, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", 42, "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => 42,], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [
-                new class implements Stringable
-                {
-                    public function __toString(): string
-                    {
-                        return "foobar.foo";
-                    }
-                },
-                42,
-                "",
-                TypeError::class,
-            ],
-            "invalidIntField" => [42, 42, "", TypeError::class,],
-            "invalidFloatField" => [3.1415927, 42, "", TypeError::class,],
-            "invalidNullField" => [null, 42, "", TypeError::class,],
-            "invalidBoolField" => [true, 42, "", TypeError::class,],
 
-            "invalidStringLength" => ["foo", "42", "", TypeError::class,],
-            "invalidEmptyStringLength" => ["foo", "", "", TypeError::class,],
-            "invalidIntArrayLength" => ["foo", [42,], "", TypeError::class,],
-            "invalidEmptyArrayLength" => ["foo", [], "", TypeError::class,],
-            "invalidStringableLength" => [
-                "foo",
-                new class implements Stringable
-                {
-                    public function __toString(): string
-                    {
-                        return "42";
-                    }
-                },
-                "",
-                TypeError::class,
-            ],
-            "invalidClosureLength" => ["foo", fn (): int => 42, "", TypeError::class,],
-            "invalidFloatLength" => ["foo", 3.1415927, "", TypeError::class,],
-            "invalidNullLength" => ["foo", null, "", TypeError::class,],
-            "invalidBoolLength" => ["foo", true, "", TypeError::class,],
-
-            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", TypeError::class,],
-            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", TypeError::class,],
-            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", TypeError::class,],
+            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", InvalidArgumentException::class,],
             "invalidArrayOneStringableLength" => [
                 [
                     "foo" => 42,
@@ -3340,12 +3208,12 @@ class QueryBuilderTest extends TestCase
                 ],
                 null,
                 "",
-                TypeError::class,
+                InvalidArgumentException::class,
             ],
-            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn (): int => 42,], null, "", TypeError::class,],
-            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", TypeError::class,],
-            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", TypeError::class,],
-            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", TypeError::class,],
+            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn (): int => 42,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", InvalidArgumentException::class,],
         ];
     }
 
@@ -3357,7 +3225,7 @@ class QueryBuilderTest extends TestCase
      * @param string $sqlWhere The expected WHERE clause.
      * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testOrWhereLength($columnOrPairs, $length, string $sqlWhere, ?string $exceptionClass = null): void
+    public function testOrWhereLength(string|array $columnOrPairs, int|null $length, string $sqlWhere, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);

@@ -2,6 +2,7 @@
 
 namespace Bead\Database;
 
+use Bead\Exceptions\Database\OrphanedJoinException;
 use LogicException;
 use PDO;
 use PDOException;
@@ -26,7 +27,8 @@ trait ExecutesQueries
      *
      * @return PDOStatement The prepared statement.
      * @throws PDOException if the built query is not valid for the connection.
-     * @throws LogicException if no connection is set..
+     * @throws LogicException if no connection is set.
+     * @throws OrphanedJoinException if any of the configured joins references a non-existent table or alias.
      */
     public function prepare(): PDOStatement
     {
@@ -44,6 +46,8 @@ trait ExecutesQueries
      *
      * @return PDOStatement The executed query.
      * @throws PDOException if the built query is not valid for the connection.
+     * @throws LogicException if no connection is set.
+     * @throws OrphanedJoinException if any of the configured joins references a non-existent table or alias.
      */
     public function execute(): PDOStatement
     {

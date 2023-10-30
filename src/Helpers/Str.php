@@ -6,6 +6,7 @@ namespace Bead\Helpers\Str;
 
 use Exception;
 use InvalidArgumentException;
+use LogicException;
 use RuntimeException;
 use SplFixedArray;
 
@@ -37,6 +38,8 @@ use function unpack;
  * @param string|null $encoding The encoding to use.
  *
  * @return string The converted string.
+ *
+ * @throws RuntimeException if the provided $encoding can't be used
  */
 function camelToSnake(string $str, ?string $encoding = null): string
 {
@@ -46,7 +49,10 @@ function camelToSnake(string $str, ?string $encoding = null): string
 
     if (isset($encoding)) {
         $oldEncoding = mb_regex_encoding();
-        mb_regex_encoding($encoding);
+
+        if (!mb_regex_encoding($encoding)) {
+            throw new RuntimeException("Unable to use encoding {$encoding}");
+        }
     }
 
     $pattern = "([[:upper:]])";
@@ -72,6 +78,10 @@ function camelToSnake(string $str, ?string $encoding = null): string
         ), $encoding);
 
     if (isset($oldEncoding)) {
+        /**
+         * @psalm-suppress UnusedFunctionCall we don't check the return value: this should never fail as we're setting
+         * the encoding back to what it was before we changed it
+         */
         mb_regex_encoding($oldEncoding);
     }
 
@@ -88,12 +98,17 @@ function camelToSnake(string $str, ?string $encoding = null): string
  * @param string|null $encoding The encoding expected in the string. If not given, UTF-8 is used.
  *
  * @return string The `camelCase` version of the `snake_case` string.
+ *
+ * @throws RuntimeException if the provided encoding can't be used.
  */
 function snakeToCamel(string $str, ?string $encoding = null): string
 {
     if (isset($encoding)) {
         $oldEncoding = mb_regex_encoding();
-        mb_regex_encoding($encoding);
+
+        if (!mb_regex_encoding($encoding)) {
+            throw new RuntimeException("Unable to use encoding {$encoding}");
+        }
     }
 
     // ignore all leading _ chars (to avoid upper-casing the first non-underscore)
@@ -114,6 +129,10 @@ function snakeToCamel(string $str, ?string $encoding = null): string
     }, mb_substr($str, $trim));
 
     if (isset($oldEncoding)) {
+        /**
+         * @psalm-suppress UnusedFunctionCall we don't check the return value: this should never fail as we're setting
+         * the encoding back to what it was before we changed it
+         */
         mb_regex_encoding($oldEncoding);
     }
 
@@ -213,11 +232,11 @@ function toCodePoints(string $str, string $encoding): array
  * @param int $length The number of characters in the string.
  *
  * @return string
- * @throws Exception if a cryptographically-secure source of randomness is not available.
+ * @throws RuntimeException if a cryptographically-secure source of randomness is not available.
  */
 function random(int $length): string
 {
-    assert(0 <= $length, new InvalidArgumentException("Can't produce a random string of < 0 characters in length."));
+    assert(0 <= $length, new LogicException("Can't produce a random string of < 0 characters in length."));
     $str = "";
 
     try {

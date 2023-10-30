@@ -73,21 +73,22 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @param string $appRoot
      * @param Connection|null $db
      *
-     * @throws \Exception if the singleton has already been created or if the provided root directory does not exist.
+     * @throws RuntimeException if the singleton already exists or if the provided root directory does not exist.
+     * @throws ServiceAlreadyBoundException if any of the service bindings set up by the Application is already bound..
      */
     public function __construct(string $appRoot, ?Connection $db = null)
     {
         $this->setErrorHandler(new BeadErrorHandler());
 
         if (isset(self::$s_instance)) {
-            throw new Exception("Application instance already created.");
+            throw new RuntimeException("Application instance already created.");
         }
 
         self::$s_instance = $this;
         $realAppRoot = (new SplFileInfo($appRoot))->getRealPath();
 
         if (false === $realAppRoot) {
-            throw new Exception("Application root directory '{$appRoot}' does not exist.");
+            throw new RuntimeException("Application root directory '{$appRoot}' does not exist.");
         }
 
         $this->m_appRoot = $realAppRoot;
@@ -116,18 +117,36 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /**
      * Helper to set up the translator.
+     *
+     * @throws RuntimeException
      */
     private function setupTranslator(): void
     {
         $this->m_translator = new Translator();
         $this->m_translator->addSearchPath("i18n");
-        $this->m_translator->setLanguage($this->config("app.language", "en-GB"));
+        $language = $this->config("app.language", "en-GB");
 
+        if (!is_string($language)) {
+            throw new RuntimeException("Expected valid language in app.language configuration item, found " . gettype($language));
+        }
+
+        $this->m_translator->setLanguage($language);
+
+        /**
+         * @psalm-suppress MissingThrowsDocblock
+         *
+         * setupTranslator() is private and is only called internally fron constructor, so the service is guaranteed not
+         * to be bound already.
+         */
         $this->bindService(TranslatorContract::class, $this->m_translator);
     }
 
     /**
      * Helper to bind the configured crypter to the encryption interfaces.
+     *
+     * @throws RuntimeException
+     * @throws ServiceAlreadyBoundException if any of the encryption interfaces is already bound into the service
+     * container.
      */
     private function setupCrypter(): void
     {
@@ -194,18 +213,18 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @return array|mixed|null
      */
-    public function config(string $key = null, $default = null)
+    public function config(string $key = null, mixed $default = null)
     {
         if (!isset($key)) {
             return $this->m_config;
         }
 
-        if (false === strpos($key, ".")) {
-            return $this->m_config[$key] ?? $default;
+        if (str_contains($key, ".")) {
+            [$file, $key] = explode(".", $key, 2);
+            return $this->m_config[$file][$key] ?? $default;
         }
 
-        [$file, $key] = explode(".", $key, 2);
-        return isset($this->m_config[$file]) ? ($this->m_config[$file][$key] ?? $default) : $default;
+        return $this->m_config[$key] ?? $default;
     }
 
     /** Fetch the application's title.
@@ -221,7 +240,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @param $title string The title.
      */
-    public function setTitle(string $title)
+    public function setTitle(string $title): void
     {
         $this->m_title = $title;
     }
@@ -241,12 +260,13 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @param string $version The version string.
      */
-    public function setVersion(string $version)
+    public function setVersion(string $version): void
     {
         $this->m_version = $version;
     }
 
-    /** Fetch the minimum PHP version the application requires.
+    /**
+     * Fetch the minimum PHP version the application requires.
      *
      * This will be *0.0.0* by default, effectively meaning any PHP version is acceptable. (Note in reality PHP
      * 7 or later is required by this library.)
@@ -412,9 +432,13 @@ abstract class Application implements ServiceContainer, ContainerInterface
     public function setErrorHandler(ErrorHandler $handler): void
     {
         $this->m_errorHandler = $handler;
-        set_error_handler(function (int $type, string $message, string $file, int $line) use ($handler): void {
+
+        $errorHandler = function (int $type, string $message, string $file = "", int $line = 0) use ($handler): void {
             $handler->handleError($type, $message, $file, $line);
-        });
+        };
+
+        set_error_handler($errorHandler);
+
         set_exception_handler(function (Throwable $err) use ($handler): void {
             $handler->handleException($err);
         });
@@ -469,12 +493,12 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @see-also connect(), disconnect()
      *
      * @param $event string The name of the event.
-     * @param $eventArgs ...mixed Zero or more arguments to provide to the event callbacks.
+     * @param ...$eventArgs mixed Zero or more arguments to provide to the event callbacks.
      *
      * @return bool _true_ if the event was emitted successfully, _false_ otherwise. An event that is valid but
      * happens to have no connected callbacks returns _true_.
      */
-    public function emitEvent(string $event, ... $eventArgs): bool
+    public function emitEvent(string $event, mixed ... $eventArgs): bool
     {
         $event = strtolower($event);
 
@@ -492,13 +516,14 @@ abstract class Application implements ServiceContainer, ContainerInterface
         return true;
     }
 
-    /** Set the minimum PHP version the application requires.
+    /**
+     * Set the minimum PHP version the application requires.
      *
      * The version string should be of the form _x.y.z_ where _x_, _y_ and _z_ are integers >= 0.
      *
      * @param $v string The minimum required PHP version.
      *
-     * @return void.
+     * @return void
      */
     public function setMinimumPhpVersion(string $v): void
     {

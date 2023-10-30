@@ -9,7 +9,7 @@ use BeadTests\Framework\TestCase;
 
 class ScrubsStringsTest extends TestCase
 {
-    /** @var ScrubsStrings */
+    /** @var object $instance Instance of an anonymous class that utilises the ScrubsStrings trait. */
     private object $instance;
 
     public function setUp(): void

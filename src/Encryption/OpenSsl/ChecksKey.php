@@ -17,7 +17,11 @@ trait ChecksKey
         return 24;
     }
 
-    /** Ensure the provided key is valid. */
+    /**
+     * Ensure the provided key is valid.
+     *
+     * @throws EncryptionException if the key is not valid.
+     */
     private static function checkKey(string $key): void
     {
         if (self::minimumKeyLength() > mb_strlen($key, "8bit")) {

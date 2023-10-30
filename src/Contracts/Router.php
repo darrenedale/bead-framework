@@ -65,7 +65,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function register(string $route, $methods, $handler): void;
+    public function register(string $route, string|array $methods, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds only to GET requests.
@@ -75,7 +75,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerGet(string $route, $handler): void;
+    public function registerGet(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds only to HEAD requests.
@@ -85,7 +85,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerHead(string $route, $handler): void;
+    public function registerHead(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds only to POST requests.
@@ -95,7 +95,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerPost(string $route, $handler): void;
+    public function registerPost(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds only to PUT requests.
@@ -105,7 +105,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerPut(string $route, $handler): void;
+    public function registerPut(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds only to DELETE requests.
@@ -115,7 +115,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerDelete(string $route, $handler): void;
+    public function registerDelete(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds only to CONNECT requests.
@@ -125,7 +125,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerConnect(string $route, $handler): void;
+    public function registerConnect(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds only to OPTIONS requests.
@@ -135,7 +135,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerOptions(string $route, $handler): void;
+    public function registerOptions(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds only to PATCH requests.
@@ -145,7 +145,7 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerPatch(string $route, $handler): void;
+    public function registerPatch(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds to requests using any HTTP method.
@@ -155,5 +155,5 @@ interface Router
      *
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
-    public function registerAny(string $route, $handler): void;
+    public function registerAny(string $route, callable|array $handler): void;
 }

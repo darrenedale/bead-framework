@@ -30,6 +30,7 @@ class OneToManyTest extends TestCase
             protected static string $table = "Foo";
         };
 
+        /** @psalm-suppress UndefinedClass Bar is just a test class name */
         $this->relation = new OneToMany($this->local, "Bar", "foo_id", "id");
     }
 
@@ -41,6 +42,7 @@ class OneToManyTest extends TestCase
 
     public function testConstructor(): void
     {
+        /** @psalm-suppress UndefinedClass Bar is just a test class name */
         $relation = new OneToMany($this->local, "Bar", "foo_id", "id");
         self::assertSame($this->local, $relation->localModel());
         self::assertEquals("Bar", $this->relation->relatedModel());

@@ -8,8 +8,8 @@ use BeadTests\Framework\TestCase;
 
 class HasLogLevelTest extends TestCase
 {
-    /** @var HasLogLevel instance utilising the trait under test. */
-    private mixed $logger;
+    /** @var object Anonymous class instance utilising the trait under test. */
+    private object $logger;
 
     public function setUp(): void
     {

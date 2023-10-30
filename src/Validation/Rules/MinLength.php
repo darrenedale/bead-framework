@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Bead\Validation\Rules;
 
 use Bead\Validation\Rule;
+use Countable;
 
 use function Bead\Helpers\I18n\tr;
 

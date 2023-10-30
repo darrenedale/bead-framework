@@ -35,6 +35,7 @@ class UriSigner implements UriSignerContract
      * Initialise a new signer.
      *
      * @param string $algorithm The optional algorithm
+     * @throws UriSignerException in the alforithm is not valid.
      */
     public function __construct(string $algorithm = self::DefaultAlgorithm)
     {
@@ -97,6 +98,7 @@ class UriSigner implements UriSignerContract
      * @param string $secret The secret.
      *
      * @return $this A UriSigner for further methdo chaining.
+     * @throws InvalidArgumentException if the secret has fewer than 6 characters..
      */
     public function usingSecret(string $secret): self
     {
@@ -195,6 +197,7 @@ class UriSigner implements UriSignerContract
      * @param int|DateTimeInterface $expires The point in time at which the signed URI expires.
      *
      * @return string The signed URI.
+     * @throws UriSignerException if the secret has not been set to a valid value
      */
     public function sign(string $uri, array $parameters, $expires): string
     {

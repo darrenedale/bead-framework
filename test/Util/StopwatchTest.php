@@ -382,7 +382,7 @@ class StopwatchTest extends TestCase
             $stopped["durations"][] = $duration;
         };
 
-        $onReset = function (string $processName) use (&$reset) {
+        $onReset = function () use (&$reset) {
             ++$reset["count"];
         };
 
@@ -488,7 +488,7 @@ class StopwatchTest extends TestCase
     {
         $resetCount = 0;
 
-        $onReset = function (string $processName) use (&$resetCount) {
+        $onReset = function () use (&$resetCount) {
             ++$resetCount;
         };
 

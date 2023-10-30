@@ -32,7 +32,7 @@ function flatten(iterable $collection): array
 
     foreach ($collection as $item) {
         if (is_iterable($item)) {
-            $flat = [...$flat, ...flatten($item)];
+            $flat = [...$flat, ...array_values(flatten($item))];
         } else {
             $flat[] = $item;
         }

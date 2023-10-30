@@ -33,6 +33,9 @@ use function Bead\Helpers\Str\random;
  *
  * The primary use-case for this class is to cache potentially large result sets so that they can subsequently be
  * accessed quickly (e.g. when paging) without having to re-query the database.
+ *
+ * @template-implements Iterator<int,array>
+ * @template-implements ArrayAccess<int,array>
  */
 class ResultsCache implements Iterator, ArrayAccess, Countable
 {
@@ -80,8 +83,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * @param PDOStatement|null $results `optional` The results to page.
      * @param string $id `optional` The ID for the results cache. If empty a unique ID will be generated.
      *
-     * @throws Exception If no ID is specified and one can't be generated internally. This should only happen on
-     * relatively obscure platforms that don't provide good random data.
+     * @throws RuntimeException If no ID is specified and one can't be generated internally (this should only happen on
+     * relatively obscure platforms that don't provide good random data) or the results can't be cached.
      */
     protected function __construct(?PDOStatement $results = null, string $id = "")
     {
@@ -120,7 +123,11 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      *
      * @return ResultsCache|null The reconstituted cached pager, or `null` if the cache object could not be rebuilt
      * (e.g. if the ID provided is not valid).
-     * @noinspection PhpDocMissingThrowsInspection
+     *
+     * @throws RuntimeException if:
+     * - the ID is empty; or
+     * - the cache directory does not exist, is not a directory or cannot be read
+     * - the metadata for the cache file has the wrong id
      */
     public static function fetch(string $id): ResultsCache
     {
@@ -154,6 +161,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * cache.
      *
      * @return string The cache file directory.
+     *
+     * @throws RuntimeException if the cache directory does not exist, is not a directory or cannot be written
      */
     public static function cacheDirectory(): string
     {
@@ -188,6 +197,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * uncontrolled. A cron job or request lottery are possible solutions.
      *
      * @param int $expiry The number of minutes of lack of use for a results cache to be considered expired.
+     *
+     * @throws RuntimeException if the cache directory does not exist, is not a directory or cannot be written.
      */
     public static function purgeCache(int $expiry = self::DefaultCacheExpiryTimeout): void
     {
@@ -229,6 +240,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * Helper to remove the cache files for a cached result set with a given id.
      *
      * @param string $id The ID of the results to remove from the cache.
+     *
+     * @throws RuntimeException if the cache directory does not exist, is not a directory, or can't be written.
      */
     protected static function removeCachedResults(string $id): void
     {
@@ -243,7 +256,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * Helper to generate a unique ID for a cache object.
      *
      * @return string The unique ID.
-     * @throws Exception If PHP's random byte generation is not functioning on the current platform.
+     * @throws RuntimeException If PHP's random byte generation is not functioning on the current platform.
      */
     protected static function generateUid(): string
     {
@@ -293,11 +306,15 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * provided as a customisation point for subclasses, if required.
      *
      * @param $results PDOStatement|null The results to display.
+     *
+     * @throws RuntimeException if caching the results fails.
      */
     protected function setResults(PDOStatement $results): void
     {
         $this->m_results = $results;
         $this->m_rowCount = 0;
+
+        /** @psalm-suppress MissingThrowsDocblock Cannot throw LogicException as results are guaranteed to be set */
         $this->cacheResults();
     }
 
@@ -306,6 +323,9 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      *
      * This should be called whenever a new instance is created from a set of database results. It should not usually be
      * called at other times.
+     *
+     * @throws RuntimeException if the ID for the cache entry is already in use
+     * @throws LogicException if there is no result set to cache.
      */
     protected function cacheResults(): void
     {
@@ -359,6 +379,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * rather than having to load all the data from the cache. In turn, this means that extremely large result sets are
      * less likely to cause the PHP process to exhaust its `memory_limit` ini setting trying to store all the data for
      * all rows in an array.
+     *
+     * @throws RuntimeException if the cache file cannot be written
      */
     private function writeCachedResultsData(array $data, int $chunkIndex): void
     {
@@ -379,6 +401,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * The meta-data written is:
      * - the ID of the result set
      * - the number of rows in the result set
+     *
+     * @throws RuntimeException if the metadata file cannot be written
      */
     protected function cacheMetaData(): void
     {
@@ -397,6 +421,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * @param $fileName string The name of the cache file to read.
      *
      * @return string The contents of the cache file, or _null_ if the file could not be found or read.
+     * @throws RuntimeException if the cache file could not be read.
      */
     private static function readCacheFile(string $fileName): string
     {
@@ -422,6 +447,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * @param $chunkIndex int The index of the results cache chunk file to read.
      *
      * @return array<string, mixed> The contents of the cache file.
+     *
+     * @throws RuntimeException if the cahce file cannot be read.
      */
     protected static function readCachedResults(string $id, int $chunkIndex): array
     {
@@ -446,6 +473,7 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * @param $id string The ID of the results to read from the cache.
      *
      * @return array The metadata read from the cache file.
+     * @throws RuntimeException if the metadata for the results could not be loaded
      */
     protected static function readCachedMetaData(string $id): array
     {
@@ -475,6 +503,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * @param string $suffix The optional suffix for the cache file.
      *
      * @return string The path to the cache file.
+     *
+     * @throws RuntimeException if the cache directory does not exist, is not a directory or can't be written.
      */
     protected static function cacheFilePath(string $id, string $suffix = ""): string
     {
@@ -489,6 +519,8 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * Iterator interface method to fetch the current item.
      *
      * @return array|null
+     *
+     * @throws RuntimeException if the on-dosk cache of results needs to be read but fails.
      */
     public function current(): ?array
     {
@@ -577,7 +609,9 @@ class ResultsCache implements Iterator, ArrayAccess, Countable
      * @param int $offset The index.
      *
      * @return array
+     *
      * @throws OutOfBoundsException if the offset is not valid
+     * @throws RuntimeException if the on-dosk cache of results needs to be read but fails.
      */
     public function offsetGet(mixed $offset): ?array
     {

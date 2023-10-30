@@ -38,6 +38,8 @@ class FileLogger extends PsrAbstractLogger implements LoggerContract
      *
      * @param string $fileName The name of the file to log to.
      * @param int $flags Flags indicating how the logger should treat the file.
+     *
+     * @throws FileLoggerException if the file can't be opened for writing.
      */
     public function __construct(string $fileName, int $flags = 0x00)
     {

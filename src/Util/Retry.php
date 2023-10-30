@@ -49,6 +49,8 @@ final class Retry
      * Fluently set how many times to execute the code.
      *
      * This method must not be called from within the callable being retried.
+     *
+     * @throws InvalidArgumentException if the number of times to retry is less than 1.
      */
     public function times(int $times): self
     {
@@ -104,6 +106,8 @@ final class Retry
      * This method must not be called from within the callable being retried.
      *
      * @param int $retries The maximum number of retries.
+     *
+     * @throws InvalidArgumentException if the retry count is less than 1
      */
     public function setMaxRetries(int $retries): void
     {

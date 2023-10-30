@@ -11,7 +11,7 @@ use BeadTests\Framework\TestCase;
 
 class GeneratesRandomBytesTest extends TestCase
 {
-    /** @var XRay&GeneratesRandomBytes */
+    /** @var XRay $instance Wrapper for an instance of an anonymous class that utilises the ScrubsStrings trait. */
     private XRay $instance;
 
     public function setUp(): void

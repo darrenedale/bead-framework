@@ -5,6 +5,7 @@ namespace Bead\Logging;
 use Bead\Contracts\Logger as LoggerContract;
 use Bead\Exceptions\Logging\LoggerException;
 use Psr\Log\LogLevel;
+use Stringable;
 
 trait ConvertsPsr3LogLevels
 {

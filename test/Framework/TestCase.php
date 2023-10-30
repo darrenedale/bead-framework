@@ -138,7 +138,7 @@ abstract class TestCase extends PhpUnitTestCase
     public function removeMethodMock(string $class, string $method): void
     {
         if (!array_key_exists($class, $this->methodMocks) || !array_key_exists($method, $this->methodMocks[$class])) {
-            throw new LogicException("Attempt to remove mock for method '{$class}::{$function}' that isn't mocked.");
+            throw new LogicException("Attempt to remove mock for method '{$class}::{$method}' that isn't mocked.");
         }
 
         // strtolower() works around bug in old(er) versions of uopz

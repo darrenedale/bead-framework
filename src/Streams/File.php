@@ -43,6 +43,9 @@ class File implements StreamInterface
      *
      * @param SplFileInfo|string $file The file to stream.
      * @param int $mode The mode to open in.
+     *
+     * @throws InvalidArgumentException if the mode is not valid.
+     * @throws FileStreamException if the file can't be opened.
      */
     public function __construct(SplFileInfo | string $file, int $mode = self::DefaultMode)
     {
@@ -76,6 +79,10 @@ class File implements StreamInterface
     public function __destruct()
     {
         if (isset($this->m_fh)) {
+            /**
+             * @psalm-suppress MissingThrowsDocblock this won't throw as we've already checked and avoided scenario
+             * where it will.
+             */
             $this->close();
         }
     }
@@ -96,6 +103,8 @@ class File implements StreamInterface
 
     /**
      * Throw a FileStreamException if the stream is not open.
+     *
+     * @throws FileStreamException
      */
     private function checkOpen(): void
     {
@@ -167,7 +176,7 @@ class File implements StreamInterface
      *
      * @return string The content, or `false` if the stream is not open.
      */
-    public function __toString()
+    public function __toString(): string
     {
         try {
             return $this->getContents();
@@ -308,13 +317,13 @@ class File implements StreamInterface
      * @return int The number of bytes written.
      * @throws FileStreamException if the stream cannot be written.
      */
-    public function write($data)
+    public function write(string $string)
     {
         if (!$this->isWritable()) {
             throw new FileStreamException("The stream is not open or is not writable.");
         }
 
-        $bytes = fwrite($this->m_fh, $data);
+        $bytes = fwrite($this->m_fh, $string);
 
         if (false === $bytes) {
             throw new FileStreamException("The stream could not be written.");

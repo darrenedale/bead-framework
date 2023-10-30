@@ -3,6 +3,7 @@
 namespace Bead;
 
 use Bead\Contracts\Response;
+use Bead\Exceptions\InternalServerErrorException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
 use Bead\Responses\DoesntHaveHeaders;
@@ -263,14 +264,12 @@ class View implements Response
      * @param array|string $keyOrData The array of data to add, or the key if a single value is being provided.
      * @param mixed|null $value The value if a single item of data is being added, `null` otherwise.
      */
-    public static function inject($keyOrData, $value = null): void
+    public static function inject(array|string $keyOrData, $value = null): void
     {
         if (is_array($keyOrData)) {
             self::$m_injectedData = array_merge(self::$m_injectedData, $keyOrData);
-        } elseif (is_string($keyOrData)) {
-            self::$m_injectedData[$keyOrData] = $value;
         } else {
-            throw new TypeError("Argument for parameter \$keyOrData must be a string or array.");
+            self::$m_injectedData[$keyOrData] = $value;
         }
     }
 
@@ -283,6 +282,8 @@ class View implements Response
      *
      * @param string $name The name of the layout view.
      * @throws ViewNotFoundException
+     * @throws LogicException if layout() is called outside the context of rendering a view or the view already has a
+     * layout
      */
     public static function layout(string $name): void
     {
@@ -310,6 +311,7 @@ class View implements Response
      *
      * @throws ViewNotFoundException
      * @throws ViewRenderingException
+     * @throws LogicException if include() is called outside the context of rendering a view
      */
     public static function include(string $name, array $data = []): void
     {
@@ -381,6 +383,7 @@ class View implements Response
      *
      * @throws ViewNotFoundException
      * @throws ViewRenderingException
+     * @throws LogicException if no view is rendering or there is no matching component() call
      */
     public static function endComponent(): void
     {
@@ -410,6 +413,8 @@ class View implements Response
      * Provide content for a named slot in a component.
      *
      * @param string $name The view to use as a component.
+     *
+     * @throws LogicException if not view is currently being rendered or there is no current component.
      */
     public static function slot(string $name): void
     {
@@ -452,6 +457,10 @@ class View implements Response
      * Start producing content for a section in the current view's layout.
      *
      * @param string $name The section name.
+     *
+     * @throws InvalidArgumentException if the provided section name is not valid
+     * @throws LogicException if the view doesn't have a layout, the named section already exists or a section is
+     * already if effect
      */
     public static function section(string $name): void
     {
@@ -466,7 +475,7 @@ class View implements Response
         }
 
         if (isset($layout->m_sections[$name])) {
-            throw new RuntimeException("Section named {$name} already exists.");
+            throw new LogicException("Section named {$name} already exists.");
         }
 
         if (isset($layout->m_currentSection)) {
@@ -479,6 +488,9 @@ class View implements Response
 
     /**
      * Finish producing content for the current section in the current view's layout.
+     *
+     * @throws LogicException if the view does not have a layout
+     * @throws RuntimeException if there is no matching section() call
      */
     public static function endSection(): void
     {
@@ -489,7 +501,7 @@ class View implements Response
         }
 
         if (!isset($layout->m_currentSection)) {
-            throw new RuntimeException("endSection() called with no matching section() call.");
+            throw new LogicException("endSection() called with no matching section() call.");
         }
 
         $layout->m_sections[$layout->m_currentSection] = ob_get_clean();
@@ -513,6 +525,9 @@ class View implements Response
      * Yield the content of a section defined in a view that uses this view as its layout.
      *
      * @param string $name The name of the section that the child view is expected to have provided.
+     *
+     * @throws InvalidArgumentException if the stack name is not valid
+     * @throws LogicException if the view does not have a layout or there is already a push to a stack in operation
      */
     public static function yieldSection(string $name): void
     {
@@ -535,13 +550,12 @@ class View implements Response
      * The content enclosed between push() and endPush() will be added to the named stack.
      *
      * @param string $name The stack name.
+     *
+     * @throws InvalidArgumentException if the stack name is not valid
+     * @throws LogicException if the view does not have a layout or there is already a push to a stack in operation
      */
     public static function push(string $name): void
     {
-        if (!self::isValidStackName($name)) {
-            throw new InvalidArgumentException("'{$name}' is not a valid stack name.");
-        }
-
         $layout = self::currentLayout();
 
         if (!isset($layout)) {
@@ -550,6 +564,10 @@ class View implements Response
 
         if (isset($layout->currentStack)) {
             throw new LogicException("Can't nest pushes to stacks.");
+        }
+
+        if (!self::isValidStackName($name)) {
+            throw new InvalidArgumentException("'{$name}' is not a valid stack name.");
         }
 
         $layout->m_currentStack = $name;
@@ -568,6 +586,9 @@ class View implements Response
      * The content enclosed between push() and endPush() will be added to the named stack.
      *
      * @param string $name The stack name.
+     *
+     * @throws InvalidArgumentException if the stack name is not valid
+     * @throws LogicException if the view does not have a layout or there is already a push to a stack in operation
      */
     public static function pushOnce(string $name): void
     {
@@ -577,6 +598,8 @@ class View implements Response
 
     /**
      * End pushing content onto the current named stack.
+     *
+     * @throws LogicException if the view doesn't have a layout or there's not matching push()
      */
     public static function endPush(): void
     {
@@ -587,7 +610,7 @@ class View implements Response
         }
 
         if (!isset($layout->m_currentStack)) {
-            throw new RuntimeException("endPush() called with no matching push() call.");
+            throw new LogicException("endPush() called with no matching push() call.");
         }
 
         $content = ob_get_clean();
@@ -624,6 +647,9 @@ class View implements Response
      * Yield the content of a named stack into a layout.
      *
      * @param string $name The name of the stack.
+     *
+     * @throws InvalidArgumentException if the provided stack name is not valid
+     * @throws LogicException if a View is not currently being rendered
      */
     public static function stack(string $name): void
     {
@@ -644,6 +670,8 @@ class View implements Response
 
     /**
      * Add a hidden form element with the current CSRF token to the view.
+     *
+     * @throws RuntimeException if the CSRF token is not available needs to be but can't be refreshed
      */
     public static function csrf(): void
     {
@@ -690,14 +718,12 @@ class View implements Response
      *
      * @return $this The View for further method chaining.
      */
-    public function with($keyOrData, $value = null): self
+    public function with(array|string $keyOrData, $value = null): self
     {
         if (is_array($keyOrData)) {
             $this->m_data = array_merge($this->m_data, $keyOrData);
-        } elseif (is_string($keyOrData)) {
-            $this->m_data[$keyOrData] = $value;
         } else {
-            throw new TypeError("Argument for parameter \$keyOrData must be a string or array.");
+            $this->m_data[$keyOrData] = $value;
         }
 
         return $this;
@@ -792,10 +818,14 @@ class View implements Response
     /**
      * The HTTP response content.
      * @return string The HTML for the view.
-     * @throws ViewRenderingException
+     * @throws InternalServerErrorException
      */
     public function content(): string
     {
-        return $this->render();
+        try {
+            return $this->render();
+        } catch (ViewRenderingException $err) {
+            throw new InternalServerErrorException(WebApplication::instance()->request(), "Error rendering view '{$this->name()}': {$err->getMessage()}", previous: $err);
+        }
     }
 }

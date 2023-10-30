@@ -5,6 +5,8 @@
  * @version 0.9.2
  */
 
+declare(strict_types=1);
+
 namespace Bead;
 
 use Bead\Contracts\Router as RouterContract;
@@ -263,8 +265,10 @@ class Router implements RouterContract
      * @param callable|array<class-string, string> $handler The handler.
      *
      * @return \ReflectionFunction|\ReflectionMethod
+     *
+     * @throws LogicException if the handler is not valid.
      */
-    protected static function reflectorForHandler($handler)
+    protected static function reflectorForHandler(callable|array $handler)
     {
         if (is_string($handler) && false !== strpos("::", $handler)) {
             $handler = explode("::", $handler, 2);
@@ -284,7 +288,10 @@ class Router implements RouterContract
     }
 
     /**
-     * @inheritDoc
+     * @throws UnroutableRequestException if no route has been registered that can handle the request
+     * @throws LogicException if:
+     * - the arguments for the route handler cannot be created from the request; or
+     * - the handler is a class instance method and the class cannot be instantiated
      */
     public function route(Request $request): Response
     {
@@ -357,11 +364,15 @@ class Router implements RouterContract
     }
 
     /**
-     * @inheritDoc
-     * @throws \Bead\Exceptions\InvalidRouteParameterNameException
-     * @throws \Bead\Exceptions\DuplicateRouteParameterNameException
+     * @param callable|array $handler
+     *
+     * @throws InvalidArgumentException if $methods is/contains one or more invalid HTTP methods
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function register(string $route, $methods, $handler): void
+    public function register(string $route, string|array $methods, callable|array|string $handler): void
     {
         static $allMethods = null;
 
@@ -374,8 +385,8 @@ class Router implements RouterContract
         } else {
             if (is_string($methods)) {
                 $methods = [$methods,];
-            } elseif (!is_array($methods) || !all($methods, "is_string")) {
-                throw new TypeError("Argument for parameter \$methods must be a string or an array of strings.");
+            } elseif (!all($methods, "is_string")) {
+                throw new InvalidArgumentException("Array argument for parameter \$methods must consist exclusively of strings.");
             }
 
             if (!isSubsetOf($methods, [...$allMethods, self::AnyMethod,])) {
@@ -386,7 +397,7 @@ class Router implements RouterContract
         }
 
         if (!is_callable($handler, true)) {
-            throw new TypeError("Argument for parameter \$handler must be a callable or a tuple of class and method name.");
+            throw new InvalidArgumentException("Argument for parameter \$handler must be a callable or a tuple of class and method name.");
         }
 
         $this->checkRouteConflicts($route, $methods);
@@ -398,74 +409,110 @@ class Router implements RouterContract
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerGet(string $route, $handler): void
+    public function registerGet(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::GetMethod, $handler);
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerPost(string $route, $handler): void
+    public function registerPost(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::PostMethod, $handler);
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerPut(string $route, $handler): void
+    public function registerPut(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::PutMethod, $handler);
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerHead(string $route, $handler): void
+    public function registerHead(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::HeadMethod, $handler);
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerDelete(string $route, $handler): void
+    public function registerDelete(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::DeleteMethod, $handler);
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerAny(string $route, $handler): void
+    public function registerAny(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::AnyMethod, $handler);
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerConnect(string $route, $handler): void
+    public function registerConnect(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::ConnectMethod, $handler);
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerOptions(string $route, $handler): void
+    public function registerOptions(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::OptionsMethod, $handler);
     }
 
     /**
-     * @inheritDoc
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
      */
-    public function registerPatch(string $route, $handler): void
+    public function registerPatch(string $route, callable|array|string $handler): void
     {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::PatchMethod, $handler);
     }
 }

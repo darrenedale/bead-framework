@@ -1069,7 +1069,7 @@ class SharedMemoryTest extends TestCase
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeInt64(0, $value);
+        $memory->writeInt64(0, $value);
     }
 
     public function testWriteInt64ThrowsWithNegativeOffset(): void
@@ -1078,7 +1078,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt64($offset, $value);
+        $this->m_memory->writeInt64($offset, $value);
     }
 
     public function testWriteInt64ThrowsWithInvalidOffset(): void
@@ -1087,7 +1087,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt64($offset, $value);
+        $this->m_memory->writeInt64($offset, $value);
     }
 
     public function testWriteInt64ThrowsWithOverflow(): void
@@ -1096,7 +1096,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 7;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt64($offset, $value);
+        $this->m_memory->writeInt64($offset, $value);
     }
 
     public function testWriteUInt64(): void
@@ -1134,7 +1134,7 @@ class SharedMemoryTest extends TestCase
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeUInt64(0, $value);
+        $memory->writeUInt64(0, $value);
     }
 
     public function testWriteUInt64ThrowsWithNegativeOffset(): void
@@ -1143,7 +1143,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt64($offset, $value);
+        $this->m_memory->writeUInt64($offset, $value);
     }
 
     public function testWriteUInt64ThrowsWithInvalidOffset(): void
@@ -1152,7 +1152,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt64($offset, $value);
+        $this->m_memory->writeUInt64($offset, $value);
     }
 
     public function testWriteUInt64ThrowsWithOverflow(): void
@@ -1161,7 +1161,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 7;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt64($offset, $value);
+        $this->m_memory->writeUInt64($offset, $value);
     }
 
     public function testWriteInt32(): void
@@ -1199,7 +1199,7 @@ class SharedMemoryTest extends TestCase
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeInt32(0, $value);
+        $memory->writeInt32(0, $value);
     }
 
     public function testWriteInt32ThrowsWithNegativeOffset(): void
@@ -1208,7 +1208,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt32($offset, $value);
+        $this->m_memory->writeInt32($offset, $value);
     }
 
     public function testWriteInt32ThrowsWithInvalidOffset(): void
@@ -1217,7 +1217,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt32($offset, $value);
+        $this->m_memory->writeInt32($offset, $value);
     }
 
     public function testWriteInt32ThrowsWithOverflow(): void
@@ -1226,7 +1226,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 3;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt32($offset, $value);
+        $this->m_memory->writeInt32($offset, $value);
     }
 
     public function testWriteUInt32(): void
@@ -1264,7 +1264,7 @@ class SharedMemoryTest extends TestCase
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeUInt32(0, $value);
+        $memory->writeUInt32(0, $value);
     }
 
     public function testWriteUInt32ThrowsWithNegativeOffset(): void
@@ -1273,7 +1273,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt32($offset, $value);
+        $this->m_memory->writeUInt32($offset, $value);
     }
 
     public function testWriteUInt32ThrowsWithInvalidOffset(): void
@@ -1282,7 +1282,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt32($offset, $value);
+        $this->m_memory->writeUInt32($offset, $value);
     }
 
     public function testWriteUInt32ThrowsWithOverflow(): void
@@ -1291,7 +1291,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 3;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt32($offset, $value);
+        $this->m_memory->writeUInt32($offset, $value);
     }
 
     public function testWriteInt16(): void
@@ -1329,7 +1329,7 @@ class SharedMemoryTest extends TestCase
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeInt16(0, $value);
+        $memory->writeInt16(0, $value);
     }
 
     public function testWriteInt16ThrowsWithNegativeOffset(): void
@@ -1338,7 +1338,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt16($offset, $value);
+        $this->m_memory->writeInt16($offset, $value);
     }
 
     public function testWriteInt16ThrowsWithInvalidOffset(): void
@@ -1347,7 +1347,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt16($offset, $value);
+        $this->m_memory->writeInt16($offset, $value);
     }
 
     public function testWriteInt16ThrowsWithOverflow(): void
@@ -1356,7 +1356,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt16($offset, $value);
+        $this->m_memory->writeInt16($offset, $value);
     }
 
     public function testWriteUInt16(): void
@@ -1394,7 +1394,7 @@ class SharedMemoryTest extends TestCase
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeUInt16(0, $value);
+        $memory->writeUInt16(0, $value);
     }
 
     public function testWriteUInt16ThrowsWithNegativeOffset(): void
@@ -1403,7 +1403,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt16($offset, $value);
+        $this->m_memory->writeUInt16($offset, $value);
     }
 
     public function testWriteUInt16ThrowsWithInvalidOffset(): void
@@ -1412,7 +1412,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt16($offset, $value);
+        $this->m_memory->writeUInt16($offset, $value);
     }
 
     public function testWriteUInt16ThrowsWithOverflow(): void
@@ -1421,7 +1421,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt16($offset, $value);
+        $this->m_memory->writeUInt16($offset, $value);
     }
 
     public function testWriteInt8(): void
@@ -1459,7 +1459,7 @@ class SharedMemoryTest extends TestCase
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeInt8(0, $value);
+        $memory->writeInt8(0, $value);
     }
 
     public function testWriteInt8ThrowsWithNegativeOffset(): void
@@ -1468,7 +1468,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt8($offset, $value);
+        $this->m_memory->writeInt8($offset, $value);
     }
 
     public function testWriteInt8ThrowsWithInvalidOffset(): void
@@ -1477,7 +1477,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt8($offset, $value);
+        $this->m_memory->writeInt8($offset, $value);
     }
 
     public function testWriteInt8ThrowsWithOverflow(): void
@@ -1486,7 +1486,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt8($offset, $value);
+        $this->m_memory->writeInt8($offset, $value);
     }
 
     public function testWriteUInt8(): void
@@ -1524,7 +1524,7 @@ class SharedMemoryTest extends TestCase
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeUInt8(0, $value);
+        $memory->writeUInt8(0, $value);
     }
 
     public function testWriteUInt8ThrowsWithNegativeOffset(): void
@@ -1533,7 +1533,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt8($offset, $value);
+        $this->m_memory->writeUInt8($offset, $value);
     }
 
     public function testWriteUInt8ThrowsWithInvalidOffset(): void
@@ -1542,7 +1542,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt8($offset, $value);
+        $this->m_memory->writeUInt8($offset, $value);
     }
 
     public function testWriteUInt8ThrowsWithOverflow(): void
@@ -1551,7 +1551,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt8($offset, $value);
+        $this->m_memory->writeUInt8($offset, $value);
     }
 
     public function testWriteString(): void

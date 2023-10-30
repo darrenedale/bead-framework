@@ -14,7 +14,7 @@ class DecryptsTest extends \BeadTests\Framework\TestCase
 
     private const ArrayRawData = ["the-data", "more-data"];
 
-    /** @var Decrypts */
+    /** @var object $instance Instance of an anonymous class that utilises the Decrypts trait. */
     private object $instance;
 
     public function setUp(): void
