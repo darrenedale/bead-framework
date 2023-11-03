@@ -390,6 +390,12 @@ class Message implements MultipartMessageContract
         return $clone;
     }
 
+    /** Make a filename safe for use with the content-disposition header. */
+    private static function escapeAttachmentFilename(string $filename): string
+    {
+        return str_replace("\"", "\\\"", $filename);
+    }
+
     /**
      * Add an attachment to the email message.
      *
@@ -413,7 +419,7 @@ class Message implements MultipartMessageContract
         $dispositionHeader = new Header(
             "content-disposition",
             "attachment",
-            ["filename" => "\"" . str_replace("\"", "\\\"", $filename) . "\""]
+            ["filename" => "\"" . self::escapeAttachmentFilename($filename) . "\""]
         );
 
         $newPart = (new Part($content))

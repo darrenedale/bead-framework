@@ -13,21 +13,21 @@ class PhpMail implements TransportContract
 {
     public function send(MessageContract $message): void
     {
-        $headers = "";
+        $headers = [];
 
         foreach ($message->headers() as $header) {
-            if (0 === strcasecmp("subject", $header->name())) {
+            if ("subject" === strtolower($header->name())) {
                 continue;
             }
 
-            $headers .= $header->line() . Mime::Rfc822LineEnd;
+            $headers[] = $header->line();
         }
 
         if (!mail(
             implode(",", array_unique([...$message->to(), ...$message->cc(), ...$message->bcc(),])),
             $message->subject(),
             $message->body(),
-            $headers
+            implode( Mime::Rfc822LineEnd, $headers)
         )) {
             throw new TransportException("Failed to transport message with subject \"{$message->subject()}\"");
         }
