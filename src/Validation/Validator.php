@@ -298,7 +298,6 @@ class Validator
     /**
      * Internal helper to add an error to the list.
      *
-     * @api
      * @param string $field The field that failed a validation rule.
      * @param string $message The error message to add.
      */
