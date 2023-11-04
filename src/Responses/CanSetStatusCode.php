@@ -10,25 +10,25 @@ namespace Bead\Responses;
 trait CanSetStatusCode
 {
     /** @var int The HTTP status code. */
-	private int $m_statusCode;
+    private int $m_statusCode;
 
     /**
      * Fetch the HTTP status code.
      *
      * @return int The code.
      */
-	public function statusCode(): int
-	{
-		return $this->m_statusCode;
-	}
+    public function statusCode(): int
+    {
+        return $this->m_statusCode;
+    }
 
     /**
      * Set the HTTP status code.
      *
      * @param int $code The code.
      */
-	public function setStatusCode(int $code): void
-	{
-		$this->m_statusCode = $code;
-	}
+    public function setStatusCode(int $code): void
+    {
+        $this->m_statusCode = $code;
+    }
 }

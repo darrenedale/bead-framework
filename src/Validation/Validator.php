@@ -372,7 +372,7 @@ class Validator
 
         // validated data contains only the data under validation - data for which there are no rules is not validated
         $fieldsUnderValidation = $this->fieldsUnderValidation();
-        $validatedData = array_filter($this->data(), fn(string $key):bool => in_array($key, $fieldsUnderValidation), ARRAY_FILTER_USE_KEY);
+        $validatedData = array_filter($this->data(), fn (string $key): bool => in_array($key, $fieldsUnderValidation), ARRAY_FILTER_USE_KEY);
 
         foreach ($this->rules() as $field => $rules) {
             if ($this->m_skipAll) {
@@ -447,6 +447,7 @@ class Validator
      * Check whether the validator fails.
      *
      * @return bool true if the original data fails validation, false if it passes.
+     * @throws LogicException if called while validation is taking place.
      */
     public function fails(): bool
     {
@@ -523,7 +524,6 @@ class Validator
      * @return array
      * @throws ArgumentCountError if there are not enough args to cover the non-optional constructor parameters
      * @throws InvalidArgumentException if an argument cannot be converted to the required type
-     * @noinspection PhpDocMissingThrowsInspection ReflectionClass constructor won't throw.
      */
     private static function convertRuleConstructorArgs(array $args, string $ruleClass): array
     {
@@ -585,8 +585,7 @@ class Validator
                 case "DateTime":
                     try {
                         $args[$idx] = new DateTime($args[$idx]);
-                    }
-                    catch (Exception $err) {
+                    } catch (Exception $err) {
                         throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter is not a valid DateTime.", 0, $err);
                     }
                     break;
@@ -606,14 +605,13 @@ class Validator
      * @param Rule|string $rule The rule.
      *
      * @throws LogicException if called while the data is being validated.
+     * @throws InvalidArgumentException if the named rule alias is not recognised.
+     * @throws RuntimeException if the rule class does not exist or can't be loaded
+     * @throws ArgumentCountError if the rule string does not contain sufficient arguments for the identified rule
      */
-    public function addRule(string $field, $rule): void
+    public function addRule(string $field, Rule|string $rule): void
     {
-        assert(!$this->isValidating(), (
-        8 <= PHP_MAJOR_VERSION
-            ? new LogicException("Can't add rules while the validator is validating the data.")
-            : "Can't add rules while the validator is validating the data."
-        ));
+        assert(!$this->isValidating(), new LogicException("Can't add rules while the validator is validating the data."));
 
         $this->clearValidated();
         $this->clearSkips();
@@ -625,7 +623,7 @@ class Validator
             $rule = array_shift($args);
 
             // unescape any escaped : chars in each arg
-            array_walk($args, function(string & $arg): void {
+            array_walk($args, function (string & $arg): void {
                 $arg = str_replace("\\:", ":", $arg);
             });
 
@@ -644,8 +642,6 @@ class Validator
             }
 
             $rule = new $ruleClass(...self::convertRuleConstructorArgs($args, $ruleClass));
-        } else if (!($rule instanceof Rule)) {
-            throw new TypeError("Argument 2 \$rule must be a string or a Rule object.");
         }
 
         if (!isset($this->m_rules[$field])) {
@@ -677,6 +673,8 @@ class Validator
      *
      * @param string $ruleName The name for the rule (its alias).
      * @param string $ruleClass The class name of the Rule object it represents.
+     *
+     * @throws InvalidArgumentException if the rule alias is already in use
      */
     public static function registerRuleAlias(string $ruleName, string $ruleClass): void
     {

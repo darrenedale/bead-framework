@@ -12,12 +12,12 @@ use Psr\Log\AbstractLogger as PsrAbstractLogger;
 class LogsToStreamTest extends TestCase
 {
     /** @var string The test error message. */
-    const TestMessage = "Test message: %1";
+    private const TestMessage = "Test message: %1";
 
     /** @var string[] The test error context. */
-    const TestContext = ["test-context"];
+    private const TestContext = ["test-context"];
 
-    /** @var LogsToStream */
+    /** @var PsrAbstractLogger */
     private mixed $instance;
 
     public function setUp(): void
@@ -54,8 +54,7 @@ class LogsToStreamTest extends TestCase
 
         self::mockFunction(
             "fwrite",
-            function($stream, string $data) use (&$actual, $expectedStream): void
-            {
+            function ($stream, string $data) use (&$actual, $expectedStream): void {
                 TestCase::assertSame($expectedStream, $stream);
                 $actual = $data;
             }
@@ -68,20 +67,18 @@ class LogsToStreamTest extends TestCase
     /** Ensure log() ignores messages above the set level. */
     public function testLogIgnores(): void
     {
-        $called = false;
-
         self::mockFunction(
             "fwrite",
-            function($stream, string $data): void
-            {
-                $called = true;
+            function ($stream, string $data): void {
                 TestCase::fail("fwrite() should not be called.");
             }
         );
 
         $this->instance->setLevel(LoggerContract::InformationLevel);
         $this->instance->log(LoggerContract::DebugLevel, self::TestMessage, self::TestContext);
-        TestCase::assertFalse($called);
+
+        // this is a test that passws as long as fwrite is not called; that expecation is taken care of above
+        self::markTestAsExternallyVerified();
     }
 
     /** Ensure log() throws with an invalid stream. */

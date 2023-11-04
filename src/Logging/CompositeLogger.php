@@ -18,6 +18,9 @@ use function Bead\Helpers\Str\build;
 
 /**
  * Composite logger to write to several logs at once.
+ *
+ * @template-implements Iterator<int,LoggerContract>
+ * @template-implements ArrayAccess<int,LoggerContract>
  */
 class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Iterator, Countable, ArrayAccess
 {
@@ -93,11 +96,13 @@ class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Itera
         return $this->loggers[$offset]["logger"];
     }
 
+    /** @throws LogicException always - CompositeLogger instances are read-only arrays. */
     public function offsetSet(mixed $offset, mixed $value): void
     {
         throw new LogicException("CompositeLoggers are read-only data structures.");
     }
 
+    /** @throws LogicException always - CompositeLogger instances are read-only arrays. */
     public function offsetUnset(mixed $offset): void
     {
         throw new LogicException("CompositeLoggers are read-only data structures.");
@@ -111,7 +116,7 @@ class CompositeLogger extends PsrAbstractLogger implements LoggerContract, Itera
 
     public function current(): LoggerContract
     {
-        assert ($this->valid(), new LogicException("Iteration reached invalid index {$this->loggerIndex}."));
+        assert($this->valid(), new LogicException("Iteration reached invalid index {$this->loggerIndex}."));
         return $this->loggers[$this->loggerIndex]["logger"];
     }
 

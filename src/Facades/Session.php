@@ -4,6 +4,7 @@ namespace Bead\Facades;
 
 use BadMethodCallException;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
+use Bead\Exceptions\Session\InvalidSessionHandlerException;
 use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\PrefixedAccessor;
@@ -48,7 +49,13 @@ final class Session
      * including calling start(), so you should never need to call this.
      *
      * @return BeadSession The session.
+     *
+     * @throws LogicException if the session has already been started
      * @throws ExpiredSessionIdUsedException if the session identified by the session cookie has expired
+     * @throws SessionExpiredException if the current session has expired
+     * @throws SessionNotFoundException If the ID provided does not identify an existing session.
+     * @throws InvalidSessionHandlerException if the session handler specified in the configuration file is not
+     * recognised.
      */
     public static function start(): BeadSession
     {

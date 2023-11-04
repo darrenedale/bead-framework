@@ -5,6 +5,7 @@ namespace Bead\Logging;
 use Bead\Exceptions\Logging\LoggerException;
 use Stringable;
 use TypeError;
+
 use function Bead\Helpers\Str\build;
 
 /**

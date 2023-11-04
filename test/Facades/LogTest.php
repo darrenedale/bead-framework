@@ -7,6 +7,7 @@ use Bead\Contracts\Logger as LoggerContract;
 use Bead\Facades\Log;
 use BeadTests\Framework\TestCase;
 use Mockery;
+use Mockery\MockInterface;
 use Stringable;
 
 final class LogTest extends TestCase
@@ -15,10 +16,10 @@ final class LogTest extends TestCase
 
     private const TestContext = ["test-context",];
 
-    /** @var Application&Mockery\MockInterface The test Application instance. */
+    /** @var Application&MockInterface The test Application instance. */
     private Application $app;
 
-    /** @var LoggerContract&Mockery\MockInterface The test logger instance bound into the application. */
+    /** @var LoggerContract&MockInterface The test logger instance bound into the application. */
     private LoggerContract $logger;
 
     public function setUp(): void
@@ -33,7 +34,7 @@ final class LogTest extends TestCase
 
     public function tearDown(): void
     {
-        unset ($this->app, $this->logger);
+        unset($this->app, $this->logger);
         Mockery::close();
         parent::tearDown();
     }
@@ -47,15 +48,15 @@ final class LogTest extends TestCase
      */
     private static function createStringable(string $string = self::TestMessage): \Stringable
     {
-        return new class($string) implements Stringable
+        return new class ($string) implements Stringable
         {
             private string $string;
-            
+
             public function __construct(string $string)
             {
                 $this->string = $string;
             }
-            
+
             public function __toString(): string
             {
                 return $this->string;

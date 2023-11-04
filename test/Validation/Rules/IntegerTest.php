@@ -41,7 +41,13 @@ class IntegerTest extends RuleTestCase
             "extremeHexString" => ["field", "0xff", false,],
             "extremeOctalString" => ["field", "0666", false,],
             "typicalObject" => ["field", (object)[], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalTrue" => ["field", true, false,],
             "typicalFalse" => ["field", false, false,],
             "typicalEmptyString" => ["field", "", false,],

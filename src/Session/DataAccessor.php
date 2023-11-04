@@ -6,6 +6,8 @@ use ArrayAccess;
 
 /**
  * Interface for accessing session data.
+ *
+ * @template-extends ArrayAccess<string,mixed>
  */
 interface DataAccessor extends ArrayAccess
 {
@@ -101,7 +103,7 @@ interface DataAccessor extends ArrayAccess
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
      */
-    public function transientSet(string|array $keyOrData, $data = null): void;
+    public function transientSet(string|array $keyOrData, mixed $data = null): void;
 
     /**
      * Remove one or more keys from the session data.

@@ -59,7 +59,13 @@ class IsBooleanTest extends RuleTestCase
                 }
             }, false,],
             "typicalObject" => ["field", (object)[], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalInt" => ["field", 123, false,],
             "typicalFloat" => ["field", 123.456, false,],
             "typicalNull" => ["field", null, false,],

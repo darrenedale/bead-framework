@@ -48,21 +48,21 @@ class Nullable implements ValidatorAwareRule, TypeConvertingRule
         return true;
     }
 
-	/**
-	 * If the data is empty, convert it to null.
-	 *
-	 * @param mixed $data The data to convert.
-	 *
-	 * @return mixed|null
-	 */
-	public function convert($data)
-	{
-		if (self::isEmpty($data)) {
-			return null;
-		}
+    /**
+     * If the data is empty, convert it to null.
+     *
+     * @param mixed $data The data to convert.
+     *
+     * @return mixed|null
+     */
+    public function convert($data)
+    {
+        if (self::isEmpty($data)) {
+            return null;
+        }
 
-		return $data;
-	}
+        return $data;
+    }
 
     /**
      * Fetch the default message for when the data does not pass the rule.

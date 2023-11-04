@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace BeadTests\Framework;
 
@@ -50,7 +50,7 @@ abstract class TestCase extends PhpUnitTestCase
                 $this->removeMethodMock($class, $method);
             }
 
-            unset ($this->methodMocks[$class]);
+            unset($this->methodMocks[$class]);
         }
 
         parent::tearDown();

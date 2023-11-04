@@ -3,16 +3,17 @@
 namespace Bead\Session\Handlers;
 
 use Bead\Application;
-use Bead\AppLog;
 use Bead\Contracts\SessionHandler;
 use Bead\Exceptions\Session\InvalidSessionDirectoryException;
 use Bead\Exceptions\Session\InvalidSessionFileException;
 use Bead\Exceptions\Session\SessionDestroyedException;
 use Bead\Exceptions\Session\SessionFileSaveException;
 use Bead\Exceptions\Session\SessionNotFoundException;
+use Bead\Facades\Log;
 use Bead\Session\Session;
 use DirectoryIterator;
 use Exception;
+use RuntimeException;
 use SplFileInfo;
 
 use function Bead\Helpers\Str\random;
@@ -59,14 +60,14 @@ class File implements SessionHandler
      * @throws InvalidSessionFileException if the session file contains invalid content.
      * @throws SessionFileSaveException if the session requires ID regeneration and the new session file can't be
      * written.
-     * @noinspection PhpDocMissingThrowsInspection Can't throw SessionDestroyedException.
+     * @throws RuntimeException if a cryptographically secure session ID cannot be generated.
      */
     public function __construct(?string $id = null)
     {
         if (!isset($id)) {
             $this->m_id = self::createId();
             $this->m_createdAt = $this->m_idCreatedAt = $this->m_lastUsedAt = time();
-            /** @noinspection PhpUnhandledExceptionInspection Can't throw SessionDestroyedException. */
+            /** @psalm-suppress MissingThrowsDocblock Can't throw SessionDestroyedException. */
             $this->commit();
         } else {
             $info = new SplFileInfo(self::sessionDirectory() . "/{$id}");
@@ -84,7 +85,7 @@ class File implements SessionHandler
             }
 
             $this->m_id = $id;
-            /** @noinspection PhpUnhandledExceptionInspection Can't throw SessionDestroyedException. */
+            /** @psalm-suppress MissingThrowsDocblock Can't throw SessionDestroyedException. */
             $this->reload();
         }
     }
@@ -95,12 +96,11 @@ class File implements SessionHandler
      * @throws InvalidSessionDirectoryException if the configured session directory is not valid.
      * @throws SessionFileSaveException if the session cannot be committed either to the file for the old ID or the
      * file for the new ID.
-     * @noinspection PhpDocMissingThrowsInspection Can't throw SessionDestroyedException.
      */
     public function __destruct()
     {
         if (!$this->m_destroyed) {
-            /** @noinspection PhpUnhandledExceptionInspection Can't throw SessionDestroyedException. */
+            /** @psalm-suppress MissingThrowsDocblock Can't throw SessionDestroyedException. */
             $this->commit();
         }
     }
@@ -112,7 +112,7 @@ class File implements SessionHandler
      *
      * @return bool `true` if the directory is valid, `false` if not.
      */
-    protected static final function isValidSessionDirectory(string $dir): bool
+    final protected static function isValidSessionDirectory(string $dir): bool
     {
         return false === strpos($dir, ".");
     }
@@ -142,6 +142,7 @@ class File implements SessionHandler
      *
      * @return string The ID.
      * @throws InvalidSessionDirectoryException if the configured session directory is not valid.
+     * @throws RuntimeException if a cryptographically-secure session ID can't be generated.
      */
     protected static function createId(): string
     {
@@ -234,7 +235,7 @@ class File implements SessionHandler
      */
     public function all(): array
     {
-    $this->throwIfDestroyed();
+        $this->throwIfDestroyed();
         return $this->m_data;
     }
 
@@ -276,6 +277,7 @@ class File implements SessionHandler
      * @throws SessionDestroyedException if the session has been destroyed
      * @throws SessionFileSaveException if the session cannot be committed either to the file for the old ID or the
      * file for the new ID.
+     * @throws RuntimeException if a cryptographically-secure session ID can't be generated.
      */
     public function regenerateId(): string
     {
@@ -322,15 +324,19 @@ class File implements SessionHandler
         $this->throwIfDestroyed();
         $this->m_lastUsedAt = time();
 
-        if (false === file_put_contents(self::sessionDirectory() . "/{$this->id()}",
-            serialize([
-                "created_at" => $this->m_createdAt,
-                "last_used_at" => $this->m_lastUsedAt,
-                "id_created_at" => $this->m_idCreatedAt,
-                "id_expired_at" => $this->m_idExpiredAt,
-                "replacement_id" => $this->m_replacementId,
-                "data" => $this->m_data,
-            ]))) {
+        if (
+            false === file_put_contents(
+                self::sessionDirectory() . "/{$this->id()}",
+                serialize([
+                    "created_at" => $this->m_createdAt,
+                    "last_used_at" => $this->m_lastUsedAt,
+                    "id_created_at" => $this->m_idCreatedAt,
+                    "id_expired_at" => $this->m_idExpiredAt,
+                    "replacement_id" => $this->m_replacementId,
+                    "data" => $this->m_data,
+                ])
+            )
+        ) {
             throw new SessionFileSaveException(self::sessionDirectory() . "/{$this->id()}", "Failed to commit the session to the file '" . self::sessionDirectory() . "/{$this->id()}'");
         }
     }
@@ -420,7 +426,7 @@ class File implements SessionHandler
             }
 
             if (!$file->isFile() || !$file->isReadable()) {
-                AppLog::warning("Session directory entry {$file->getRealPath()} is not a file or is not readable when purging session directory.");
+                Log::warning("Session directory entry {$file->getRealPath()} is not a file or is not readable when purging session directory.");
                 continue;
             }
 
@@ -431,7 +437,7 @@ class File implements SessionHandler
                     $session->destroy();
                 }
             } catch (Exception $err) {
-                AppLog::error("Exception reading session file {$file->getRealPath()} when purging session directory: {$err->getMessage()}");
+                Log::error("Exception reading session file {$file->getRealPath()} when purging session directory: {$err->getMessage()}");
             }
         }
     }
