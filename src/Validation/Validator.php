@@ -61,7 +61,6 @@ use InvalidArgumentException;
 use LogicException;
 use ReflectionClass;
 use RuntimeException;
-use TypeError;
 
 /**
  * A class that validates datasets.
@@ -219,6 +218,7 @@ class Validator
     /**
      * Check whether the validator is currently validating the data.
      *
+     * @api
      * @return bool `true` if it is, `false` otherwise.
      */
     public function isValidating(): bool
@@ -242,6 +242,7 @@ class Validator
      *
      * Setting fresh data clears any previous errors and validated data.
      *
+     * @api
      * @param array $data The data to validate.
      */
     public function setData(array $data): void
@@ -261,6 +262,7 @@ class Validator
     /**
      * Fetch the data under validation.
      *
+     * @api
      * @return array The data.
      */
     public function data(): array
@@ -271,10 +273,11 @@ class Validator
     /**
      * Fetch the rules the Validator will use to validate the dataset.
      *
+     * @api
      * @param string|null $field The field whose rules are sought. Defaults to `null` to return all the rules, keyed by
      * field.
      *
-     * @return array The rules (for the requested field), or `null` if the requested field is not under validation.
+     * @return array|null The rules (for the requested field), or `null` if the requested field is not under validation.
      */
     public function rules(?string $field = null): ?array
     {
@@ -284,6 +287,7 @@ class Validator
     /**
      * Fetch the fields under validation.
      *
+     * @api
      * @return array<string> The fields for which the validator contains rules.
      */
     public function fieldsUnderValidation(): array
@@ -311,6 +315,7 @@ class Validator
      *
      * If not field is specified, all errors are cleared.
      *
+     * @api
      * @param string|null $field The field to reset.
      */
     public function clearErrors(?string $field = null): void
@@ -327,6 +332,7 @@ class Validator
      *
      * If no field is given, all the remaining rules for all fields are skipped.
      *
+     * @api
      * @param string|null $field The field whose rules should be skipped.
      */
     public function skipRemainingRules(?string $field = null): void
@@ -354,6 +360,7 @@ class Validator
      * rules that failed, keyed by field, while validated() will provide the validated data if the validation passed. If
      * validation passes errors() will return an empty array; if validation fails, validated() will throw.
      *
+     * @api
      * @throws ValidationException If the data does not pass validation.
      * @throws LogicException if called while validation is already taking place.
      */
@@ -422,6 +429,7 @@ class Validator
     /**
      * Check whether the data passes validation.
      *
+     * @api
      * @return bool true if the data passes, false otherwise.
      * @throws LogicException if called while validation is taking place.
      */
@@ -435,7 +443,7 @@ class Validator
         if (!$this->hasValidated()) {
             try {
                 $this->validate();
-            } catch (ValidationException $err) {
+            } catch (ValidationException) {
                 return false;
             }
         }
@@ -446,6 +454,7 @@ class Validator
     /**
      * Check whether the validator fails.
      *
+     * @api
      * @return bool true if the original data fails validation, false if it passes.
      * @throws LogicException if called while validation is taking place.
      */
@@ -479,6 +488,7 @@ class Validator
      *
      * @return array<string, mixed> The validated data.
      *
+     * @api
      * @throws ValidationException if the data is not valid.
      * @throws LogicException if called while validation is taking place.
      */
@@ -507,6 +517,7 @@ class Validator
      * The errors are keyed by field. There can be multiple errors per field. If the data has not yet been subjected to
      * validation, the error messages will be empty.
      *
+     * @api
      * @return array<string, array<string>> The messages.
      */
     public function errors(): array
@@ -601,6 +612,7 @@ class Validator
     /**
      * Add a rule to the validator.
      *
+     * @api
      * @param string $field The field for which the rule applies.
      * @param Rule|string $rule The rule.
      *
@@ -671,6 +683,7 @@ class Validator
      *
      * Your code is marginally faster if you don't use aliases, but other than that there's no difference.
      *
+     * @api
      * @param string $ruleName The name for the rule (its alias).
      * @param string $ruleClass The class name of the Rule object it represents.
      *
