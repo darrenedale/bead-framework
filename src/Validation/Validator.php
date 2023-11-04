@@ -274,7 +274,7 @@ class Validator
      * @param string|null $field The field whose rules are sought. Defaults to `null` to return all the rules, keyed by
      * field.
      *
-     * @return array The rules (for the requested field), or `null` if the requested field is not under validation.
+     * @return array|null The rules (for the requested field), or `null` if the requested field is not under validation.
      */
     public function rules(?string $field = null): ?array
     {
