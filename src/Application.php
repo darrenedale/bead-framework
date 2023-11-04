@@ -179,6 +179,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
         $this->m_config = [];
 
         foreach (new DirectoryIterator($path) as $configFile) {
+            if ($configFile->isDot()) {
+                continue;
+            }
+
             if ($configFile->isLink() || !$configFile->isFile() || !$configFile->isReadable() || "php" !== $configFile->getExtension()) {
                 throw new RuntimeException("config file '{$configFile->getFilename()}' is not valid or is not readable.");
             }
