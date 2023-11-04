@@ -179,7 +179,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
         $this->m_config = [];
 
         foreach (new DirectoryIterator($path) as $configFile) {
-            if ($file->isDot()) {
+            if ($configFile->isDot()) {
                 continue;
             }
 
