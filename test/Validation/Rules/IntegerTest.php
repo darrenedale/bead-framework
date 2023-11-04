@@ -41,7 +41,13 @@ class IntegerTest extends RuleTestCase
             "extremeHexString" => ["field", "0xff", false,],
             "extremeOctalString" => ["field", "0666", false,],
             "typicalObject" => ["field", (object)[], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalTrue" => ["field", true, false,],
             "typicalFalse" => ["field", false, false,],
             "typicalEmptyString" => ["field", "", false,],
@@ -97,7 +103,7 @@ class IntegerTest extends RuleTestCase
         }
 
         $rule = $this->ruleInstance();
-        $this->assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
+        self::assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
     }
     /**
      * Data provider for testConvert().
@@ -139,7 +145,7 @@ class IntegerTest extends RuleTestCase
     {
         /** @var Integer $rule */
         $rule = $this->ruleInstance();
-        $this->assertTrue($rule->passes("field", $data));
-        $this->assertSame($expected, $rule->convert($data));
+        self::assertTrue($rule->passes("field", $data));
+        self::assertSame($expected, $rule->convert($data));
     }
 }

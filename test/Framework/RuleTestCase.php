@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Framework;
-
 namespace BeadTests\Framework;
 
 use Bead\Validation\Rule;
@@ -67,6 +65,6 @@ abstract class RuleTestCase extends TestCase
         }
 
         $rule = new Integer();
-        $this->assertIsString($rule->message($field), "The message method did not produce a string.");
+        self::assertIsString($rule->message($field), "The message method did not produce a string.");
     }
 }

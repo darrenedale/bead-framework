@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 class ConnectionTest extends TestCase
 {
-
     public function dataForTestSqlToDefactoWildcards(): iterable
     {
         yield from [
@@ -30,7 +29,7 @@ class ConnectionTest extends TestCase
      */
     public function testSqlToDefactoWildcards(string $sql, string $expected): void
     {
-        $this->assertEquals($expected, Connection::sqlToDefactoWildcards($sql));
+        self::assertEquals($expected, Connection::sqlToDefactoWildcards($sql));
     }
 
     public function dataForTestDefactoToSqlWildcards(): iterable
@@ -53,7 +52,7 @@ class ConnectionTest extends TestCase
      */
     public function testDefactoToSqlWildcards(string $defacto, string $expected): void
     {
-        $this->assertEquals($expected, Connection::defactoToSqlWildcards($defacto));
+        self::assertEquals($expected, Connection::defactoToSqlWildcards($defacto));
     }
 
     public function dataForTestEscapeSqlWildcards(): iterable
@@ -74,7 +73,7 @@ class ConnectionTest extends TestCase
      */
     public function testEscapeSqlWildcards(string $sql, string $expected): void
     {
-        $this->assertEquals($expected, Connection::escapeSqlWildcards($sql));
+        self::assertEquals($expected, Connection::escapeSqlWildcards($sql));
     }
 
     public function dataForTestDefactoToRegExpWildcards(): iterable
@@ -95,6 +94,6 @@ class ConnectionTest extends TestCase
      */
     public function testDefactoToRegExpWildcards(string $defacto, string $expected): void
     {
-        $this->assertEquals($expected, Connection::defactoToRegExpWildcards($defacto));
+        self::assertEquals($expected, Connection::defactoToRegExpWildcards($defacto));
     }
 }

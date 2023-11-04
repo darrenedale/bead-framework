@@ -12,8 +12,9 @@ namespace Bead\Validation\Rules;
 
 use Bead\Validation\DatasetAwareRule;
 use InvalidArgumentException;
-use function Bead\Traversable\some;
 
+use function Bead\Helpers\Iterable\some;
+use function Bead\Helpers\Iterable\grammaticalImplode;
 use function Bead\Helpers\I18n\tr;
 
 /**
@@ -32,7 +33,7 @@ class RequiredWith implements DatasetAwareRule
      */
     public function __construct(array $otherFields)
     {
-        assert (!empty($otherFields), (
+        assert(!empty($otherFields), (
             8 <= PHP_MAJOR_VERSION
             ? new InvalidArgumentException("Argument for parameter \$otherFields must not be an empty array.")
             : "Argument for parameter \$otherFields must not be an empty array."
@@ -48,7 +49,7 @@ class RequiredWith implements DatasetAwareRule
     protected function otherFieldIsPresent(): bool
     {
         $data = $this->dataset();
-        return some($this->otherFields(), fn(string $field): bool => self::isFilled($data[$field] ?? null));
+        return some($this->otherFields(), fn (string $field): bool => self::isFilled($data[$field] ?? null));
     }
 
     /**

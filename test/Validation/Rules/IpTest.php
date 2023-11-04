@@ -83,7 +83,13 @@ class IpTest extends RuleTestCase
                 }
             }, true,],
             "typicalObject" => ["field", (object)[], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalIntClassC" => ["field", ip2long("192.168.1.1"), false,],
             "typicalTrue" => ["field", true, false,],
             "typicalFalse" => ["field", false, false,],
@@ -120,6 +126,6 @@ class IpTest extends RuleTestCase
         }
 
         $rule = $this->ruleInstance();
-        $this->assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
+        self::assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
     }
 }

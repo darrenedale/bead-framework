@@ -10,7 +10,7 @@ use Throwable;
 class SessionNotFoundException extends SessionException
 {
     /** @var string The ID of the session that was not found. */
-    private string $m_id;
+    private string $m_sessionId;
 
     /**
      * Initialise a new instance of the exception.
@@ -23,15 +23,15 @@ class SessionNotFoundException extends SessionException
     public function __construct(string $id, string $message = "", int $code = 0, Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
-        $this->m_id = $id;
+        $this->m_sessionId = $id;
     }
 
     /**
      * Fetch the ID of the missing session.
      * @return string The ID.
      */
-    public function getId(): string
+    public function getSessionId(): string
     {
-        return $this->m_id;
+        return $this->m_sessionId;
     }
 }

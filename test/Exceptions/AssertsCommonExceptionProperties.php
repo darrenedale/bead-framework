@@ -4,25 +4,41 @@ namespace BeadTests\Exceptions;
 
 use Throwable;
 
+/**
+ * Trait for test cases that need to perform common assertions on Throwable objects.
+ */
 trait AssertsCommonExceptionProperties
 {
-    private function assertMessage(Throwable $throwable, string $message): void
+    /** Constrain importing classes to those with an assertEquals() method. */
+    abstract public static function assertEquals(mixed $expected, mixed $actual, string $message = ""): void;
+
+    /** Constrain importing classes to those with an assertSame() method. */
+    abstract public static function assertSame(mixed $expected, mixed $actual, string $message = ""): void;
+
+    /** Constrain importing classes to those with an assertMatchesRegularExpression() method. */
+    abstract public static function assertMatchesRegularExpression(string $expected, string $actual, string $message = ""): void;
+
+    /** Assert that a Throwable has a given message. */
+    private static function assertMessage(string $message, Throwable $throwable): void
     {
-        $this->assertEquals($message, $throwable->getMessage());
+        self::assertEquals($message, $throwable->getMessage());
     }
 
-    private function assertMessageMatches(Throwable $throwable, string $pattern): void
+    /** Assert that a Throwable has a message matching a regular expression. */
+    private static function assertMessageMatches(string $pattern, Throwable $throwable): void
     {
-        $this->assertMatchesRegularExpression($message, $throwable->getMessage());
+        self::assertMatchesRegularExpression($pattern, $throwable->getMessage());
     }
 
-    private function assertCode(Throwable $throwable, int $code): void
+    /** Assert that a Throwable has a given code. */
+    private static function assertCode(int $code, Throwable $throwable): void
     {
-        $this->assertEquals($code, $throwable->getCode());
+        self::assertEquals($code, $throwable->getCode());
     }
 
-    private function assertPrevious(Throwable $throwable, ?Throwable $previous): void
+    /** Assert that a Throwable's previous Throwable is a given instance (or null). */
+    private static function assertPrevious(?Throwable $previous, Throwable $throwable): void
     {
-        $this->assertSame($previous, $throwable->getPrevious());
+        self::assertSame($previous, $throwable->getPrevious());
     }
 }

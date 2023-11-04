@@ -14,37 +14,37 @@ class UnrecognisedQueryOperatorExceptionTest extends TestCase
     public function testWithOperator(): void
     {
         $err = new UnrecognisedQueryOperatorException("->");
-        $this->assertEquals("->", $err->getOperator());
-        $this->assertMessage($err, "");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("->", $err->getOperator());
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithOperatorAndMessage(): void
     {
         $err = new UnrecognisedQueryOperatorException("->", "Message.");
-        $this->assertEquals("->", $err->getOperator());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("->", $err->getOperator());
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithOperatorMessageAndCode(): void
     {
         $err = new UnrecognisedQueryOperatorException("->", "Message.", 42);
-        $this->assertEquals("->", $err->getOperator());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, null);
+        self::assertEquals("->", $err->getOperator());
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithOperatorMessageCodeAndPrevious(): void
     {
         $previous = new Exception();
         $err = new UnrecognisedQueryOperatorException("->", "Message.", 42, $previous);
-        $this->assertEquals("->", $err->getOperator());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, $previous);
+        self::assertEquals("->", $err->getOperator());
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }

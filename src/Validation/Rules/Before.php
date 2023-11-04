@@ -67,8 +67,7 @@ class Before implements Rule
         if (!($data instanceof DateTime)) {
             try {
                 $data = new DateTime($data);
-            }
-            catch (Throwable $err) {
+            } catch (Throwable $err) {
                 return false;
             }
         }

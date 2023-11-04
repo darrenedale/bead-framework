@@ -4,8 +4,11 @@ namespace Bead;
 
 use Bead\Contracts\ErrorHandler as ErrorHandlerContract;
 use Bead\Contracts\Response;
+use Bead\Exceptions\ViewNotFoundException;
+use Bead\Facades\Log;
 use Bead\Responses\AbstractResponse;
 use Error;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -28,30 +31,30 @@ class ErrorHandler implements ErrorHandlerContract
         return $app && $app->isInDebugMode();
     }
 
-	/**
-	 * Fetch the name of the view to use to render exceptions.
-	 *
-	 * This is used to display exception details when the web app is in debug mode.
-	 *
-	 * @return string The view name.
-	 */
-	protected function exceptionDisplayViewName(): string
-	{
-		return "errors.exception";
-	}
+    /**
+     * Fetch the name of the view to use to render exceptions.
+     *
+     * This is used to display exception details when the web app is in debug mode.
+     *
+     * @return string The view name.
+     */
+    protected function exceptionDisplayViewName(): string
+    {
+        return "errors.exception";
+    }
 
-	/**
-	 * Fetch the name of the view to use when exceptions are not being shown.
-	 *
-	 * This means the user is not greeted with an entirely blank page when an error occurs and the web app is not in
-	 * debug mode (i.e. in production).
-	 *
-	 * @return string The view name.
-	 */
-	protected function errorPageViewName(): string
-	{
-		return "errors.error";
-	}
+    /**
+     * Fetch the name of the view to use when exceptions are not being shown.
+     *
+     * This means the user is not greeted with an entirely blank page when an error occurs and the web app is not in
+     * debug mode (i.e. in production).
+     *
+     * @return string The view name.
+     */
+    protected function errorPageViewName(): string
+    {
+        return "errors.error";
+    }
 
     /**
      * Display a given exception.
@@ -79,63 +82,67 @@ class ErrorHandler implements ErrorHandlerContract
      */
     protected function displayExceptionInView(Throwable $error): void
     {
-		try {
-			WebApplication::instance()->sendResponse(new View($this->exceptionDisplayViewName(), compact("error")));
-		} catch (Throwable $error) {
-			// extremely basic fallback display
-			WebApplication::instance()->sendResponse(new class($error) extends AbstractResponse {
-				private Throwable $m_error;
+        try {
+            try {
+                WebApplication::instance()->sendResponse(new View($this->exceptionDisplayViewName(), compact("error")));
+            } catch (Throwable $err) {
+                // extremely basic fallback display
+                WebApplication::instance()->sendResponse(new class ($error) extends AbstractResponse {
+                    private Throwable $m_error;
 
-				public function __construct(Throwable $error)
-				{
-					$this->m_error = $error;
-				}
+                    public function __construct(Throwable $error)
+                    {
+                        $this->m_error = $error;
+                    }
 
-				public function statusCode(): int
-				{
-					return 500;
-				}
+                    public function statusCode(): int
+                    {
+                        return 500;
+                    }
 
-				public function contentType(): string
-				{
-					return "text/plain";
-				}
+                    public function contentType(): string
+                    {
+                        return "text/plain";
+                    }
 
-				public function content(): string
-				{
-					return $this->m_error->getMessage();
-				}
-			});
-		}
+                    public function content(): string
+                    {
+                        return $this->m_error->getMessage();
+                    }
+                });
+            }
+        } catch (Throwable $err) {
+            // we're displaying the requested error rather than the one we've just caught
+            echo $error->getMessage();
+        }
     }
 
-	/**
-	 * Display the generic error page.
-	 *
-	 * This is used in a web app when the error handler indicates error details should not be displayed.
-	 *
-	 * @return void
-	 */
-	protected function showErrorPage(): void
-	{
-		try {
-			WebApplication::instance()->sendResponse(new View($this->errorPageViewName()));
-		} catch (Throwable $error) {
-			// extremely basic fallback display
-			WebApplication::instance()->sendResponse(new class() extends AbstractResponse {
-				public function statusCode(): int
-				{
-					return 500;
-				}
+    /**
+     * Display the generic error page.
+     *
+     * This is used in a web app when the error handler indicates error details should not be displayed.
+     */
+    protected function showErrorPage(): void
+    {
+        try {
+            try {
+                WebApplication::instance()->sendResponse(new View($this->errorPageViewName()));
+            } catch (ViewNotFoundException $error) {
+                // extremely basic fallback display
+                WebApplication::instance()->sendResponse(new class extends AbstractResponse {
+                    public function statusCode(): int
+                    {
+                        return 500;
+                    }
 
-				public function contentType(): string
-				{
-					return "text/html";
-				}
+                    public function contentType(): string
+                    {
+                        return "text/html";
+                    }
 
-				public function content(): string
-				{
-					return <<<HTML
+                    public function content(): string
+                    {
+                        return <<<HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -172,10 +179,14 @@ An application error has occurred. It has been reported and should be investigat
 </body>
 </html>
 HTML;
-				}
-			});
-		}
-	}
+                    }
+                });
+            }
+        } catch (Throwable $err) {
+            // if we can't even emptythe output buffer, just echo to it
+            echo "An application error has occurred. It has been reported and should be investigated and fixed in due course.";
+        }
+    }
 
     /**
      * Output an exception to a stream.
@@ -212,7 +223,7 @@ HTML;
      */
     protected function report(Throwable $error): void
     {
-        AppLog::error($error->getMessage(), $error->getFile(), $error->getLine());
+        Log::critical("Exception in %1[%2]: {$error->getMessage()}", [$error->getFile(), $error->getLine(),]);
     }
 
     /**
@@ -242,17 +253,26 @@ HTML;
     public function handleException(Throwable $error): void
     {
         $this->report($error);
+        $displayed = true;
 
-		if (Application::instance() instanceof WebApplication && $error instanceof Response) {
-			// if the exception is itself a response, send it
-			WebApplication::instance()->sendResponse($error);
-		} else if ($this->shouldDisplay($error)) {
-			// display the error information
-            $this->display($error);
-        } else if (Application::instance() instanceof WebApplication) {
-			// in production, just show the generic error page
-			$this->showErrorPage();
-		}
+        if (Application::instance() instanceof WebApplication && $error instanceof Response) {
+            // if the exception is itself a response, send it
+            try {
+                WebApplication::instance()->sendResponse($error);
+            } catch (Throwable $err) {
+                $displayed = false;
+            }
+        }
+
+        if (!$displayed) {
+            if ($this->shouldDisplay($error)) {
+                // display the error information
+                $this->display($error);
+            } elseif (Application::instance() instanceof WebApplication) {
+                // in production, just show the generic error page
+                $this->showErrorPage();
+            }
+        }
 
         exit($error->getCode());
     }

@@ -14,37 +14,37 @@ class InvalidTableNameExceptionTest extends TestCase
     public function testWithTableName(): void
     {
         $err = new InvalidTableNameException("table");
-        $this->assertEquals("table", $err->getTableName());
-        $this->assertMessage($err, "");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("table", $err->getTableName());
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithTableNameAndMessage(): void
     {
         $err = new InvalidTableNameException("table", "Message.");
-        $this->assertEquals("table", $err->getTableName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("table", $err->getTableName());
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithTableNameMessageAndCode(): void
     {
         $err = new InvalidTableNameException("table", "Message.", 42);
-        $this->assertEquals("table", $err->getTableName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, null);
+        self::assertEquals("table", $err->getTableName());
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithTableNameMessageCodeAndPrevious(): void
     {
         $previous = new Exception();
         $err = new InvalidTableNameException("table", "Message.", 42, $previous);
-        $this->assertEquals("table", $err->getTableName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, $previous);
+        self::assertEquals("table", $err->getTableName());
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }

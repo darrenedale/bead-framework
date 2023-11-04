@@ -24,18 +24,17 @@ use Bead\Exceptions\Database\OrphanedJoinException;
 use InvalidArgumentException;
 use Mockery;
 use PDO;
+use Stringable;
 use TypeError;
-
-use function uopz_set_return;
-use function uopz_unset_return;
 
 /**
  * Test the query builder class.
  */
 class QueryBuilderTest extends TestCase
 {
-    private ?Application $m_application;
-    private ?Connection $m_defaultConnection;
+    private ?Application $application;
+
+    private ?Connection $defaultConnection;
 
     /**
      * Sets up for every test.
@@ -44,25 +43,18 @@ class QueryBuilderTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->m_application = Mockery::mock(Application::class);
-        $this->m_defaultConnection = Mockery::mock(Connection::class);
-
-        uopz_set_return(Application::class, "instance", $this->m_application);
-
-        $this->m_application->shouldReceive("database")
-            ->andReturn($this->m_defaultConnection);
+        $this->application = Mockery::mock(Application::class);
+        $this->defaultConnection = Mockery::mock(Connection::class);
+        $this->mockMethod(Application::class, "instance", $this->application);
+        $this->application->shouldReceive("database")
+            ->andReturn($this->defaultConnection);
     }
 
     public function tearDown(): void
     {
-        uopz_unset_return(Application::class, "instance");
-
-        unset(
-            $this->m_application,
-            $this->m_defaultConnection
-        );
-
+        unset($this->application, $this->defaultConnection);
         Mockery::close();
+        parent::tearDown();
     }
 
     /**
@@ -111,47 +103,25 @@ class QueryBuilderTest extends TestCase
     public function testDefaultConstructor(): void
     {
         $builder = new QueryBuilder();
-        $this->m_application->shouldHaveReceived("database")->once();
-        $this->assertSame($this->m_defaultConnection, $builder->connection());
+        $this->application->shouldHaveReceived("database")->once();
+        self::assertSame($this->defaultConnection, $builder->connection());
     }
 
     public function testConstructorWithConnection(): void
     {
         $connection = Mockery::mock(Connection::class);
         $builder = new QueryBuilder($connection);
-        $this->m_application->shouldNotHaveReceived("database");
-        $this->assertSame($connection, $builder->connection());
+        $this->application->shouldNotHaveReceived("database");
+        self::assertSame($connection, $builder->connection());
     }
 
-    public function dataForTestSetConnection(): iterable
+    /** Ensure we can set the connection. */
+    public function testSetConnection(): void
     {
-        yield from [
-            "typical" => [Mockery::mock(PDO::class),],
-            "invalidString" => [PDO::class, TypeError::class,],
-            "invalidInt" => [42, TypeError::class,],
-            "invalidFloat" => [3.1415926, TypeError::class,],
-            "invalidBool" => [true, TypeError::class,],
-            "invalidObject" => [new class{}, TypeError::class,],
-            "invalidArray" => [[Mockery::mock(PDO::class)], TypeError::class,],
-            "invalidNull" => [null, TypeError::class,],
-        ];
-    }
-
-    /**
-     * @dataProvider dataForTestSetConnection
-     *
-     * @param $connection mixed The value to test the mutator with.
-     * @param string|null $exceptionClass The class of the expected exception, if any.
-     */
-    public function testSetConnection($connection, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
+        $connection = Mockery::mock(PDO::class);
         $builder = new QueryBuilder();
         $builder->setConnection($connection);
-        $this->assertSame($connection, $builder->connection());
+        self::assertSame($connection, $builder->connection());
     }
 
     /**
@@ -161,9 +131,9 @@ class QueryBuilderTest extends TestCase
     {
         $builder = new QueryBuilder();
         $connection = Mockery::mock(PDO::class);
-        $this->assertSame($this->m_defaultConnection, $builder->connection());
+        self::assertSame($this->defaultConnection, $builder->connection());
         $builder->setConnection($connection);
-        $this->assertSame($connection, $builder->connection());
+        self::assertSame($connection, $builder->connection());
     }
 
     /**
@@ -196,8 +166,8 @@ class QueryBuilderTest extends TestCase
     {
         $builder = self::createBuilder($initialSelects, $tables);
         $actual = $builder->select($select);
-        $this->assertSame($builder, $actual, "QueryBuilder::select() did not return the same QueryBuilder instance.");
-        $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::select() did not return the same QueryBuilder instance.");
+        self::assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -244,13 +214,13 @@ class QueryBuilderTest extends TestCase
         }
 
         $actual = $builder->addSelect($addSelects);
-        $this->assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
-        $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
+        self::assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
      * Data provider for testAddRawSelect().
-     * 
+     *
      * @return array The test data.
      */
     public function dataForTestAddRawSelect(): array
@@ -263,23 +233,39 @@ class QueryBuilderTest extends TestCase
             "invalidIntExpression" => [[], 12, "foo", null, "", TypeError::class],
             "invalidFloatExpression" => [[], 99.99, "foo", null, "", TypeError::class,],
             "invalidNullExpression" => [[], null, "foo", null, "", TypeError::class,],
-            "invalidStringableExpression" => [[], new class {
-                public function __toString(): string
+            "invalidStringableExpression" => [
+                [],
+                new class implements Stringable
                 {
-                    return "foo";
-                }
-            }, "foo", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "foo";
+                    }
+                },
+                "foo",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidObjectExpression" => [[], (object)["foo" => "bar"], "foo", null, "", TypeError::class,],
             "invalidBoolExpression" => [[], true, "foo", null, "", TypeError::class,],
             "invalidIntAlias" => [[], "`a` + `b`", 12, null, "", TypeError::class],
             "invalidFloatAlias" => [[], "`product`.`price` * `product`.`quantity`", 99.99, null, "", TypeError::class,],
             "invalidNullAlias" => [[], "`LENGTH(`name`)", null, null, "", TypeError::class,],
-            "invalidStringableAlias" => [[], "SQRT(POW(`a`, 2) + POW(`b`, 2))", new class {
-                public function __toString(): string
+            "invalidStringableAlias" => [
+                [],
+                "SQRT(POW(`a`, 2) + POW(`b`, 2))",
+                new class implements Stringable
                 {
-                    return "foo";
-                }
-            }, null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "foo";
+                    }
+                },
+                null,
+                "",
+                TypeError::class,
+                ],
             "invalidObjectAlias" => [[], "IF(`explode` = 1, 'BOOM', 'pfft')", (object)["foo" => "bar"], null, "", TypeError::class,],
             "invalidBoolAlias" => [[], "`c` - `d` + `e` / `f`", true, null, "", TypeError::class,],
             "invalidDuplicateAlias" => [["foo" => "bar",], "fix", "foo", "foobar", "", DuplicateColumnNameException::class,]
@@ -300,11 +286,11 @@ class QueryBuilderTest extends TestCase
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
         }
-        
+
         $builder = self::createBuilder($initialSelects, $tables);
         $actual = $builder->addRawSelect($expression, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
-        $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::addSelect() did not return the same QueryBuilder instance.");
+        self::assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -325,12 +311,18 @@ class QueryBuilderTest extends TestCase
             "invalidInt" => [12, null, "", TypeError::class,],
             "invalidFloat" => [99.99, null, "", TypeError::class,],
             "invalidNull" => [null, null, "", TypeError::class,],
-            "invalidStringable" => [new class {
-            public function __toString(): string
+            "invalidStringable" => [
+                new class implements Stringable
                 {
-                    return "foo";
-                }
-            }, null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "foo";
+                    }
+                },
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidObject" => [(object)["foo" => "bar"], null, "", TypeError::class,],
             "invalidBool" => [true, null, "", TypeError::class,],
             "invalidEmpty" => ["", null, "", InvalidTableNameException::class,],
@@ -356,8 +348,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"]);
         $actual = $builder->from($tables, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -397,10 +389,10 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"]);
         $actual = $builder->from($table, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
         $actual = $builder->from($otherTable, $otherAlias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
-        $this->assertEquals(
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertEquals(
             "SELECT `foo`,`bar` FROM `{$table}`" . (isset($alias) ? " AS `{$alias}`" : "") . ",`{$otherTable}`" . (isset($otherAlias) ? " AS `{$otherAlias}`" : ""),
             $builder->sql(),
             "The QueryBuilder did not generate the expected SQL."
@@ -427,12 +419,18 @@ class QueryBuilderTest extends TestCase
             "invalidInt" => [12, "foobar_alias", "", TypeError::class,],
             "invalidFloat" => [99.99, "foobar_alias", "", TypeError::class,],
             "invalidNullExpression" => [null, "foobar_alias", "", TypeError::class,],
-            "invalidStringable" => [new class {
-                public function __toString(): string
+            "invalidStringable" => [
+                new class implements Stringable
                 {
-                    return "(SELECT `foo`, `bar` FROM `foobar` WHERE `deleted` <> 1)";
-                }
-            }, "foobar_alias", "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "(SELECT `foo`, `bar` FROM `foobar` WHERE `deleted` <> 1)";
+                    }
+                },
+                "foobar_alias",
+                "",
+                TypeError::class,
+            ],
             "invalidObject" => [(object)["foobar_alias" => "(SELECT `foo`, `bar` FROM `foobar` WHERE `deleted` <> 1)"], "foobar_alias", "", TypeError::class,],
             "invalidBool" => [true, "foobar_alias", "", TypeError::class,],
             "invalidEmptyAlias" => ["(SELECT `foo`, `bar` FROM `foobar` WHERE `deleted` <> 1)", "", "", InvalidTableNameException::class,],
@@ -465,8 +463,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"]);
         $actual = $builder->rawFrom($expression, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::rawFrom() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::rawFrom() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM {$sqlFrom}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -506,10 +504,10 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"]);
         $actual = $builder->rawFrom($expression, $alias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
         $actual = $builder->rawFrom($otherExpression, $otherAlias);
-        $this->assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
-        $this->assertEquals(
+        self::assertSame($builder, $actual, "QueryBuilder::from() did not return the same QueryBuilder instance.");
+        self::assertEquals(
             "SELECT `foo`,`bar` FROM {$expression}" . (isset($alias) ? " AS `{$alias}`" : "") . ",`{$otherExpression}`" . (isset($otherAlias) ? " AS `{$otherAlias}`" : ""),
             $builder->sql(),
             "The QueryBuilder did not generate the expected SQL."
@@ -540,12 +538,21 @@ class QueryBuilderTest extends TestCase
             "invalidIntTable" => [12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatTable" => [99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullTable" => [null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableTable" => [new class {
-                public function __toString(): string
+            "invalidStringableTable" => [
+                new class implements Stringable
                 {
-                    return "fizz";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "fizz";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolTable" => [true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyTable" => ["", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
         ];
@@ -572,8 +579,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->leftJoin($joinTable, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -610,12 +617,21 @@ class QueryBuilderTest extends TestCase
             "invalidIntTable" => [12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatTable" => [99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullTable" => [null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableTable" => [new class {
-                public function __toString(): string
+            "invalidStringableTable" => [
+                new class implements Stringable
                 {
-                    return "fizz";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "fizz";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolTable" => [true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyTable" => ["", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
         ];
@@ -642,8 +658,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->innerJoin($joinTable, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -680,12 +696,21 @@ class QueryBuilderTest extends TestCase
             "invalidIntTable" => [12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatTable" => [99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullTable" => [null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableTable" => [new class {
-                public function __toString(): string
+            "invalidStringableTable" => [
+                new class implements Stringable
                 {
-                    return "fizz";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "fizz";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+                ],
             "invalidBoolTable" => [true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyTable" => ["", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
         ];
@@ -712,8 +737,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rightJoin($joinTable, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoin() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -749,23 +774,43 @@ class QueryBuilderTest extends TestCase
             "invalidIntTable" => [12, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatTable" => [99.99, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullTable" => [null, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableTable" => [new class {
-                public function __toString(): string
+            "invalidStringableTable" => [
+                new class implements Stringable
                 {
-                    return "fizz";
-                }
-            }, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "fizz";
+                    }
+                },
+                "f",
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolTable" => [true, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyTable" => ["", "f", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidIntAlias" => ["fizz", 12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatAlias" => ["fizz", 99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullAlias" => ["fizz", null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableAlias" => ["fizz", new class {
-                public function __toString(): string
+            "invalidStringableAlias" => [
+                "fizz",
+                new class implements Stringable
                 {
-                    return "f";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "f";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolAlias" => ["fizz", true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyAlias" => ["fizz", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidEmptyTableAndAlias" => ["", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
@@ -793,8 +838,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->leftJoinAs($joinTable, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -830,23 +875,43 @@ class QueryBuilderTest extends TestCase
             "invalidIntTable" => [12, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatTable" => [99.99, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullTable" => [null, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableTable" => [new class {
-                public function __toString(): string
+            "invalidStringableTable" => [
+                new class implements Stringable
                 {
-                    return "fizz";
-                }
-            }, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "fizz";
+                    }
+                },
+                "f",
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolTable" => [true, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyTable" => ["", "f", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidIntAlias" => ["fizz", 12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatAlias" => ["fizz", 99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullAlias" => ["fizz", null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableAlias" => ["fizz", new class {
-                public function __toString(): string
+            "invalidStringableAlias" => [
+                "fizz",
+                new class implements Stringable
                 {
-                    return "f";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "f";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolAlias" => ["fizz", true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyAlias" => ["fizz", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidEmptyTableAndAlias" => ["", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
@@ -874,8 +939,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->innerJoinAs($joinTable, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -911,23 +976,42 @@ class QueryBuilderTest extends TestCase
             "invalidIntTable" => [12, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatTable" => [99.99, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullTable" => [null, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableTable" => [new class {
-                public function __toString(): string
-                {
-                    return "fizz";
-                }
-            }, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
+            "invalidStringableTable" => [
+                new class implements Stringable {
+                    public function __toString(): string
+                    {
+                        return "fizz";
+                    }
+                },
+                "f",
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolTable" => [true, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyTable" => ["", "f", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidIntAlias" => ["fizz", 12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatAlias" => ["fizz", 99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullAlias" => ["fizz", null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableAlias" => ["fizz", new class {
-                public function __toString(): string
+            "invalidStringableAlias" => [
+                "fizz",
+                new class implements Stringable
                 {
-                    return "f";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "f";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolAlias" => ["fizz", true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyAlias" => ["fizz", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidEmptyTableAndAlias" => ["", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
@@ -955,8 +1039,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rightJoinAs($joinTable, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -992,23 +1076,43 @@ class QueryBuilderTest extends TestCase
             "invalidIntExpression" => [12, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatExpression" => [99.99, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullExpression" => [null, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableExpression" => [new class {
-                public function __toString(): string
+            "invalidStringableExpression" => [
+                new class implements Stringable
                 {
-                    return "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)";
-                }
-            }, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)";
+                    }
+                },
+                "f",
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolExpression" => [true, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyExpression" => ["", "f", "foobar", "id", "fizz_id", null, "", InvalidQueryExpressionException::class,],
             "invalidIntAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", 12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", 99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", new class {
-                public function __toString(): string
+            "invalidStringableAlias" => [
+                "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)",
+                new class implements Stringable
                 {
-                    return "f";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "f";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidEmptyExpressionAndAlias" => ["", "", "foobar", "id", "fizz_id", null, "", InvalidQueryExpressionException::class,],
@@ -1036,8 +1140,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rawLeftJoin($joinExpression, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1083,23 +1187,43 @@ class QueryBuilderTest extends TestCase
             "invalidIntExpression" => [12, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatExpression" => [99.99, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullExpression" => [null, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableExpression" => [new class {
-                public function __toString(): string
+            "invalidStringableExpression" => [
+                new class implements Stringable
                 {
-                    return "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)";
-                }
-            }, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)";
+                    }
+                },
+                "f",
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolExpression" => [true, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyExpression" => ["", "f", "foobar", "id", "fizz_id", null, "", InvalidQueryExpressionException::class,],
             "invalidIntAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", 12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", 99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", new class {
-                public function __toString(): string
+            "invalidStringableAlias" => [
+                "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)",
+                new class implements Stringable
                 {
-                    return "f";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "f";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidEmptyExpressionAndAlias" => ["", "", "foobar", "id", "fizz_id", null, "", InvalidQueryExpressionException::class,],
@@ -1127,8 +1251,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rawRightJoin($joinExpression, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1174,23 +1298,43 @@ class QueryBuilderTest extends TestCase
             "invalidIntExpression" => [12, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatExpression" => [99.99, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullExpression" => [null, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableExpression" => [new class {
-                public function __toString(): string
+            "invalidStringableExpression" => [
+                new class implements Stringable
                 {
-                    return "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)";
-                }
-            }, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)";
+                    }
+                },
+                "f",
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolExpression" => [true, "f", "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyExpression" => ["", "f", "foobar", "id", "fizz_id", null, "", InvalidQueryExpressionException::class,],
             "invalidIntAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", 12, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidFloatAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", 99.99, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidNullAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", null, "foobar", "id", "fizz_id", null, "", TypeError::class,],
-            "invalidStringableAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", new class {
-                public function __toString(): string
+            "invalidStringableAlias" => [
+                "(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)",
+                new class implements Stringable
                 {
-                    return "f";
-                }
-            }, "foobar", "id", "fizz_id", null, "", TypeError::class,],
+                    public function __toString(): string
+                    {
+                        return "f";
+                    }
+                },
+                "foobar",
+                "id",
+                "fizz_id",
+                null,
+                "",
+                TypeError::class,
+            ],
             "invalidBoolAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", true, "foobar", "id", "fizz_id", null, "", TypeError::class,],
             "invalidEmptyAlias" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", "", "foobar", "id", "fizz_id", null, "", InvalidTableNameException::class,],
             "invalidEmptyExpressionAndAlias" => ["", "", "foobar", "id", "fizz_id", null, "", InvalidQueryExpressionException::class,],
@@ -1218,8 +1362,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder(["foo", "bar"], $queryTable);
         $actual = $builder->rawInnerJoin($joinExpression, $alias, "foobar", $foreignFieldOrPairs, $localFieldOrOperator, $localField);
-        $this->assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::leftJoinAs() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlJoin}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1264,9 +1408,12 @@ class QueryBuilderTest extends TestCase
                     "flux" => "flux-value", "box" => "box-value", "flib" => "flib-value", "bib" => "bib-value",
                     "fang" => "fang-value", "bang" => "bang-value", "fork" => "fork-value", "bork" => "bork-value",
                     "fix" => "fix-value", "bix" => "bix-value", "fab" => "fab-value", "bab" => "bab-value",
-                ], null, null,
-                "WHERE (`foo` = 'foo-value' AND `bar` = 'bar-value' AND `fizz` = 'fizz-value' AND `buzz` = 'buzz-value' AND `flux` = 'flux-value' AND `box` = 'box-value' AND `flib` = 'flib-value' AND `bib` = 'bib-value' AND `fang` = 'fang-value' AND `bang` = 'bang-value' AND `fork` = 'fork-value' AND `bork` = 'bork-value' AND `fix` = 'fix-value' AND `bix` = 'bix-value' AND `fab` = 'fab-value' AND `bab` = 'bab-value')"],
-            
+                ],
+                null,
+                null,
+                "WHERE (`foo` = 'foo-value' AND `bar` = 'bar-value' AND `fizz` = 'fizz-value' AND `buzz` = 'buzz-value' AND `flux` = 'flux-value' AND `box` = 'box-value' AND `flib` = 'flib-value' AND `bib` = 'bib-value' AND `fang` = 'fang-value' AND `bang` = 'bang-value' AND `fork` = 'fork-value' AND `bork` = 'bork-value' AND `fix` = 'fix-value' AND `bix` = 'bix-value' AND `fab` = 'fab-value' AND `bab` = 'bab-value')",
+            ],
+
             "typicalSingleFieldWith=Operator" => ["foo", "=", "value", "WHERE (`foo` = 'value')"],
             "typicalSingleFieldWithTableAnd=Operator" => ["foobar.foo", "=", "value", "WHERE (`foobar`.`foo` = 'value')"],
             "typicalSingleFieldWith!=Operator" => ["foo", "!=", "value", "WHERE (`foo` != 'value')"],
@@ -1288,32 +1435,56 @@ class QueryBuilderTest extends TestCase
 
             "invalidEmptyField" => ["", "NOT LIKE", "value", "", InvalidColumnNameException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "NOT LIKE", "value", "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "NOT LIKE", "value", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "NOT LIKE",
+                "value",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "NOT LIKE", "value", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "NOT LIKE", "value", "", TypeError::class,],
             "invalidNullField" => [null, "NOT LIKE", "value", "", TypeError::class,],
             "invalidBoolField" => [true, "NOT LIKE", "value", "", TypeError::class,],
 
             "invalidEmptyOperator" => ["foobar.foo", "", "value", "", InvalidOperatorException::class,],
-            "invalidStringableOperator" => ["foobar.foo", new class() {
-                public function __toString(): string {
-                    return "=";
-                }
-            }, "value", "", TypeError::class,],
+            "invalidStringableOperator" => [
+                "foobar.foo",
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "=";
+                    }
+                },
+                "value",
+                "",
+                TypeError::class,
+                ],
             "invalidIntOperator" => ["foobar.foo", 42, "value", "", TypeError::class,],
             "invalidFloatOperator" => ["foobar.foo", 3.1415927, "value", "", TypeError::class,],
             "invalidNullOperator" => ["foobar.foo", null, "value", "", TypeError::class,],
             "invalidBoolOperator" => ["foobar.foo", true, "value", "", TypeError::class,],
 
-            "invalidStringableValue" => ["foobar.foo", "=", new class() {
-                public function __toString(): string {
-                    return "value";
-                }
-            }, "", TypeError::class,],
+            "invalidStringableValue" => [
+                "foobar.foo",
+                "=",
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "value";
+                    }
+                },
+                "",
+                TypeError::class,
+            ],
             "invalidArrayValue" => ["foobar.foo", "=", ["value",], "", TypeError::class,],
         ];
     }
@@ -1336,8 +1507,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = $this->createBuilder(["foo", "bar"], "foobar");
         $actual = $builder->where($field, $operatorOrValue, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::where() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlWhere}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::where() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar` FROM `foobar` {$sqlWhere}", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1401,27 +1572,23 @@ class QueryBuilderTest extends TestCase
      * @dataProvider dataForTestWhereWithClosure
      *
      * NOTE tests for incorrect parameter types are included in testWhereWithFields().
-     * 
+     *
      * @param mixed $closure The closure to test with.
      * @param string $sqlWhere The expected WHERE clause
      */
     public function testWhereWithClosure($closure, string $sqlWhere): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where($closure);
-        $this->assertSame($builder, $actual, "QueryBuilder::orWhere() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::orWhere() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
 
         // test with orWhere() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar")->where("foo", "foo");
         $actual = $builder->orWhere($closure);
-        $this->assertSame($builder, $actual, "QueryBuilder::orWhere() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR {$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::orWhere() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR {$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1432,8 +1599,8 @@ class QueryBuilderTest extends TestCase
     public function dataForTestWhereNull(): array
     {
         return [
-            "typicalSingleField" =>["foo", "`foo` IS NULL",],
-            "typicalMultipleFields" =>[["foo", "bar",], "`foo` IS NULL AND `bar` IS NULL",],
+            "typicalSingleField" => ["foo", "`foo` IS NULL",],
+            "typicalMultipleFields" => [["foo", "bar",], "`foo` IS NULL AND `bar` IS NULL",],
             "typicalLargeNumberOfFields" => [
                 [
                     "foo", "bar", "fizz", "buzz", "flex", "box", "fen", "bun", "fin", "bin", "flan", "ban", "flub",
@@ -1447,15 +1614,6 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "", TypeError::class,],
-            "invalidIntField" => [42, "", TypeError::class,],
-            "invalidFloatField" => [3.1415927, "", TypeError::class,],
-            "invalidNullField" => [null, "", TypeError::class,],
-            "invalidBoolField" => [true, "", TypeError::class,],
         ];
     }
 
@@ -1475,8 +1633,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNull($columns);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNull() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNull() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1487,8 +1645,8 @@ class QueryBuilderTest extends TestCase
     public function dataForTestWhereNotNull(): array
     {
         return [
-            "typicalSingleField" =>["foo", "`foo` IS NOT NULL",],
-            "typicalMultipleFields" =>[["foo", "bar",], "`foo` IS NOT NULL AND `bar` IS NOT NULL",],
+            "typicalSingleField" => ["foo", "`foo` IS NOT NULL",],
+            "typicalMultipleFields" => [["foo", "bar",], "`foo` IS NOT NULL AND `bar` IS NOT NULL",],
             "typicalLargeNumberOfFields" => [
                 [
                     "foo", "bar", "fizz", "buzz", "flex", "box", "fen", "bun", "fin", "bin", "flan", "ban", "flub",
@@ -1502,11 +1660,17 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "", TypeError::class,],
             "invalidNullField" => [null, "", TypeError::class,],
@@ -1530,8 +1694,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotNull($columns);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotNull() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotNull() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1568,11 +1732,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -1597,8 +1768,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereContains($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1635,11 +1806,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -1664,8 +1842,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotContains($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotContains() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotContains() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1702,11 +1880,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -1731,8 +1916,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereStartsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1769,11 +1954,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+                ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -1798,8 +1990,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotStartsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotStartsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotStartsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1836,11 +2028,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -1865,8 +2064,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereEndsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1903,11 +2102,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -1932,8 +2138,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotEndsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -1971,7 +2177,7 @@ class QueryBuilderTest extends TestCase
             "typicalSingleFieldMultipleDateTimeValuesAsArray" => [["foo" => [new DateTime("2022-07-01"), new DateTime("2024-01-08"), new DateTime("2020-04-23"),],], null, "`foo` IN ('2022-07-01 00:00:00','2024-01-08 00:00:00','2020-04-23 00:00:00')",],
 
             "typicalMultipleFieldsMultipleMixedValues" => [["foo" => [42, 43, 44,], "bar" => ["boo", "far", "faz",], "baz" => [3.14159, 4.28208, 5.39319,],], null, "`foo` IN (42,43,44) AND `bar` IN ('boo','far','faz') AND `baz` IN (3.14159,4.28208,5.39319)",],
-            
+
             "invalidEmptyInArray" => ["foo", [], "", InvalidArgumentException::class,],
             "invalidEmptyInArrayAsArray" => [["foo" => [],], null, "", InvalidArgumentException::class,],
             "invalidMultipleOneEmptyInArray" => [["foo" => ["foo", "bar",], "bar" => [], "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
@@ -1983,11 +2189,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, ["bar", "baz",], "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                    {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                ["bar", "baz",],
+                "",
+                TypeError::class,
+                ],
             "invalidIntField" => [42, ["bar", "baz",], "", TypeError::class,],
             "invalidFloatField" => [3.1415927, ["bar", "baz",], "", TypeError::class,],
             "invalidNullField" => [null, ["bar", "baz",], "", TypeError::class,],
@@ -2012,8 +2225,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereIn($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2051,7 +2264,7 @@ class QueryBuilderTest extends TestCase
             "typicalSingleFieldMultipleDateTimeValuesAsArray" => [["foo" => [new DateTime("2022-07-01"), new DateTime("2024-01-08"), new DateTime("2020-04-23"),],], null, "`foo` NOT IN ('2022-07-01 00:00:00','2024-01-08 00:00:00','2020-04-23 00:00:00')",],
 
             "typicalMultipleFieldsMultipleMixedValues" => [["foo" => [42, 43, 44,], "bar" => ["boo", "far", "faz",], "baz" => [3.14159, 4.28208, 5.39319,],], null, "`foo` NOT IN (42,43,44) AND `bar` NOT IN ('boo','far','faz') AND `baz` NOT IN (3.14159,4.28208,5.39319)",],
-            
+
             "invalidEmptyInArray" => ["foo", [], "", InvalidArgumentException::class,],
             "invalidEmptyInArrayAsArray" => [["foo" => [],], null, "", InvalidArgumentException::class,],
             "invalidMultipleOneEmptyInArray" => [["foo" => ["foo", "bar",], "bar" => [], "baz" => ["bar", "baz",],], null, "", InvalidArgumentException::class,],
@@ -2061,11 +2274,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, ["bar", "baz",], "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                ["bar", "baz",],
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, ["bar", "baz",], "", TypeError::class,],
             "invalidFloatField" => [3.1415927, ["bar", "baz",], "", TypeError::class,],
             "invalidNullField" => [null, ["bar", "baz",], "", TypeError::class,],
@@ -2090,8 +2310,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereNotIn($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2119,39 +2339,16 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], 42, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", 42, "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => 42,], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, 42, "", TypeError::class,],
-            "invalidIntField" => [42, 42, "", TypeError::class,],
-            "invalidFloatField" => [3.1415927, 42, "", TypeError::class,],
-            "invalidNullField" => [null, 42, "", TypeError::class,],
-            "invalidBoolField" => [true, 42, "", TypeError::class,],
 
-            "invalidStringLength" => ["foo", "42", "", TypeError::class,],
-            "invalidEmptyStringLength" => ["foo", "", "", TypeError::class,],
-            "invalidIntArrayLength" => ["foo", [42,], "", TypeError::class,],
-            "invalidEmptyArrayLength" => ["foo", [], "", TypeError::class,],
-            "invalidStringableLength" => ["foo", new class() {
-                public function __toString(): string {
-                    return "42";
-                }
-            }, "", TypeError::class,],
-            "invalidClosureLength" => ["foo", fn(): int => 42, "", TypeError::class,],
-            "invalidFloatLength" => ["foo", 3.1415927, "", TypeError::class,],
-            "invalidNullLength" => ["foo", null, "", TypeError::class,],
-            "invalidBoolLength" => ["foo", true, "", TypeError::class,],
-
-            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", TypeError::class,],
-            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", TypeError::class,],
-            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", TypeError::class,],
+            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", InvalidArgumentException::class,],
             "invalidArrayOneStringableLength" => [
                 [
                     "foo" => 42,
-                    "bar" => new class
+                    "bar" => new class implements Stringable
                     {
-                        public function __string(): string
+                        public function __toString(): string
                         {
                             return "42";
                         }
@@ -2159,12 +2356,12 @@ class QueryBuilderTest extends TestCase
                 ],
                 null,
                 "",
-                TypeError::class,
+                InvalidArgumentException::class,
             ],
-            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn(): int => 42,], null, "", TypeError::class,],
-            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", TypeError::class,],
-            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", TypeError::class,],
-            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", TypeError::class,],
+            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn (): int => 42,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", InvalidArgumentException::class,],
         ];
     }
 
@@ -2176,7 +2373,7 @@ class QueryBuilderTest extends TestCase
      * @param string $sqlWhere The expected WHERE clause.
      * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testWhereLength($columnOrPairs, $length, string $sqlWhere, ?string $exceptionClass = null): void
+    public function testWhereLength(string|array $columnOrPairs, int|null $length, string $sqlWhere, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
@@ -2185,8 +2382,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->whereLength($columnOrPairs, $length);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2196,11 +2393,11 @@ class QueryBuilderTest extends TestCase
     {
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where("foo", "foo");
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->orWhere("foo", "bar");
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->sql();
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar')", $actual);
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar')", $actual);
     }
 
     /**
@@ -2210,11 +2407,11 @@ class QueryBuilderTest extends TestCase
     {
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where("foo", 3);
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->orWhere("foo", ">", 42);
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->sql();
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 3 OR `foo` > 42)", $actual);
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 3 OR `foo` > 42)", $actual);
     }
 
     /**
@@ -2224,7 +2421,7 @@ class QueryBuilderTest extends TestCase
     {
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where("foo", 3);
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $this->expectException(InvalidOperatorException::class);
         $actual = $builder->orWhere("foo", "", 42);
     }
@@ -2236,11 +2433,11 @@ class QueryBuilderTest extends TestCase
     {
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->where("foo", "foo");
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->orWhere(["foo" => "bar", "bar" => "fizz", "fizz" => "buzz",]);
-        $this->assertSame($builder, $actual);
+        self::assertSame($builder, $actual);
         $actual = $builder->sql();
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar' OR `bar` = 'fizz' OR `fizz` = 'buzz')", $actual);
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE (`foo` = 'foo' OR `foo` = 'bar' OR `bar` = 'fizz' OR `fizz` = 'buzz')", $actual);
     }
 
     /**
@@ -2251,8 +2448,8 @@ class QueryBuilderTest extends TestCase
     public function dataForTestOrWhereNull(): array
     {
         return [
-            "typicalSingleField" =>["foo", "`foo` IS NULL",],
-            "typicalMultipleFields" =>[["foo", "bar",], "`foo` IS NULL OR `bar` IS NULL",],
+            "typicalSingleField" => ["foo", "`foo` IS NULL",],
+            "typicalMultipleFields" => [["foo", "bar",], "`foo` IS NULL OR `bar` IS NULL",],
             "typicalLargeNumberOfFields" => [
                 [
                     "foo", "bar", "fizz", "buzz", "flex", "box", "fen", "bun", "fin", "bin", "flan", "ban", "flub",
@@ -2266,26 +2463,17 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "", TypeError::class,],
-            "invalidIntField" => [42, "", TypeError::class,],
-            "invalidFloatField" => [3.1415927, "", TypeError::class,],
-            "invalidNullField" => [null, "", TypeError::class,],
-            "invalidBoolField" => [true, "", TypeError::class,],
         ];
     }
 
     /**
      * @dataProvider dataForTestOrWhereNull
      *
-     * @param mixed $columns The test field(s) to provide to the orWhereNull() method.
+     * @param string|array $columns The test field(s) to provide to the orWhereNull() method.
      * @param string $sqlWhere The expected SQL WHERE clause.
      * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testOrWhereNull($columns, string $sqlWhere, ?string $exceptionClass = null): void
+    public function testOrWhereNull(string|array $columns, string $sqlWhere, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
@@ -2293,8 +2481,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNull($columns);
-        $this->assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2305,8 +2493,8 @@ class QueryBuilderTest extends TestCase
     public function dataForTestOrWhereNotNull(): array
     {
         return [
-            "typicalSingleField" =>["foo", "`foo` IS NOT NULL",],
-            "typicalMultipleFields" =>[["foo", "bar",], "`foo` IS NOT NULL OR `bar` IS NOT NULL",],
+            "typicalSingleField" => ["foo", "`foo` IS NOT NULL",],
+            "typicalMultipleFields" => [["foo", "bar",], "`foo` IS NOT NULL OR `bar` IS NOT NULL",],
             "typicalLargeNumberOfFields" => [
                 [
                     "foo", "bar", "fizz", "buzz", "flex", "box", "fen", "bun", "fin", "bin", "flan", "ban", "flub",
@@ -2320,11 +2508,17 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyField" => ["", "", InvalidColumnNameException::class,],
             "invalidEmptyFieldArray" => [[], "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "", TypeError::class,],
             "invalidNullField" => [null, "", TypeError::class,],
@@ -2347,8 +2541,8 @@ class QueryBuilderTest extends TestCase
 
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotNull($columns);
-        $this->assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::orWhereNull() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2385,11 +2579,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -2414,8 +2615,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereContains($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
 
@@ -2453,11 +2654,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -2482,8 +2690,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotContains($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereContains() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2520,11 +2728,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -2549,8 +2764,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereStartsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2587,11 +2802,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -2616,8 +2838,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotStartsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereStartsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2654,11 +2876,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+                ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -2683,8 +2912,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereEndsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereEndsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2721,11 +2950,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", "", "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => "bar",], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, "bar", "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                "bar",
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, "bar", "", TypeError::class,],
             "invalidFloatField" => [3.1415927, "bar", "", TypeError::class,],
             "invalidNullField" => [null, "bar", "", TypeError::class,],
@@ -2750,8 +2986,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotEndsWith($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereNotEndsWith() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2801,11 +3037,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, ["bar", "baz",], "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                ["bar", "baz",],
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, ["bar", "baz",], "", TypeError::class,],
             "invalidFloatField" => [3.1415927, ["bar", "baz",], "", TypeError::class,],
             "invalidNullField" => [null, ["bar", "baz",], "", TypeError::class,],
@@ -2830,8 +3073,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereIn($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
 
@@ -2883,11 +3126,18 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], null, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", ["bar", "baz",], "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => ["bar", "baz",],], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, ["bar", "baz",], "", TypeError::class,],
+            "invalidStringableField" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foobar.foo";
+                    }
+                },
+                ["bar", "baz",],
+                "",
+                TypeError::class,
+            ],
             "invalidIntField" => [42, ["bar", "baz",], "", TypeError::class,],
             "invalidFloatField" => [3.1415927, ["bar", "baz",], "", TypeError::class,],
             "invalidNullField" => [null, ["bar", "baz",], "", TypeError::class,],
@@ -2912,8 +3162,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereNotIn($columnOrPairs, $value);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     /**
@@ -2941,39 +3191,16 @@ class QueryBuilderTest extends TestCase
             "invalidEmptyFieldArray" => [[], 42, "", InvalidArgumentException::class,],
             "invalidMalformedField" => ["foo.bar.baz", 42, "", InvalidColumnNameException::class,],
             "invalidMalformedFieldArray" => [["foo.bar.baz" => 42,], null, "", InvalidColumnNameException::class,],
-            "invalidStringableField" => [new class() {
-                public function __toString(): string {
-                    return "foobar.foo";
-                }
-            }, 42, "", TypeError::class,],
-            "invalidIntField" => [42, 42, "", TypeError::class,],
-            "invalidFloatField" => [3.1415927, 42, "", TypeError::class,],
-            "invalidNullField" => [null, 42, "", TypeError::class,],
-            "invalidBoolField" => [true, 42, "", TypeError::class,],
 
-            "invalidStringLength" => ["foo", "42", "", TypeError::class,],
-            "invalidEmptyStringLength" => ["foo", "", "", TypeError::class,],
-            "invalidIntArrayLength" => ["foo", [42,], "", TypeError::class,],
-            "invalidEmptyArrayLength" => ["foo", [], "", TypeError::class,],
-            "invalidStringableLength" => ["foo", new class() {
-                public function __toString(): string {
-                    return "42";
-                }
-            }, "", TypeError::class,],
-            "invalidClosureLength" => ["foo", fn(): int => 42, "", TypeError::class,],
-            "invalidFloatLength" => ["foo", 3.1415927, "", TypeError::class,],
-            "invalidNullLength" => ["foo", null, "", TypeError::class,],
-            "invalidBoolLength" => ["foo", true, "", TypeError::class,],
-
-            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", TypeError::class,],
-            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", TypeError::class,],
-            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", TypeError::class,],
+            "invalidArrayOneStringLength" => [["foo" => 42, "bar" => "5",], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneIntArrayLength" => [["foo" => 42, "bar" => [5,],], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneEmptyArrayLength" => [["foo" => 42, "bar" => [],], null, "", InvalidArgumentException::class,],
             "invalidArrayOneStringableLength" => [
                 [
                     "foo" => 42,
-                    "bar" => new class
+                    "bar" => new class implements Stringable
                     {
-                        public function __string(): string
+                        public function __toString(): string
                         {
                             return "42";
                         }
@@ -2981,12 +3208,12 @@ class QueryBuilderTest extends TestCase
                 ],
                 null,
                 "",
-                TypeError::class,
+                InvalidArgumentException::class,
             ],
-            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn(): int => 42,], null, "", TypeError::class,],
-            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", TypeError::class,],
-            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", TypeError::class,],
-            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", TypeError::class,],
+            "invalidArrayOneClosureLength" => [["foo" => 42, "bar" => fn (): int => 42,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneFloatLength" => [["foo" => 42, "bar" => 3.1415926,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneNullLength" => [["foo" => 42, "bar" => null,], null, "", InvalidArgumentException::class,],
+            "invalidArrayOneBoolLength" => [["foo" => 42, "bar" => true,], null, "", InvalidArgumentException::class,],
         ];
     }
 
@@ -2998,7 +3225,7 @@ class QueryBuilderTest extends TestCase
      * @param string $sqlWhere The expected WHERE clause.
      * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testOrWhereLength($columnOrPairs, $length, string $sqlWhere, ?string $exceptionClass = null): void
+    public function testOrWhereLength(string|array $columnOrPairs, int|null $length, string $sqlWhere, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
@@ -3007,8 +3234,8 @@ class QueryBuilderTest extends TestCase
         // test with where() method
         $builder = $this->createBuilder(["foo", "bar", "fizz", "buzz",], "foobar");
         $actual = $builder->orWhereLength($columnOrPairs, $length);
-        $this->assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
-        $this->assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::whereIn() did not return the same QueryBuilder instance.");
+        self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
     public function dataForTestOrderBy(): iterable
@@ -3038,12 +3265,19 @@ class QueryBuilderTest extends TestCase
             "invalidMultipleColumnsCustomDirectionsOneBad" => [["foo" => "desc", "bar" => "foo",], null, "", InvalidOrderByDirectionException::class,],
 
             "invalidIntColumn" => [42, null, "", TypeError::class,],
-            "invalidStringableColumn" => [new class() {
-                public function __toString(): string {
-                    return "foo";
-                }
-            }, null, "", TypeError::class,],
-            "invalidClosureColumn" => [fn(): string => "foo", null, "", TypeError::class,],
+            "invalidStringableColumn" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foo";
+                    }
+                },
+                null,
+                "",
+                TypeError::class,
+            ],
+            "invalidClosureColumn" => [fn (): string => "foo", null, "", TypeError::class,],
             "invalidFloatColumn" => [3.1415927, null, "", TypeError::class,],
             "invalidNullColumn" => [null, null, "", TypeError::class,],
             "invalidBoolColumn" => [true, null, "", TypeError::class,],
@@ -3052,12 +3286,19 @@ class QueryBuilderTest extends TestCase
             "invalidArrayEmptyStringColumn" => [["" => "asc",], null, "", InvalidColumnNameException::class,],
 
             "invalidArrayIntColumn" => [[42 => "asc",], null, "", TypeError::class,],
-            "invalidArrayStringableColumn" => [new class() {
-                public function __toString(): string {
-                    return "foo";
-                }
-            }, null, "", TypeError::class,],
-            "invalidArrayClosureDirection" => [["foo" => (fn(): string => "foo"),], null, "", TypeError::class,],
+            "invalidArrayStringableColumn" => [
+                new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "foo";
+                    }
+                },
+                null,
+                "",
+                TypeError::class,
+            ],
+            "invalidArrayClosureDirection" => [["foo" => (fn (): string => "foo"),], null, "", TypeError::class,],
             "invalidArrayFloatDirection" => [["foo" => 3.1415927,], null, "", TypeError::class,],
             "invalidArrayNullDirection" => [["foo" => null,], null, "", TypeError::class,],
             "invalidArrayBoolDirection" => [["foo" => true,], null, "", TypeError::class,],
@@ -3086,7 +3327,7 @@ class QueryBuilderTest extends TestCase
             $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar` ORDER BY {$sqlOrderBy}";
         }
 
-        $this->assertEquals($expectedSql, $builder->sql());
+        self::assertEquals($expectedSql, $builder->sql());
     }
 
     public function dataForTestRawOrderBy(): iterable
@@ -3103,8 +3344,7 @@ class QueryBuilderTest extends TestCase
             "invalidBoolExpression" => [true, null, "", TypeError::class,],
             "invalidObjectExpression" => [
                 (object) [
-                    "__toString" => function(): string
-                    {
+                    "__toString" => function (): string {
                         return "foo";
                     },
                 ],
@@ -3113,8 +3353,7 @@ class QueryBuilderTest extends TestCase
                 TypeError::class,
             ],
             "invalidClosureExpression" => [
-                function(): string
-                {
+                function (): string {
                     return "foo";
                 },
                 null,
@@ -3122,7 +3361,7 @@ class QueryBuilderTest extends TestCase
                 TypeError::class,
             ],
             "invalidStringableExpression" => [
-                new class
+                new class implements Stringable
                 {
                     public function __toString(): string
                     {
@@ -3159,7 +3398,7 @@ class QueryBuilderTest extends TestCase
             $expectedSql = "SELECT `foo`,`bar`,`buzz` FROM `foobar` ORDER BY {$sqlOrderBy}";
         }
 
-        $this->assertEquals($expectedSql, $builder->sql());
+        self::assertEquals($expectedSql, $builder->sql());
     }
 
     /**
@@ -3174,7 +3413,7 @@ class QueryBuilderTest extends TestCase
         } catch (InvalidOrderByDirectionException $err) {
         }
 
-        $this->assertEquals("SELECT `foo`,`bar`,`baz` FROM `foobar` WHERE (`foo` = 'foo') ORDER BY `foo` DESC", $builder->sql());
+        self::assertEquals("SELECT `foo`,`bar`,`baz` FROM `foobar` WHERE (`foo` = 'foo') ORDER BY `foo` DESC", $builder->sql());
     }
 
     /**
@@ -3212,7 +3451,7 @@ class QueryBuilderTest extends TestCase
 
         $builder = self::createBuilder($columns, $tables);
         $actual = $builder->limit($limit, $offset);
-        $this->assertSame($builder, $actual, "QueryBuilder::limit() did not return the same QueryBuilder instance.");
-        $this->assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
+        self::assertSame($builder, $actual, "QueryBuilder::limit() did not return the same QueryBuilder instance.");
+        self::assertEquals($sql, $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 }

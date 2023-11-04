@@ -4,7 +4,7 @@ namespace BeadTests\Responses;
 
 use Bead\Responses\SendsHeaders;
 use Bead\Testing\XRay;
-use PHPUnit\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 
 final class SendsHeadersTest extends TestCase
 {
@@ -32,13 +32,6 @@ final class SendsHeadersTest extends TestCase
         };
     }
 
-    public function tearDown(): void
-    {
-        if (uopz_get_return('header')) {
-            uopz_unset_return('header');
-        }
-    }
-
     /** Ensure we send the expected headers. */
     public function testSendHeaders(): void
     {
@@ -51,20 +44,18 @@ final class SendsHeadersTest extends TestCase
         $expectedHeaders[] = "content-type: text/plain";
         $test = $this;
 
-        uopz_set_return(
-            'header',
-            function (string $header, bool $replace) use (&$expectedHeaders, $test)
-            {
+        $this->mockFunction(
+            "header",
+            function (string $header, bool $replace) use (&$expectedHeaders, $test) {
                 $test->assertTrue($replace);
                 $idx = array_search($header, $expectedHeaders);
                 $test->assertIsInt($idx, "Unexpected header '{$header}' generated.");
                 array_splice($expectedHeaders, $idx, 1);
-            },
-            true
+            }
         );
 
         $instance = new XRay($this->createInstance());
         $instance->sendHeaders();
-        $this->assertEmpty($expectedHeaders, "Not all expected headers were generated.");
+        self::assertEmpty($expectedHeaders, "Not all expected headers were generated.");
     }
 }

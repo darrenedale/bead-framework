@@ -47,7 +47,13 @@ class EmailTest extends RuleTestCase
                 }
             }, true,],
             "typicalObject" => ["field", (object)[], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalTrue" => ["field", true, false,],
             "typicalFalse" => ["field", false, false,],
             "typicalEmptyString" => ["field", "", false,],
@@ -83,6 +89,6 @@ class EmailTest extends RuleTestCase
         }
 
         $rule = $this->ruleInstance();
-        $this->assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
+        self::assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
     }
 }

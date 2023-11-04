@@ -11,12 +11,17 @@ use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
 use Bead\Exceptions\NotFoundException;
+use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
+use Bead\Exceptions\Session\InvalidSessionHandlerException;
+use Bead\Exceptions\Session\SessionExpiredException;
+use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
 use Bead\Session\DataAccessor as SessionDataAccessor;
 use DirectoryIterator;
 use Exception;
 use InvalidArgumentException;
+use LogicException;
 use ReflectionClass;
 use ReflectionException;
 use RuntimeException;
@@ -136,143 +141,149 @@ use function Bead\Helpers\Str\random;
  */
 class WebApplication extends Application
 {
-	/** @var string The context name for this class's session data. */
-	public const SessionDataContext = "application";
+    /** @var string The context name for this class's session data. */
+    public const SessionDataContext = "application";
 
-	/** @var string Where plugins are loaded from by default. Relative to the app root directory. */
-	protected const DefaultPluginsPath = "app/Plugins";
+    /** @var string Where plugins are loaded from by default. Relative to the app root directory. */
+    protected const DefaultPluginsPath = "app/Plugins";
 
-	/** @var string The default namespace for plugin classes. */
-	protected const DefaultPluginsNamespace = "App\\Plugins";
+    /** @var string The default namespace for plugin classes. */
+    protected const DefaultPluginsNamespace = "App\\Plugins";
 
-	/** @var string Where plugins are loaded from. */
-	private string $m_pluginsDirectory = self::DefaultPluginsPath;
+    /** @var string Where plugins are loaded from. */
+    private string $m_pluginsDirectory = self::DefaultPluginsPath;
 
-	/** @var string The namespace where plugins are located. */
-	private string $m_pluginsNamespace = self::DefaultPluginsNamespace;
+    /** @var string The namespace where plugins are located. */
+    private string $m_pluginsNamespace = self::DefaultPluginsNamespace;
 
-	/** Application class's session data array. */
-	protected ?SessionDataAccessor $m_session = null;
+    /** Application class's session data array. */
+    protected ?SessionDataAccessor $m_session = null;
 
-	/** Loaded plugin storage.*/
-	private array $m_pluginsByName = [];
+    /** Loaded plugin storage.*/
+    private array $m_pluginsByName = [];
 
-	/** @var bool True when exec() is in progress, false otherwise. */
-	private bool $m_isRunning = false;
+    /** @var bool True when exec() is in progress, false otherwise. */
+    private bool $m_isRunning = false;
 
-	/** @var RouterContract The router that routes requests to handlers. */
-	private RouterContract $m_router;
+    /** @var RouterContract The router that routes requests to handlers. */
+    private RouterContract $m_router;
 
-	/**
-	 * Construct a new WebApplication object.
-	 *
-	 * WebApplication is a singleton class. Once an instance has been created, attempts to create another will throw.
-	 *
-	 * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
-	 * @param $db Connection|null The data controller for the application.
-	 *
-	 * @throws \Exception if an Application instance has already been created.
-	 */
-	public function __construct(string $appRoot, ?Connection $db = null)
-	{
-		parent::__construct($appRoot, $db);
-		$this->initialiseSession();
-		$this->m_session = $this->sessionData(self::SessionDataContext);
-		$this->setRouter(new Router());
+    /**
+     * Construct a new WebApplication object.
+     *
+     * WebApplication is a singleton class. Once an instance has been created, attempts to create another will throw.
+     *
+     * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
+     * @param $db Connection|null The data controller for the application.
+     *
+     * @throws \Exception if an Application instance has already been created.
+     */
+    public function __construct(string $appRoot, ?Connection $db = null)
+    {
+        parent::__construct($appRoot, $db);
+        $this->initialiseSession();
+        $this->m_session = $this->sessionData(self::SessionDataContext);
+        $this->setRouter(new Router());
 
-		if (!empty($this->config("app.plugins.path"))) {
-			$this->setPluginsDirectory($this->config("app.plugins.path"));
-		}
+        if (!empty($this->config("app.plugins.path"))) {
+            $this->setPluginsDirectory($this->config("app.plugins.path"));
+        }
 
-		if (!empty($this->config("app.plugins.namespace"))) {
-			$this->setPluginsNamespace($this->config("app.plugins.namespace"));
-		}
-	}
+        if (!empty($this->config("app.plugins.namespace"))) {
+            $this->setPluginsNamespace($this->config("app.plugins.namespace"));
+        }
+    }
 
-	/**
-	 * Determine whether the application is currently running or not.
-	 *
-	 * The application is running if its `exec()` method has been called and has not yet returned.
-	 *
-	 * @return bool `true` if the application is running, `false` otherwise.
-	 */
-	public function isRunning(): bool
-	{
-		return $this->m_isRunning;
-	}
+    /**
+     * Determine whether the application is currently running or not.
+     *
+     * The application is running if its `exec()` method has been called and has not yet returned.
+     *
+     * @return bool `true` if the application is running, `false` otherwise.
+     */
+    public function isRunning(): bool
+    {
+        return $this->m_isRunning;
+    }
 
-	/**
-	 * Set the plugins directory.
-	 *
-	 * The plugins directory can only be set before `exec()` is called. If `exec()` has been called, calling
-	 * `setPluginsDirectory()` will fail.
-	 *
-	 * @param string $dir The directory to load plugins from.
-	 *
-	 * @return bool `true` If the provided directory was valid and was set, `false` otherwise.
-	 */
-	public function setPluginsDirectory(string $dir): bool
-	{
-		if ($this->isRunning()) {
-			AppLog::error("can't set plugins path while application is running", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
+    /**
+     * Set the plugins directory.
+     *
+     * The plugins directory can only be set before `exec()` is called. If `exec()` has been called, calling
+     * `setPluginsDirectory()` will fail.
+     *
+     * @param string $dir The directory to load plugins from.
+     *
+     * @throws LogicException if the app is already running
+     * @throws InvalidPluginsDirectoryException if the provided directory is not valid.
+     */
+    public function setPluginsDirectory(string $dir): void
+    {
+        if ($this->isRunning()) {
+            throw new LogicException("Can't set plugins path while application is running");
+        }
 
-		if (!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $dir)) {
-			AppLog::error("invalid plugins path: \"$dir\"", __FILE__, __LINE__, __FUNCTION__);
-			return false;
-		}
+        if (!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $dir)) {
+            throw new InvalidPluginsDirectoryException($dir, "Plugin directories must be composed entirely of path segments that are alphanumeric plus _ and -.");
+        }
 
-		$this->m_pluginsDirectory = $dir;
-		return true;
-	}
+        $this->m_pluginsDirectory = $dir;
+    }
 
-	/**
-	 * Fetch the plugins path.
-	 *
-	 * This is the path from which plugins will be/were loaded.
-	 *
-	 * @return string The plugins path.
-	 */
-	public function pluginsDirectory(): string
-	{
-		return $this->m_pluginsDirectory;
-	}
+    /**
+     * Fetch the plugins path.
+     *
+     * This is the path from which plugins will be/were loaded.
+     *
+     * @return string The plugins path.
+     */
+    public function pluginsDirectory(): string
+    {
+        return $this->m_pluginsDirectory;
+    }
 
-	/**
-	 * Fetch the routes directory.
-	 *
-	 * The directory is relative to the application's root directory. The default is "routes".
-	 *
-	 * @return string The directory.
-	 */
-	public function routesDirectory(): string
-	{
-		return $this->config("app.routes.directory", "routes");
-	}
+    /**
+     * Fetch the routes directory.
+     *
+     * The directory is relative to the application's root directory. The default is "routes".
+     *
+     * @return string The directory.
+     */
+    public function routesDirectory(): string
+    {
+        return $this->config("app.routes.directory", "routes");
+    }
 
-	/**
-	 * Set the namespace for plugins.
-	 *
-	 * @param string $namespace The namespace.
-	 */
-	public function setPluginsNamespace(string $namespace): void
-	{
-		$this->m_pluginsNamespace = $namespace;
-	}
+    /**
+     * Set the namespace for plugins.
+     *
+     * @param string $namespace The namespace.
+     */
+    public function setPluginsNamespace(string $namespace): void
+    {
+        $this->m_pluginsNamespace = $namespace;
+    }
 
-	/**
-	 * Fetch the namespace for plugins.
-	 *
-	 * @return string The namespace.
-	 */
-	public function pluginsNamespace(): string
-	{
-		return $this->m_pluginsNamespace;
-	}
+    /**
+     * Fetch the namespace for plugins.
+     *
+     * @return string The namespace.
+     */
+    public function pluginsNamespace(): string
+    {
+        return $this->m_pluginsNamespace;
+    }
 
     /**
      * Initialise the application session data.
+     *
+     * @throws ExpiredSessionIdUsedException if the session ID has timed out
+     * @throws RuntimeException if the CSRF token needs to be refereshed but fails
+     * @throws LogicException if the session has already been started
+     * @throws SessionExpiredException if the current session has expired
+     * @throws SessionNotFoundException If the ID provided does not identify an existing session.
+     * @throws InvalidSessionHandlerException if the session handler specified in the configuration file is not
+     * recognised.
      */
     private function initialiseSession(): void
     {
@@ -305,444 +316,457 @@ class WebApplication extends Application
         return SessionFacade::prefixed("{$context}.");
     }
 
-	/**
-	 * Set the application's Request router.
-	 *
-	 * @param RouterContract $router
-	 */
-	public function setRouter(RouterContract $router): void
-	{
-		$this->m_router = $router;
-	}
+    /**
+     * Set the application's Request router.
+     *
+     * @param RouterContract $router
+     */
+    public function setRouter(RouterContract $router): void
+    {
+        $this->m_router = $router;
+    }
 
-	/**
-	 * Fetch the application's Request router.
-	 *
-	 * @return RouterContract The router.
-	 */
-	public function router(): RouterContract
-	{
-		return $this->m_router;
-	}
+    /**
+     * Fetch the application's Request router.
+     *
+     * @return RouterContract The router.
+     */
+    public function router(): RouterContract
+    {
+        return $this->m_router;
+    }
 
-	/**
-	 * Fetch the expected fully-qualified name for a plugin loaded from a given path.
-	 *
-	 * The default is to take the basename of the path and append it to the plugins namespace to construct the FQ name.
-	 *
-	 * @param string $path The path from which the plugin is being loaded.
-	 *
-	 * @return string The expected fully-qualified class name.
-	 */
-	protected function pluginClassNameForPath(string $path): string
-	{
-		$className = basename($path, ".php");
-		return "{$this->pluginsNamespace()}\\$className";
-	}
+    /**
+     * Fetch the expected fully-qualified name for a plugin loaded from a given path.
+     *
+     * The default is to take the basename of the path and append it to the plugins namespace to construct the FQ name.
+     *
+     * @param string $path The path from which the plugin is being loaded.
+     *
+     * @return string The expected fully-qualified class name.
+     */
+    protected function pluginClassNameForPath(string $path): string
+    {
+        $className = basename($path, ".php");
+        return "{$this->pluginsNamespace()}\\{$className}";
+    }
 
-	/**
-	 * Load a plugin.
-	 *
-	 * Various checks are performed to ensure that the path represents a genuine plugin for the application. If it does,
-	 * it is loaded and added to the application's set of available plugins. Each plugin is guaranteed to be loaded just
-	 * once.
-	 *
-	 * Plugins are required to meet the following conditions:
-	 * - defined in a file named exactly as the plugin class is named, with the extension ".php"
-	 * - define a class that inherits the `Bead\Plugin` base class
-	 * - provide a valid instance of the appropriate class from the `instance()` method of the main plugin class
-	 *   defined in the file
-	 *
-	 * @param $path string The path to the plugin to load.
-	 *
-	 * @throws InvalidPluginException
-	 */
-	private function loadPlugin(string $path): void
-	{
-		if (!is_file($path) || !is_readable($path)) {
-			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a file or is not readable.");
-		}
+    /**
+     * Load a plugin.
+     *
+     * Various checks are performed to ensure that the path represents a genuine plugin for the application. If it does,
+     * it is loaded and added to the application's set of available plugins. Each plugin is guaranteed to be loaded just
+     * once.
+     *
+     * Plugins are required to meet the following conditions:
+     * - defined in a file named exactly as the plugin class is named, with the extension ".php"
+     * - define a class that inherits the `Bead\Plugin` base class
+     * - provide a valid instance of the appropriate class from the `instance()` method of the main plugin class
+     *   defined in the file
+     *
+     * @param $path string The path to the plugin to load.
+     *
+     * @throws InvalidPluginException
+     */
+    private function loadPlugin(string $path): void
+    {
+        if (!is_file($path) || !is_readable($path)) {
+            throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a file or is not readable.");
+        }
 
-		if (".php" != substr($path, -4)) {
-			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a PHP file.");
-		}
+        if (".php" != substr($path, -4)) {
+            throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a PHP file.");
+        }
 
-		// NOTE this currently requires plugins to be in the global namespace
-		$className    = $this->pluginClassNameForPath($path);
-		$classNameKey = mb_convert_case($className, MB_CASE_LOWER, "UTF-8");
+        // NOTE this currently requires plugins to be in the global namespace
+        $className    = $this->pluginClassNameForPath($path);
+        $classNameKey = mb_convert_case($className, MB_CASE_LOWER, "UTF-8");
 
-		if (isset($this->m_pluginsByName[$classNameKey])) {
-			return;
-		}
+        if (isset($this->m_pluginsByName[$classNameKey])) {
+            return;
+        }
 
-		include_once($path);
+        include_once($path);
 
-		if (!class_exists($className)) {
-			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" does not define the expected \"{$className}\" class.");
-		}
+        if (!class_exists($className)) {
+            throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" does not define the expected \"{$className}\" class.");
+        }
 
         $pluginClassInfo = new ReflectionClass($className);
 
-		if (!$pluginClassInfo->isSubclassOf(Plugin::class)) {
-			throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" contains the class \"{$className}\" which does not implement " . Plugin::class);
-		}
+        if (!$pluginClassInfo->isSubclassOf(Plugin::class)) {
+            throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" contains the class \"{$className}\" which does not implement " . Plugin::class);
+        }
 
-		try {
-			$instanceFn = $pluginClassInfo->getMethod("instance");
-		} catch (ReflectionException $err) {
-			throw new InvalidPluginException($path, null, "Exception introspecting {$className}::instance() method: [{$err->getCode()}] {$err->getMessage()}", 0, $err);
-		}
+        try {
+            $instanceFn = $pluginClassInfo->getMethod("instance");
+        } catch (ReflectionException $err) {
+            throw new InvalidPluginException($path, null, "Exception introspecting {$className}::instance() method: [{$err->getCode()}] {$err->getMessage()}", 0, $err);
+        }
 
-		if (!$instanceFn->isPublic() || !$instanceFn->isStatic()) {
-			throw new InvalidPluginException($path, null, "{$className}::instance() method must be public static",);
-		}
+        if (!$instanceFn->isPublic() || !$instanceFn->isStatic()) {
+            throw new InvalidPluginException($path, null, "{$className}::instance() method must be public static");
+        }
 
-		if (0 != $instanceFn->getNumberOfRequiredParameters()) {
-			throw new InvalidPluginException($path, null, "{$className}::instance() method must be callable with no arguments");
-		}
+        if (0 != $instanceFn->getNumberOfRequiredParameters()) {
+            throw new InvalidPluginException($path, null, "{$className}::instance() method must be callable with no arguments");
+        }
 
-		$instanceFnReturnType = $instanceFn->getReturnType();
+        $instanceFnReturnType = $instanceFn->getReturnType();
 
-		if (!$instanceFnReturnType) {
-			throw new InvalidPluginException($path, null, "{$className}::instance() has no return type");
-		}
+        if (!$instanceFnReturnType) {
+            throw new InvalidPluginException($path, null, "{$className}::instance() has no return type");
+        }
 
-		if ($instanceFnReturnType->isBuiltin() || ("self" != $instanceFnReturnType->getName() && !is_a($instanceFnReturnType->getName(), Plugin::class, true))) {
-			throw new InvalidPluginException($path, null, "{$className}::instance() must return an instance of {$className}");
-		}
+        if ($instanceFnReturnType->isBuiltin() || ("self" != $instanceFnReturnType->getName() && !is_a($instanceFnReturnType->getName(), Plugin::class, true))) {
+            throw new InvalidPluginException($path, null, "{$className}::instance() must return an instance of {$className}");
+        }
 
         try {
             $plugin = $instanceFn->invoke(null);
         } catch (ReflectionException $err) {
-			throw new InvalidPluginException($path, null, "Exception invoking {$className}::instance(): [{$err->getCode()}] {$err->getMessage()}", 0, $err);
+            throw new InvalidPluginException($path, null, "Exception invoking {$className}::instance(): [{$err->getCode()}] {$err->getMessage()}", 0, $err);
         }
 
-		if (!$plugin instanceof $className) {
-			throw new InvalidPluginException($path, null, "{$className}::instance() did not provide an object of the {$className}.");
-		}
+        if (!$plugin instanceof $className) {
+            throw new InvalidPluginException($path, null, "{$className}::instance() did not provide an object of the {$className}.");
+        }
 
-		$this->m_pluginsByName[$classNameKey] = $plugin;
-	}
+        $this->m_pluginsByName[$classNameKey] = $plugin;
+    }
 
-	/**
-	 * Load all the available plugins.
-	 *
-	 * Plugins are loaded from the default plugins path. All valid plugins found are loaded and instantiated. The
-	 * error log will contain details of any plugins that failed to load.
-	 *
-	 * @return bool true if the plugins path was successfully scanned for plugins, false otherwise.
-	 * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
-	 * @throws InvalidPluginException if the plugins path can't be read for some reason.
-	 */
-	protected function loadPlugins(): bool
-	{
-		static $s_done = false;
+    /**
+     * Load all the available plugins.
+     *
+     * Plugins are loaded from the default plugins path. All valid plugins found are loaded and instantiated. The
+     * error log will contain details of any plugins that failed to load.
+     *
+     * @return bool true if the plugins path was successfully scanned for plugins, false otherwise.
+     * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
+     * @throws InvalidPluginException if the plugins path can't be read for some reason.
+     */
+    protected function loadPlugins(): bool
+    {
+        static $s_done = false;
 
-		if (!$s_done) {
-			$info = new SplFileInfo("{$this->rootDir()}/{$this->pluginsDirectory()}");
+        if (!$s_done) {
+            $info = new SplFileInfo("{$this->rootDir()}/{$this->pluginsDirectory()}");
 
-			if (!$info->isDir()) {
-				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" is not a directory.");
-			}
+            if (!$info->isDir()) {
+                throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" is not a directory.");
+            }
 
-			if (!$info->isReadable() || !$info->isExecutable()) {
-				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.");
-			}
+            if (!$info->isReadable() || !$info->isExecutable()) {
+                throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.");
+            }
 
-			/* load the ordered plugins, then the rest after */
-			$pluginLoadOrder = $this->config("app.plugins.loadorder", []);
+            /* load the ordered plugins, then the rest after */
+            $pluginLoadOrder = $this->config("app.plugins.loadorder", []);
 
-			foreach ($pluginLoadOrder as $pluginName) {
-				$pluginFile = new SplFileInfo("{$info->getRealPath()}/{$pluginName}.php");
-				$pluginFilePath = $pluginFile->getRealPath();
+            foreach ($pluginLoadOrder as $pluginName) {
+                $pluginFile = new SplFileInfo("{$info->getRealPath()}/{$pluginName}.php");
+                $pluginFilePath = $pluginFile->getRealPath();
 
-				if (false !== $pluginFilePath) {
-					$this->loadPlugin($pluginFilePath);
-				}
-			}
+                if (false !== $pluginFilePath) {
+                    $this->loadPlugin($pluginFilePath);
+                }
+            }
 
-			try {
-				$directory = new DirectoryIterator("{$info->getRealPath()}");
-			} catch (UnexpectedValueException $err) {
-				throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.", 0, $err);
-			}
+            try {
+                $directory = new DirectoryIterator("{$info->getRealPath()}");
+            } catch (UnexpectedValueException $err) {
+                throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.", 0, $err);
+            }
 
-			foreach ($directory as $pluginFile) {
-				if ($pluginFile->isDot()) {
-					continue;
-				}
+            foreach ($directory as $pluginFile) {
+                if ($pluginFile->isDot()) {
+                    continue;
+                }
 
-				$this->loadPlugin($pluginFile->getRealPath());
-			}
+                $this->loadPlugin($pluginFile->getRealPath());
+            }
 
-			$s_done = true;
-			$this->emitEvent("application.pluginsloaded");
-		}
+            $s_done = true;
+            $this->emitEvent("application.pluginsloaded");
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	/**
-	 * Load all the routes files in the routes directory.
-	 *
-	 * @throws InvalidRoutesDirectoryException
-	 * @throws InvalidRoutesFileException
-	 */
-	protected function loadRoutes(): void
-	{
-		static $s_done = false;
+    /**
+     * Load all the routes files in the routes directory.
+     *
+     * @throws InvalidRoutesDirectoryException
+     * @throws InvalidRoutesFileException
+     */
+    protected function loadRoutes(): void
+    {
+        static $s_done = false;
 
-		if (!$s_done) {
-			$dir = new SplFileInfo("{$this->rootDir()}/{$this->routesDirectory()}");
+        if (!$s_done) {
+            $dir = new SplFileInfo("{$this->rootDir()}/{$this->routesDirectory()}");
 
-			if (!$dir->isDir()) {
-				throw new InvalidRoutesDirectoryException($this->pluginsDirectory(), "Routes directory \"{$this->pluginsDirectory()}\" is not a directory.");
-			}
+            if (!$dir->isDir()) {
+                throw new InvalidRoutesDirectoryException($this->pluginsDirectory(), "Routes directory \"{$this->pluginsDirectory()}\" is not a directory.");
+            }
 
-			if (!$dir->isReadable() || !$dir->isExecutable()) {
-				throw new InvalidRoutesDirectoryException($this->routesDirectory(), "Routes directory \"{$this->routesDirectory()}\" cannot be scanned for route files to load.");
-			}
+            if (!$dir->isReadable() || !$dir->isExecutable()) {
+                throw new InvalidRoutesDirectoryException($this->routesDirectory(), "Routes directory \"{$this->routesDirectory()}\" cannot be scanned for route files to load.");
+            }
 
-			$app = $this;
-			$router = $this->router();
+            $app = $this;
+            $router = $this->router();
 
-			foreach (new DirectoryIterator($dir) as $routeFile) {
-				if ($routeFile->isDot() || !$routeFile->isFile()) {
-					continue;
-				}
+            foreach (new DirectoryIterator($dir) as $routeFile) {
+                if ($routeFile->isDot() || !$routeFile->isFile()) {
+                    continue;
+                }
 
-				if ($routeFile->isLink()) {
-					throw new InvalidRoutesFileException($routeFile->getRealPath(), "Routes file {$routeFile->getRealPath()} cannot be loaded because linked routes files are not supported for security reasons.");
-				}
+                if ($routeFile->isLink()) {
+                    throw new InvalidRoutesFileException($routeFile->getRealPath(), "Routes file {$routeFile->getRealPath()} cannot be loaded because linked routes files are not supported for security reasons.");
+                }
 
-				$routeFile = $routeFile->getRealPath();
+                $routeFile = $routeFile->getRealPath();
 
-				try {
-					// isolate the context of the included routes file
-					(function () use ($app, $router, $routeFile) {
-						include $routeFile;
-					})();
-				} catch (Exception $err) {
-					throw new InvalidRoutesFileException($routeFile, "The routes file {$routeFile} could not be loaded.", 0, $err);
-				}
-			}
-		}
-	}
+                try {
+                    // isolate the context of the included routes file
+                    /** @psalm-suppress UnusedVariable $app and $router are made available to the included route file */
+                    (function () use ($app, $router, $routeFile) {
+                        include $routeFile;
+                    })();
+                } catch (Exception $err) {
+                    throw new InvalidRoutesFileException($routeFile, "The routes file {$routeFile} could not be loaded.", 0, $err);
+                }
+            }
+        }
+    }
 
-	/**
-	 * Fetch the list of loaded plugins.
-	 *
-	 * @return array<string> The names of the loaded plugins.
-	 */
-	public function loadedPlugins(): array
-	{
-		return array_keys($this->m_pluginsByName);
-	}
+    /**
+     * Fetch the list of loaded plugins.
+     *
+     * @return array<string> The names of the loaded plugins.
+     */
+    public function loadedPlugins(): array
+    {
+        return array_keys($this->m_pluginsByName);
+    }
 
     /**
      * Fetch a plugin by its name.
      *
-	 * If the plugin has been loaded, the created instance of that plugin will be returned. The provided class name must
-	 * be fully-qualified with its namespace.
+     * If the plugin has been loaded, the created instance of that plugin will be returned. The provided class name must
+     * be fully-qualified with its namespace.
      *
      * @param $name string The class name of the plugin.
      *
-	 * @return Plugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
+     * @return Plugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
+     * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
+     * @throws InvalidPluginException if the plugins path can't be read for some reason.
      */
-	public function pluginByName(string $name): ?Plugin
-	{
-		$this->loadPlugins();
-		return $this->m_pluginsByName[mb_strtolower($name, "UTF-8")] ?? null;
-	}
+    public function pluginByName(string $name): ?Plugin
+    {
+        $this->loadPlugins();
+        return $this->m_pluginsByName[mb_strtolower($name, "UTF-8")] ?? null;
+    }
 
-	/**
-	 * Send a response to the client.
-	 *
-	 * @param Response $response The response to send.
-	 */
-	public function sendResponse(Response $response): void
-	{
-		if (0 != ob_get_level() && !ob_end_clean()) {
-			throw new RuntimeException("Failed to clear output buffer before sending response.");
-		}
+    /**
+     * Send a response to the client.
+     *
+     * @param Response $response The response to send.
+     *
+     * @throws RuntimeException if the output buffer was not empty and could not be cleaned.
+     */
+    public function sendResponse(Response $response): void
+    {
+        if (0 != ob_get_level() && !ob_end_clean()) {
+            throw new RuntimeException("Failed to clear output buffer before sending response.");
+        }
 
-		$response->send();
-	}
+        $response->send();
+    }
 
-	/** Fetch the request submitted by the user.
-	 *
-	 * This method fetches the original request received from the user. It is just a convenience synonym for
-	 * Bead\Request::originalRequest().
-	 *
-	 * @see-also currentRequest()
-	 *
-	 * @return Request The user's original request.
-	 */
-	public function request(): Request
-	{
-		return Request::originalRequest();
-	}
+    /** Fetch the request submitted by the user.
+     *
+     * This method fetches the original request received from the user. It is just a convenience synonym for
+     * Bead\Request::originalRequest().
+     *
+     * @see-also currentRequest()
+     *
+     * @return Request The user's original request.
+     */
+    public function request(): Request
+    {
+        return Request::originalRequest();
+    }
 
-	/**
-	 * Fetch the current CSRF token.
-	 *
-	 * @return string The token.
-	 */
-	public function csrf(): string
-	{
-		if (!SessionFacade::has("csrf-token")) {
-			$this->regenerateCsrf();
-		}
+    /**
+     * Fetch the current CSRF token.
+     *
+     * @return string The token.
+     *
+     * @throws RuntimeException
+     */
+    public function csrf(): string
+    {
+        if (!SessionFacade::has("csrf-token")) {
+            $this->regenerateCsrf();
+        }
 
-		return SessionFacade::get("csrf-token");
-	}
+        return SessionFacade::get("csrf-token");
+    }
 
-	/**
-	 * Force the CSRF token to be regenerated.
-	 *
-	 * By default a 64-character random string is generated.
-	 */
-	public function regenerateCsrf(): void
-	{
-		SessionFacade::set("csrf-token", random(64));
-	}
+    /**
+     * Force the CSRF token to be regenerated.
+     *
+     * By default a 64-character random string is generated.
+     *
+     * @throws RuntimeException
+     */
+    public function regenerateCsrf(): void
+    {
+        SessionFacade::set("csrf-token", random(64));
+    }
 
-	/**
-	 * Determine whether the incoming request must pass CSRF verification.
-	 *
-	 * The default behaviour is to require verification for all requests that don't use the GET, HEAD or OPTIONS HTTP
-	 * methods. Use this method as a customisation point in your WebApplication subclass to implement more detailed
-	 * logic.
-	 *
-	 * @param Request $request The incoming request.
-	 *
-	 * @return bool `true` if the request requires CSRF validation, `false` if not.
-	 */
-	protected function requestRequiresCsrf(Request $request): bool
-	{
-		switch ($request->method()) {
-			case "GET":
-			case "HEAD":
-			case "OPTIONS":
-				return false;
-		}
+    /**
+     * Determine whether the incoming request must pass CSRF verification.
+     *
+     * The default behaviour is to require verification for all requests that don't use the GET, HEAD or OPTIONS HTTP
+     * methods. Use this method as a customisation point in your WebApplication subclass to implement more detailed
+     * logic.
+     *
+     * @param Request $request The incoming request.
+     *
+     * @return bool `true` if the request requires CSRF validation, `false` if not.
+     */
+    protected function requestRequiresCsrf(Request $request): bool
+    {
+        switch ($request->method()) {
+            case "GET":
+            case "HEAD":
+            case "OPTIONS":
+                return false;
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	/**
-	 * Extract the CSRF token submitted with a request.
-	 *
-	 * Use this as a customisation point in your WebApplication subclass if you need custom logic to obtain the token
-	 * from Requests. The default behaviour is to look for a `_token` POST field, or an X-CSRF-TOKEN header if the
-	 * field is not present (the latter case is primarily for AJAX requests).
-	 *
-	 * @param Request $request The request from which to extract the CSRF token.
-	 *
-	 * @return string|null The token, or `null` if no CSRF token is found in the request.
-	 */
-	protected function csrfTokenFromRequest(Request $request): ?string
-	{
-		return $request->postData("_token") ?? $request->header("X-CSRF-TOKEN");
-	}
+    /**
+     * Extract the CSRF token submitted with a request.
+     *
+     * Use this as a customisation point in your WebApplication subclass if you need custom logic to obtain the token
+     * from Requests. The default behaviour is to look for a `_token` POST field, or an X-CSRF-TOKEN header if the
+     * field is not present (the latter case is primarily for AJAX requests).
+     *
+     * @param Request $request The request from which to extract the CSRF token.
+     *
+     * @return string|null The token, or `null` if no CSRF token is found in the request.
+     */
+    protected function csrfTokenFromRequest(Request $request): ?string
+    {
+        return $request->postData("_token") ?? $request->header("X-CSRF-TOKEN");
+    }
 
-	/**
-	 * Helper to verify the CSRF token in an incoming request is correct, if necessary.
-	 *
-	 * Not all requests require CSRF verification. requestRequiresCsrf() is used to determine whether the request
-	 * requires it. The CSRF token is extracted from the request by csrfTokenFromRequest().
-	 *
-	 * @param Request $request The incoming request.
-	 *
-	 * @throws CsrfTokenVerificationException if the CSRF token in the request is not verified.
-	 */
-	protected function verifyCsrf(Request $request): void
-	{
-		if (!$this->requestRequiresCsrf($request)) {
-			return;
-		}
+    /**
+     * Helper to verify the CSRF token in an incoming request is correct, if necessary.
+     *
+     * Not all requests require CSRF verification. requestRequiresCsrf() is used to determine whether the request
+     * requires it. The CSRF token is extracted from the request by csrfTokenFromRequest().
+     *
+     * @param Request $request The incoming request.
+     *
+     * @throws CsrfTokenVerificationException if the CSRF token in the request is not verified.
+     */
+    protected function verifyCsrf(Request $request): void
+    {
+        if (!$this->requestRequiresCsrf($request)) {
+            return;
+        }
 
-		$requestCsrf = $this->csrfTokenFromRequest($request);
+        $requestCsrf = $this->csrfTokenFromRequest($request);
 
-		if (!isset($requestCsrf) || !hash_equals($this->csrf(),  $requestCsrf)) {
-			throw new CsrfTokenVerificationException($request, "The CSRF token is missing from the request or is invalid.");
-		}
-	}
+        if (!isset($requestCsrf) || !hash_equals($this->csrf(), $requestCsrf)) {
+            throw new CsrfTokenVerificationException($request, "The CSRF token is missing from the request or is invalid.");
+        }
+    }
 
-	/**
-	 * Handle a request.
-	 *
-	 * This method submits a request to the application for processing. Processing of the request starts immediately and
-	 * any current request is held until it finishes.
-	 *
-	 * @param $request Request The request to handle.
-	 *
-	 * @return Response An optional Response to send to the client. For legacy support, if no response is returned
-	 * exec() assumes that content has been added to the Page instance and that is output instead.
-	 * @throws CsrfTokenVerificationException if the request requires CSRF verification and fails
-	 */
-	public function handleRequest(Request $request): Response
-	{
-		$this->emitEvent("application.handlerequest.requestreceived", $request);
-		$this->verifyCsrf($request);
+    /**
+     * Handle a request.
+     *
+     * This method submits a request to the application for processing. Processing of the request starts immediately and
+     * any current request is held until it finishes.
+     *
+     * @param $request Request The request to handle.
+     *
+     * @return Response An optional Response to send to the client. For legacy support, if no response is returned
+     * exec() assumes that content has been added to the Page instance and that is output instead.
+     * @throws CsrfTokenVerificationException if the request requires CSRF verification and fails
+     * @throws NotFoundException if the request can't be routed
+     */
+    public function handleRequest(Request $request): Response
+    {
+        $this->emitEvent("application.handlerequest.requestreceived", $request);
+        $this->verifyCsrf($request);
 
-		try {
-			$this->emitEvent("application.handlerequest.routing", $request);
-			$response = $this->router()->route($request);
-			$this->emitEvent("application.handlerequest.routed", $request);
-		} catch (UnroutableRequestException $err) {
-			throw new NotFoundException($request, "", 0, $err);
-		}
+        try {
+            $this->emitEvent("application.handlerequest.routing", $request);
+            $response = $this->router()->route($request);
+            $this->emitEvent("application.handlerequest.routed", $request);
+        } catch (UnroutableRequestException $err) {
+            throw new NotFoundException($request, "", 0, $err);
+        }
 
-		return $response;
-	}
+        return $response;
+    }
 
-	/**
-	 * Execute the application.
-	 *
-	 * Start execution of the application. This method will pass the original request from the user to
-	 * `handleRequest()` and return when processing of that request completes. This method should never be called,
-	 * except from the script that is in use as the application bootstrap.
-	 *
-	 * This method is responsible for setting up the execution context for the request, including initialising the
-	 * page. It emits some events that may be of interest to plugins.
-	 *
-	 * Once this method returns, the application is considered to have exited.
-	 *
-	 * @return int `self::ErrOk` on success, some other value on failure.
-	 * @throws InvalidPluginException
-	 * @throws InvalidPluginsDirectoryException
-	 * @throws InvalidRoutesDirectoryException
-	 * @throws InvalidRoutesFileException
-	 */
-	public function exec(): int
-	{
-		if (0 > version_compare(PHP_VERSION, $this->minimumPhpVersion())) {
-			$appName = $this->title();
+    /**
+     * Execute the application.
+     *
+     * Start execution of the application. This method will pass the original request from the user to
+     * `handleRequest()` and return when processing of that request completes. This method should never be called,
+     * except from the script that is in use as the application bootstrap.
+     *
+     * This method is responsible for setting up the execution context for the request, including initialising the
+     * page. It emits some events that may be of interest to plugins.
+     *
+     * Once this method returns, the application is considered to have exited.
+     *
+     * @return int `self::ErrOk` on success, some other value on failure.
+     * @throws InvalidPluginException
+     * @throws InvalidPluginsDirectoryException
+     * @throws InvalidRoutesDirectoryException
+     * @throws InvalidRoutesFileException
+     * @throws RuntimeException
+     * @throws CsrfTokenVerificationException
+     * @throws NotFoundException
+     */
+    public function exec(): int
+    {
+        if (0 > version_compare(PHP_VERSION, $this->minimumPhpVersion())) {
+            $appName = $this->title();
 
-			if (empty($appName)) {
-				$appName = "This application";
-			}
+            if (empty($appName)) {
+                $appName = "This application";
+            }
 
-			throw new RuntimeException("{$appName} is not able to run on this server.");
-		}
+            throw new RuntimeException("{$appName} is not able to run on this server.");
+        }
 
-		$this->m_isRunning = true;
-		$this->loadPlugins();
-		$this->loadRoutes();
-		$this->emitEvent("application.executionstarted");
-		$response = $this->handleRequest(Request::originalRequest());
-		$this->emitEvent("application.executionfinished");
+        $this->m_isRunning = true;
+        $this->loadPlugins();
+        $this->loadRoutes();
+        $this->emitEvent("application.executionstarted");
+        $response = $this->handleRequest(Request::originalRequest());
+        $this->emitEvent("application.executionfinished");
 
-		$this->emitEvent("application.sendingresponse");
-		$this->sendResponse($response);
-		$this->emitEvent("application.responsesent");
+        $this->emitEvent("application.sendingresponse");
+        $this->sendResponse($response);
+        $this->emitEvent("application.responsesent");
 
-		if (!empty($this->m_session["current_user"])) {
-			$this->m_session["current_user"]["last_activity_time"] = time();
-		}
+        if (!empty($this->m_session["current_user"])) {
+            $this->m_session["current_user"]["last_activity_time"] = time();
+        }
 
-		$this->m_isRunning = false;
+        $this->m_isRunning = false;
         return self::ExitOk;
-	}
+    }
 }

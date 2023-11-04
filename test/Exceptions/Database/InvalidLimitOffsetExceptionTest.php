@@ -14,37 +14,37 @@ class InvalidLimitOffsetExceptionTest extends TestCase
     public function testWithLimitOffset(): void
     {
         $err = new InvalidLimitOffsetException(42);
-        $this->assertEquals(42, $err->getOffset());
-        $this->assertMessage($err, "");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals(42, $err->getOffset());
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithLimitOffsetAndMessage(): void
     {
         $err = new InvalidLimitOffsetException(42, "Message.");
-        $this->assertEquals(42, $err->getOffset());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals(42, $err->getOffset());
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithLimitOffsetMessageAndCode(): void
     {
         $err = new InvalidLimitOffsetException(42, "Message.", 42);
-        $this->assertEquals(42, $err->getOffset());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, null);
+        self::assertEquals(42, $err->getOffset());
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithLimitOffsetMessageCodeAndPrevious(): void
     {
         $previous = new Exception();
         $err = new InvalidLimitOffsetException(42, "Message.", 42, $previous);
-        $this->assertEquals(42, $err->getOffset());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, $previous);
+        self::assertEquals(42, $err->getOffset());
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }

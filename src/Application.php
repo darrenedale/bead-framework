@@ -2,22 +2,25 @@
 
 namespace Bead;
 
+use Bead\Contracts\Encryption\Crypter;
+use Bead\Contracts\Encryption\Decrypter;
+use Bead\Contracts\Encryption\Encrypter;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Database\Connection;
+use Bead\Encryption\OpenSsl\Crypter as OpenSslCrypter;
+use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
 use Bead\ErrorHandler as BeadErrorHandler;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
 use DirectoryIterator;
 use Exception;
-use InvalidArgumentException;
+use Bead\Facades\Log;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
 use Throwable;
-
-use function Bead\Helpers\Str\stringify;
 
 /**
  * Abstract base class for all applications.
@@ -70,26 +73,28 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @param string $appRoot
      * @param Connection|null $db
      *
-     * @throws \Exception if the singleton has already been created or if the provided root directory does not exist.
+     * @throws RuntimeException if the singleton already exists or if the provided root directory does not exist.
+     * @throws ServiceAlreadyBoundException if any of the service bindings set up by the Application is already bound..
      */
     public function __construct(string $appRoot, ?Connection $db = null)
     {
         $this->setErrorHandler(new BeadErrorHandler());
 
         if (isset(self::$s_instance)) {
-            throw new Exception("Application instance already created.");
+            throw new RuntimeException("Application instance already created.");
         }
 
         self::$s_instance = $this;
         $realAppRoot = (new SplFileInfo($appRoot))->getRealPath();
 
         if (false === $realAppRoot) {
-            throw new Exception("Application root directory '{$appRoot}' does not exist.");
+            throw new RuntimeException("Application root directory '{$appRoot}' does not exist.");
         }
 
         $this->m_appRoot = $realAppRoot;
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->setupTranslator();
+        $this->setupCrypter();
         $this->setDatabase($db);
     }
 
@@ -112,29 +117,74 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /**
      * Helper to set up the translator.
+     *
+     * @throws RuntimeException
      */
     private function setupTranslator(): void
     {
         $this->m_translator = new Translator();
         $this->m_translator->addSearchPath("i18n");
-        $this->m_translator->setLanguage($this->config("app.language", "en-GB"));
+        $language = $this->config("app.language", "en-GB");
 
+        if (!is_string($language)) {
+            throw new RuntimeException("Expected valid language in app.language configuration item, found " . gettype($language));
+        }
+
+        $this->m_translator->setLanguage($language);
+
+        /**
+         * @psalm-suppress MissingThrowsDocblock
+         *
+         * setupTranslator() is private and is only called internally fron constructor, so the service is guaranteed not
+         * to be bound already.
+         */
         $this->bindService(TranslatorContract::class, $this->m_translator);
+    }
+
+    /**
+     * Helper to bind the configured crypter to the encryption interfaces.
+     *
+     * @throws RuntimeException
+     * @throws ServiceAlreadyBoundException if any of the encryption interfaces is already bound into the service
+     * container.
+     */
+    private function setupCrypter(): void
+    {
+        $cryptConfig = $this->config("crypto");
+
+        if (!isset($cryptConfig["driver"])) {
+            return;
+        }
+
+        $crypter = match ($cryptConfig["driver"]) {
+            "openssl" => new OpenSslCrypter($cryptConfig["algorithm"] ?? "", $cryptConfig["key"] ?? ""),
+            "sodium" => new SodiumCrypter($cryptConfig["key"] ?? ""),
+            default => throw new RuntimeException("Invalid crypto driver {$cryptConfig["driver"]}"),
+        };
+
+        $this->bindService(Decrypter::class, $crypter);
+        $this->bindService(Encrypter::class, $crypter);
+        $this->bindService(Crypter::class, $crypter);
     }
 
     /**
      * Load the configuration files from the provided directory.
      *
      * @param string $path The directory from which to load the configuration.
+     *
+     * @throws RuntimeException If an unreadable or invalid configuration file is found.
      */
     protected function loadConfig(string $path): void
     {
         $this->m_config = [];
 
         foreach (new DirectoryIterator($path) as $configFile) {
-            if ($configFile->isLink() || !$configFile->isFile() || !$configFile->isReadable() || "php" !== $configFile->getExtension()) {
-                AppLog::error("config file '{$configFile->getFilename()}' is not valid or is not readable.");
+            if ($configFile->isDot()) {
                 continue;
+            }
+
+            if ($configFile->isLink() || !$configFile->isFile() || !$configFile->isReadable() || "php" !== $configFile->getExtension()) {
+                throw new RuntimeException("config file '{$configFile->getFilename()}' is not valid or is not readable.");
             }
 
             $this->m_config[$configFile->getBasename(".php")] = include($configFile->getRealPath());
@@ -167,18 +217,18 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @return array|mixed|null
      */
-    public function config(string $key = null, $default = null)
+    public function config(string $key = null, mixed $default = null)
     {
         if (!isset($key)) {
             return $this->m_config;
         }
 
-        if (false === strpos($key, ".")) {
-            return $this->m_config[$key] ?? $default;
+        if (str_contains($key, ".")) {
+            [$file, $key] = explode(".", $key, 2);
+            return $this->m_config[$file][$key] ?? $default;
         }
 
-        [$file, $key] = explode(".", $key, 2);
-        return isset($this->m_config[$file]) ? ($this->m_config[$file][$key] ?? $default) : $default;
+        return $this->m_config[$key] ?? $default;
     }
 
     /** Fetch the application's title.
@@ -194,7 +244,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @param $title string The title.
      */
-    public function setTitle(string $title)
+    public function setTitle(string $title): void
     {
         $this->m_title = $title;
     }
@@ -214,12 +264,13 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @param string $version The version string.
      */
-    public function setVersion(string $version)
+    public function setVersion(string $version): void
     {
         $this->m_version = $version;
     }
 
-    /** Fetch the minimum PHP version the application requires.
+    /**
+     * Fetch the minimum PHP version the application requires.
      *
      * This will be *0.0.0* by default, effectively meaning any PHP version is acceptable. (Note in reality PHP
      * 7 or later is required by this library.)
@@ -237,7 +288,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @param string $service The service identifier to bind to.
      * @param mixed $instance The service instance.
      *
-     * @throws ServieAlreadyBoundException if there is already a service bound to the identifier.
+     * @throws ServiceAlreadyBoundException if there is already a service bound to the identifier.
      */
     public function bindService(string $service, $instance): void
     {
@@ -252,19 +303,19 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Replace a service already bound to the Application instance.
      *
      * @param string $service The service identifier to bind to.
-     * @param mixed $object The service instance.
+     * @param mixed $instance The service instance.
      *
      * @return mixed The previously-bound service.
      * @throws ServiceNotFoundException If no instance is currently bound to the identified service.
      */
-    public function replaceService(string $service, $object)
+    public function replaceService(string $service, mixed $instance): mixed
     {
         if (!$this->serviceIsBound($service)) {
             throw new ServiceNotFoundException($service, "The service '{$service}' is not bound to the Application instance.");
         }
 
         $previous = $this->m_services[$service];
-        $this->m_services[$service] = $object;
+        $this->m_services[$service] = $instance;
         return $previous;
     }
 
@@ -288,10 +339,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @return mixed The service.
      * @throws ServiceNotFoundException If no service is bound to the identifier.
      */
-    public function service(string $service)
+    public function service(string $service): mixed
     {
         if (!array_key_exists($service, $this->m_services)) {
-            throw new ServiceNotFoundException("The service {$service} was not found in the container.");
+            throw new ServiceNotFoundException($service, "The service {$service} was not found in the container.");
         }
 
         return $this->m_services[$service];
@@ -322,16 +373,16 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /**
      * Fetch the application's translator.
-	 *
-	 * The application's translator handles translation of strings into the user's chosen language. Client code
-	 * should never need to use this method: it is far simpler to use the tr() function.
-	 *
-	 * @return TranslatorContract|null The translator.
-	 */
-	public function translator(): ?TranslatorContract
-	{
-		return $this->m_translator;
-	}
+     *
+     * The application's translator handles translation of strings into the user's chosen language. Client code
+     * should never need to use this method: it is far simpler to use the tr() function.
+     *
+     * @return TranslatorContract|null The translator.
+     */
+    public function translator(): ?TranslatorContract
+    {
+        return $this->m_translator;
+    }
 
     /**
      * Fetch the current language.
@@ -385,10 +436,14 @@ abstract class Application implements ServiceContainer, ContainerInterface
     public function setErrorHandler(ErrorHandler $handler): void
     {
         $this->m_errorHandler = $handler;
-        set_error_handler(function(int $type, string $message, string $file, int $line ) use ($handler): void {
+
+        $errorHandler = function (int $type, string $message, string $file = "", int $line = 0) use ($handler): void {
             $handler->handleError($type, $message, $file, $line);
-        });
-        set_exception_handler(function(Throwable $err) use ($handler): void {
+        };
+
+        set_error_handler($errorHandler);
+
+        set_exception_handler(function (Throwable $err) use ($handler): void {
             $handler->handleException($err);
         });
     }
@@ -442,24 +497,19 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @see-also connect(), disconnect()
      *
      * @param $event string The name of the event.
-     * @param $eventArgs ...mixed Zero or more arguments to provide to the event callbacks.
+     * @param ...$eventArgs mixed Zero or more arguments to provide to the event callbacks.
      *
      * @return bool _true_ if the event was emitted successfully, _false_ otherwise. An event that is valid but
      * happens to have no connected callbacks returns _true_.
      */
-    public function emitEvent(string $event, ...$eventArgs): bool
+    public function emitEvent(string $event, mixed ... $eventArgs): bool
     {
-        if (!is_string($event)) {
-            AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
         $event = strtolower($event);
 
         if (isset($this->m_eventCallbacks[$event])) {
             foreach ($this->m_eventCallbacks[$event] as $callback) {
-                if (!is_callable($callback, false)) {
-                    AppLog::warning("ignoring un-callable callback: " . print_r($callback, true), __FILE__, __LINE__, __FUNCTION__);
+                if (!is_callable($callback)) {
+                    Log::warning("ignoring un-callable event callback: " . print_r($callback, true));
                     continue;
                 }
 
@@ -470,13 +520,14 @@ abstract class Application implements ServiceContainer, ContainerInterface
         return true;
     }
 
-    /** Set the minimum PHP version the application requires.
+    /**
+     * Set the minimum PHP version the application requires.
      *
      * The version string should be of the form _x.y.z_ where _x_, _y_ and _z_ are integers >= 0.
      *
      * @param $v string The minimum required PHP version.
      *
-     * @return void.
+     * @return void
      */
     public function setMinimumPhpVersion(string $v): void
     {
@@ -516,16 +567,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function connect(string $event, callable $callback): bool
     {
-        if (!is_string($event)) {
-            AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
-        if (!is_callable($callback, true)) {
-            AppLog::error("invalid callback", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
         $event = strtolower($event);
 
         if (!isset($this->m_eventCallbacks[$event])) {
@@ -578,16 +619,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function disconnect(string $event, callable $callback): bool
     {
-        if (!is_string($event)) {
-            AppLog::error("invalid event", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
-        if (!is_callable($callback, true)) {
-            AppLog::error("invalid callback", __FILE__, __LINE__, __FUNCTION__);
-            return false;
-        }
-
         $event = strtolower($event);
 
         if (isset($this->m_eventCallbacks[$event])) {

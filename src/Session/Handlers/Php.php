@@ -3,6 +3,7 @@
 namespace Bead\Session\Handlers;
 
 use Bead\Contracts\SessionHandler;
+use Bead\Exceptions\Session\SessionException;
 
 /**
  * Session handler that uses PHP's built-in sessions.
@@ -18,6 +19,7 @@ class Php implements SessionHandler
     {
         if (isset($id)) {
             session_id($id);
+        } else {
             $now = time();
             $_SESSION["__created_at"] = $now;
             $_SESSION["__last_used_at"] = $now;
@@ -38,18 +40,21 @@ class Php implements SessionHandler
     /** @inheritDoc */
     public function createdAt(): int
     {
+        assert(is_int($_SESSION["__created_at"] ?? null), new SessionException("Session created timestamp is not found or is corrupt."));
         return $_SESSION["__created_at"];
     }
 
     /** @inheritDoc */
     public function lastUsedAt(): int
     {
+        assert(is_int($_SESSION["__last_used_at"] ?? null), new SessionException("Session last used timestamp is not found or is corrupt."));
         return $_SESSION["__last_used_at"];
     }
 
     /** @inheritDoc */
     public function idGeneratedAt(): int
     {
+        assert(is_int($_SESSION["__id_created_at"] ?? null), new SessionException("Session id generated timestamp is not found or is corrupt."));
         return $_SESSION["__id_created_at"];
     }
 
@@ -58,7 +63,7 @@ class Php implements SessionHandler
     {
         $_SESSION["__last_used_at"] = $time ?? time();
     }
-    
+
     /**
      * The timestamp when the session was expired.
      * @return int|null
@@ -69,7 +74,7 @@ class Php implements SessionHandler
     }
 
     /** @inheritDoc */
-    public function get(string $key)
+    public function get(string $key): mixed
     {
         return $_SESSION["__data"][$key] ?? null;
     }
@@ -81,7 +86,7 @@ class Php implements SessionHandler
     }
 
     /** @inheritDoc */
-    public function set(string $key, $data)
+    public function set(string $key, $data): void
     {
         $_SESSION["__data"][$key] = $data;
     }

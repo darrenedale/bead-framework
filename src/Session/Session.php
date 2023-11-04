@@ -14,7 +14,8 @@ use Exception;
 use InvalidArgumentException;
 use RuntimeException;
 use TypeError;
-use function Bead\Traversable\all;
+
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Class encapsulating session data.
@@ -65,6 +66,8 @@ class Session implements DataAccessor
      * @throws SessionNotFoundException If the ID provided does not identify an existing session.
      * @throws ExpiredSessionIdUsedException If the ID provided is for a session that has had its ID cycled.
      * @throws SessionExpiredException If the session identified hasn't been used for more than the threshold duration.
+     * @throws InvalidSessionHandlerException if the session handler specified in the configuration file is not
+     * recognised.
      */
     public function __construct(?string $id = null)
     {
@@ -79,11 +82,11 @@ class Session implements DataAccessor
                 // expired and within the grace period, promote to the regenerated ID for the old session ID
                 $this->m_handler = self::createHandler($this->handler()->replacementId());
             }
-        } else if ($this->lastUsedAt() < time() - self::sessionIdleTimeoutPeriod()) {
+        } elseif ($this->lastUsedAt() < time() - self::sessionIdleTimeoutPeriod()) {
             // not used for too long
             $this->destroy();
             throw new SessionExpiredException($id, "The session with the provided ID has been unused for more than " . self::sessionIdleTimeoutPeriod() . " seconds.");
-        } else if ($this->handler()->idGeneratedAt() < time() - self::sessionIdRegenerationPeriod()) {
+        } elseif ($this->handler()->idGeneratedAt() < time() - self::sessionIdRegenerationPeriod()) {
             // due to expire but not so old that we don't trust it
             $this->regenerateId();
         }
@@ -199,30 +202,28 @@ class Session implements DataAccessor
      *
      * @return mixed|null The value.
      */
-    public function get(string $key, $default = null)
+    public function get(string $key, mixed $default = null): mixed
     {
         return $this->handler()->get($key) ?? $default;
     }
 
-	/**
-	 * Extract the data for one or more keys from the session.
-	 *
-	 * The keys extracted will be removed from the session data.
-	 *
-	 * @param $keys string|array<string> The key(s) to extract.
-	 *
-	 * @return mixed|array<string,mixed> The extracted data.
-	 */
-    public function extract($keys)
+    /**
+     * Extract the data for one or more keys from the session.
+     *
+     * The keys extracted will be removed from the session data.
+     *
+     * @param $keys string|array<string> The key(s) to extract.
+     *
+     * @return mixed|array<string,mixed> The extracted data.
+     *
+     * @throws InvalidArgumentException if $keys is an array that contains one or more non-string elements.
+     */
+    public function extract(string|array $keys): mixed
     {
         if (is_string($keys)) {
             $data = $this->get($keys);
             $this->remove($keys);
             return $data;
-        }
-
-        if (!is_array($keys)) {
-            throw new TypeError("Parameter \$keys expects a string or array of strings, " . gettype($keys) . " given.");
         }
 
         if (!all($keys, "is_string")) {
@@ -245,11 +246,11 @@ class Session implements DataAccessor
         return $data;
     }
 
-	/**
-	 * Fetch all the session data.
-	 *
-	 * @return array<string, mixed> The session data.
-	 */
+    /**
+     * Fetch all the session data.
+     *
+     * @return array<string, mixed> The session data.
+     */
     public function all(): array
     {
         return $this->handler()->all();
@@ -260,16 +261,14 @@ class Session implements DataAccessor
      *
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
+     *
+     * @throws InvalidArgumentException if $keyOrData is an array with one or more non-string keys.
      */
-    public function set($keyOrData, $data = null): void
+    public function set(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
             $this->handler()->set($keyOrData, $data);
             return;
-        }
-
-        if (!is_array($keyOrData)) {
-            throw new TypeError("set() expects a key and value or an array of keys and values.");
         }
 
         if (!all(array_keys($keyOrData), "is_string")) {
@@ -288,17 +287,15 @@ class Session implements DataAccessor
      *
      * @param string|array<string, mixed> $keyOrData The key to set, or an array of key-value pairs to set.
      * @param mixed|null $data The data to set if `$keyOrData` is a string key. Ignored otherwise.
+     *
+     * @throws InvalidArgumentException if $keyOrData is an array that contains one or more non-string keys.
      */
-    public function transientSet($keyOrData, $data = null): void
+    public function transientSet(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
             $this->handler()->set($keyOrData, $data);
             $this->m_transientKeys[$keyOrData] = 1;
             return;
-        }
-
-        if (!is_array($keyOrData)) {
-            throw new InvalidArgumentException("transientSet() expects a key and value or an array of keys and values.");
         }
 
         if (!all(array_keys($keyOrData), "is_string")) {
@@ -319,13 +316,17 @@ class Session implements DataAccessor
      */
     public function pruneTransientData(): void
     {
-        $remove = array_filter($this->m_transientKeys, function(int $count): bool {
+        $remove = array_filter($this->m_transientKeys, function (int $count): bool {
             return 0 >= $count;
         });
 
+        /**
+         * @psalm-suppress MissingThrowsDocblock $remove is an array of strings which won't trigger
+         * remove() to throw.
+         */
         $this->remove($remove);
 
-        $this->m_transientKeys = array_filter($this->m_transientKeys, function(string $key) use ($remove): bool {
+        $this->m_transientKeys = array_filter($this->m_transientKeys, function (string $key) use ($remove): bool {
             return !in_array($key, $remove);
         });
 
@@ -349,18 +350,18 @@ class Session implements DataAccessor
     /**
      * Remove one or more keys from the session data.
      *
-     * @param array<string>|string $keys The key or keys to remove.
+     * @param array<string>|string $key The key or keys to remove.
+     *
+     * @throws InvalidArgumentException if $keys is an array that contains any non-string elements.
      */
-    public function remove($keys): void
+    public function remove(string|array $keys): void
     {
         if (is_string($keys)) {
             $keys = [$keys];
-        } else if (!is_array($keys)) {
-            throw new TypeError("remove() expects a key or an array of keys.");
-        } else if (!all($keys, "is_string")) {
+        } elseif (!all($keys, "is_string")) {
             throw new InvalidArgumentException("Keys for session data to remove must be strings.");
         }
-        
+
         foreach ($keys as $key) {
             $this->handler()->remove($key);
         }
@@ -415,7 +416,7 @@ class Session implements DataAccessor
      * The type of handler is determined by the session config file.
      *
      * @throws SessionNotFoundException if the session handler for the identified session can't be created.
-     * @throws Exception if the session handler specified in the configuration file is not recognised.
+     * @throws InvalidSessionHandlerException if the session handler specified in the configuration file is not recognised.
      */
     protected static function createHandler(?string $id): SessionHandler
     {
@@ -438,8 +439,10 @@ class Session implements DataAccessor
      *
      * @param string $key The session array to add to.
      * @param mixed $data The data to add.
+     *
+     * @throws RuntimeException if the session data identified by $key is not an array.
      */
-    public function push(string $key, $data): void
+    public function push(string $key, mixed $data): void
     {
         $this->pushAll($key, [$data]);
     }
@@ -449,6 +452,8 @@ class Session implements DataAccessor
      *
      * @param string $key The session array to add to.
      * @param array $data The items to add.
+     *
+     * @throws RuntimeException if the data stored in the session for the identified session key is not an array.
      */
     public function pushAll(string $key, array $data): void
     {
@@ -459,6 +464,7 @@ class Session implements DataAccessor
         }
 
         $arr = array_merge($arr, $data);
+        /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
         $this->set($key, $arr);
     }
 
@@ -469,8 +475,10 @@ class Session implements DataAccessor
      * @param int $n The number of items to pop.
      *
      * @return array|mixed|null
+     *
+     * @throws RuntimeException if the data stored in the session for the identified session key is not an array.
      */
-    public function pop(string $key, int $n = 1)
+    public function pop(string $key, int $n = 1): mixed
     {
         $arr = $this->get($key);
 
@@ -484,6 +492,7 @@ class Session implements DataAccessor
             $value = array_splice($arr, -$n);
         }
 
+        /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
         $this->set($key, $arr);
         return $value;
     }

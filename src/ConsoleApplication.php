@@ -2,6 +2,9 @@
 
 namespace Bead;
 
+use Bead\Exceptions\ServiceAlreadyBoundException;
+use RuntimeException;
+
 class ConsoleApplication extends Application
 {
     private ?string $m_cmd;
@@ -10,6 +13,13 @@ class ConsoleApplication extends Application
     private $m_err = STDERR;
     private $m_in = STDIN;
 
+    /**
+     * @param string $rootDir
+     * @param array|null $args
+     *
+     * @throws RuntimeException if the singleton is already set or the root dir does not exist and cannot be created.
+     * @throws ServiceAlreadyBoundException if any of the service bindings set up by the Application is already bound.
+     */
     public function __construct(string $rootDir, array $args = null)
     {
         parent::__construct($rootDir);
@@ -53,6 +63,8 @@ class ConsoleApplication extends Application
      * @param int|null $maxLen The maximum number of characters to read.
      *
      * @return string The input.
+     *
+     * @throws RuntimeException if the input stream cannot be read.
      */
     public function read(string $prompt = "", ?int $maxLen = null): string
     {
@@ -65,7 +77,7 @@ class ConsoleApplication extends Application
         }
 
         if (false === $line) {
-            throw new \RuntimeException("Failed to read from input stream.");
+            throw new RuntimeException("Failed to read from input stream.");
         }
 
         if (str_ends_with($line, "\n")) {
@@ -86,11 +98,13 @@ class ConsoleApplication extends Application
      * @param string $prompt The optional prompt to display to the user.
      *
      * @return string The provided secret input.
+     *
+     * @throws RuntimeException if the input stream can't be read from without echoing the input.
      */
     public function readSecret(string $prompt = ""): string
     {
         if (STDIN !== $this->inStream()) {
-            throw new \RuntimeException("Input stream does not support hiding.");
+            throw new RuntimeException("Input stream does not support hiding.");
         }
 
         $mode = shell_exec("stty -g");
@@ -105,9 +119,15 @@ class ConsoleApplication extends Application
         return $value;
     }
 
+    /**
+     * @param string $prompt
+     * @return bool
+     *
+     * @throws RuntimeException if the input stream cannot be read.
+     */
     public function confirm(string $prompt): bool
     {
-        $response = $this->read("$prompt [y|N] ", 1);
+        $response = $this->read("{$prompt} [y|N] ", 1);
         return "Y" === strtoupper($response);
     }
 
@@ -186,7 +206,7 @@ class ConsoleApplication extends Application
     {
         return $this->m_cmd;
     }
-    
+
     /**
      * Fetch all the command-line arguments.
      * @return array
@@ -211,9 +231,9 @@ class ConsoleApplication extends Application
     {
         if (1 === strlen($name)) {
             return "-{$name}";
-        } else if (2 === strlen($name) && "-" === $name[0] && "-" !== $name[1]) {
+        } elseif (2 === strlen($name) && "-" === $name[0] && "-" !== $name[1]) {
             return $name;
-        } else if (str_starts_with($name, "--")) {
+        } elseif (str_starts_with($name, "--")) {
             return $name;
         }
 

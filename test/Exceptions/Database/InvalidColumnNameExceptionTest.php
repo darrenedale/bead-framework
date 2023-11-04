@@ -14,37 +14,37 @@ class InvalidColumnNameExceptionTest extends TestCase
     public function testWithColumnName(): void
     {
         $err = new InvalidColumnNameException("column");
-        $this->assertEquals("column", $err->getColumnName());
-        $this->assertMessage($err, "");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("column", $err->getColumnName());
+        self::assertMessage("", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithColumnNameAndMessage(): void
     {
         $err = new InvalidColumnNameException("column", "Message.");
-        $this->assertEquals("column", $err->getColumnName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 0);
-        $this->assertPrevious($err, null);
+        self::assertEquals("column", $err->getColumnName());
+        self::assertMessage("Message.", $err);
+        self::assertCode(0, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithColumnNameMessageAndCode(): void
     {
         $err = new InvalidColumnNameException("column", "Message.", 42);
-        $this->assertEquals("column", $err->getColumnName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, null);
+        self::assertEquals("column", $err->getColumnName());
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious(null, $err);
     }
 
     public function testWithColumnNameMessageCodeAndPrevious(): void
     {
         $previous = new Exception();
         $err = new InvalidColumnNameException("column", "Message.", 42, $previous);
-        $this->assertEquals("column", $err->getColumnName());
-        $this->assertMessage($err, "Message.");
-        $this->assertCode($err, 42);
-        $this->assertPrevious($err, $previous);
+        self::assertEquals("column", $err->getColumnName());
+        self::assertMessage("Message.", $err);
+        self::assertCode(42, $err);
+        self::assertPrevious($previous, $err);
     }
 }

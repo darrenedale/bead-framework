@@ -42,7 +42,13 @@ class IsStringTest extends RuleTestCase
                 }
             }, false,],
             "typicalObject" => ["field", (object)[], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalInt" => ["field", 123, false,],
             "typicalFloat" => ["field", 123.456, false,],
             "typicalTrue" => ["field", true, false,],
@@ -79,6 +85,6 @@ class IsStringTest extends RuleTestCase
         }
 
         $rule = $this->ruleInstance();
-        $this->assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
+        self::assertSame($shouldPass, $rule->passes($field, $data), "The rule did not provide the expected result from passes().");
     }
 }
