@@ -3682,7 +3682,7 @@ class RouterTest extends TestCase
 
         $expectedResponse = Mockery::mock(Response::class);
 
-        $handler = function(Logger $injectedLog) use ($log, $expectedResponse): Response {
+        $handler = function (Logger $injectedLog) use ($log, $expectedResponse): Response {
             RouterTest::assertSame($log, $injectedLog);
             return $expectedResponse;
         };

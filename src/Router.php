@@ -214,13 +214,13 @@ class Router implements RouterContract
                 continue;
             }
 
-            # if the handler wants an instance of a service bound into the service container, provide it
+            // if the handler wants an instance of a service bound into the service container, provide it
             if ($app?->has($type->getName())) {
                 $handlerArguments[] = $app->get($type->getName());
                 continue;
             }
 
-            # otherwise, look for the argument in those extracted from the route
+            // otherwise, look for the argument in those extracted from the route
             if (!array_key_exists($parameter->getName(), $routeArguments)) {
                 if (!$parameter->isOptional()) {
                     throw new LogicException("Can't call handler for route parameter \${$parameter->getName()} is not optional and does not have a value in the route definition.");
