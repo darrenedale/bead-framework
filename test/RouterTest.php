@@ -13,6 +13,7 @@ use Bead\Contracts\Response;
 use Bead\Exceptions\ConflictingRouteException;
 use Bead\Exceptions\DuplicateRouteParameterNameException;
 use Bead\Exceptions\InvalidRouteParameterNameException;
+use Bead\Responses\AbstractResponse;
 use BeadTests\Framework\TestCase;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Contracts\Router as RouterContract;
@@ -22,9 +23,14 @@ use Bead\Testing\XRay;
 use Closure;
 use InvalidArgumentException;
 use ReflectionProperty;
-use TypeError;
 
+use function array_unique;
 use function Bead\Helpers\Iterable\accumulate;
+use function count;
+use function implode;
+use function in_array;
+use function is_string;
+use function mt_rand;
 
 /**
  * Test case for the Router class.
@@ -2572,7 +2578,7 @@ class RouterTest extends TestCase
             "typicalGetWithNoParameters" => [RouterContract::GetMethod, "/home", RouterContract::GetMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2582,7 +2588,7 @@ class RouterTest extends TestCase
             "typicalGetWithLongerPathAndNoParameters" => [RouterContract::GetMethod, "/admin/users/home", RouterContract::GetMethod, "/admin/users/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/admin/users/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2592,7 +2598,7 @@ class RouterTest extends TestCase
             "typicalAnyGetWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::GetMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2602,7 +2608,7 @@ class RouterTest extends TestCase
             "typicalAnyPostWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PostMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2612,7 +2618,7 @@ class RouterTest extends TestCase
             "typicalAnyPutWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PutMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2622,7 +2628,7 @@ class RouterTest extends TestCase
             "typicalAnyDeleteWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::DeleteMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2632,7 +2638,7 @@ class RouterTest extends TestCase
             "typicalAnyHeadWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::HeadMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2642,7 +2648,7 @@ class RouterTest extends TestCase
             "typicalAnyOptionsWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::OptionsMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2652,7 +2658,7 @@ class RouterTest extends TestCase
             "typicalAnyConnectWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::ConnectMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2662,7 +2668,7 @@ class RouterTest extends TestCase
             "typicalAnyPatchWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PatchMethod, "/home", function (Request $request): Response {
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/home", $request->pathInfo());
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2673,7 +2679,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2684,7 +2690,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2695,7 +2701,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2706,7 +2712,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2717,7 +2723,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2728,7 +2734,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2739,7 +2745,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2750,7 +2756,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2761,7 +2767,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2772,7 +2778,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2783,7 +2789,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2794,7 +2800,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2805,7 +2811,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2816,7 +2822,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2827,7 +2833,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2838,7 +2844,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2849,7 +2855,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2860,7 +2866,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2871,7 +2877,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2882,7 +2888,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2893,7 +2899,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2904,7 +2910,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2915,7 +2921,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2926,7 +2932,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2937,7 +2943,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2948,7 +2954,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2959,7 +2965,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2970,7 +2976,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2981,7 +2987,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -2992,7 +2998,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3003,7 +3009,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3014,7 +3020,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3025,7 +3031,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3036,7 +3042,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3047,7 +3053,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3058,7 +3064,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3069,7 +3075,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3080,7 +3086,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3091,7 +3097,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3102,7 +3108,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3113,7 +3119,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3124,7 +3130,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3135,7 +3141,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3146,7 +3152,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3157,7 +3163,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3168,7 +3174,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3179,7 +3185,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3190,7 +3196,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3201,7 +3207,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3212,7 +3218,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3223,7 +3229,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3234,7 +3240,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3245,7 +3251,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3256,7 +3262,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3267,7 +3273,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3278,7 +3284,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3289,7 +3295,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3300,7 +3306,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame("123", $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3311,7 +3317,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/123", $request->pathInfo());
                 self::assertSame(123.0, $id);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3322,7 +3328,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/1", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3333,7 +3339,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/true", $request->pathInfo());
                 self::assertSame(true, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3344,7 +3350,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/0", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3355,7 +3361,7 @@ class RouterTest extends TestCase
                 self::assertInstanceOf(Request::class, $request);
                 self::assertSame("/edit/false", $request->pathInfo());
                 self::assertSame(false, $confirmed);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3370,7 +3376,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3385,7 +3391,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3400,7 +3406,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3415,7 +3421,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3430,7 +3436,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3445,7 +3451,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3460,7 +3466,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3475,7 +3481,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3490,7 +3496,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3505,7 +3511,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3520,7 +3526,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3535,7 +3541,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3550,7 +3556,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3565,7 +3571,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3580,7 +3586,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3595,7 +3601,7 @@ class RouterTest extends TestCase
                 self::assertSame("set", $action);
                 self::assertSame("status", $property);
                 self::assertSame("draft", $value);
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3604,7 +3610,7 @@ class RouterTest extends TestCase
             }],
             "typicalUnroutableIncorrectMethodOneRegisteredMethod" => [RouterContract::GetMethod, "/", RouterContract::PostMethod, "/", function (Request $request, bool $confirmed): Response {
                 $this->fail("Handler should not be called: Request method '{$request->method()}' should not match registered method '" . RouterContract::GetMethod . "'.");
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3613,7 +3619,7 @@ class RouterTest extends TestCase
             }, UnroutableRequestException::class,],
             "typicalUnroutableIncorrectMethodManyRegisteredMethods" => [[RouterContract::GetMethod, RouterContract::PostMethod,], "/", RouterContract::PutMethod, "/", function (Request $request, bool $confirmed): Response {
                 $this->fail("Handler should not be called: Request method '{$request->method()}' should not match registered methods '" . implode("', '", [RouterContract::GetMethod, RouterContract::PostMethod,]) . "'.");
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3622,7 +3628,7 @@ class RouterTest extends TestCase
             }, UnroutableRequestException::class,],
             "typicalUnroutableNoMatchedRoute" => [RouterContract::GetMethod, "/", RouterContract::PostMethod, "/home", function (Request $request, bool $confirmed): Response {
                 $this->fail("Handler should not be called: Request path '{$request->pathInfo()}' should not match registered route '/'.");
-                return new class extends \Bead\Responses\AbstractResponse {
+                return new class extends AbstractResponse {
                     public function content(): string
                     {
                         return "";
@@ -3646,7 +3652,7 @@ class RouterTest extends TestCase
      *
      * @noinspection PhpDocMissingThrowsInspection Only exceptions thrown will be exptected test exceptions.
      */
-    public function testRoute($routeMethods, string $route, string $requestMethod, string $requestPath, ?Closure $handler, ?string $exceptionClass = null): void
+    public function testRoute(string|array $routeMethods, string $route, string $requestMethod, string $requestPath, ?Closure $handler, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
@@ -3690,7 +3696,7 @@ class RouterTest extends TestCase
      *
      * @noinspection PhpDocMissingThrowsInspection Only test exceptions should be thrown.
      */
-    public function testRouteConflicts($route1Methods, string $route1, $route2Methods, string $route2, bool $shouldConflict = true): void
+    public function testRouteConflicts(string|array $route1Methods, string $route1, $route2Methods, string $route2, bool $shouldConflict = true): void
     {
         $accumulateRoutes = fn (array $routes, int $accumulation): int => $accumulation + count($routes);
 
