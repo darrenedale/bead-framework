@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace BeadTests;
 
+use Bead\Application;
+use Bead\Contracts\Logger;
 use Bead\Contracts\Response;
 use Bead\Exceptions\ConflictingRouteException;
 use Bead\Exceptions\DuplicateRouteParameterNameException;
@@ -22,6 +24,7 @@ use Bead\Request;
 use Bead\Testing\XRay;
 use Closure;
 use InvalidArgumentException;
+use Mockery;
 use ReflectionProperty;
 
 use function array_unique;
@@ -42,21 +45,21 @@ class RouterTest extends TestCase
      *
      * This is useful for asserting that the handler was called when a request was routed.
      */
-    private static int $s_nullStaticRouteHandlerCallCount = 0;
+    private static int $nullStaticRouteHandlerCallCount = 0;
 
     /**
      * @var int The number of times the nullRouteHandler was called during a test.
      *
      * This is useful for asserting that the handler was called when a request was routed.
      */
-    private int $m_nullRouteHandlerCallCount = 0;
+    private int $nullRouteHandlerCallCount = 0;
 
     /**
      * Route handler that does nothing except increment a call counter.
      */
     public static function nullStaticRouteHandler(): void
     {
-        ++self::$s_nullStaticRouteHandlerCallCount;
+        ++self::$nullStaticRouteHandlerCallCount;
     }
 
     /**
@@ -64,7 +67,7 @@ class RouterTest extends TestCase
      */
     public function nullRouteHandler(): void
     {
-        ++$this->m_nullRouteHandlerCallCount;
+        ++$this->nullRouteHandlerCallCount;
     }
 
     /**
@@ -2572,7 +2575,7 @@ class RouterTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestRoute(): array
+    public function dataForTestRoute1(): array
     {
         return [
             "typicalGetWithNoParameters" => [RouterContract::GetMethod, "/home", RouterContract::GetMethod, "/home", function (Request $request): Response {
@@ -3641,7 +3644,7 @@ class RouterTest extends TestCase
     /**
      * Test for Router::route()
      *
-     * @dataProvider dataForTestRoute
+     * @dataProvider dataForTestRoute1
      *
      * @param string|array<string> $routeMethods The HTTP methods to define for the test route.
      * @param string $route The test route.
@@ -3652,18 +3655,49 @@ class RouterTest extends TestCase
      *
      * @noinspection PhpDocMissingThrowsInspection Only exceptions thrown will be exptected test exceptions.
      */
-    public function testRoute(string|array $routeMethods, string $route, string $requestMethod, string $requestPath, ?Closure $handler, ?string $exceptionClass = null): void
+    public function testRoute1(string|array $routeMethods, string $route, string $requestMethod, string $requestPath, ?Closure $handler, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
         }
 
-        $router = new XRay(new Router());
+        $router = new Router();
         /** @noinspection PhpUnhandledExceptionInspection Should never throw with test data. */
         $router->register($route, $routeMethods, $handler);
         $request = self::makeRequest($requestPath, $requestMethod);
         /** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exceptions. */
         $router->route($request);
+    }
+
+    /** Ensure dependencies can be injected into route parameters from the service container. */
+    public function testRoute2(): void
+    {
+        $log = Mockery::mock(Logger::class);
+        $app = Mockery::mock(Application::class);
+        $this->mockMethod(Application::class, "instance", $app);
+
+        $app->shouldReceive("has")
+            ->once()
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->shouldReceive("get")
+            ->once()
+            ->with(Logger::class)
+            ->andReturn($log);
+
+
+        $expectedResponse = Mockery::mock(Response::class);
+
+        $handler = function (Logger $injectedLog) use ($log, $expectedResponse): Response {
+            RouterTest::assertSame($log, $injectedLog);
+            return $expectedResponse;
+        };
+
+        $router = new Router();
+        $router->registerGet("/", $handler);
+        $actualResponse = $router->route(self::makeRequest("/"));
+        self::assertSame($expectedResponse, $actualResponse);
     }
 
     /**
