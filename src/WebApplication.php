@@ -441,13 +441,16 @@ class WebApplication extends Application
      * Plugins are loaded from the default plugins path. All valid plugins found are loaded and instantiated. The
      * error log will contain details of any plugins that failed to load.
      *
-     * @return bool true if the plugins path was successfully scanned for plugins, false otherwise.
      * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
      * @throws InvalidPluginException if the plugins path can't be read for some reason.
      */
-    protected function loadPlugins(): bool
+    protected function loadPlugins(): void
     {
         static $s_done = false;
+
+        if (!$this->config("app.plugins.enabled", false)) {
+            return;
+        }
 
         if (!$s_done) {
             $info = new SplFileInfo("{$this->rootDir()}/{$this->pluginsDirectory()}");
@@ -489,8 +492,6 @@ class WebApplication extends Application
             $s_done = true;
             $this->emitEvent("application.pluginsloaded");
         }
-
-        return true;
     }
 
     /**
