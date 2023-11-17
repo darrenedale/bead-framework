@@ -83,9 +83,10 @@ class RouterTest extends TestCase
         return new class ($pathInfo, $method) extends Request
         {
             /** @noinspection PhpMissingParentConstructorInspection we're creating a test double, we don't want to call the parent constructor. */
-            public function __construct(string $pathInfo, string $method)
+            public function __construct(string $path, string $method)
             {
-                $this->setPathInfo($pathInfo);
+                $this->setPath($path);
+                $this->setPathInfo($path);
                 $this->setMethod($method);
             }
         };
