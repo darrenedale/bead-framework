@@ -7,7 +7,7 @@ namespace BeadTests\Email\Transport;
 use Bead\Contracts\Email\Message as MessageContract;
 use Bead\Contracts\Email\Transport;
 use Bead\Email\Message;
-use Bead\Email\Transport\PhpMail;
+use Bead\Email\Transport\Php;
 use Bead\Exceptions\Email\TransportException;
 use BeadTests\Framework\TestCase;
 use Throwable;
@@ -43,7 +43,7 @@ The plain text body of a sample unit test message.\r
 
     private array $mockMailExpectations;
 
-    private PhpMail $transport;
+    private Php $transport;
 
     private MessageContract $message;
 
@@ -97,7 +97,7 @@ The plain text body of a sample unit test message.\r
         $this->mockFunction("rand", fn (int $min, int $max): int => 0);
         $this->mockMailExpectations = [];
         $this->message = new Message(self::TestRecipient, self::TestSubject, self::TestPlainTextBody);
-        $this->transport = new PhpMail();
+        $this->transport = new Php();
     }
 
     public function tearDown(): void

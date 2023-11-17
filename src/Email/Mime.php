@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Bead\Email;
 
+use function Bead\Helpers\Iterable\fill;
+use function Bead\Helpers\Iterable\toArray;
+
 /**
  * Static class providing some convenience MIME-related methods.
  */
@@ -11,6 +14,9 @@ final class Mime
 {
     /** @var string CRLF as defined in RFC-822. */
     public const Rfc822LineEnd = "\r\n";
+
+    /** @var string The possible characters to use in the randomly-generated portion of the mulitpart delimiter. */
+    public const DelimiterAlphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
 
     /**
      * PCRE pattern to identify valid RFC-2045 tokens.
@@ -98,5 +104,11 @@ final class Mime
         }
 
         return 1 === preg_match($rxMimeType, $type);
+    }
+
+    /** Generate a boundary string that can be used in multipart MIME messages. */
+    public static function generateMultipartBoundary(): string
+    {
+        return "--bead-email-part-" . implode(toArray(fill(40, fn() => self::DelimiterAlphabet[rand(0, 35)]))) . "--";
     }
 }

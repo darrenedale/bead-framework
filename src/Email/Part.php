@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace Bead\Email;
 
+use Bead\Contracts\Email\Multipart as MultipartContract;
 use Bead\Contracts\Email\Part as PartContract;
 use InvalidArgumentException;
 
-use function preg_match;
 use function trim;
 
 /**
  * Class representing a part of a multipart email message.
  *
- * Objects of this class can be used as parts in a multipart email message.
+ * Parts can themselves consist of multiple parts. Adding a part to a part removes its existing body content; adding
+ * body content removes its parts. So use one or the other for your message parts.
  */
-class Part implements PartContract
+class Part implements PartContract, MultipartContract
 {
     use HasHeaders;
+    use HasParts;
 
     /** @var string The default content type for email message parts. */
     public const DefaultContentType = "text/plain";
@@ -25,8 +27,8 @@ class Part implements PartContract
     /** @var string The default content encoding for email message parts. */
     public const DefaultContentEncoding = "quoted-printable";
 
-    /** @var string The part's content. */
-    private string $body = "";
+    /** @var string|null The part's content, unless it's multipart. */
+    private ?string $body = null;
 
     /**
      * Create a new message part.
@@ -37,15 +39,20 @@ class Part implements PartContract
      *
      * The default content type for message parts is *text/plain* and the default encoding is *quoted-printable*.
      *
-     * @param $content string The content.
+     * @param $content string|PartContract|null The content.
      * @param $contentType string The content type for the message part.
      * @param $contentEncoding string The content encoding.
      */
-    function __construct(string $content = "", string $contentType = self::DefaultContentType, string $contentEncoding = self::DefaultContentEncoding)
+    function __construct(string|PartContract|null $content = null, string $contentType = self::DefaultContentType, string $contentEncoding = self::DefaultContentEncoding)
     {
         $this->setHeader("content-type", $contentType);
         $this->setHeader("content-transfer-encoding", $contentEncoding);
-        $this->body = $content;
+
+        if ($content instanceof PartContract) {
+            $this->parts[] = $content;
+        } else {
+            $this->body = $content;
+        }
     }
 
     /**
@@ -59,23 +66,27 @@ class Part implements PartContract
     }
 
     /**
-     * Sets the Content-Type header for the message part.
+     * Sets the content type of the message.
      *
-     * @param $contentType string The content type for the message part.
+     * Setting the content type does not transform the content. The caller is responsible for ensuring the content is
+     * correct for the type.
      *
-     * @return $this A clone of the Part with the given content type.
+     * @api
+     * @param $contentType string the new content type.
+     * @param $parameters array<string,string> the content type header parameters, if any.
      *
+     * @return $this A clone of the Message, with the content type set to that provided.
      * @throws InvalidArgumentException if the content type is not valid.
      */
-    public function withContentType(string $contentType): self
+    public function withContentType(string $contentType, array $parameters = []): self
     {
         $contentType = trim($contentType);
 
         if (!Mime::isValidMediaType($contentType)) {
-            throw new InvalidArgumentException("Content type \"{$contentType}\" is not valid.");
+            throw new InvalidArgumentException("Expected valid media type, found \"{$contentType}\"");
         }
 
-        return $this->withHeader(new Header("content-type", $contentType));
+        return $this->withHeader(new Header("content-type", $contentType, $parameters));
     }
 
     /**
@@ -85,7 +96,7 @@ class Part implements PartContract
      */
     public function contentEncoding(): ?string
     {
-        return $this->header("Content-Transfer-Encoding")?->value();
+        return $this->header("content-transfer-encoding")?->value();
     }
 
     /**
@@ -118,19 +129,22 @@ class Part implements PartContract
      * On a successful call, the content provided is always a byte sequence represented as a PHP string. It will be the
      * exact content provided either in the constructor or to `setContent()` if used after construction.
      *
-     * @return string The part's body, as provided in the call to `setContent()`.
+     * @return string|null The part's body, as provided in the call to `setContent()`.
      */
-    public function body(): string
+    public function body(): ?string
     {
+        if (!empty($this->parts)) {
+            $this->body = null;
+        }
+
         return $this->body;
     }
 
     /**
      * Sets the body content of the message part.
      *
-     * The content must be a PHP string. It is regarded internally as a sequence of bytes. It need not be pre-formatted
-     * to conform to RFC2045. It is the responsibility of the code that uses the part for output to construct a
-     * multipart message to ensure that content is properly formatted to conform to RFC2045.
+     * Set the part to have the given body content. All parts will be discarded. The content type will not be updated,
+     * so you must also set the header to the appropriate type.
      *
      * @param $body string The content for the message part.
      *
@@ -139,6 +153,7 @@ class Part implements PartContract
     public function withBody(string $body): self
     {
         $clone = clone $this;
+        $this->parts = [];
         $clone->body = $body;
         return $clone;
     }

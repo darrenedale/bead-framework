@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Bead\Email;
 
 use Bead\Contracts\Email\Header as HeaderContract;
-use Bead\Contracts\Email\MultipartMessage as MultipartMessageContract;
-use Bead\Contracts\Email\Part as PartContract;
+use Bead\Contracts\Email\Message as MessageContract;
+use Bead\Contracts\Email\Multipart as MutlipartContract;
 use InvalidArgumentException;
 
+use LogicException;
 use function Bead\Helpers\Iterable\all;
-use function Bead\Helpers\Iterable\fill;
-use function Bead\Helpers\Iterable\toArray;
 
 /**
  * Class encapsulating an email message.
@@ -20,135 +19,125 @@ use function Bead\Helpers\Iterable\toArray;
  * multipart. It will never directly support non-MIME messages; simple `text/plain` messages are always encapsulated
  * as multipart MIME messages with a single body part.
  */
-class Message implements MultipartMessageContract
+class Message implements MessageContract, MutlipartContract
 {
-    use HasHeaders {
-        withHeader as private traitWithHeader;
-    }
+    use HasHeaders;
+    use HasParts;
 
-    /** @var string The possible characters to use in the randomly-generated portion of the mulitpart delimiter. */
-    private const DelimiterAlphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
-
-    /** @var PartContract[] The parts of the email body. */
-    protected array $parts = [];
-
-    /** @var string The delimiter for parts of the message body. */
-    protected string $multipartBoundary;
+    private ?string $body = null;
 
     /**
      * Constructor.
      *
-     * A Mime V1.0 multipart/mixed, 7bit-encoded message will be created by default. You can change this by setting the
-     * appropriate headers, but you're encouraged not to do so. You cannot alter the multipart boundary that is used in
-     * the message by setting the content-type header.
+     * A text/plain, quoted-printable message will be created.
      *
-     * Some headers are permitted only once (mime-version, content-type, content-transfer-encoding, from). For these, if
-     * you provide multiple instances of those headers in your $headers array an InvalidArgumentException will be
-     * thrown.
+     * The parameter names are guaranteed to remain stable within major versions of the framework.
+     *
+     * @api
      *
      * @param $to string|null The destination address for the message.
      * @param $subject string|null The subject for the message.
-     * @param $message string|null The initial body content for the message.
+     * @param $body string|null The initial body content for the message.
      * @param $from string|null The sender of the message.
-     * @param $headers Header[] The initial set of headers for the message.
      *
      * @throws InvalidArgumentException if any invalid header is found.
      */
-    public function __construct(?string $to = null, ?string $subject = null, ?string $message = null, ?string $from = null, array $headers = [])
+    public function __construct(?string $to = null, ?string $subject = null, ?string $body = null, ?string $from = null)
     {
-        if (!all($headers, fn(mixed $header): bool => $header instanceof HeaderContract)) {
-            throw new InvalidArgumentException("Invalid header provided to Message constructor.");
-        }
-
-        // work out which headers the user has provided for which we shouldn't provide defaults
-        $singleUseHeaders = array_combine(
-            array_map(fn (string $headerName): string => strtolower($headerName), self::singleUseHeaders()),
-            array_fill(0, count(self::singleUseHeaders()), false)
-        );
-
-        $this->multipartBoundary = "--bead-email-part-" . implode(toArray(fill(80, fn() => Message::DelimiterAlphabet[rand(0, 35)]))) . "--";
-
-        foreach ($headers as & $header) {
-            $headerName = strtolower($header->name());
-
-            // if the caller provides a multipart content type, ensure it has the correct boundary string
-            if ("content-type" === $headerName && str_starts_with(strtolower($header->value()), "multipart/")) {
-                $header = $header->withParameter("boundary", "\"{$this->multipartBoundary}\"");
-            }
-
-            if (!array_key_exists($headerName, $singleUseHeaders)) {
-                continue;
-            }
-
-            if ($singleUseHeaders[$headerName]) {
-                throw new InvalidArgumentException("Header {$headerName} can only appear once.");
-            }
-
-            $singleUseHeaders[$headerName] = true;
-        }
+        $this->body = $body;
+        $this->headers[] = new Header("content-type", "text/plain");
+        $this->headers[] = new Header("content-transfer-encoding", "quoted-printable");
 
         if (is_string($to)) {
-            $headers[] = new Header("to", $to);
+            $this->headers[] = new Header("to", $to);
         }
 
-        if (is_string($message)) {
-            $this->parts = [new Part($message)];
-        }
-
-        $this->headers = $headers;
-
-        // fill in defaults for any missing headers that we require
-        if (!($singleUseHeaders["content-type"] ?? false)) {
-            $this->headers[] = (new Header("content-type", "multipart/mixed"))->withParameter("boundary", "\"{$this->multipartBoundary}\"");
-        }
-
-        if (!($singleUseHeaders["mime-version"] ?? false)) {
-            $this->headers[] = new Header("mime-version", "1.0");
-        }
-
-        if (!($singleUseHeaders["content-transfer-encoding"] ?? false)) {
-            $this->headers[] = new Header("content-transfer-encoding", "7bit");
-        }
-
-        // only now set the explicitly-provided sender and subject so they take precedence over headers
         if (is_string($from)) {
-            $this->setHeader("from", $from);
+            $this->headers[] = new Header("from", $from);
         }
 
         if (is_string($subject)) {
-            $this->setHeader("subject", $subject);
+            $this->headers[] = new Header("subject", $subject);
         }
     }
 
     /**
-     * Clone the Message with an added header.
+     * Gets the content type of the email message.
      *
-     * If the header provided is the content-type header, and its value is a multipart media type, the boundary
-     * parameter for the header will be set to the Message's boundary.
-     *
-     * @param Header|string $header
-     * @param string|null $value
-     *
-     * @return self The clone of the Message, with the header set/added.
+     * @api
+     * @return string The message content type.
      */
-    public function withHeader(Header|string $header, ?string $value = null, array $parameters = []): self
+    public function contentType(): string
     {
-        if (is_string($header)) {
-            assert(is_string($value), new InvalidArgumentException("\$value must be provided when \$header is a string"));
-            $header = new Header($header, $value, $parameters);
+        $contentType = $this->header("content-type");
+        assert ($contentType instanceof HeaderContract, new LogicException("It is an invariant that Message instances have a content-type header"));
+        return $contentType->value();
+    }
+
+    /**
+     * Sets the content type of the message.
+     *
+     * Setting the content type does not transform the content. The caller is responsible for ensuring the content is
+     * correct for the type.
+     *
+     * @api
+     * @param $contentType string the new content type.
+     * @param $parameters array<string,string> the content type header parameters, if any.
+     *
+     * @return $this A clone of the Message, with the content type set to that provided.
+     * @throws InvalidArgumentException if the content type is not valid.
+     */
+    public function withContentType(string $contentType, array $parameters = []): self
+    {
+        $contentType = trim($contentType);
+
+        if (!Mime::isValidMediaType($contentType)) {
+            throw new InvalidArgumentException("Expected valid media type, found \"{$contentType}\"");
         }
 
-        // ensure we always use the correct boundary
-        if ("content-type" === strtolower($header->name()) && str_starts_with(strtolower($header->value()), "multipart/")) {
-            $header = $header->withParameter("boundary", "\"{$this->multipartBoundary}\"");
+        return $this->withHeader(new Header("content-type", $contentType, $parameters));
+    }
+
+    /**
+     * Gets the transfer encoding of the email message.
+     *
+     * @api
+     * @return string The message transfer encoding.
+     */
+    public function contentTransferEncoding(): string
+    {
+        $contentEncoding = $this->header("content-transfer-encoding");
+        assert ($contentEncoding instanceof HeaderContract, new LogicException("It is an invariant that Message instances have a content-transfer-encoding header"));
+        return $contentEncoding->value();
+    }
+
+    /**
+     * Sets the content transfer encoding of the message.
+     *
+     * Setting the content transfer encoding does not transform the content. The caller is responsible for ensuring the
+     * content is correct for the content transfer encoding.
+     *
+     * @api
+     * @param $contentEncoding string the new content transfer encoding.
+     * @param $parameters array<string,string> the content transfer encoding header parameters, if any.
+     *
+     * @return $this A clone of the Message, with the content transfer encoding set to that provided.
+     */
+    public function withContentTransferEncoding(string $contentEncoding, array $parameters = []): self
+    {
+        $contentEncoding = trim($contentEncoding);
+
+        if (!Mime::isValidContentTransferEncoding($contentEncoding)) {
+            throw new InvalidArgumentException("Expected valid content encoding type, found \"{$contentEncoding}\"");
         }
 
-        return $this->traitWithHeader($header);
+        return $this->withHeader(new Header("content-transfer-encoding", $contentEncoding, $parameters));
     }
 
     /**
      * Gets the subject of the email message.
      *
+     * @api
      * @return string The message subject.
      */
     public function subject(): string
@@ -169,6 +158,7 @@ class Message implements MultipartMessageContract
     /**
      * Gets the recipients of the message.
      *
+     * @api
      * @return string[] The primary recipients of the message.
      */
     public function to(): array
@@ -181,6 +171,7 @@ class Message implements MultipartMessageContract
      *
      * The recipient should be provided in RFCxxxx format, although this rule is not strictly enforced (yet).
      *
+     * @api
      * @param $address string|string[] the recipient address(es) to add.
      */
     public function withTo(string|array $address): self
@@ -207,6 +198,7 @@ class Message implements MultipartMessageContract
      *
      * The cc recipients are returned as an array of addresses. If there are none, this will be an empty array.
      *
+     * @api
      * @return string[] The CC recipients.
      */
     public function cc(): array
@@ -250,7 +242,7 @@ class Message implements MultipartMessageContract
      */
     public function bcc(): array
     {
-        return $this->headerValues("bcc");
+        return $this->headerValues("Bcc");
     }
 
     /**
@@ -310,83 +302,30 @@ class Message implements MultipartMessageContract
      * message part that has a content type of *text/plain*, which is inserted into the message's main body as is
      * without any modification.
      *
-     * @return string The full body of the email message.
+     * @return string|null The full body of the email message.
      */
-    public function body(): string
+    public function body(): ?string
     {
-        $ret = "";
-
-        foreach ($this->parts() as $part) {
-            $ret .= Mime::Rfc822LineEnd . "--{$this->multipartBoundary}" . Mime::Rfc822LineEnd;
-
-            /* output the part headers  */
-            foreach ($part->headers() as $header) {
-                $ret .= $header->line() . Mime::Rfc822LineEnd;
-            }
-
-            $ret .= Mime::Rfc822LineEnd . $part->body() . Mime::Rfc822LineEnd;
+        if (!empty($this->parts)) {
+            $this->body = null;
         }
 
-        return "{$ret}--{$this->multipartBoundary}--";
+        return $this->body;
     }
 
     /**
      * Sets the body of the message from a string.
      *
-     * ### Note Using this function replaces all existing message body parts with a single plain text body part.
+     * ### Note Using this function replaces all existing message parts with a single body content (or null). You must
+     * ensure the message has an appropriate content-type header for the content provided.
      *
-     * @param $body string|null The string to use as the body of the message, or `null` to clear the current parts.
+     * @param $body string|null The string to use as the body of the message, or `null` to clear the current body.
      */
     public function withBody(?string $body): self
     {
         $clone = clone $this;
-
-        // by default parts have content-type text/plain, content-transfer-encoding: quoted-printable
-        $clone->parts = is_string($body) ? [new Part($body)] : [];
-
-        return $clone;
-    }
-
-    /**
-     * Get the parts for the message body.
-     *
-     * @return PartContract[] The parts, or `null` on error.
-     */
-    public function parts(): array
-    {
-        return $this->parts;
-    }
-
-    /**
-     * Get the number of parts for the message body.
-     *
-     * @return int The number of parts.
-     */
-    public function partCount(): int
-    {
-        return count($this->parts);
-    }
-
-    /**
-     * Add a body part to the email message.
-     *
-     * Parts are always added to the end of the message. When adding unwrapped part content to the email, if no type or
-     * encoding is provided, the defaults of `text/plain` (in UTF-8 character encoding) and `quoted-printable` will be
-     * used respectively. It is the client code's responsibility to ensure that the data in the content string provided
-     * matches the type and transfer encoding specified. No checks, translations or conversions will be carried out.
-     *
-     * @param PartContract|string $part The part to add.
-     * @param string|null $contentType The content type for the part, if `$part` is a string.
-     * @param string|null $contentEncoding The content transfer encoding for the part, if `$part` is a string.
-     */
-    public function withPart(PartContract|string $part, ?string $contentType = null, ?string $contentEncoding = null): self
-    {
-        if (is_string($part)) {
-            $part = new Part($part, (string) $contentType, (string) $contentEncoding);
-        }
-
-        $clone = clone $this;
-        $clone->parts[] = $part;
+        $clone->parts = [];
+        $this->body = $body;
         return $clone;
     }
 
@@ -416,6 +355,8 @@ class Message implements MultipartMessageContract
      */
     public function withAttachment(string $content, string $contentType, string $contentEncoding, string $filename): self
     {
+        // TODO if the message has a body and no parts, convert the body to a part before adding the attachment?
+
         $dispositionHeader = new Header(
             "content-disposition",
             "attachment",

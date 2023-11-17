@@ -6,6 +6,7 @@ use Bead\Contracts\Encryption\Crypter;
 use Bead\Contracts\Encryption\Decrypter;
 use Bead\Contracts\Encryption\Encrypter;
 use Bead\Contracts\ErrorHandler;
+use Bead\Contracts\Logger;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Database\Connection;
@@ -14,6 +15,8 @@ use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
 use Bead\ErrorHandler as BeadErrorHandler;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
+use Bead\Logging\NullLogger;
+use Bead\Logging\StandardOutputLogger;
 use DirectoryIterator;
 use Exception;
 use Bead\Facades\Log;
@@ -179,6 +182,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
         $this->m_config = [];
 
         foreach (new DirectoryIterator($path) as $configFile) {
+            if ($configFile->isDot()) {
+                continue;
+            }
+
             if ($configFile->isLink() || !$configFile->isFile() || !$configFile->isReadable() || "php" !== $configFile->getExtension()) {
                 throw new RuntimeException("config file '{$configFile->getFilename()}' is not valid or is not readable.");
             }
