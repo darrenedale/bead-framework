@@ -1,5 +1,8 @@
 <?php
 
 return [
-	"debugmode"=> true,
+    "debugmode"=> true,
+    "plugins" => [
+        "enabled" => false,
+    ]
 ];
