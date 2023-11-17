@@ -76,7 +76,7 @@ class Router implements RouterContract
      */
     protected function matchedRoute(Request $request): ?string
     {
-        $requestRoute = $request->pathInfo();
+        $requestRoute = $request->path();
 
         foreach (array_keys($this->m_routes[$request->method()]) as $route) {
             $rxRegisteredRoute = self::regularExpressionForRoute($route);
@@ -170,7 +170,7 @@ class Router implements RouterContract
     protected static function extractRouteArgumentsFromRequest(string $route, Request $request): array
     {
         $routeParameterNames = self::parametersForRoute($route);
-        preg_match(self::regularExpressionForRoute($route), $request->pathInfo(), $requestArguments);
+        preg_match(self::regularExpressionForRoute($route), $request->path(), $requestArguments);
         array_shift($requestArguments);
         array_walk($requestArguments, function (string & $arg): void {
             $arg = urldecode($arg);
@@ -321,7 +321,7 @@ class Router implements RouterContract
             try {
                 $handler = [new $handler[0](), $handler[1]];
             } catch (Throwable $err) {
-                throw new LogicException("Class {$handler[0]} must have a default constructor to handle request '{$request->pathInfo()}' to route {$route}.", 0, $err);
+                throw new LogicException("Class {$handler[0]} must have a default constructor to handle re//Requestquest '{$request->path()}' to route {$route}.", 0, $err);
             }
         }
 

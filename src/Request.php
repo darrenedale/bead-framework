@@ -194,6 +194,7 @@ class Request
      * The path is the part of the request URL between the host and the query string/fragment/end of the URL.
      *
      * @return string The path.
+     * @deprecated use URI paths instead
      */
     public function pathInfo(): string
     {
@@ -204,6 +205,7 @@ class Request
      * Set the request path.
      *
      * @param string $path The path.
+     * @deprecated use URI paths instead
      */
     public function setPathInfo(string $path): void
     {
@@ -580,54 +582,10 @@ class Request
                 }
             }
 
-            $path = $_SERVER["SCRIPT_NAME"] ?? null;
-
-            if (!isset($path)) {
-                $path = "/";
-            } else {
-                if (!str_starts_with($path, "/")) {
-                    $path = "/{$path}";
-                }
-
-                $path = dirname($path);
-            }
-
+            $path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) ?? "/";
             $req->setPath($path);
+            $req->setPathInfo($path);
 
-            if (isset($_SERVER["PATH_INFO"])) {
-                $pathInfo = $_SERVER["PATH_INFO"];
-            } elseif (isset($_SERVER["SCRIPT_NAME"])) {
-                // attempt to extract the path info from the URI if PATH_INFO is not provided
-                $scriptPath = $_SERVER["SCRIPT_NAME"];
-
-                // if the script name is part of the URI, remove that and the reaminder is the path info
-                if (str_starts_with($_SERVER["REQUEST_URI"], $scriptPath)) {
-                    $pathInfo = "/" . substr($_SERVER["REQUEST_URI"], strlen($scriptPath));
-                } else {
-                    // otherwise, if the script name is not part of the URI, remove the path to the script from the URI
-                    $scriptPath = dirname($scriptPath);
-
-                    if (str_starts_with($_SERVER["REQUEST_URI"], $scriptPath)) {
-                        $pathInfo = "/" . substr($_SERVER["REQUEST_URI"], strlen($scriptPath));
-                    } else {
-                        $pathInfo = "/";
-                    }
-                }
-
-                // strip out the query string if present
-                if (false !== ($pos = strpos($pathInfo, "?"))) {
-                    $pathInfo = substr($pathInfo, 0, $pos);
-                }
-            } else {
-                // don't know how we can access the path info
-                $pathInfo = "/";
-            }
-
-            if (!str_starts_with($pathInfo, "/")) {
-                $pathInfo = "/{$pathInfo}";
-            }
-
-            $req->setPathInfo($pathInfo);
             $req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
             $req->m_url = "{$req->protocol()}://{$req->host()}{$_SERVER["REQUEST_URI"]}";
             Request::$s_originalRequest = $req;
