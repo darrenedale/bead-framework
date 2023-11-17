@@ -6,12 +6,21 @@ namespace BeadTests;
 
 use Bead\Request;
 use BeadTests\Framework\TestCase;
+use ReflectionProperty;
 
 class RequestTest extends TestCase
 {
     public function setUp(): void
     {
         $_SERVER["REQUEST_METHOD"] = "GET";
+    }
+
+    public function tearDown(): void
+    {
+        // ensure the request doesn't persist between tests.
+        $property = new ReflectionProperty(Request::class, "s_originalRequest");
+        $property->setAccessible(true);
+        $property->setValue(null);
     }
 
     public static function dataForTestOriginalRequest1(): iterable
@@ -55,6 +64,7 @@ class RequestTest extends TestCase
     public function testOriginalRequest2(): void
     {
         $_SERVER["REQUEST_URI"] = "http://bead.example.com";
+        echo $_SERVER["REQUEST_URI"] . chr(10);
         self::assertEquals("/", Request::originalRequest()->path());
     }
 }
