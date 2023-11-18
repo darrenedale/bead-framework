@@ -18,7 +18,7 @@ class RequestTest extends TestCase
     public function setUp(): void
     {
         $_SERVER["REQUEST_METHOD"] = "GET";
-        $reflector =new ReflectionClass(Request::class);
+        $reflector = new ReflectionClass(Request::class);
         $this->request = $reflector->newInstanceWithoutConstructor();
         $reflector = $reflector->getConstructor();
         self::assertInstanceOf(ReflectionMethod::class, $reflector);
@@ -34,7 +34,7 @@ class RequestTest extends TestCase
         $property->setValue(null);
         unset($this->request);
     }
-    
+
     /** Ensure ipv4 is empty by default. */
     public function testRemoteIpV41(): void
     {
@@ -123,7 +123,7 @@ class RequestTest extends TestCase
         self::expectExceptionMessage("Expected valid IPv4 dotted-decimal address, found \"{$ip}\"");
         $this->request->setRemoteIp4($ip);
     }
-    
+
     /** Ensure ipV6 is empty by default. */
     public function testRemoteIpV61(): void
     {
