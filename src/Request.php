@@ -547,7 +547,7 @@ class Request
         return "XMLHttpRequest" == $this->header("x_requested_with");
     }
 
-
+    /** @throws InvalidArgumentException if the IP is not valid. */
     public function setRemoteIp4(string $ip): void
     {
         $validIp = filter_var($ip, FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV4,]);
@@ -566,6 +566,7 @@ class Request
     }
 
 
+    /** @throws InvalidArgumentException if the IP is not valid. */
     public function setRemoteIp6(string $ip): void
     {
         $validIp = filter_var($ip, FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV6,]);
