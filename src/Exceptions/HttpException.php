@@ -3,11 +3,11 @@
 namespace Bead\Exceptions;
 
 use Bead\Contracts\Response;
+use Bead\Core\WebApplication;
 use Bead\Request;
 use Bead\Responses\DoesntHaveHeaders;
 use Bead\Responses\NaivelySendsContent;
 use Bead\View;
-use Bead\WebApplication;
 use Exception;
 use Throwable;
 

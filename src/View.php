@@ -3,6 +3,8 @@
 namespace Bead;
 
 use Bead\Contracts\Response;
+use Bead\Core\Application;
+use Bead\Core\WebApplication;
 use Bead\Exceptions\InternalServerErrorException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
@@ -11,7 +13,6 @@ use Bead\Responses\NaivelySendsContent;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
-use TypeError;
 
 use function Bead\Helpers\Iterable\some;
 use function Bead\Helpers\Str\html;

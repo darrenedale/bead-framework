@@ -3,17 +3,16 @@
 namespace Bead\Session;
 
 use Bead\Contracts\SessionHandler;
+use Bead\Core\WebApplication;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
 use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\Handlers\File as FileSessionHandler;
 use Bead\Session\Handlers\Php as PhpSessionHandler;
-use Bead\WebApplication;
 use Exception;
 use InvalidArgumentException;
 use RuntimeException;
-use TypeError;
 
 use function Bead\Helpers\Iterable\all;
 

@@ -7,20 +7,20 @@
 
 declare(strict_types=1);
 
-namespace Bead;
+namespace Bead\Core;
 
-use Bead\Contracts\Router as RouterContract;
 use Bead\Contracts\Response;
+use Bead\Contracts\Router as RouterContract;
 use Bead\Exceptions\ConflictingRouteException;
 use Bead\Exceptions\DuplicateRouteParameterNameException;
 use Bead\Exceptions\InvalidRouteParameterNameException;
 use Bead\Exceptions\UnroutableRequestException;
+use Bead\Request;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionClass;
 use ReflectionFunction;
 use Throwable;
-use TypeError;
 
 use function Bead\Helpers\Iterable\all;
 use function Bead\Helpers\Iterable\isSubsetOf;

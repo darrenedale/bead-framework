@@ -1,8 +1,8 @@
 <?php
 
-namespace BeadTests;
+namespace BeadTests\Core;
 
-use Bead\Application;
+use Bead\Core\Application;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use PHPUnit\Framework\TestCase;
 

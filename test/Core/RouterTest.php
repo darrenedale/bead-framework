@@ -7,21 +7,21 @@
 
 declare(strict_types=1);
 
-namespace BeadTests;
+namespace BeadTests\Core;
 
-use Bead\Application;
 use Bead\Contracts\Logger;
 use Bead\Contracts\Response;
+use Bead\Contracts\Router as RouterContract;
+use Bead\Core\Application;
+use Bead\Core\Router;
 use Bead\Exceptions\ConflictingRouteException;
 use Bead\Exceptions\DuplicateRouteParameterNameException;
 use Bead\Exceptions\InvalidRouteParameterNameException;
-use Bead\Responses\AbstractResponse;
-use BeadTests\Framework\TestCase;
 use Bead\Exceptions\UnroutableRequestException;
-use Bead\Contracts\Router as RouterContract;
-use Bead\Router;
 use Bead\Request;
+use Bead\Responses\AbstractResponse;
 use Bead\Testing\XRay;
+use BeadTests\Framework\TestCase;
 use Closure;
 use InvalidArgumentException;
 use Mockery;

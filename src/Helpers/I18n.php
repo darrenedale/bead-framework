@@ -2,7 +2,7 @@
 
 namespace Bead\Helpers\I18n;
 
-use Bead\Application;
+use Bead\Core\Application;
 
 use function Bead\Helpers\Str\build;
 

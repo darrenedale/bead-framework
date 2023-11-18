@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead;
+namespace Bead\Core;
 
 use Bead\Contracts\Encryption\Crypter;
 use Bead\Contracts\Encryption\Decrypter;
@@ -8,19 +8,20 @@ use Bead\Contracts\Encryption\Encrypter;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
+use Bead\Core\ErrorHandler as BeadErrorHandler;
 use Bead\Database\Connection;
 use Bead\Encryption\OpenSsl\Crypter as OpenSslCrypter;
 use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
-use Bead\ErrorHandler as BeadErrorHandler;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
-use DirectoryIterator;
-use Exception;
 use Bead\Facades\Log;
+use DirectoryIterator;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
 use Throwable;
+
+use function gettype;
 
 /**
  * Abstract base class for all applications.
@@ -54,10 +55,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
     /** The minimum PHP version the app requires to run. */
     private string $m_minimumPhpVersion = "0.0.0";
 
-    /** @var null|\Bead\Translator The currently installed translator */
+    /** @var null|Translator The currently installed translator */
     private ?Translator $m_translator = null;
 
-    /** @var \Bead\Contracts\ErrorHandler|null The currently installed error handler. */
+    /** @var ErrorHandler|null The currently installed error handler. */
     private ?ErrorHandler $m_errorHandler = null;
 
     /** @var Connection|null The data controller. */

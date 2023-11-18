@@ -1,7 +1,7 @@
 <?php
 
 /** @var array<string, mixed> $data */
-/** @var \Bead\WebApplication $app */
+/** @var \Bead\Core\WebApplication $app */
 
 use Bead\View;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead;
+namespace Bead\Core;
 
 use Bead\Contracts\Translator as TranslatorContract;
 

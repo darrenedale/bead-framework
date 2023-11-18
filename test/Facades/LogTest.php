@@ -2,8 +2,8 @@
 
 namespace BeadTests\Facades;
 
-use Bead\Application;
 use Bead\Contracts\Logger as LoggerContract;
+use Bead\Core\Application;
 use Bead\Facades\Log;
 use BeadTests\Framework\TestCase;
 use Mockery;
