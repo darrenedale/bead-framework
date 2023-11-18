@@ -3,6 +3,7 @@
 namespace Bead;
 
 use TypeError;
+use InvalidArgumentException;
 
 /**
  * Abstract representation of an incoming HTTP request.
@@ -52,6 +53,12 @@ class Request
 
     /** @var string The HTTP request method for the request. */
     private string $m_method = "";
+
+    /** @var string The dotted-decimal IPv4 address of the remote making the request. */
+    private string $remoteIp4 = "";
+
+    /** @var string The IPv6 address of the remote making the request. */
+    private string $remoteIp6 = "";
 
     /**
      * Create a new Request.
@@ -536,9 +543,47 @@ class Request
      */
     public function isAjax(): bool
     {
-        // FE frameworks need to set this header. equit.js does so, as do many popular frameworks
+        // FE frameworks need to set this header. many popular frameworks do so
         return "XMLHttpRequest" == $this->header("x_requested_with");
     }
+
+    /** @throws InvalidArgumentException if the IP is not valid. */
+    public function setRemoteIp4(string $ip): void
+    {
+        $validIp = filter_var($ip, FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV4,]);
+
+        if (false === $validIp) {
+            throw new InvalidArgumentException("Expected valid IPv4 dotted-decimal address, found \"{$ip}\"");
+        }
+
+        $this->remoteIp4 = $ip;
+    }
+
+
+    public function remoteIp4(): string
+    {
+        return $this->remoteIp4;
+    }
+
+
+    /** @throws InvalidArgumentException if the IP is not valid. */
+    public function setRemoteIp6(string $ip): void
+    {
+        $validIp = filter_var($ip, FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV6,]);
+
+        if (false === $validIp) {
+            throw new InvalidArgumentException("Expected valid IPv6 address, found \"{$ip}\"");
+        }
+
+        $this->remoteIp6 = $ip;
+    }
+
+
+    public function remoteIp6(): string
+    {
+        return $this->remoteIp6;
+    }
+
 
     /**
      * Fetch the original request submitted by the user agent.
@@ -582,12 +627,21 @@ class Request
                 }
             }
 
+            $req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
+            $req->m_url = "{$req->protocol()}://{$req->host()}{$_SERVER["REQUEST_URI"]}";
+
+            if (array_key_exists("REMOTE_ADDR", $_SERVER)) {
+                if (false !== filter_var($_SERVER["REMOTE_ADDR"], FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV4,])) {
+                    $req->remoteIp4 = $_SERVER["REMOTE_ADDR"];
+                } elseif (false !== filter_var($_SERVER["REMOTE_ADDR"], FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV6,])) {
+                    $req->remoteIp6 = $_SERVER["REMOTE_ADDR"];
+                }
+            }
+
             $path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) ?? "/";
             $req->setPath($path);
             $req->setPathInfo($path);
 
-            $req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
-            $req->m_url = "{$req->protocol()}://{$req->host()}{$_SERVER["REQUEST_URI"]}";
             Request::$s_originalRequest = $req;
         }
 
