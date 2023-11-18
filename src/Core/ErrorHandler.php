@@ -1,14 +1,14 @@
 <?php
 
-namespace Bead;
+namespace Bead\Core;
 
 use Bead\Contracts\ErrorHandler as ErrorHandlerContract;
 use Bead\Contracts\Response;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Facades\Log;
 use Bead\Responses\AbstractResponse;
+use Bead\View;
 use Error;
-use RuntimeException;
 use Throwable;
 
 /**

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BeadTests;
 
-use Bead\Application;
 use Bead\Contracts\Logger as LoggerContract;
+use Bead\Core\Application;
 use Bead\Facades\Log;
 use Bead\Logging\NullLogger;
 use Bead\UploadedFile;

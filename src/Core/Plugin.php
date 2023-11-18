@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead;
+namespace Bead\Core;
 
 /**
  * Base class for application plugins.

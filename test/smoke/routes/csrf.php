@@ -1,10 +1,9 @@
 <?php
 
 use Bead\Contracts\Router;
-use Bead\Exceptions\CsrfTokenVerificationException;
+use Bead\Core\WebApplication;
 use Bead\Request;
 use Bead\View;
-use Bead\WebApplication;
 
 /** @var Router $router */
 

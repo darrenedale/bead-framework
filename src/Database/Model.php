@@ -2,12 +2,12 @@
 
 namespace Bead\Database;
 
-use DateTime;
-use Bead\Application;
 use Bead\Contracts\SoftDeletableModel;
+use Bead\Core\Application;
 use Bead\Exceptions\Database\ModelPropertyCastException;
 use Bead\Exceptions\Database\UnknownRelationException;
 use Bead\Exceptions\Database\UnrecognisedQueryOperatorException;
+use DateTime;
 use Exception;
 use JsonException;
 use LogicException;

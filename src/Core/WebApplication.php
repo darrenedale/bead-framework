@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead;
+namespace Bead\Core;
 
 use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
@@ -17,6 +17,7 @@ use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
+use Bead\Request;
 use Bead\Session\DataAccessor as SessionDataAccessor;
 use DirectoryIterator;
 use Exception;

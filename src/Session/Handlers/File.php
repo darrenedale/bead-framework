@@ -2,8 +2,8 @@
 
 namespace Bead\Session\Handlers;
 
-use Bead\Application;
 use Bead\Contracts\SessionHandler;
+use Bead\Core\Application;
 use Bead\Exceptions\Session\InvalidSessionDirectoryException;
 use Bead\Exceptions\Session\InvalidSessionFileException;
 use Bead\Exceptions\Session\SessionDestroyedException;

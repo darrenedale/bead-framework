@@ -2,7 +2,7 @@
 
 namespace Bead\Facades;
 
-use Bead\Application;
+use Bead\Core\Application;
 use LogicException;
 
 abstract class ApplicationServiceFacade

@@ -1,8 +1,8 @@
 <?php
 
-namespace BeadTests;
+namespace BeadTests\Core;
 
-use Bead\Translator;
+use Bead\Core\Translator;
 use PHPUnit\Framework\TestCase;
 use ReflectionClassConstant;
 

@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace BeadTests;
+namespace BeadTests\Core;
 
-use Bead\Database\Connection;
+use Bead\Core\Application;
+use Bead\Core\WebApplication;
 use Bead\Facades\Session;
 use Bead\Testing\XRay;
-use Bead\Application;
-use Bead\WebApplication;
 use BeadTests\Framework\TestCase;
 use ReflectionProperty;
 

@@ -2,8 +2,8 @@
 
 namespace Bead\Database;
 
-use Bead\Application;
 use Bead\Contracts\QueryBuilder as QueryBuilderContract;
+use Bead\Core\Application;
 use PDO;
 
 class QueryBuilder implements QueryBuilderContract
