@@ -2,11 +2,11 @@
 
 namespace Database;
 
-use BeadTests\Framework\TestCase;
-use Bead\Application;
+use Bead\Core\Application;
 use Bead\Database\Connection;
 use Bead\Database\ManyToOne;
 use Bead\Database\Model;
+use BeadTests\Framework\TestCase;
 use Mockery;
 
 class ManyToOneTest extends TestCase
@@ -30,6 +30,7 @@ class ManyToOneTest extends TestCase
             protected static string $table = "Foo";
         };
 
+        /** @psalm-suppress UndefinedClass Bar is just a test class name */
         $this->relation = new ManyToOne($this->local, "Bar", "id", "bar_id");
     }
 
@@ -41,6 +42,7 @@ class ManyToOneTest extends TestCase
 
     public function testConstructor(): void
     {
+        /** @psalm-suppress UndefinedClass Bar is just a test class name */
         $relation = new ManyToOne($this->local, "Bar", "id", "bar_id");
         self::assertSame($this->local, $relation->localModel());
         self::assertEquals("Bar", $this->relation->relatedModel());

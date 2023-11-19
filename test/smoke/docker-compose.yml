@@ -1,0 +1,23 @@
+version: "3.4"
+name: "bead-framework-smoke-test"
+
+services:
+  web:
+    container_name: "bead-smoke-test-web"
+    depends_on:
+      - "fpm"
+    image: caddy
+    ports:
+      - "6080:80"
+    volumes:
+      - "../../:/srv/bead"
+      - "./docker/web/Caddyfile:/etc/caddy/Caddyfile"
+
+  fpm:
+    container_name: "bead-smoke-test-fpm"
+    build:
+      context: "../../"
+      dockerfile: "docker/fpm/Dockerfile"
+    working_dir: "/srv/bead"
+    volumes:
+      - "../../:/srv/bead"

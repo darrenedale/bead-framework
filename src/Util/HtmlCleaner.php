@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Bead\Util;
 
@@ -160,7 +160,7 @@ class HtmlCleaner
      *
      * @throws InvalidArgumentException if the mode is not valid.
      */
-    protected final static function checkMode(int $mode): void
+    final protected static function checkMode(int $mode): void
     {
         if (self::AllowListMode != $mode && self::DenyListMode != $mode && self::CombinedMode != $mode) {
             throw new InvalidArgumentException("Test mode for attributes and tag names must be one of the class test mode constants.");
@@ -204,7 +204,7 @@ class HtmlCleaner
      *
      * @return bool `true` if it may be used as the first character in an HTML tag name, `false` if not.
      */
-    protected static final function isValidTagStartCodepoint(int $codePoint): bool
+    final protected static function isValidTagStartCodepoint(int $codePoint): bool
     {
         return (ord(":") == $codePoint) ||
             (ord("A") <= $codePoint && ord("Z") >= $codePoint) ||
@@ -232,7 +232,7 @@ class HtmlCleaner
      *
      * @return bool `true` if it may be used in an HTML tag name, `false` if not.
      */
-    protected static final function isValidTagCodepoint(int $codePoint): bool
+    final protected static function isValidTagCodepoint(int $codePoint): bool
     {
         return self::isValidTagStartCodepoint($codePoint) ||
             ord("-") == $codePoint ||
@@ -250,7 +250,7 @@ class HtmlCleaner
      *
      * @return bool `true` if the tag name is valid, `false` if not.
      */
-    protected final function isValidTagName(string $name): bool
+    final protected function isValidTagName(string $name): bool
     {
         if ("" === $name) {
             return false;
@@ -258,12 +258,12 @@ class HtmlCleaner
 
         $codePoints = toCodePoints($name, $this->userCharset);
 
-        return self::isValidTagStartCodepoint($codePoints[0]) && all(array_slice($codePoints, 1), function(int $codePoint): bool {
+        return self::isValidTagStartCodepoint($codePoints[0]) && all(array_slice($codePoints, 1), function (int $codePoint): bool {
             return self::isValidTagCodepoint($codePoint);
         });
     }
 
-    protected final function isValidClass(string $name): bool
+    final protected function isValidClass(string $name): bool
     {
         if ("" === $name) {
             return false;
@@ -273,7 +273,7 @@ class HtmlCleaner
         return false === mb_strpos($name, " ", 0, $this->userCharset);
     }
 
-    protected final function isValidId(string $id): bool
+    final protected function isValidId(string $id): bool
     {
         if ("" === $id) {
             return false;
@@ -290,14 +290,14 @@ class HtmlCleaner
      * guard this during testing/development. All items will be converted to lower case and duplicate items will not
      * end up in the target list.
      *
-     * @param array $list Reference to the list to add to.
-     * @param array|string $items The items to add.
+     * @param array<int,string> $list Reference to the list to add to.
+     * @param array<int,string>|string $items The items to add.
      * @param callable $validator A function to use to validate the items before they are added to the list.
      *
      * @throws InvalidArgumentException if $items is not a string or array, or if it contains an invalid entry for the
      * list
      */
-    protected final function addToList(array &$list, array|string $items, callable $validator): void
+    final protected function addToList(array & $list, array|string $items, callable $validator): void
     {
         if (is_string($items)) {
             $items = [$items];
@@ -307,11 +307,13 @@ class HtmlCleaner
             throw new InvalidArgumentException("Invalid value found in allow or deny list.");
         }
 
-        array_walk($items, function (string &$item) {
+        array_walk($items, function (string & $item) {
             $item = mb_strtolower($item, $this->userCharset);
         });
 
-        $list = array_unique([...$list, ...$items]);
+        /** @var array<int,string> $items Hint for Psalm that array_walk doesn't change the type of $items */
+
+        $list = array_unique([...$list, ...$items,]);
     }
 
     /**
@@ -331,7 +333,7 @@ class HtmlCleaner
      */
     public function allowTags(array|string $tags): void
     {
-        $this->addToList($this->allowedTags, $tags, fn(string $tagName): bool => $this->isValidTagName($tagName));
+        $this->addToList($this->allowedTags, $tags, fn (string $tagName): bool => $this->isValidTagName($tagName));
     }
 
     /**
@@ -351,7 +353,7 @@ class HtmlCleaner
      */
     public function denyTags(array|string $tags): void
     {
-        $this->addToList($this->deniedTags, $tags, fn(string $tagName): bool => $this->isValidTagName($tagName));
+        $this->addToList($this->deniedTags, $tags, fn (string $tagName): bool => $this->isValidTagName($tagName));
     }
 
     /**
@@ -372,7 +374,7 @@ class HtmlCleaner
      */
     public function allowClasses(array|string $classes): void
     {
-        $this->addToList($this->allowedClasses, $classes, fn(string $class): bool => $this->isValidClass($class));
+        $this->addToList($this->allowedClasses, $classes, fn (string $class): bool => $this->isValidClass($class));
     }
 
     /**
@@ -392,7 +394,7 @@ class HtmlCleaner
      */
     public function denyClasses(array|string $classes): void
     {
-        $this->addToList($this->deniedClasses, $classes, fn(string $class): bool => $this->isValidClass($class));
+        $this->addToList($this->deniedClasses, $classes, fn (string $class): bool => $this->isValidClass($class));
     }
 
     /**
@@ -413,7 +415,7 @@ class HtmlCleaner
      */
     public function allowIds(array|string $ids): void
     {
-        $this->addToList($this->allowedIds, $ids, fn(string $id): bool => $this->isValidId($id));
+        $this->addToList($this->allowedIds, $ids, fn (string $id): bool => $this->isValidId($id));
     }
 
     /**
@@ -433,7 +435,7 @@ class HtmlCleaner
      */
     public function denyIds(array|string $ids): void
     {
-        $this->addToList($this->deniedIds, $ids, fn(string $id): bool => $this->isValidId($id));
+        $this->addToList($this->deniedIds, $ids, fn (string $id): bool => $this->isValidId($id));
     }
 
     /**
@@ -593,7 +595,7 @@ class HtmlCleaner
      *
      * @return bool `true` if the node is allowed, `false` if not.
      */
-    protected final function isAllowedNode(DOMNode $node): bool
+    final protected function isAllowedNode(DOMNode $node): bool
     {
         if (XML_ELEMENT_NODE == $node->nodeType) {
             if (!$this->isAllowedTag($node->nodeName)) {
@@ -627,7 +629,7 @@ class HtmlCleaner
      * @throws RuntimeException if the HTML cannot be parsed.
      *
      */
-    public final function clean(string $html): string
+    final public function clean(string $html): string
     {
         $doc = new DOMDocument("1.0", $this->userCharset);
 
@@ -635,7 +637,7 @@ class HtmlCleaner
             throw new RuntimeException("failed to parse HTML");
         }
 
-        $cleanNode = function (DOMNode $node) use (&$cleanNode): void {
+        $cleanNode = function (DOMNode $node) use (& $cleanNode): void {
             if ($node->hasChildNodes()) {
                 // can't use foreach() because it will skip next node when a node is removed
                 $idx = 0;

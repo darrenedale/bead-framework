@@ -2,6 +2,7 @@
 
 namespace Bead\Contracts;
 
+use Closure;
 use DateTime;
 
 interface QueryBuilder
@@ -13,7 +14,7 @@ interface QueryBuilder
      *
      * @return $this The QueryBuilder instance for further method chaining.
      */
-    public function select($columns): self;
+    public function select(array|string $columns): self;
 
     /**
      * Add columns to the query's SELECT clause.
@@ -22,7 +23,7 @@ interface QueryBuilder
      *
      * @return $this The QueryBuilder instance for further method chaining.
      */
-    public function addSelect($columns): self;
+    public function addSelect(array|string $columns): self;
 
     /**
      * Add a raw expression to the SELECT clause.
@@ -46,7 +47,7 @@ interface QueryBuilder
      *
      * @return $this The QueryBuilder instance for further method chaining.
      */
-    public function from($table, ?string $alias = null): self;
+    public function from(array|string $table, ?string $alias = null): self;
 
     /**
      * Add a raw SQL expression to the FROM clause.
@@ -58,7 +59,7 @@ interface QueryBuilder
      *
      * @return $this The QueryBuilder instance for further method chaining.
      */
-    public function rawFrom($expression, string $alias): self;
+    public function rawFrom(array|string $expression, string $alias): self;
 
     /**
      * Add a left join to the query.
@@ -182,7 +183,7 @@ interface QueryBuilder
     public function innerJoinAs(string $foreign, string $alias, string $local, $expr1OrExpressions, ?string $operatorOrExpr2 = "AND", ?string $expr2 = null): self;
 
     /**
-     * @param array|string|Closure $column The field to add to the where clause, or an array of fields and values to add to the
+     * @param array|string|callable $column The field to add to the where clause, or an array of fields and values to add to the
      * clause using the = operator, or a closure to call with this QueryBuilder to add one or more WHERE
      * expressions to a parenthesised group (e.g. WHERE ... AND (...) ... ).
      * @param string|int|float|DateTime|null $operatorOrValue The operator or value. Ignored if `$field` is an array. If
@@ -191,10 +192,10 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function where($column, $operatorOrValue = null, $value = null): self;
+    public function where(array|string|callable $column, string|int|float|DateTime|null $operatorOrValue = null, string|int|float|DateTime|null $value = null): self;
 
     /**
-     * @param array|string|Closure $column The field to add to the where clause, or an array of fields and values to add
+     * @param array|string|callable $column The field to add to the where clause, or an array of fields and values to add
      * to the clause using the = operator, or a closure to call with this QueryBuilder to add one or more WHERE
      * expressions to a parenthesised group (e.g. WHERE ... OR (...) ... ).
      * @param string|int|float|DateTime|null $operatorOrValue The operator or value. Ignored if `$field` is an array. If
@@ -203,7 +204,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhere($column, $operatorOrValue = null, $value = null): self;
+    public function orWhere(array|string|callable $column, string|int|float|DateTime|null $operatorOrValue = null, string|int|float|DateTime|null $value = null): self;
 
     /**
      * Add one or more IS NOT NULL expressions to the query's WHERE clause.
@@ -214,7 +215,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereNotNull($columns): self;
+    public function whereNotNull(array|string $columns): self;
 
     /**
      * Add one or more IS NOT NULL expressions to the query's WHERE clause.
@@ -225,7 +226,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereNotNull($columns): self;
+    public function orWhereNotNull(array|string $columns): self;
 
     /**
      * Add one or more IS NULL expressions to the query's WHERE clause.
@@ -236,7 +237,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereNull($columns): self;
+    public function whereNull(array|string $columns): self;
 
     /**
      * Add one or more IS NULL expressions to the query's WHERE clause.
@@ -247,7 +248,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereNull($columns): self;
+    public function orWhereNull(array|string $columns): self;
 
     /**
      * Add one or more LIKE '%value%' expressions to the query's WHERE clause.
@@ -259,7 +260,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereContains($columns, ?string $value = null): self;
+    public function whereContains(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more LIKE '%value%' expressions to the query's WHERE clause.
@@ -271,7 +272,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereContains($columns, ?string $value = null): self;
+    public function orWhereContains(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more NOT LIKE '%value%' expressions to the query's WHERE clause.
@@ -283,7 +284,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereNotContains($columns, ?string $value = null): self;
+    public function whereNotContains(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more NOT LIKE '%value%' expressions to the query's WHERE clause.
@@ -295,7 +296,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereNotContains($columns, ?string $value = null): self;
+    public function orWhereNotContains(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more LIKE 'value%' expressions to the query's WHERE clause.
@@ -307,7 +308,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereStartsWith($columns, ?string $value = null): self;
+    public function whereStartsWith(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more LIKE 'value%' expressions to the query's WHERE clause.
@@ -319,7 +320,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereStartsWith($columns, ?string $value = null): self;
+    public function orWhereStartsWith(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more NOT LIKE 'value%' expressions to the query's WHERE clause.
@@ -331,7 +332,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereNotStartsWith($columns, ?string $value = null): self;
+    public function whereNotStartsWith(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more NOT LIKE 'value%' expressions to the query's WHERE clause.
@@ -343,7 +344,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereNotStartsWith($columns, ?string $value = null): self;
+    public function orWhereNotStartsWith(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more LIKE '%value' expressions to the query's WHERE clause.
@@ -355,7 +356,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereEndsWith($columns, ?string $value = null): self;
+    public function whereEndsWith(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more LIKE '%value' expressions to the query's WHERE clause.
@@ -367,7 +368,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereEndsWith($columns, ?string $value = null): self;
+    public function orWhereEndsWith(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more NOT LIKE '%value' expressions to the query's WHERE clause.
@@ -379,7 +380,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereNotEndsWith($columns, ?string $value = null): self;
+    public function whereNotEndsWith(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more NOT LIKE '%value' expressions to the query's WHERE clause.
@@ -391,7 +392,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereNotEndsWith($columns, ?string $value = null): self;
+    public function orWhereNotEndsWith(array|string $columns, ?string $value = null): self;
 
     /**
      * Add one or more IN (...) expressions to the query's WHERE clause.
@@ -403,7 +404,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereIn($columns, ?array $value = null): self;
+    public function whereIn(array|string $columns, ?array $value = null): self;
 
     /**
      * Add one or more IN (...) expressions to the query's WHERE clause.
@@ -415,7 +416,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereIn($columns, ?array $value = null): self;
+    public function orWhereIn(array|string $columns, ?array $value = null): self;
 
     /**
      * Add one or more NOT IN (...) expressions to the query's WHERE clause.
@@ -427,7 +428,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereNotIn($columns, ?array $value = null): self;
+    public function whereNotIn(array|string $columns, ?array $value = null): self;
 
     /**
      * Add one or more NOT IN (...) expressions to the query's WHERE clause.
@@ -439,7 +440,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereNotIn($columns, ?array $value = null): self;
+    public function orWhereNotIn(array|string $columns, ?array $value = null): self;
 
     /**
      * Add one or more LENGTH(...) =|<>|<|>|<=|>= value expressions to the query's WHERE clause.
@@ -451,19 +452,19 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function whereLength($columns, $operatorOrValue = null, $value = null): self;
+    public function whereLength(array|string $columns, string|int|null $operatorOrValue = null, ?int $value = null): self;
 
     /**
      * Add one or more LENGTH(...) =|<>|<|>|<=|>= value expressions to the query's WHERE clause.
      *
      * The expression is joined to the WHERE clause with "OR" if necessary.
      *
-     * @param $columns
+     * @param array|string $columns
      * @param string|null $value
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orWhereLength($columns, $operatorOrValue = null, $value = null): self;
+    public function orWhereLength(array|string $columns, string|int|null $operatorOrValue = null, ?int $value = null): self;
 
     /**
      * Add an ORDER BY clause to the query.
@@ -473,7 +474,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function orderBy($columns, ?string $direction = null): self;
+    public function orderBy(array|string $columns, ?string $direction = null): self;
 
     /**
      * Add an ORDER BY clause to the query using a raw SQL expression.
@@ -483,7 +484,7 @@ interface QueryBuilder
      *
      * @return $this The query builder for further method chaining.
      */
-    public function rawOrderBy($expressions, ?string $direction = "ASC"): self;
+    public function rawOrderBy(array|string $expressions, ?string $direction = "ASC"): self;
 
     /**
      * Add a LIMIT clause to the query.

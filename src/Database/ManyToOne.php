@@ -27,13 +27,13 @@ class ManyToOne extends Relation
      */
     public function reload(): void
     {
-		$key = $this->localModel()->{$this->localKey()};
+        $key = $this->localModel()->{$this->localKey()};
 
-		if (isset($key)) {
-			$this->relatedModel = $this->relatedModel()::fetch($key);
-		} else {
-			$this->relatedModel = null;
-		}
+        if (isset($key)) {
+            $this->relatedModel = $this->relatedModel()::fetch($key);
+        } else {
+            $this->relatedModel = null;
+        }
 
         $this->fetched = true;
     }

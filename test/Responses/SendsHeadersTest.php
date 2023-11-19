@@ -44,9 +44,9 @@ final class SendsHeadersTest extends TestCase
         $expectedHeaders[] = "content-type: text/plain";
         $test = $this;
 
-        $this->mockFunction('header',
-            function (string $header, bool $replace) use (&$expectedHeaders, $test)
-            {
+        $this->mockFunction(
+            "header",
+            function (string $header, bool $replace) use (&$expectedHeaders, $test) {
                 $test->assertTrue($replace);
                 $idx = array_search($header, $expectedHeaders);
                 $test->assertIsInt($idx, "Unexpected header '{$header}' generated.");

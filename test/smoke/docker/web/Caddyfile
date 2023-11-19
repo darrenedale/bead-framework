@@ -1,0 +1,6 @@
+http:// {
+    root * /srv/bead/test/smoke/public
+    encode gzip
+    php_fastcgi fpm:9000
+    file_server
+}

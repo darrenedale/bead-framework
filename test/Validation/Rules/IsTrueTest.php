@@ -55,8 +55,14 @@ class IsTrueTest extends RuleTestCase
                     return "string";
                 }
             }, false,],
-            "typicalObject" => ["field", (object)[], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalObject" => ["field", (object) [], false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalInt" => ["field", 123, false,],
             "typicalFloat" => ["field", 123.456, false,],
             "typicalNull" => ["field", null, false,],

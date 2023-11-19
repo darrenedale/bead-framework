@@ -34,5 +34,4 @@ class InvalidTableNameException extends QueryBuilderException
     {
         return $this->m_name;
     }
-
 }

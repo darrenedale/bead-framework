@@ -1,7 +1,7 @@
 <?php
 
 include_once __DIR__ . "/Helpers/I18n.php";
-include_once __DIR__ . "/Helpers/Iterable.php.php";
+include_once __DIR__ . "/Helpers/Iterable.php";
 include_once __DIR__ . "/Helpers/Str.php";
 
 spl_autoload_register(function (string $className) {

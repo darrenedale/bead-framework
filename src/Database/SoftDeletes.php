@@ -26,7 +26,7 @@ trait SoftDeletes
      *
      * @return PDO The connection to use when soft-deleting/restoring the model.
      */
-    public abstract function connection(): PDO;
+    abstract public function connection(): PDO;
 
     /**
      * Fetch the table to use when soft-deleting/restoring the model.
@@ -35,7 +35,7 @@ trait SoftDeletes
      *
      * @return string The database table.
      */
-    public abstract static function table(): string;
+    abstract public static function table(): string;
 
     /**
      * Fetch the primary key column to use when soft-deleting/restoring the model.
@@ -44,7 +44,7 @@ trait SoftDeletes
      *
      * @return string The primary key column.
      */
-    public abstract static function primaryKey(): string;
+    abstract public static function primaryKey(): string;
 
     /**
      * The name of the column that contains the deleted timestamp for soft-deleted records.

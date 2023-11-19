@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace BeadTests\Framework;
 
@@ -38,7 +38,7 @@ abstract class TestCase extends PhpUnitTestCase
                 $this->removeMethodMock($class, $method);
             }
 
-            unset ($this->methodMocks[$class]);
+            unset($this->methodMocks[$class]);
         }
 
         parent::tearDown();
@@ -138,7 +138,7 @@ abstract class TestCase extends PhpUnitTestCase
     public function removeMethodMock(string $class, string $method): void
     {
         if (!array_key_exists($class, $this->methodMocks) || !array_key_exists($method, $this->methodMocks[$class])) {
-            throw new LogicException("Attempt to remove mock for method '{$class}::{$function}' that isn't mocked.");
+            throw new LogicException("Attempt to remove mock for method '{$class}::{$method}' that isn't mocked.");
         }
 
         // strtolower() works around bug in old(er) versions of uopz
@@ -190,5 +190,15 @@ abstract class TestCase extends PhpUnitTestCase
     public static function assertAttributeIsInt(array $objectAndAttr, string $msg = ""): void
     {
         self::assertThat($objectAndAttr, new AttributeIsInt(), $msg);
+    }
+
+    /**
+     * Call this if the test is externally verified (e.g. by Mockery).
+     *
+     * This prevents PHPUnit from marking the test as risky on the basis that it doesn't perform any assertions.
+     */
+    protected static function markTestAsExternallyVerified(): void
+    {
+        self::assertTrue(true);
     }
 }
