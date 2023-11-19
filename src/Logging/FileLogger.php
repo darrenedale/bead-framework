@@ -10,13 +10,11 @@ use RuntimeException;
 use SplFileInfo;
 use SplFileObject;
 use Stringable;
-
 use Throwable;
+
 use function Bead\Helpers\Str\build;
 
-/**
- * Log messages to a named file.
- */
+/** Log messages to a named file. */
 class FileLogger extends PsrAbstractLogger implements LoggerContract
 {
     use HasLogLevel;
