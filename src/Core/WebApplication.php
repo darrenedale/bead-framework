@@ -179,9 +179,9 @@ class WebApplication extends Application
      *
      * @throws \Exception if an Application instance has already been created.
      */
-    public function __construct(string $appRoot, ?Connection $db = null)
+    public function __construct(string $appRoot)
     {
-        parent::__construct($appRoot, $db);
+        parent::__construct($appRoot);
         $this->initialiseSession();
         $this->m_session = $this->sessionData(self::SessionDataContext);
         $this->setRouter(new Router());

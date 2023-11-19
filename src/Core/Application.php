@@ -2,16 +2,13 @@
 
 namespace Bead\Core;
 
-use Bead\Contracts\Encryption\Crypter;
-use Bead\Contracts\Encryption\Decrypter;
-use Bead\Contracts\Encryption\Encrypter;
+use Bead\Contracts\Binder;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\ErrorHandler as BeadErrorHandler;
 use Bead\Database\Connection;
-use Bead\Encryption\OpenSsl\Crypter as OpenSslCrypter;
-use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
+use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
 use Bead\Facades\Log;
@@ -55,14 +52,8 @@ abstract class Application implements ServiceContainer, ContainerInterface
     /** The minimum PHP version the app requires to run. */
     private string $m_minimumPhpVersion = "0.0.0";
 
-    /** @var null|Translator The currently installed translator */
-    private ?Translator $m_translator = null;
-
     /** @var ErrorHandler|null The currently installed error handler. */
     private ?ErrorHandler $m_errorHandler = null;
-
-    /** @var Connection|null The data controller. */
-    private ?Connection $m_dbConnection = null;
 
     /** @var array The loaded config. */
     private array $m_config = [];
@@ -77,7 +68,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * @throws RuntimeException if the singleton already exists or if the provided root directory does not exist.
      * @throws ServiceAlreadyBoundException if any of the service bindings set up by the Application is already bound..
      */
-    public function __construct(string $appRoot, ?Connection $db = null)
+    public function __construct(string $appRoot)
     {
         $this->setErrorHandler(new BeadErrorHandler());
 
@@ -94,9 +85,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
         $this->m_appRoot = $realAppRoot;
         $this->loadConfig("{$this->m_appRoot}/config");
-        $this->setupTranslator();
-        $this->setupCrypter();
-        $this->setDatabase($db);
+        $this->bindServices();
     }
 
     /**
@@ -116,56 +105,33 @@ abstract class Application implements ServiceContainer, ContainerInterface
         return (self::$s_instance instanceof static) ? self::$s_instance : null;
     }
 
-    /**
-     * Helper to set up the translator.
-     *
-     * @throws RuntimeException
-     */
-    private function setupTranslator(): void
+    private function bindServices(): void
     {
-        $this->m_translator = new Translator();
-        $this->m_translator->addSearchPath("i18n");
-        $language = $this->config("app.language", "en-GB");
+        $binders = $this->config("app.binders");
 
-        if (!is_string($language)) {
-            throw new RuntimeException("Expected valid language in app.language configuration item, found " . gettype($language));
-        }
-
-        $this->m_translator->setLanguage($language);
-
-        /**
-         * @psalm-suppress MissingThrowsDocblock
-         *
-         * setupTranslator() is private and is only called internally fron constructor, so the service is guaranteed not
-         * to be bound already.
-         */
-        $this->bindService(TranslatorContract::class, $this->m_translator);
-    }
-
-    /**
-     * Helper to bind the configured crypter to the encryption interfaces.
-     *
-     * @throws RuntimeException
-     * @throws ServiceAlreadyBoundException if any of the encryption interfaces is already bound into the service
-     * container.
-     */
-    private function setupCrypter(): void
-    {
-        $cryptConfig = $this->config("crypto");
-
-        if (!isset($cryptConfig["driver"])) {
+        if (!is_array($binders)) {
             return;
         }
 
-        $crypter = match ($cryptConfig["driver"]) {
-            "openssl" => new OpenSslCrypter($cryptConfig["algorithm"] ?? "", $cryptConfig["key"] ?? ""),
-            "sodium" => new SodiumCrypter($cryptConfig["key"] ?? ""),
-            default => throw new RuntimeException("Invalid crypto driver {$cryptConfig["driver"]}"),
-        };
+        // instantiate all binders before bnding their services
+        $instances = [];
 
-        $this->bindService(Decrypter::class, $crypter);
-        $this->bindService(Encrypter::class, $crypter);
-        $this->bindService(Crypter::class, $crypter);
+        foreach ($binders as $binder) {
+            if (!class_exists($binder)) {
+                throw new InvalidConfigurationException("app.binders", "The binder {$binder} does not exist");
+            }
+
+            if (!(is_subclass_of($binder, Binder::class, true))) {
+                throw new InvalidConfigurationException("app.binders", "The binder {$binder} does not implement the " . Binder::class . " interface");
+            }
+
+            /** @var Binder $instance */
+            $instances[] = new $binder();
+        }
+
+        foreach ($instances as $binder) {
+            $binder->bindServices($this);
+        }
     }
 
     /**
@@ -382,7 +348,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function translator(): ?TranslatorContract
     {
-        return $this->m_translator;
+        return ($this->serviceIsBound(TranslatorContract::class) ? $this->service(TranslatorContract::class) : null);
     }
 
     /**
@@ -393,8 +359,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function currentLanguage(): ?string
     {
-        $translator = $this->translator();
-        return ($translator ? $translator->language() : null);
+        return $this->translator()?->language();
     }
 
     /**
@@ -458,19 +423,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function database(): ?Connection
     {
-        return $this->m_dbConnection;
-    }
-
-    /** Set the application's data controller.
-     *
-     * The data controller mediates all interaction between the application (including classes and plugins) and the
-     * database.
-     *
-     * @param $controller Connection|null The data controller to use.
-     */
-    public function setDatabase(?Connection $controller): void
-    {
-        $this->m_dbConnection = $controller;
+        return $this->serviceIsBound(Connection::class) ? $this->service(Connection::class) : null;
     }
 
     /** Emit an event.
