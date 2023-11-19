@@ -11,7 +11,6 @@ use Bead\View;
 require_once __DIR__ . "/../../../vendor/autoload.php";
 
 $app = new WebApplication(__DIR__ . "/..");
-$app->setPluginsDirectory("plugins");
 View::inject("pageTitle", "Bead test page");
 
 $app->exec();
