@@ -6,9 +6,7 @@ namespace Bead\Contracts\Database;
 
 use Bead\Exceptions\Database\StatementException;
 
-/**
- * Interface for prepared statements created by database connections.
- */
+/** Interface for prepared statements created by database connections. */
 interface Statement extends Traversable
 {
     /**
@@ -76,5 +74,4 @@ interface Statement extends Traversable
      * @throws StatementException if the statement is not a DQL statement or an error occurs.
      */
     public function count(): int;
-
 }

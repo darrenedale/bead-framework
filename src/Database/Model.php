@@ -1200,7 +1200,6 @@ abstract class Model
     protected static function makeModelsFromQuery(DatabaseStatementContract $stmt): array
     {
         $models = [];
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
 
         foreach ($stmt as $data) {
             $model = new static();
