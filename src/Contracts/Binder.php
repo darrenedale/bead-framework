@@ -1,13 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Bead\Contracts;
 
 use Bead\Core\Application;
 
-/**
- * Contract for classes that bind services into the service container.
- */
+/** Contract for classes that bind services into the service container. */
 interface Binder
 {
     /**

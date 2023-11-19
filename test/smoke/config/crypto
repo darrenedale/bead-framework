@@ -1,0 +1,8 @@
+<?php
+
+return [
+    "driver"=> "sodium,
+    "sodium" => [
+        "key" => "-some-insecure-key-insecure-some",
+    ]
+];

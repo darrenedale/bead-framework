@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Bead\Core\Binders;
@@ -13,9 +14,7 @@ use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 
-/**
- * Bind cryptographic services into the service container.
- */
+/** Bind cryptographic services into the service container. */
 class Crypter implements Binder
 {
     /**

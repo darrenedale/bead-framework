@@ -3,16 +3,11 @@
 namespace Bead\Core;
 
 use Bead\Contracts\Binder;
-use Bead\Contracts\Encryption\Crypter;
-use Bead\Contracts\Encryption\Decrypter;
-use Bead\Contracts\Encryption\Encrypter;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\ErrorHandler as BeadErrorHandler;
 use Bead\Database\Connection;
-use Bead\Encryption\OpenSsl\Crypter as OpenSslCrypter;
-use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -364,7 +359,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function currentLanguage(): ?string
     {
-        $translator = $this->translator()?->language();
+        return $this->translator()?->language();
     }
 
     /**

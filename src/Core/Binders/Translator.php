@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Bead\Core\Binders;
@@ -13,9 +14,7 @@ use Bead\Exceptions\ServiceAlreadyBoundException;
 use function gettype;
 use function is_string;
 
-/**
- * Binds the configured translator into the service container.
- */
+/** Binds the configured translator into the service container. */
 class Translator implements BinderContract
 {
     /**
@@ -26,7 +25,6 @@ class Translator implements BinderContract
     public function bindServices(Application $app): void
     {
         $translator = new BeadTranslator();
-        // TODO load path(s) from config
         $translator->addSearchPath("i18n");
         $language = $app->config("app.language", "en-GB");
 

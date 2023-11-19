@@ -1,14 +1,14 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Bead\Exceptions;
 
-use BeadTests\Exceptions\Throwable;
+use RuntimeException;
+use Throwable;
 
-/**
- * Thrown when something in a config file doesn't make sense.
- */
-class InvalidConfigurationException extends \RuntimeException
+/** Thrown when something in a config file doesn't make sense. */
+class InvalidConfigurationException extends RuntimeException
 {
     /** @var string The configuration key that is not valid. */
     private string $key;
