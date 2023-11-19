@@ -2,7 +2,7 @@
 
 namespace Bead\Helpers\I18n;
 
-use Bead\Application;
+use Bead\Core\Application;
 
 use function Bead\Helpers\Str\build;
 
@@ -33,15 +33,15 @@ use function Bead\Helpers\Str\build;
  */
 function tr(string $str, string $file = null, int $line = null, ... $args): string
 {
-	$app = Application::instance();
+    $app = Application::instance();
 
-	if (isset($app)) {
-		$translator = $app->translator();
+    if (isset($app)) {
+        $translator = $app->translator();
 
-		if (isset($translator)) {
-			$str = $translator->translate($str, $file, $line);
-		}
-	}
+        if (isset($translator)) {
+            $str = $translator->translate($str, $file, $line);
+        }
+    }
 
-	return (0 === count($args) ? $str : build($str, ... $args));
+    return (0 === count($args) ? $str : build($str, ...$args));
 }

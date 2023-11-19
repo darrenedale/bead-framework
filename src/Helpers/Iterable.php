@@ -28,17 +28,17 @@ namespace Bead\Helpers\Iterable;
  */
 function flatten(iterable $collection): array
 {
-	$flat = [];
+    $flat = [];
 
-	foreach ($collection as $item) {
-		if (is_iterable($item)) {
-			$flat = [...$flat, ...flatten($item)];
-		} else {
-			$flat[] = $item;
-		}
-	}
+    foreach ($collection as $item) {
+        if (is_iterable($item)) {
+            $flat = [...$flat, ...array_values(flatten($item))];
+        } else {
+            $flat[] = $item;
+        }
+    }
 
-	return $flat;
+    return $flat;
 }
 
 /**
@@ -53,17 +53,17 @@ function flatten(iterable $collection): array
  */
 function toArray(iterable $collection): array
 {
-	if (is_array($collection)) {
-		return $collection;
-	}
+    if (is_array($collection)) {
+        return $collection;
+    }
 
-	$ret = [];
+    $ret = [];
 
-	foreach ($collection as $item) {
-		$ret[] = $item;
-	}
+    foreach ($collection as $item) {
+        $ret[] = $item;
+    }
 
-	return $ret;
+    return $ret;
 }
 
 /**
@@ -76,17 +76,16 @@ function toArray(iterable $collection): array
  */
 function implode(string $glue, iterable $collection): string
 {
-	$first = true;
+    $first = true;
 
-	return reduce($collection, function ($item, $reduction) use ($glue, &$first): string
-	{
-		if ($first) {
-			$first = false;
-			return (string) $item;
-		}
+    return reduce($collection, function ($item, $reduction) use ($glue, & $first): string {
+        if ($first) {
+            $first = false;
+            return (string) $item;
+        }
 
-		return "{$reduction}{$glue}{$item}";
-	}) ?? "";
+        return "{$reduction}{$glue}{$item}";
+    }) ?? "";
 }
 
 /**
@@ -109,19 +108,19 @@ function implode(string $glue, iterable $collection): string
  */
 function grammaticalImplode(iterable $collection, string $glue = ", ", string $lastGlue = " and "): string
 {
-	$collection = toArray($collection);
-	$nItems = count($collection);
+    $collection = toArray($collection);
+    $nItems = count($collection);
 
-	if (0 == $nItems) {
-		return "";
-	}
+    if (0 == $nItems) {
+        return "";
+    }
 
-	if (1 == $nItems) {
-		return "{$collection[0]}";
-	}
+    if (1 == $nItems) {
+        return "{$collection[0]}";
+    }
 
-	$lastItem = array_pop($collection);
-	return implode($glue, $collection) . "{$lastGlue}{$lastItem}";
+    $lastItem = array_pop($collection);
+    return implode($glue, $collection) . "{$lastGlue}{$lastItem}";
 }
 
 /**
@@ -141,11 +140,11 @@ function grammaticalImplode(iterable $collection, string $glue = ", ", string $l
  */
 function & transform(iterable & $collection, callable $fn): iterable
 {
-	foreach ($collection as & $item) {
-		$item = $fn($item);
-	}
+    foreach ($collection as & $item) {
+        $item = $fn($item);
+    }
 
-	return $collection;
+    return $collection;
 }
 
 /**
@@ -160,9 +159,9 @@ function & transform(iterable & $collection, callable $fn): iterable
  */
 function map(iterable $collection, callable $fn): iterable
 {
-	foreach ($collection as $item) {
-		yield $fn($item);
-	}
+    foreach ($collection as $item) {
+        yield $fn($item);
+    }
 }
 
 /**
@@ -181,13 +180,13 @@ function map(iterable $collection, callable $fn): iterable
  */
 function reduce(iterable $collection, callable $fn, $init = null)
 {
-	$reduction = $init;
+    $reduction = $init;
 
-	foreach ($collection as $item) {
-		$reduction = $fn($item, $reduction);
-	}
+    foreach ($collection as $item) {
+        $reduction = $fn($item, $reduction);
+    }
 
-	return $reduction;
+    return $reduction;
 }
 
 /**
@@ -206,23 +205,23 @@ function reduce(iterable $collection, callable $fn, $init = null)
  */
 function accumulate(iterable $collection, ?callable $accumulator = null, $init = 0)
 {
-	static $add = null;
+    static $add = null;
 
-	if (!isset($accumulator)) {
-		if (!isset($add)) {
-			$add = fn ($a, $b): int => $a + $b;
-		}
+    if (!isset($accumulator)) {
+        if (!isset($add)) {
+            $add = fn ($a, $b): int => $a + $b;
+        }
 
-		$accumulator = $add;
-	}
+        $accumulator = $add;
+    }
 
-	$accumulation = $init;
+    $accumulation = $init;
 
-	foreach ($collection as $item) {
-		$accumulation = $accumulator($item, $accumulation);
-	}
+    foreach ($collection as $item) {
+        $accumulation = $accumulator($item, $accumulation);
+    }
 
-	return $accumulation;
+    return $accumulation;
 }
 
 /**
@@ -235,13 +234,13 @@ function accumulate(iterable $collection, ?callable $accumulator = null, $init =
  */
 function all(iterable $collection, callable $predicate): bool
 {
-	foreach ($collection as $item) {
-		if (!$predicate($item)) {
-			return false;
-		}
-	}
+    foreach ($collection as $item) {
+        if (!$predicate($item)) {
+            return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 /**
@@ -254,13 +253,13 @@ function all(iterable $collection, callable $predicate): bool
  */
 function some(iterable $collection, callable $predicate): bool
 {
-	foreach ($collection as $item) {
-		if ($predicate($item)) {
-			return true;
-		}
-	}
+    foreach ($collection as $item) {
+        if ($predicate($item)) {
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 /**
@@ -273,13 +272,13 @@ function some(iterable $collection, callable $predicate): bool
  */
 function none(iterable $collection, callable $predicate): bool
 {
-	foreach ($collection as $item) {
-		if ($predicate($item)) {
-			return false;
-		}
-	}
+    foreach ($collection as $item) {
+        if ($predicate($item)) {
+            return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 /**
@@ -295,15 +294,15 @@ function none(iterable $collection, callable $predicate): bool
  */
 function isSubsetOf(iterable $collection, iterable $set): bool
 {
-	return all($collection, function ($item) use ($set): bool {
-		foreach ($set as $setItem) {
-			if ($item === $setItem) {
-				return true;
-			}
-		}
+    return all($collection, function ($item) use ($set): bool {
+        foreach ($set as $setItem) {
+            if ($item === $setItem) {
+                return true;
+            }
+        }
 
-		return false;
-	});
+        return false;
+    });
 }
 
 /**
@@ -320,15 +319,15 @@ function isSubsetOf(iterable $collection, iterable $set): bool
  */
 function recursiveCount(iterable $collection): int
 {
-	$count = 0;
+    $count = 0;
 
-	foreach ($collection as $item) {
-		if (is_iterable($item)) {
-			$count += recursiveCount($item);
-		} else {
-			++$count;
-		}
-	}
+    foreach ($collection as $item) {
+        if (is_iterable($item)) {
+            $count += recursiveCount($item);
+        } else {
+            ++$count;
+        }
+    }
 
-	return $count;
+    return $count;
 }

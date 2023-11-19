@@ -2,6 +2,7 @@
 
 namespace Bead;
 
+use Bead\Facades\Log;
 use SplFileInfo;
 
 /**
@@ -17,34 +18,34 @@ use SplFileInfo;
  */
 final class UploadedFile
 {
-	/** The original name of the file uploaded by the user. */
-	private string $m_name;
+    /** The original name of the file uploaded by the user. */
+    private string $m_name;
 
-	/** The full original path of the file uploaded by the user. Only available after PHP 8.1 and not trustworthy. */
-	private string $m_clientPath;
+    /** The full original path of the file uploaded by the user. Only available after PHP 8.1 and not trustworthy. */
+    private string $m_clientPath;
 
-	/** The path to the file's content. */
-	private ?string $m_tempFile;
+    /** The path to the file's content. */
+    private ?string $m_tempFile;
 
-	/** The file data, if loaded. */
-	private ?string $m_fileData;
+    /** The file data, if loaded. */
+    private ?string $m_fileData;
 
-	/** The MIME type of the file reported by the user agent. */
-	private string $m_mimeType;
+    /** The MIME type of the file reported by the user agent. */
+    private string $m_mimeType;
 
-	/** The size in bytes of the file reported by the user agent. */
-	private int $m_size;
+    /** The size in bytes of the file reported by the user agent. */
+    private int $m_size;
 
     /** @var int The error code for the upload. */
     private int $m_errorCode;
 
-	/**
-	 * Create a new UploadedFile object.
-	 *
-	 * @param array $uploadedFile The entry from $_FILES from which to initialise the object..
-	 */
-	private function __construct(array $uploadedFile)
-	{
+    /**
+     * Create a new UploadedFile object.
+     *
+     * @param array $uploadedFile The entry from $_FILES from which to initialise the object..
+     */
+    private function __construct(array $uploadedFile)
+    {
         $this->m_tempFile = $uploadedFile["tmp_name"];
         $this->m_name = $uploadedFile["name"];
         $this->m_clientPath = $uploadedFile["full_path"] ?? "";
@@ -52,7 +53,7 @@ final class UploadedFile
         $this->m_errorCode = $uploadedFile["error"] ?? 0;
         $this->m_mimeType = $uploadedFile["type"] ?? "";
         $this->m_fileData = null;
-	}
+    }
 
     /**
      * Fetch all the files uploaded.
@@ -66,7 +67,7 @@ final class UploadedFile
         static $files = null;
 
         if (!isset($files)) {
-			$files = [];
+            $files = [];
 
             foreach ($_FILES as $name => $file) {
                 $files[$name] = new UploadedFile($file);
@@ -85,15 +86,15 @@ final class UploadedFile
         $this->m_fileData = null;
     }
 
-	/**
-	 * Fetch the name of the uploaded file on the client's machine.
-	 *
-	 * @return string The file name.
-	 */
-	public function name(): string
-	{
-		return $this->m_name;
-	}
+    /**
+     * Fetch the name of the uploaded file on the client's machine.
+     *
+     * @return string The file name.
+     */
+    public function name(): string
+    {
+        return $this->m_name;
+    }
 
     /**
      * The original full path name on the client machine of the file.
@@ -108,15 +109,15 @@ final class UploadedFile
         return $this->m_clientPath;
     }
 
-	/**
-	 * Fetch the path for the uploaded file's temporary file.
-	 *
-	 * @return string The path to the temporary file, or `null` if the file has been discarded or moved.
-	 */
-	public function tempFile(): string
-	{
-		return $this->m_tempFile;
-	}
+    /**
+     * Fetch the path for the uploaded file's temporary file.
+     *
+     * @return string The path to the temporary file, or `null` if the file has been discarded or moved.
+     */
+    public function tempFile(): string
+    {
+        return $this->m_tempFile;
+    }
 
     /**
      * Move the uploaded file to a more permanent storage location.
@@ -125,7 +126,7 @@ final class UploadedFile
      *
      * @param string $path The destination for the file.
      *
-     * @return SplFileInfo The moved file, or null if the file could not be moved.
+     * @return SplFileInfo|null The moved file, or null if the file could not be moved.
      */
     public function moveTo(string $path): ?SplFileInfo
     {
@@ -154,18 +155,18 @@ final class UploadedFile
         return false;
     }
 
-	/**
-	 * Fetch the MIME type for the uploaded file data.
-	 *
-	 * This is reported by the user agent and may not be accurate. It will be an empty string if the user agent did not
+    /**
+     * Fetch the MIME type for the uploaded file data.
+     *
+     * This is reported by the user agent and may not be accurate. It will be an empty string if the user agent did not
      * supply a MIME type.
-	 *
-	 * @return string The MIME type.
-	 */
-	public function mimeType(): ?string
-	{
-		return $this->m_mimeType;
-	}
+     *
+     * @return string|null The MIME type.
+     */
+    public function mimeType(): ?string
+    {
+        return $this->m_mimeType;
+    }
 
     /**
      * Fetch the size, in bytes, reported for the uploaded file by the user agent.
@@ -196,28 +197,28 @@ final class UploadedFile
         return (false === $size ? null : $size);
     }
 
-	/**
-	 * Fetch the file data.
-	 *
-	 * This method returns the uploaded file content unless the file is invalid. The content of the file is read and
+    /**
+     * Fetch the file data.
+     *
+     * This method returns the uploaded file content unless the file is invalid. The content of the file is read and
      * cached on the first call. If the file is valid but cannot be read for some reason, null is returned.
-	 *
-	 * @return string The file data, or `null` the file is not valid or the temporary file cannot be read.
-	 */
-	public function data(): ?string
-	{
-		if (!isset($this->m_fileData) && $this->isValid()) {
-			if (!is_file($this->m_tempFile)) {
-				AppLog::error("file \"{$this->m_tempFile}\" is not a file");
-			} else if (!is_readable($this->m_tempFile)) {
-				AppLog::error("file \"{$this->m_tempFile}\" is not readable");
-			} else {
-				$this->m_fileData = file_get_contents($this->m_tempFile);
-			}
-		}
+     *
+     * @return string The file data, or `null` the file is not valid or the temporary file cannot be read.
+     */
+    public function data(): ?string
+    {
+        if (!isset($this->m_fileData) && $this->isValid()) {
+            if (!is_file($this->m_tempFile)) {
+                Log::error("file \"{$this->m_tempFile}\" is not a file");
+            } elseif (!is_readable($this->m_tempFile)) {
+                Log::error("file \"{$this->m_tempFile}\" is not readable");
+            } else {
+                $this->m_fileData = file_get_contents($this->m_tempFile);
+            }
+        }
 
-		return $this->m_fileData;
-	}
+        return $this->m_fileData;
+    }
 
     /**
      * Fetch the upload error code.

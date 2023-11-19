@@ -9,6 +9,7 @@ use Bead\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
 use InvalidArgumentException;
 use JsonException;
 use RuntimeException;
+use Shmop;
 
 use function shmop_close;
 use function shmop_delete;
@@ -55,7 +56,7 @@ class SharedMemory
      */
     private function __construct($handle, int $id, int $size, int $mode)
     {
-		assert(extension_loaded("shmop"), new RuntimeException("SharedMemory requires the 'shmop' extension to be loaded."));
+        assert(extension_loaded("shmop"), new RuntimeException("SharedMemory requires the 'shmop' extension to be loaded."));
         $this->m_id = $id;
         $this->m_size = $size;
         $this->m_handle = $handle;
@@ -91,6 +92,8 @@ class SharedMemory
      * @param int|null $id Optional ID for the memory block. If not given, a random one will be generated.
      *
      * @return SharedMemory The created instance.
+     *
+     * @throws SharedMemoryException if the memory block cannot be created.
      */
     public static function create(int $size, ?int $id = null): SharedMemory
     {
@@ -134,11 +137,13 @@ class SharedMemory
      * @param int $mode The access mode.
      *
      * @return SharedMemory The opened instance.
+     *
+     * @throws SharedMemoryException if the memory could not be opened.
      */
     public static function open(int $id, int $mode = self::ModeRead): SharedMemory
     {
         assert(extension_loaded("shmop"), new SharedMemoryExtensionMissingException("Shared memory is not available - shmop extension si not loaded."));
-        assert ($mode === self::ModeRead || $mode === self::ModeReadWrite, new SharedMemoryException("Invalid open mode."));
+        assert($mode === self::ModeRead || $mode === self::ModeReadWrite, new SharedMemoryException("Invalid open mode."));
         $handle = @shmop_open($id, (self::ModeReadWrite === $mode ? "w" : "a"), 0, 0);
 
         if (false === $handle) {
@@ -219,6 +224,8 @@ class SharedMemory
      * Delete the shared memory block.
      *
      * Any other objects using the shared memory block with the same ID will no longer be able to use it.
+     *
+     * @throws SharedMemoryException if the shared memory handle has already been closed.
      */
     public function delete(): void
     {
@@ -226,8 +233,12 @@ class SharedMemory
             throw new SharedMemoryException("SharedMemory can't be deleted as it's already been closed or deleted.");
         }
 
-        @shmop_delete($this->m_handle);
+        $handle = $this->m_handle;
         $this->nullify();
+
+        if (!@shmop_delete($handle)) {
+            throw new SharedMemoryException("Error deleting SharedMemory.");
+        }
     }
 
     /**
@@ -240,16 +251,19 @@ class SharedMemory
         $this->m_size = 0;
         $this->m_mode = self::ModeRead;
     }
-    
+
     /**
      * Helper to perform all reading from the memory.
-     * 
+     *
      * Implements bounds checking to protect against overflows.
-     * 
+     *
      * @param int $offset The offset to read from. Must be >= 0 and <= the length of the memory block less read size.
      * @param int|null $size The size of the read. If null or not given, the read is to the end of the memory block.
-     * 
+     *
      * @return string The bytes read.
+     *
+     * @throws InvalidArgumentException if the offset and size would result in a read outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not readable or is no longer accessible
      */
     private function read(int $offset = 0, ?int $size = null): string
     {
@@ -279,7 +293,11 @@ class SharedMemory
      * @param string $format The unpack() format.
      * @param int $offset The offset from which to read the value.
      * @param int $size The size of the value.
+     *
      * @return int|float The value.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     private function readValue(string $format, int $offset, int $size)
     {
@@ -292,6 +310,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the int.
      *
      * @return int The int.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readInt64(int $offset = 0): int
     {
@@ -304,6 +325,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the int.
      *
      * @return int The int.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readUint64(int $offset = 0): int
     {
@@ -316,6 +340,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the int.
      *
      * @return int The int.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readInt32(int $offset = 0): int
     {
@@ -328,6 +355,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the int.
      *
      * @return int The int.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readUint32(int $offset = 0): int
     {
@@ -340,6 +370,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the int.
      *
      * @return int The int.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readInt16(int $offset = 0): int
     {
@@ -352,6 +385,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the int.
      *
      * @return int The int.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readUint16(int $offset = 0): int
     {
@@ -364,6 +400,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the int.
      *
      * @return int The int.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readInt8(int $offset = 0): int
     {
@@ -376,6 +415,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the int.
      *
      * @return int The int.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readUint8(int $offset = 0): int
     {
@@ -388,6 +430,9 @@ class SharedMemory
      * @param int $offset The offset within the shared memory block from which to read the float.
      *
      * @return float The float.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readFloat(int $offset = 0): float
     {
@@ -399,7 +444,10 @@ class SharedMemory
      *
      * @param int $offset The offset within the shared memory block from which to read the double.
      *
-     * @return float The double.
+     * @return double The double.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readDouble(int $offset = 0): float
     {
@@ -415,6 +463,9 @@ class SharedMemory
      * @param int|null $size The optional number of bytes to read.
      *
      * @return string The string from the memory block.
+     *
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readString(int $offset = 0, ?int $size = null): string
     {
@@ -429,6 +480,10 @@ class SharedMemory
      * @param int $offset The offset from which to read the string.
      *
      * @return string The string from the memory block (wihtout the null terminating byte).
+     *
+     * @throws SharedMemoryException if the read would breach the bounds of the shared memory.
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readCString(int $offset = 0): string
     {
@@ -450,7 +505,10 @@ class SharedMemory
      *   `$offset` to the end of the block.
      *
      * @return mixed The JSON read from the shared memory.
+     *
      * @throws JsonException if the content of the shared memory (at the offset) is not valid serializsed JSON.
+     * @throws SharedMemoryException if the shared memory cannot be read.
+     * @throws InvalidArgumentException If the read would extend outside the bounds of the memory.
      */
     public function readJson(int $offset = 0, ?int $size = null)
     {
@@ -465,14 +523,13 @@ class SharedMemory
      * provenance is a security risk. Only use it when you need to share objects between processes and you know the
      * object was created by trusted code, and a JSON representation is not adequate.
      *
-     * @template<T>
-     *
      * @param int $offset The optional byte offset to read from. Default is the start of the block.
      * @param int|null $size The optional size to restrict the unserialisation read to.
      *
-     * @return T The unserialised value.
+     * @throws SharedMemoryException if the shared memory does not contain a serialized object.
+     * @throws InvalidArgumentException If the offset and size would result in a read outside the bounds of the memory.
      */
-    public function unserialize(int $offset = 0, ?int $size = null)
+    public function unserialize(int $offset = 0, ?int $size = null): mixed
     {
         $data = $this->read($offset, $size);
         $value = @unserialize($data);
@@ -493,6 +550,9 @@ class SharedMemory
      * @param string $bytes The bytes to write.
      * @param int $offset The offset to write to. Must be >= 0 and <= the length of the memory block less write size.
      * @param int|null $size The size of the write. If null or not given, the whole of the provided string is written.
+     *
+     * @throws InvalidArgumentException if the offset and size would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     private function write(string $bytes, int $offset = 0, ?int $size = null): void
     {
@@ -520,6 +580,9 @@ class SharedMemory
      * @param int|float $value The value to write.
      * @param string $format The pack() format.
      * @param int $offset The offset from which to write the value.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     private function writeValue($value, string $format, int $offset): void
     {
@@ -531,6 +594,9 @@ class SharedMemory
      *
      * @param int $value The value to write.
      * @param int $offset The offset within the shared memory block from which to write the int.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeInt64(int $value, int $offset = 0): void
     {
@@ -542,6 +608,9 @@ class SharedMemory
      *
      * @param int $value The value to write.
      * @param int $offset The offset within the shared memory block from which to write the int.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeUint64(int $value, int $offset = 0): void
     {
@@ -555,6 +624,9 @@ class SharedMemory
      *
      * @param int $value The value to write.
      * @param int $offset The offset within the shared memory block from which to write the int.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeInt32(int $value, int $offset = 0): void
     {
@@ -568,6 +640,9 @@ class SharedMemory
      *
      * @param int $value The value to write.
      * @param int $offset The offset within the shared memory block from which to write the int.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeUint32(int $value, int $offset = 0): void
     {
@@ -581,6 +656,9 @@ class SharedMemory
      *
      * @param int $value The value to write.
      * @param int $offset The offset within the shared memory block at which to write the int.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeInt16(int $value, int $offset = 0): void
     {
@@ -594,6 +672,9 @@ class SharedMemory
      *
      * @param int $value The value to write.
      * @param int $offset The offset within the shared memory block at which to write the int.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeUint16(int $value, int $offset = 0): void
     {
@@ -607,6 +688,9 @@ class SharedMemory
      *
      * @param int $value The value to write.
      * @param int $offset The offset within the shared memory block at which to write the int.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeInt8(int $value, int $offset = 0): void
     {
@@ -620,6 +704,9 @@ class SharedMemory
      *
      * @param int $value The value to write.
      * @param int $offset The offset within the shared memory block at which to write the int.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeUint8(int $value, int $offset = 0): void
     {
@@ -631,6 +718,9 @@ class SharedMemory
      *
      * @param float $value The value to write.
      * @param int $offset The offset within the shared memory block at which to write the float.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeFloat(float $value, int $offset = 0): void
     {
@@ -642,6 +732,9 @@ class SharedMemory
      *
      * @param float $value The value to write.
      * @param int $offset The offset within the shared memory block at which to write the double.
+     *
+     * @throws InvalidArgumentException if writing the value would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeDouble(float $value, int $offset = 0): void
     {
@@ -655,6 +748,9 @@ class SharedMemory
      *
      * @param int $offset The offset from which to read the string.
      * @param int|null $size The optional number of bytes to read.
+     *
+     * @throws InvalidArgumentException if writing the string would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeString(string $str, int $offset = 0, ?int $size = null): void
     {
@@ -668,10 +764,13 @@ class SharedMemory
      *
      * @param string $str The string to write.
      * @param int $offset The offset at which to write the string.
+     *
+     * @throws InvalidArgumentException if writing the string would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeCString(string $str, int $offset = 0): void
     {
-        $str = $this->write("{$str}\0", $offset);
+        $this->write("{$str}\0", $offset);
     }
 
     /**
@@ -681,6 +780,9 @@ class SharedMemory
      * @param int $offset The optional byte offset to read from. Default is the start of the block.
      *
      * @return int The number of bytes written for the JSON representation of the value.
+     *
+     * @throws InvalidArgumentException if writing the JSON would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
     public function writeJson($value, int $offset = 0): int
     {
@@ -692,14 +794,15 @@ class SharedMemory
     /**
      * Serialise a value to the shared memory, optionally at a given offset.
      *
-     * @template<T>
-     *
-     * @param T $value The value to serialise.
+     * @param mixed $value The value to serialise.
      * @param int $offset The byte offset at which to store the serialisation. Defaults to 0.
      *
      * @return int The number of bytes written for the serialised value.
+     *
+     * @throws InvalidArgumentException if the serialization would result in a write outside the bounds of the memory.
+     * @throws SharedMemoryException if the memory is not writable or is no longer accessible
      */
-    public function serialize($value, int $offset = 0): int
+    public function serialize(mixed $value, int $offset = 0): int
     {
         $data = serialize($value);
         $this->write($data, $offset);

@@ -20,7 +20,7 @@ class XRayTest extends TestCase
     {
         $this->m_tracker = new CallTracker();
 
-        $testObject = new class($this->m_tracker)
+        $testObject = new class ($this->m_tracker)
         {
             private static CallTracker $m_tracker;
             private static string $m_privateStaticProperty = "private-static-property";

@@ -35,6 +35,6 @@ class InvalidQueryExpressionException extends QueryBuilderException
      */
     public function getExpression(): string
     {
-       return $this->m_expression;
+        return $this->m_expression;
     }
 }

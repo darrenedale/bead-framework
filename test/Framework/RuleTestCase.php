@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Framework;
-
 namespace BeadTests\Framework;
 
 use Bead\Validation\Rule;

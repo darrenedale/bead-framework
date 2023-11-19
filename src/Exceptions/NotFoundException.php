@@ -7,13 +7,13 @@ namespace Bead\Exceptions;
  */
 class NotFoundException extends HttpException
 {
-	/**
-	 * The HTTP status code.
-	 *
-	 * @return int 404
-	 */
-	public function statusCode(): int
-	{
-		return 404;
-	}
+    /**
+     * The HTTP status code.
+     *
+     * @return int 404
+     */
+    public function statusCode(): int
+    {
+        return 404;
+    }
 }

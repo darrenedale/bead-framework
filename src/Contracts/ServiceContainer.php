@@ -2,7 +2,7 @@
 
 namespace Bead\Contracts;
 
-use Bead\Exceptions\ServieAlreadyBoundException;
+use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
 
 interface ServiceContainer
@@ -13,7 +13,7 @@ interface ServiceContainer
      * @param string $service The service identifier to bind to.
      * @param mixed $instance The service instance.
      *
-     * @throws ServieAlreadyBoundException if there is already a service bound to the identifier.
+     * @throws ServiceAlreadyBoundException if there is already a service bound to the identifier.
      */
     public function bindService(string $service, $instance): void;
 

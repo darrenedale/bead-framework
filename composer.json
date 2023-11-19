@@ -17,15 +17,21 @@
     "ext-iconv": "*",
     "ext-json": "*",
     "psr/container": "^2.0",
-    "psr/http-message": "^1"
+    "psr/http-message": "^1",
+    "psr/log": "^3"
   },
   "suggest": {
-    "ext-shmop": "*"
+    "ext-shmop": "*",
+    "ext-openssl": "*",
+    "ext-sodium": "*",
+    "ext-uopz": "^6||^7"
   },
   "require-dev": {
     "mockery/mockery": "^1.5",
     "phpunit/phpunit": "^9.5",
-    "ext-uopz": "^6||^7"
+    "squizlabs/php_codesniffer": "^3.7",
+    "ext-uopz": "^6||^7",
+    "vimeo/psalm": "^5.15"
   },
   "autoload": {
     "psr-4": {
@@ -35,13 +41,14 @@
       "src/Helpers/I18n.php",
       "src/Helpers/Iterable.php",
       "src/Helpers/Str.php",
-      "src/polyfill/string.php",
-      "src/polyfill/array.php"
+      "src/Polyfill/string.php",
+      "src/Polyfill/array.php"
     ]
   },
   "autoload-dev": {
     "psr-4": {
-      "BeadTests\\": "test"
+      "BeadTests\\": "test",
+      "BeadStandards\\": "standards"
     }
   }
 }

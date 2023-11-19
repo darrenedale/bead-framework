@@ -27,7 +27,7 @@ trait AssertsCommonExceptionProperties
     /** Assert that a Throwable has a message matching a regular expression. */
     private static function assertMessageMatches(string $pattern, Throwable $throwable): void
     {
-        self::assertMatchesRegularExpression($message, $throwable->getMessage());
+        self::assertMatchesRegularExpression($pattern, $throwable->getMessage());
     }
 
     /** Assert that a Throwable has a given code. */

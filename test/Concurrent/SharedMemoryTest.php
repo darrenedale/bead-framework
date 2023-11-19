@@ -78,9 +78,9 @@ class SharedMemoryTest extends TestCase
         $newId = 0x80808080;
         $called = false;
 
-        $this->mockFunction("rand",
-            function() use ($existingId, $newId, &$called): int
-            {
+        $this->mockFunction(
+            "rand",
+            function () use ($existingId, $newId, &$called): int {
                 if (!$called) {
                     $called = true;
                     return $existingId;
@@ -121,11 +121,10 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -150,11 +149,10 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -179,11 +177,10 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -208,11 +205,10 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -238,11 +234,10 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -262,7 +257,7 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             $memory = SharedMemory::open(0x80808080);
 
             if (isset($memory)) {
@@ -325,11 +320,10 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay(SharedMemory::create(100, 0x80808080));
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -389,11 +383,10 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay(SharedMemory::create(100, 0x80808080));
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -456,11 +449,10 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay(SharedMemory::create(100, 0x80808080));
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -523,11 +515,10 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay(SharedMemory::create(100, 0x80808080));
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -590,11 +581,10 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay(SharedMemory::create(100, 0x80808080));
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -657,11 +647,10 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay(SharedMemory::create(100, 0x80808080));
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -724,11 +713,10 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay(SharedMemory::create(100, 0x80808080));
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -756,7 +744,7 @@ class SharedMemoryTest extends TestCase
         $this->expectExceptionMessage("Can't read outside bounds of SharedMemory.");
         $actual = $this->m_memory->readInt8($offset);
     }
-    
+
     // NOTE 8-bit overflow test is identical to 8-bit invalid offset test, so omitted
 
     public function testReadUInt8(): void
@@ -784,11 +772,10 @@ class SharedMemoryTest extends TestCase
         $memory = new XRay(SharedMemory::create(100, 0x80808080));
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
@@ -990,7 +977,7 @@ class SharedMemoryTest extends TestCase
         $this->expectExceptionMessage("Can't read outside bounds of SharedMemory.");
         $this->m_memory->readJson($offset, 2);
     }
-    
+
     public function testUnserialize(): void
     {
         $value = [1, 2, 3,];
@@ -1052,7 +1039,7 @@ class SharedMemoryTest extends TestCase
         $value = -9187201950435737600;
         $this->m_memory->writeInt64($value);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("q", shmop_read($memory->m_handle, 0,8))[1];
+        $actual = unpack("q", shmop_read($memory->m_handle, 0, 8))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1062,7 +1049,7 @@ class SharedMemoryTest extends TestCase
         $offset = 4;
         $this->m_memory->writeInt64($value, $offset);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("q", shmop_read($memory->m_handle, $offset,8))[1];
+        $actual = unpack("q", shmop_read($memory->m_handle, $offset, 8))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1072,18 +1059,17 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeInt64(0, $value);
+        $memory->writeInt64(0, $value);
     }
 
     public function testWriteInt64ThrowsWithNegativeOffset(): void
@@ -1092,7 +1078,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt64($offset, $value);
+        $this->m_memory->writeInt64($offset, $value);
     }
 
     public function testWriteInt64ThrowsWithInvalidOffset(): void
@@ -1101,7 +1087,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt64($offset, $value);
+        $this->m_memory->writeInt64($offset, $value);
     }
 
     public function testWriteInt64ThrowsWithOverflow(): void
@@ -1110,7 +1096,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 7;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt64($offset, $value);
+        $this->m_memory->writeInt64($offset, $value);
     }
 
     public function testWriteUInt64(): void
@@ -1118,7 +1104,7 @@ class SharedMemoryTest extends TestCase
         $value = 0x7fffffffffffffff;
         $this->m_memory->writeUInt64($value);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("Q", shmop_read($memory->m_handle, 0,8))[1];
+        $actual = unpack("Q", shmop_read($memory->m_handle, 0, 8))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1128,7 +1114,7 @@ class SharedMemoryTest extends TestCase
         $offset = 4;
         $this->m_memory->writeUInt64($value, $offset);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("Q", shmop_read($memory->m_handle, $offset,8))[1];
+        $actual = unpack("Q", shmop_read($memory->m_handle, $offset, 8))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1138,18 +1124,17 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeUInt64(0, $value);
+        $memory->writeUInt64(0, $value);
     }
 
     public function testWriteUInt64ThrowsWithNegativeOffset(): void
@@ -1158,7 +1143,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt64($offset, $value);
+        $this->m_memory->writeUInt64($offset, $value);
     }
 
     public function testWriteUInt64ThrowsWithInvalidOffset(): void
@@ -1167,7 +1152,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt64($offset, $value);
+        $this->m_memory->writeUInt64($offset, $value);
     }
 
     public function testWriteUInt64ThrowsWithOverflow(): void
@@ -1176,7 +1161,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 7;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt64($offset, $value);
+        $this->m_memory->writeUInt64($offset, $value);
     }
 
     public function testWriteInt32(): void
@@ -1184,7 +1169,7 @@ class SharedMemoryTest extends TestCase
         $value = -2147483648;
         $this->m_memory->writeInt32($value);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("i", shmop_read($memory->m_handle, 0,4))[1];
+        $actual = unpack("i", shmop_read($memory->m_handle, 0, 4))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1194,7 +1179,7 @@ class SharedMemoryTest extends TestCase
         $offset = 4;
         $this->m_memory->writeInt32($value, $offset);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("i", shmop_read($memory->m_handle, $offset,4))[1];
+        $actual = unpack("i", shmop_read($memory->m_handle, $offset, 4))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1204,18 +1189,17 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeInt32(0, $value);
+        $memory->writeInt32(0, $value);
     }
 
     public function testWriteInt32ThrowsWithNegativeOffset(): void
@@ -1224,7 +1208,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt32($offset, $value);
+        $this->m_memory->writeInt32($offset, $value);
     }
 
     public function testWriteInt32ThrowsWithInvalidOffset(): void
@@ -1233,7 +1217,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt32($offset, $value);
+        $this->m_memory->writeInt32($offset, $value);
     }
 
     public function testWriteInt32ThrowsWithOverflow(): void
@@ -1242,7 +1226,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 3;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt32($offset, $value);
+        $this->m_memory->writeInt32($offset, $value);
     }
 
     public function testWriteUInt32(): void
@@ -1250,7 +1234,7 @@ class SharedMemoryTest extends TestCase
         $value = 0x7fffffff;
         $this->m_memory->writeUInt32($value);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("I", shmop_read($memory->m_handle, 0,4))[1];
+        $actual = unpack("I", shmop_read($memory->m_handle, 0, 4))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1260,7 +1244,7 @@ class SharedMemoryTest extends TestCase
         $offset = 4;
         $this->m_memory->writeUInt32($value, $offset);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("I", shmop_read($memory->m_handle, $offset,4))[1];
+        $actual = unpack("I", shmop_read($memory->m_handle, $offset, 4))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1270,18 +1254,17 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeUInt32(0, $value);
+        $memory->writeUInt32(0, $value);
     }
 
     public function testWriteUInt32ThrowsWithNegativeOffset(): void
@@ -1290,7 +1273,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt32($offset, $value);
+        $this->m_memory->writeUInt32($offset, $value);
     }
 
     public function testWriteUInt32ThrowsWithInvalidOffset(): void
@@ -1299,7 +1282,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt32($offset, $value);
+        $this->m_memory->writeUInt32($offset, $value);
     }
 
     public function testWriteUInt32ThrowsWithOverflow(): void
@@ -1308,7 +1291,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 3;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt32($offset, $value);
+        $this->m_memory->writeUInt32($offset, $value);
     }
 
     public function testWriteInt16(): void
@@ -1316,7 +1299,7 @@ class SharedMemoryTest extends TestCase
         $value = -32768;
         $this->m_memory->writeInt16($value);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("s", shmop_read($memory->m_handle, 0,2))[1];
+        $actual = unpack("s", shmop_read($memory->m_handle, 0, 2))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1326,7 +1309,7 @@ class SharedMemoryTest extends TestCase
         $offset = 4;
         $this->m_memory->writeInt16($value, $offset);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("s", shmop_read($memory->m_handle, $offset,2))[1];
+        $actual = unpack("s", shmop_read($memory->m_handle, $offset, 2))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1336,18 +1319,17 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeInt16(0, $value);
+        $memory->writeInt16(0, $value);
     }
 
     public function testWriteInt16ThrowsWithNegativeOffset(): void
@@ -1356,7 +1338,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt16($offset, $value);
+        $this->m_memory->writeInt16($offset, $value);
     }
 
     public function testWriteInt16ThrowsWithInvalidOffset(): void
@@ -1365,7 +1347,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt16($offset, $value);
+        $this->m_memory->writeInt16($offset, $value);
     }
 
     public function testWriteInt16ThrowsWithOverflow(): void
@@ -1374,7 +1356,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt16($offset, $value);
+        $this->m_memory->writeInt16($offset, $value);
     }
 
     public function testWriteUInt16(): void
@@ -1382,7 +1364,7 @@ class SharedMemoryTest extends TestCase
         $value = 0x7fff;
         $this->m_memory->writeUInt16($value);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("S", shmop_read($memory->m_handle, 0,4))[1];
+        $actual = unpack("S", shmop_read($memory->m_handle, 0, 4))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1392,7 +1374,7 @@ class SharedMemoryTest extends TestCase
         $offset = 4;
         $this->m_memory->writeUInt16($value, $offset);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("S", shmop_read($memory->m_handle, $offset,4))[1];
+        $actual = unpack("S", shmop_read($memory->m_handle, $offset, 4))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1402,18 +1384,17 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeUInt16(0, $value);
+        $memory->writeUInt16(0, $value);
     }
 
     public function testWriteUInt16ThrowsWithNegativeOffset(): void
@@ -1422,7 +1403,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt16($offset, $value);
+        $this->m_memory->writeUInt16($offset, $value);
     }
 
     public function testWriteUInt16ThrowsWithInvalidOffset(): void
@@ -1431,7 +1412,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt16($offset, $value);
+        $this->m_memory->writeUInt16($offset, $value);
     }
 
     public function testWriteUInt16ThrowsWithOverflow(): void
@@ -1440,7 +1421,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize - 1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt16($offset, $value);
+        $this->m_memory->writeUInt16($offset, $value);
     }
 
     public function testWriteInt8(): void
@@ -1448,7 +1429,7 @@ class SharedMemoryTest extends TestCase
         $value = -128;
         $this->m_memory->writeInt8($value);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("c", shmop_read($memory->m_handle, 0,2))[1];
+        $actual = unpack("c", shmop_read($memory->m_handle, 0, 2))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1458,7 +1439,7 @@ class SharedMemoryTest extends TestCase
         $offset = 4;
         $this->m_memory->writeInt8($value, $offset);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("c", shmop_read($memory->m_handle, $offset,2))[1];
+        $actual = unpack("c", shmop_read($memory->m_handle, $offset, 2))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1468,18 +1449,17 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeInt8(0, $value);
+        $memory->writeInt8(0, $value);
     }
 
     public function testWriteInt8ThrowsWithNegativeOffset(): void
@@ -1488,7 +1468,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt8($offset, $value);
+        $this->m_memory->writeInt8($offset, $value);
     }
 
     public function testWriteInt8ThrowsWithInvalidOffset(): void
@@ -1497,7 +1477,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt8($offset, $value);
+        $this->m_memory->writeInt8($offset, $value);
     }
 
     public function testWriteInt8ThrowsWithOverflow(): void
@@ -1506,7 +1486,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeInt8($offset, $value);
+        $this->m_memory->writeInt8($offset, $value);
     }
 
     public function testWriteUInt8(): void
@@ -1514,7 +1494,7 @@ class SharedMemoryTest extends TestCase
         $value = 0x7f;
         $this->m_memory->writeUInt8($value);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("C", shmop_read($memory->m_handle, 0,4))[1];
+        $actual = unpack("C", shmop_read($memory->m_handle, 0, 4))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1524,7 +1504,7 @@ class SharedMemoryTest extends TestCase
         $offset = 4;
         $this->m_memory->writeUInt8($value, $offset);
         $memory = new XRay($this->m_memory);
-        $actual = unpack("C", shmop_read($memory->m_handle, $offset,4))[1];
+        $actual = unpack("C", shmop_read($memory->m_handle, $offset, 4))[1];
         self::assertEquals($value, $actual);
     }
 
@@ -1534,18 +1514,17 @@ class SharedMemoryTest extends TestCase
         $memory = SharedMemory::create(100, 0x80808080);
         $this->m_memories[] = $memory;
 
-        $guard = new ScopeGuard(function(): void {
+        $guard = new ScopeGuard(function (): void {
             try {
                 SharedMemory::open(0x80808080)->delete();
-            }
-            catch (SharedMemoryException $err) {
+            } catch (SharedMemoryException $err) {
             }
         });
 
         $memory->close();
         $this->expectException(SharedMemoryException::class);
         $this->expectExceptionMessage("The shared memory is not writable.");
-        $actual = $memory->writeUInt8(0, $value);
+        $memory->writeUInt8(0, $value);
     }
 
     public function testWriteUInt8ThrowsWithNegativeOffset(): void
@@ -1554,7 +1533,7 @@ class SharedMemoryTest extends TestCase
         $offset = -1;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt8($offset, $value);
+        $this->m_memory->writeUInt8($offset, $value);
     }
 
     public function testWriteUInt8ThrowsWithInvalidOffset(): void
@@ -1563,7 +1542,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt8($offset, $value);
+        $this->m_memory->writeUInt8($offset, $value);
     }
 
     public function testWriteUInt8ThrowsWithOverflow(): void
@@ -1572,7 +1551,7 @@ class SharedMemoryTest extends TestCase
         $offset = self::SharedMemoryTestSize;
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Can't write outside bounds of SharedMemory.");
-        $actual = $this->m_memory->writeUInt8($offset, $value);
+        $this->m_memory->writeUInt8($offset, $value);
     }
 
     public function testWriteString(): void

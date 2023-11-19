@@ -83,7 +83,13 @@ class IpTest extends RuleTestCase
                 }
             }, true,],
             "typicalObject" => ["field", (object)[], false,],
-            "typicalAnonymousClass" => ["field", new class{}, false,],
+            "typicalAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                false,
+            ],
             "typicalIntClassC" => ["field", ip2long("192.168.1.1"), false,],
             "typicalTrue" => ["field", true, false,],
             "typicalFalse" => ["field", false, false,],

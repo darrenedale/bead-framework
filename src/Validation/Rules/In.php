@@ -11,8 +11,8 @@ declare(strict_types=1);
 namespace Bead\Validation\Rules;
 
 use Bead\Validation\Rule;
-use function Bead\Helpers\Iterable\all;
 
+use function Bead\Helpers\Iterable\all;
 use function Bead\Helpers\I18n\tr;
 
 /**
@@ -66,7 +66,7 @@ class In implements Rule
      */
     public function passes(string $field, $data): bool
     {
-		return (is_array($data) && all($data, fn($value) => in_array($value, $this->options()))) || in_array($data, $this->options());
+        return (is_array($data) && all($data, fn ($value) => in_array($value, $this->options()))) || in_array($data, $this->options());
     }
 
     /**

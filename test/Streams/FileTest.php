@@ -11,7 +11,6 @@ use SplFileInfo;
 
 class FileTest extends TestCase
 {
-
     private const ReadFileName = __DIR__ . "/files/filetest-file01.txt";
 
     private const WriteFileName = "filetest-write-file01.txt";
@@ -59,7 +58,7 @@ class FileTest extends TestCase
      */
     public function testConstructorReadWrite(): void
     {
-        file_put_contents(self::writeFilename(), '');
+        file_put_contents(self::writeFilename(), "");
         $stream = new File(self::writeFilename(), File::ModeRead | File::ModeWrite);
         $this->assertTrue($stream->isReadable());
         $this->assertTrue($stream->isWritable());
@@ -70,7 +69,7 @@ class FileTest extends TestCase
      */
     public function testConstructorWriteOnly(): void
     {
-        file_put_contents(self::writeFilename(), '');
+        file_put_contents(self::writeFilename(), "");
         $stream = new File(self::writeFilename(), File::ModeWrite);
         $this->assertFalse($stream->isReadable());
         $this->assertTrue($stream->isWritable());
@@ -425,7 +424,7 @@ class FileTest extends TestCase
      */
     public function testReadThrowsWithReadFail(): void
     {
-        $this->mockFunction('fread', false);
+        $this->mockFunction("fread", false);
         self::expectException(FileStreamException::class);
         self::expectExceptionMessage("Error reading from the stream.");
         $content = $this->m_stream->read(4);
@@ -576,7 +575,7 @@ class FileTest extends TestCase
     public function testWriteThrowsWithWriteFail(): void
     {
         $stream = new File(self::writeFilename(), File::ModeWrite);
-        $this->mockFunction('fwrite', false);
+        $this->mockFunction("fwrite", false);
         $this->expectException(FileStreamException::class);
         $this->expectExceptionMessage("The stream could not be written.");
         $stream->write("file");

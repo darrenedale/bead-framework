@@ -9,23 +9,23 @@ use Bead\Contracts\Response;
  */
 class RedirectResponse implements Response
 {
-	use DoesntHaveContent;
-	use SendsHeaders;
+    use DoesntHaveContent;
+    use SendsHeaders;
 
     /** @var int HTTP status code for permanent redirects. */
-	public const PermanentRedirect = 308;
+    public const PermanentRedirect = 308;
 
     /** @var int HTTP status code for temporary redirects. */
-	public const TemporaryRedirect = 307;
+    public const TemporaryRedirect = 307;
 
     /** @var int The default HTTP status code to use. */
-	public const DefaultRedirectCode = self::TemporaryRedirect;
+    public const DefaultRedirectCode = self::TemporaryRedirect;
 
-	/** @var int The HTTP status code. */
-	private int $m_code;
+    /** @var int The HTTP status code. */
+    private int $m_code;
 
-	/** @var string The redirect location. */
-	private string $m_url;
+    /** @var string The redirect location. */
+    private string $m_url;
 
     /**
      * Initialise a new redirect response.
@@ -36,56 +36,56 @@ class RedirectResponse implements Response
      * @param string $url The URL to redirect to.
      * @param int $code The HTTP status code.
      */
-	public function __construct(string $url, int $code = self::DefaultRedirectCode)
-	{
-		$this->m_url  = $url;
-		$this->m_code = $code;
-	}
+    public function __construct(string $url, int $code = self::DefaultRedirectCode)
+    {
+        $this->m_url  = $url;
+        $this->m_code = $code;
+    }
 
-	/**
-	 * @inheritDoc
-	 */
-	public function statusCode(): int
-	{
-		return $this->m_code;
-	}
+    /**
+     * @inheritDoc
+     */
+    public function statusCode(): int
+    {
+        return $this->m_code;
+    }
 
-	/**
-	 * The redirect headers.
-	 *
-	 * @return array
-	 */
-	public function headers(): array
-	{
-		return ["location" => $this->url(),];
-	}
+    /**
+     * The redirect headers.
+     *
+     * @return array
+     */
+    public function headers(): array
+    {
+        return ["location" => $this->url(),];
+    }
 
-	/**
-	 * Fetch the redirect URL.
-	 *
-	 * @return string The URL.
-	 */
-	public function url(): string
-	{
-		return $this->m_url;
-	}
+    /**
+     * Fetch the redirect URL.
+     *
+     * @return string The URL.
+     */
+    public function url(): string
+    {
+        return $this->m_url;
+    }
 
-	/**
-	 * Set the redirect URL.
-	 *
-	 * @param string $url The URL.
-	 */
-	public function setUrl(string $url): void
-	{
-		$this->m_url = $url;
-	}
+    /**
+     * Set the redirect URL.
+     *
+     * @param string $url The URL.
+     */
+    public function setUrl(string $url): void
+    {
+        $this->m_url = $url;
+    }
 
     /**
      * Send the redirect response.
      */
-	public function send(): void
-	{
-		http_response_code($this->statusCode());
-		$this->sendHeaders();
-	}
+    public function send(): void
+    {
+        http_response_code($this->statusCode());
+        $this->sendHeaders();
+    }
 }

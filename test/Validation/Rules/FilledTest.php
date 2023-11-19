@@ -37,7 +37,13 @@ class FilledTest extends RuleTestCase
             "typicalFilledFloat" => ["field", 1.5, true,],
             "typicalFilledArray" => ["field", [1, 2, 3, 4, 5,], true,],
             "typicalFilledObject" => ["field", (object)[], true,],
-            "typicalFilledAnonymousClass" => ["field", new class{}, true,],
+            "typicalFilledAnonymousClass" => [
+                "field",
+                new class
+                {
+                },
+                true,
+            ],
             "extremeFilledFalse" => ["field", false, true,],
             "extremeFilledInt0" => ["field", 0, true,],
             "extremeFilledFloat0" => ["field", 0.0, true,],
@@ -53,13 +59,18 @@ class FilledTest extends RuleTestCase
             "invalidFloatField" => [1.5, "", false, TypeError::class,],
             "invalidNullField" => [null, "", false, TypeError::class,],
             "invalidEmptyArrayField" => [[], "", false, TypeError::class,],
-            "invalidStringableField" => [new class
+            "invalidStringableField" => [
+                new class
                 {
                     public function __toString(): string
                     {
                         return "field";
                     }
-                }, "", false, TypeError::class,],
+                },
+                "",
+                false,
+                TypeError::class,
+            ],
             "invalidArrayField" => [["field",], "", false, TypeError::class,],
             "invalidTrueField" => [true, "", false, TypeError::class,],
             "invalidFalseField" => [false, "", false, TypeError::class,],

@@ -13,21 +13,21 @@ use function Bead\Helpers\I18n\tr;
  */
 class Present implements DatasetAwareRule
 {
-	use KnowsDataset;
+    use KnowsDataset;
 
-	/**
-	 * @inheritDoc
-	 */
-	public function passes(string $field, $data): bool
-	{
-		return array_key_exists($field, $this->dataset());
-	}
+    /**
+     * @inheritDoc
+     */
+    public function passes(string $field, $data): bool
+    {
+        return array_key_exists($field, $this->dataset());
+    }
 
-	/**
-	 * @inheritDoc
-	 */
-	public function message(string $field): string
-	{
-		return tr("The %1 field must be present in the data.", __FILE__, __LINE__, $field);
-	}
+    /**
+     * @inheritDoc
+     */
+    public function message(string $field): string
+    {
+        return tr("The %1 field must be present in the data.", __FILE__, __LINE__, $field);
+    }
 }

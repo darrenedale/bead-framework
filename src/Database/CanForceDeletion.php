@@ -16,7 +16,7 @@ trait CanForceDeletion
      *
      * @return DatabaseConnectionContract The connection to use when soft-deleting/restoring the model.
      */
-    public abstract function connection(): DatabaseConnectionContract;
+    abstract public function connection(): DatabaseConnectionContract;
 
     /**
      * Fetch the table to use when soft-deleting/restoring the model.
@@ -25,7 +25,7 @@ trait CanForceDeletion
      *
      * @return string The database table.
      */
-    public abstract static function table(): string;
+    abstract public static function table(): string;
 
     /**
      * Fetch the primary key column to use when soft-deleting/restoring the model.
@@ -34,7 +34,7 @@ trait CanForceDeletion
      *
      * @return string The primary key column.
      */
-    public abstract static function primaryKey(): string;
+    abstract public static function primaryKey(): string;
 
     /**
      * Force deletion of the model.

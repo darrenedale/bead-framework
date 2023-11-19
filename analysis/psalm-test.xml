@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<psalm
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config ../../vendor/vimeo/psalm/config.xsd"
+    errorLevel="7"
+    resolveFromConfigFile="true"
+    checkForThrowsDocblock="false"
+    inferPropertyTypesFromConstructor="false"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="false"
+    findUnusedVariablesAndParams="false"
+    findUnusedPsalmSuppress="true"
+    disableSuppressAll="true"
+    triggerErrorExits="always"
+    autoloader="./psalm-autoload.php"
+>
+    <projectFiles>
+        <directory name="../test" />
+        <ignoreFiles>
+            <directory name="../test/smoke" />
+        </ignoreFiles>
+    </projectFiles>
+</psalm>

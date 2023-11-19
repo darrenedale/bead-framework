@@ -14,7 +14,7 @@ use Bead\Validation\DatasetAwareRule;
 use InvalidArgumentException;
 
 use function Bead\Helpers\Iterable\all;
-
+use function Bead\Helpers\Iterable\grammaticalImplode;
 use function Bead\Helpers\I18n\tr;
 
 /**
@@ -49,7 +49,7 @@ class RequiredWithAll implements DatasetAwareRule
     protected function otherFieldsArePresent(): bool
     {
         $data = $this->dataset();
-        return all($this->otherFields(), fn(string $field): bool => self::isFilled($data[$field] ?? null));
+        return all($this->otherFields(), fn (string $field): bool => self::isFilled($data[$field] ?? null));
     }
 
     /**

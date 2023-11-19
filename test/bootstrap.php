@@ -2,4 +2,6 @@
 
 require_once __DIR__ . "/../vendor/autoload.php";
 
-mkdir("/tmp/bead-framework/test", recursive: true);
+use BeadTests\Framework\TestCase;
+
+mkdir(TestCase::tempDir(), 0777, true);

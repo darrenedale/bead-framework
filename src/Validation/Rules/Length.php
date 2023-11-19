@@ -68,7 +68,7 @@ class Length implements Rule
     {
         if (is_string($data)) {
             return $this->length() === strlen($data);
-        } else if (is_array($data) || $data instanceof Countable) {
+        } elseif (is_array($data) || $data instanceof Countable) {
             return $this->length() === count($data);
         }
 

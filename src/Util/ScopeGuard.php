@@ -2,7 +2,7 @@
 
 namespace Bead\Util;
 
-use \Closure;
+use Closure;
 
 /**
  * Invoke a closure when the object goes out of scope.
@@ -20,92 +20,92 @@ use \Closure;
  */
 class ScopeGuard
 {
-	/** @var array The closures to invoke when the guard goes out of scope. */
-	private array $m_closures = [];
+    /** @var array The closures to invoke when the guard goes out of scope. */
+    private array $m_closures = [];
 
-	/** @var bool Whether the guard is currently enabled. */
-	private bool $m_enabled = true;
+    /** @var bool Whether the guard is currently enabled. */
+    private bool $m_enabled = true;
 
-	/**
-	 * Initialise a guard with a single closure.
-	 *
-	 * @param Closure $closure The closure to invoke when the object goes out of scope.
-	 */
-	public function __construct(Closure $closure)
-	{
-		$this->addClosure($closure);
-	}
+    /**
+     * Initialise a guard with a single closure.
+     *
+     * @param Closure $closure The closure to invoke when the object goes out of scope.
+     */
+    public function __construct(Closure $closure)
+    {
+        $this->addClosure($closure);
+    }
 
-	/**
-	 * The destructor.
-	 */
-	public function __destruct()
-	{
-		$this->invoke();
-	}
+    /**
+     * The destructor.
+     */
+    public function __destruct()
+    {
+        $this->invoke();
+    }
 
-	/**
-	 * Add a closure to be invoked when the guard goes out of scope.
-	 *
-	 * @param Closure $closure The closure to add.
-	 */
-	public function addClosure(Closure $closure): void
-	{
-		$this->m_closures[] = $closure;
-	}
+    /**
+     * Add a closure to be invoked when the guard goes out of scope.
+     *
+     * @param Closure $closure The closure to add.
+     */
+    public function addClosure(Closure $closure): void
+    {
+        $this->m_closures[] = $closure;
+    }
 
-	/**
-	 * Fetch the closures that will be invoked when the guard goes out of scope.
-	 *
-	 * @return array The closures.
-	 */
-	protected function closures(): array
-	{
-		return $this->m_closures;
-	}
+    /**
+     * Fetch the closures that will be invoked when the guard goes out of scope.
+     *
+     * @return array The closures.
+     */
+    protected function closures(): array
+    {
+        return $this->m_closures;
+    }
 
-	/**
-	 * Invoke the closures, if the guard is enabled.
-	 */
-	public function invoke(): void
-	{
-		if (!$this->isEnabled()) {
-			return;
-		}
+    /**
+     * Invoke the closures, if the guard is enabled.
+     */
+    public function invoke(): void
+    {
+        if (!$this->isEnabled()) {
+            return;
+        }
 
-		foreach ($this->closures() as $closure) {
-			$closure();
-		}
-	}
+        foreach ($this->closures() as $closure) {
+            $closure();
+        }
+    }
 
-	/**
-	 * Cancel the guard.
-	 *
-	 * Once cancelled, the closures will not be invoked when the guard goes out of scope. You can re-enable the guard
-	 * by subsequently calling enable().
-	 */
-	public function cancel(): void
-	{
-		$this->m_enabled = false;
-	}
+    /**
+     * Cancel the guard.
+     *
+     * Once cancelled, the closures will not be invoked when the guard goes out of scope. You can re-enable the guard
+     * by subsequently calling enable().
+     */
+    public function cancel(): void
+    {
+        $this->m_enabled = false;
+    }
 
-	/**
-	 * Enable the guard.
-	 *
-	 * You can re-enable a cancelled guard by calling this method.
-	 */
-	public function enable(): void
-	{
-		$this->m_enabled = true;
-	}
+    /**
+     * Enable the guard.
+     *
+     * You can re-enable a cancelled guard by calling this method.
+     */
+    public function enable(): void
+    {
+        $this->m_enabled = true;
+    }
 
-	/**
-	 * Fetch whether the guard is enabled.
-	 *
-	 * @return bool `true` if the closures will be called when the guard goes out of scope, `false` otherwise.
-	 */
-	public function isEnabled(): bool
-	{
-		return $this->m_enabled;
-	}
+    /**
+     * Fetch whether the guard is enabled.
+     *
+     * @return bool `true` if the closures will be called when the guard goes out of scope, `false` otherwise.
+     */
+    public function isEnabled(): bool
+    {
+        return $this->m_enabled;
+    }
 }

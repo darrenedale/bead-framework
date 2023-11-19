@@ -12,18 +12,18 @@ trait DoesntHaveContent
      *
      * @return string An empty string.
      */
-	public function contentType(): string
-	{
-		return "";
-	}
+    public function contentType(): string
+    {
+        return "";
+    }
 
     /**
      * The (empty) content.
      *
      * @return string An empty string.
      */
-	public function content(): string
-	{
-		return "";
-	}
+    public function content(): string
+    {
+        return "";
+    }
 }

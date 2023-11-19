@@ -20,11 +20,13 @@ use function Bead\Helpers\I18n\tr;
  */
 class Max implements Rule
 {
-    /** @var int | float The maximum value. */
-    private $m_max;
+    /** @var int|float The maximum value. */
+    private int|float $m_max;
 
     /**
-     * @param int|float $max
+     * @param int|float|string $max
+     *
+     * @throws TypeError if $max is given as a string and is not a numeric value.
      */
     public function __construct($max)
     {
@@ -134,11 +136,11 @@ class Max implements Rule
     {
         if (is_int($data)) {
             return $this->intPasses($data);
-        } else if (is_float($data)) {
+        } elseif (is_float($data)) {
             return $this->floatPasses($data);
-        } else if (is_array($data)) {
+        } elseif (is_array($data)) {
             return $this->arrayPasses($data);
-        } else if (is_string($data)) {
+        } elseif (is_string($data)) {
             $intData = filter_var($data, FILTER_VALIDATE_INT);
 
             if (false !== $intData) {

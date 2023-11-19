@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 class ConnectionTest extends TestCase
 {
-
     public function dataForTestSqlToDefactoWildcards(): iterable
     {
         yield from [

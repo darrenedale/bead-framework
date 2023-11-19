@@ -4,6 +4,7 @@ namespace Bead\Database;
 
 use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 use ReflectionMethod;
+use ReflectionException;
 
 /**
  * A model relation that links many models of two related types in arbitrary configurations through a pivot table.
@@ -72,7 +73,7 @@ class ManyToMany extends Relation
     }
 
     /**
-     * @inheritDoc
+     * @throws ReflectionException if hydration fails due to an invalid related model class.
      */
     public function reload(): void
     {
@@ -93,7 +94,7 @@ class ManyToMany extends Relation
     }
 
     /**
-     * @inheritDoc
+     * @throws ReflectionException if hydration fails due to an invalid related model class.
      */
     public function relatedModels()
     {

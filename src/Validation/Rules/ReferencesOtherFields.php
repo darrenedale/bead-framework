@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Bead\Validation\Rules;
 
 use InvalidArgumentException;
+
 use function Bead\Helpers\Iterable\all;
 
 /**

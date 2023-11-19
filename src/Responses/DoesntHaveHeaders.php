@@ -13,8 +13,8 @@ trait DoesntHaveHeaders
      * The (empty) array of headers.
      * @return array The headers.
      */
-	public function headers(): array
-	{
-		return [];
-	}
+    public function headers(): array
+    {
+        return [];
+    }
 }
