@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Bead\Core\Binders;
 
 use Bead\Contracts\Binder;
+use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 use Bead\Core\Application;
 use Bead\Database\Connection;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 
 use function array_key_exists;
+use function gettype;
 use function is_array;
 
 /** Bind database services into the application service container. */
@@ -141,7 +143,7 @@ class Database implements Binder
      *
      * Abstracted primarily to make bindServices() testable.
      */
-    private static function connection(string $dsn, string $user, string $password): Connection
+    private static function connection(string $dsn, string $user, string $password): DatabaseConnectionContract
     {
         return new Connection($dsn, $user, $password);
     }
@@ -167,6 +169,6 @@ class Database implements Binder
 
         $dsn = self::dsn($driver, $driverConfig);
         ["user" => $user, "password" => $password,] = $config[$driver];
-        $app->bindService(Connection::class, self::connection($dsn, $user, $password));
+        $app->bindService(DatabaseConnectionContract::class, self::connection($dsn, $user, $password));
     }
 }

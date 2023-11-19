@@ -64,7 +64,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /**
      * @param string $appRoot
-     * @param DatabaseConnectionContract|null $db
      *
      * @throws RuntimeException if the singleton already exists or if the provided root directory does not exist.
      * @throws ServiceAlreadyBoundException if any of the service bindings set up by the Application is already bound..
@@ -424,7 +423,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function database(): ?DatabaseConnectionContract
     {
-        return $this->serviceIsBound(Connection::class) ? $this->service(Connection::class) : null;
+        return $this->serviceIsBound(DatabaseConnectionContract::class) ? $this->service(DatabaseConnectionContract::class) : null;
     }
 
     /** Emit an event.
