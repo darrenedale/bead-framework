@@ -1,8 +1,8 @@
 <?php
 
-namespace BeadTests\Environment\Providers;
+namespace BeadTests\Environment\Sources;
 
-use Bead\Environment\Providers\ValidatesVariableNames;
+use Bead\Environment\Sources\ValidatesVariableNames;
 use Bead\Testing\StaticXRay;
 use BeadTests\Framework\TestCase;
 

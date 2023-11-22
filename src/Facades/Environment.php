@@ -15,20 +15,7 @@ use LogicException;
  * @method static bool has(string $key)
  * @method static string get(string $key)
  */
-final class Environment
+final class Environment extends ApplicationServiceFacade
 {
-    public static function __callStatic(string $method, array $args)
-    {
-        $environment = Application::instance()?->get(EnvironmentContract::class);
-
-        if (!isset($environment)) {
-            throw new LogicException("Application environment has not been set up.");
-        }
-
-        if (!method_exists($environment, $method)) {
-            throw new BadMethodCallException("The method '{$method}' does not exist on the instance bound to " . EnvironmentContract::class . ".");
-        }
-
-        return $environment->{$method}(...$args);
-    }
+    protected static string $serviceInterface = EnvironmentContract::class;
 }

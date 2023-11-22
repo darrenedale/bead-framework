@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Environment\Providers;
+namespace BeadTests\Environment\Sources;
 
-use Bead\Environment\Providers\File;
+use Bead\Environment\Sources\File;
 use Bead\Exceptions\Environment\Exception as EnvironmentException;
-use Bead\Exceptions\Environment\EnvironmentFileParseException;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 
@@ -80,7 +79,7 @@ final class FileTest extends TestCase
     public function testParseThrowsWithInvalidLine(): void
     {
         $envFile = new XRay(new File(__DIR__ . "/files/test-invalid-line.env"));
-        self::expectException(EnvironmentFileParseException::class);
+        self::expectException(EnvironmentException::class);
         self::expectExceptionMessage("Invalid declaration at line 5 in '{$envFile->fileName()}'.");
         $envFile->parse();
     }
@@ -89,7 +88,7 @@ final class FileTest extends TestCase
     public function testParseThrowsWithInvalidName(): void
     {
         $envFile = new XRay(new File(__DIR__ . "/files/test-invalid-name.env"));
-        self::expectException(EnvironmentFileParseException::class);
+        self::expectException(EnvironmentException::class);
         self::expectExceptionMessage("Invalid varaible name '2_key' at line 5 in '{$envFile->fileName()}'.");
         $envFile->parse();
     }
@@ -98,7 +97,7 @@ final class FileTest extends TestCase
     public function testParseThrowsWithDuplicateName(): void
     {
         $envFile = new XRay(new File(__DIR__ . "/files/test-duplicate-name.env"));
-        self::expectException(EnvironmentFileParseException::class);
+        self::expectException(EnvironmentException::class);
         self::expectExceptionMessage("Varaible name 'key_1' at line 5 has been defined previously in '{$envFile->fileName()}'.");
         $envFile->parse();
     }

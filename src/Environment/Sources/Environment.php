@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Bead\Environment\Providers;
+namespace Bead\Environment\Sources;
 
 use Bead\Contracts\Environment as EnvironmentContract;
 
-/**
- * Provide environment variables from the actual environment.
- */
+/** Source environment variables from the actual environment. */
 class Environment implements EnvironmentContract
 {
     /**
@@ -20,7 +18,7 @@ class Environment implements EnvironmentContract
      */
     public function has(string $name): bool
     {
-        return '' !== $this->get($name);
+        return "" !== $this->get($name);
     }
 
     /**

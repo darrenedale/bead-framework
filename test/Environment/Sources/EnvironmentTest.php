@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Environment\Providers;
+namespace BeadTests\Environment\Sources;
 
-use Bead\Environment\Providers\Environment;
+use Bead\Environment\Sources\Environment;
 use BeadTests\Framework\TestCase;
 
 final class EnvironmentTest extends TestCase

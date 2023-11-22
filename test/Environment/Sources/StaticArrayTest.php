@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Environment\Providers;
+namespace BeadTests\Environment\Sources;
 
-use Bead\Environment\Providers\StaticArray;
-use Bead\Exceptions\Environment\InvalidEnvironmentArrayException;
+use Bead\Environment\Sources\StaticArray;
+use Bead\Exceptions\Environment\Exception as EnvironmentException;
 use BeadTests\Framework\TestCase;
 
 final class StaticArrayTest extends TestCase
@@ -72,7 +72,7 @@ final class StaticArrayTest extends TestCase
      */
     public function testConstructorThrowsWithInvalidValues(array $data): void
     {
-        self::expectException(InvalidEnvironmentArrayException::class);
+        self::expectException(EnvironmentException::class);
         self::expectExceptionMessage("Values for environment variable arrays must be ints, floats or strings.");
         $env = new StaticArray($data);
     }
@@ -99,7 +99,7 @@ final class StaticArrayTest extends TestCase
      */
     public function testConstructorThrowsWithInvalidKey(array $data): void
     {
-        self::expectException(InvalidEnvironmentArrayException::class);
+        self::expectException(EnvironmentException::class);
         self::expectExceptionMessageMatches("/^'.*' is not a valid environment variable name.\$/");
         $env = new StaticArray($data);
     }

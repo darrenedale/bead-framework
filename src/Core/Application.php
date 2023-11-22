@@ -10,8 +10,8 @@ use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\ErrorHandler as BeadErrorHandler;
 use Bead\Database\Connection;
 use Bead\Environment\Environment;
-use Bead\Environment\Providers\Environment as EnvironmentProvider;
-use Bead\Environment\Providers\File as FileProvider;
+use Bead\Environment\Sources\Environment as EnvironmentProvider;
+use Bead\Environment\Sources\File as FileProvider;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -88,9 +88,9 @@ abstract class Application implements ServiceContainer, ContainerInterface
         }
 
         $this->m_appRoot = $realAppRoot;
+        $this->setupEnvironment();
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->bindServices();
-        $this->setupEnvironment();
     }
 
     /**
@@ -143,7 +143,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Provide the list of environment files that should be loeaded.
      *
      * Reimplement this method to customise the set of environment files loaded by your app. If you reimplement this
-     * method, your implementation may rely ont he application root directory being set but cannot rely on the
+     * method, your implementation may rely on the application root directory being set but cannot rely on the
      * configuration being loaded.
      *
      * Files in the returned array should be in reverse order of precedence.
@@ -169,10 +169,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
     protected function setupEnvironment(): void
     {
         $environment = new Environment();
-        $environment->addProvider(new EnvironmentProvider());
+        $environment->addSource(new EnvironmentProvider());
 
         foreach ($this->environmentFiles() as $file) {
-            $environment->addProvider(new FileProvider($file));
+            $environment->addSource(new FileProvider($file));
         }
 
         $this->bindService(EnvironmentContract::class, $environment);

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Bead\Environment;
 
-use Bead\AppLog;
 use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Exceptions\Environment\Exception as EnvironmentException;
+use Bead\Facades\Log;
 
+use function array_unshift;
 use function Bead\Helpers\Iterable\some;
 
 /**
@@ -24,17 +25,17 @@ use function Bead\Helpers\Iterable\some;
  */
 class Environment implements EnvironmentContract
 {
-    /** @var array<EnvironmentContract> The environment variable providers. */
-    private array $providers = [];
+    /** @var EnvironmentContract[] The environment variable sources. */
+    private array $sources = [];
 
     /**
      * Add a provider to the environment.
      *
      * @param EnvironmentContract $provider The provider to add.
      */
-    public function addProvider(EnvironmentContract $provider): void
+    public function addSource(EnvironmentContract $provider): void
     {
-        array_unshift($this->providers, $provider);
+        array_unshift($this->sources, $provider);
     }
 
     /**
@@ -46,14 +47,14 @@ class Environment implements EnvironmentContract
      */
     public function has(string $key): bool
     {
-        return some($this->providers, fn(EnvironmentContract $provider) => $provider->has($key));
+        return some($this->sources, fn(EnvironmentContract $provider) => $provider->has($key));
     }
 
     /**
      * Retrieve a value from the environment.
      *
      * The environment providers are queried in the reverse order in which they were added - more recently added
-     * provider override earlier ones.
+     * providers override earlier ones.
      *
      * @param string $key The key to fetch.
      *
@@ -61,13 +62,13 @@ class Environment implements EnvironmentContract
      */
     public function get(string $key): string
     {
-        foreach ($this->providers as $provider) {
+        foreach ($this->sources as $source) {
             try {
-                if ($provider->has($key)) {
-                    return $provider->get($key);
+                if ($source->has($key)) {
+                    return $source->get($key);
                 }
             } catch (EnvironmentException $err) {
-                AppLog::warning("Environment exception querying environment provider of type " . get_class($provider) . ": {$err->getMessage()}");
+                Log::warning("Environment exception querying environment source of type " . $source::class . ": {$err->getMessage()}");
             }
         }
 

@@ -2,17 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Bead\Environment\Providers;
+namespace Bead\Environment\Sources;
 
 use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Exceptions\Environment\Exception as EnvironmentException;
-use Bead\Exceptions\Environment\EnvironmentFileParseException;
 use RuntimeException;
 use SplFileInfo;
 
-/**
- * Provide environment variables from a file.
- */
+/** Sources environment variables from a file. */
 class File implements EnvironmentContract
 {
     use ValidatesVariableNames;
@@ -41,14 +38,18 @@ class File implements EnvironmentContract
         return isset($this->data);
     }
 
-    /** Parse the file. */
+    /**
+     * Parse the file.
+     *
+     * @throws EnvironmentException
+     */
     private function parse(): void
     {
         $fileInfo = new SplFileInfo($this->fileName());
 
         try {
             $file = $fileInfo->openFile();
-        } catch  (RuntimeException $err) {
+        } catch (RuntimeException $err) {
             throw new EnvironmentException("Failed to read env file '{$this->fileName()}': {$err->getMessage()}", previous: $err);
         }
 
@@ -66,17 +67,17 @@ class File implements EnvironmentContract
             $keyValue = explode("=", $line, 2);
 
             if (2 !== count($keyValue)) {
-                throw new EnvironmentFileParseException($this->fileName(), $lineNumber, "Invalid declaration at line {$lineNumber} in '{$this->fileName()}'.");
+                throw new EnvironmentException("Invalid declaration at line {$lineNumber} in '{$this->fileName()}'.");
             }
 
             $key = self::validateVariableName($keyValue[0]);
 
             if (!isset($key)) {
-                throw new EnvironmentFileParseException($this->fileName(), $lineNumber, "Invalid varaible name '{$keyValue[0]}' at line {$lineNumber} in '{$this->fileName()}'.");
+                throw new EnvironmentException("Invalid varaible name '{$keyValue[0]}' at line {$lineNumber} in '{$this->fileName()}'.");
             }
 
             if (array_key_exists($key, $data)) {
-                throw new EnvironmentFileParseException($this->fileName(), $lineNumber, "Varaible name '{$key}' at line {$lineNumber} has been defined previously in '{$this->fileName()}'.");
+                throw new EnvironmentException("Varaible name '{$key}' at line {$lineNumber} has been defined previously in '{$this->fileName()}'.");
             }
 
             $data[$key] = self::extractValue($keyValue[1]);
@@ -86,7 +87,7 @@ class File implements EnvironmentContract
     }
 
     /**
-     * Helper to extract a value from a possibly enclosed string.
+     * Helper to extract a value from a possibly quoted string.
      *
      * If the value is wrapped in single or double quotes, its content will be extracted; otherwise, it will be returned
      * as-is.
@@ -122,6 +123,7 @@ class File implements EnvironmentContract
      * @param string $key The key to check for.
      *
      * @return bool true if the key is defined in tne env file, false if not.
+     * @throws EnvironmentException
      */
     public function has(string $key): bool
     {

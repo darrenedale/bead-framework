@@ -27,7 +27,7 @@ abstract class ApplicationServiceFacade
         $app = Application::instance();
         assert($app instanceof Application, new LogicException(static::class . " facade used without Application container instance."));
         $instance = $app->get(static::$serviceInterface);
-        assert($instance instanceof static::$serviceInterface, new LogicException("No service bound to " . static::$serviceInterface . " interface."));
+        assert($instance instanceof static::$serviceInterface, new LogicException("Invalid service bound to " . static::$serviceInterface . " interface."));
         return $instance->{$method}(...$args);
     }
 }

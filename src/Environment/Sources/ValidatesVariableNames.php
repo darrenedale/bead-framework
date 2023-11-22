@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Bead\Environment\Providers;
+namespace Bead\Environment\Sources;
 
 trait ValidatesVariableNames
 {

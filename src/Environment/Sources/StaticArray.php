@@ -2,16 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Bead\Environment\Providers;
+namespace Bead\Environment\Sources;
 
 use Bead\Contracts\Environment;
-use Bead\Exceptions\Environment\InvalidEnvironmentArrayException;
+use Bead\Exceptions\Environment\Exception as EnvironmentException;
 
+use function is_float;
+use function is_int;
+use function is_string;
 use function Bead\Helpers\Iterable\all;
 
-/**
- * An environment variable provider that uses a PHP associative array to provide named values.
- */
+/** An environment variable source that uses a PHP associative array to provide named values. */
 class StaticArray implements Environment
 {
     use ValidatesVariableNames;
@@ -23,18 +24,19 @@ class StaticArray implements Environment
      * Initialise a new StaticArray environment provider.
      *
      * @param array<string,string|int|float> $data The environment variables.
+     * @throws EnvironmentException
      */
     public function __construct(array $data)
     {
         if (!all($data, fn(mixed $value): bool => is_string($value) || is_int($value) || is_float($value))) {
-            throw new InvalidEnvironmentArrayException("Values for environment variable arrays must be ints, floats or strings.");
+            throw new EnvironmentException("Values for environment variable arrays must be ints, floats or strings.");
         }
 
         foreach ($data as $key => $value) {
             $name = self::validateVariableName((string) $key);
 
             if (!isset($name)) {
-                throw new InvalidEnvironmentArrayException("'{$key}' is not a valid environment variable name.");
+                throw new EnvironmentException("'{$key}' is not a valid environment variable name.");
             }
 
             $this->data[$name] = (string) $value;

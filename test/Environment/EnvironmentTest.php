@@ -6,10 +6,10 @@ namespace BeadTests\Environment;
 
 use Bead\AppLog;
 use Bead\Environment\Environment;
-use Bead\Environment\Providers\StaticArray;
+use Bead\Environment\Sources\StaticArray;
 use Bead\Exceptions\Environment\Exception;
 use Bead\Testing\XRay;
-use BeadTests\Environment\Providers\StaticArrayTest;
+use BeadTests\Environment\Sources\StaticArrayTest;
 use BeadTests\Framework\TestCase;
 
 final class EnvironmentTest extends TestCase
@@ -25,7 +25,7 @@ final class EnvironmentTest extends TestCase
     public function setUp(): void
     {
         $this->env = new Environment();
-        $this->env->addProvider(new StaticArray(self::TestEnvironment));
+        $this->env->addSource(new StaticArray(self::TestEnvironment));
     }
 
     public function tearDown(): void
@@ -41,7 +41,7 @@ final class EnvironmentTest extends TestCase
             "KEY_1" => "value-2",
         ]);
 
-        $this->env->addProvider($provider);
+        $this->env->addSource($provider);
         $env = new XRay($this->env);
         self::assertCount(2, $env->providers);
         self::assertSame($provider, $env->providers[0]);
@@ -62,7 +62,7 @@ final class EnvironmentTest extends TestCase
     /** Ensure get() returns the value from the provider with the highest precedence. */
     public function testGetProviderHonoursPrecedence(): void
     {
-        $this->env->addProvider(new StaticArray([
+        $this->env->addSource(new StaticArray([
             "KEY_1" => "value-2",
         ]));
 
@@ -72,7 +72,7 @@ final class EnvironmentTest extends TestCase
     /** Ensure get() uses providers with lower precedence when key missing in higher-precedence providers. */
     public function testGetProviderFallsBack(): void
     {
-        $this->env->addProvider(new StaticArray([
+        $this->env->addSource(new StaticArray([
             "KEY_2" => "value-2",
         ]));
 
@@ -94,7 +94,7 @@ final class EnvironmentTest extends TestCase
     /** Ensure has() checks all providers if necessary. */
     public function testHasChecksAllProviders(): void
     {
-        $this->env->addProvider(new StaticArray([
+        $this->env->addSource(new StaticArray([
             "KEY_2" => "value-2",
         ]));
 
@@ -137,7 +137,7 @@ final class EnvironmentTest extends TestCase
         };
 
         AppLog::setWarningLog($logger);
-        $this->env->addProvider($provider);
+        $this->env->addSource($provider);
         self::assertEquals("value-1", $this->env->get("KEY_1"));
         self::assertTrue($messageLogged);
     }
