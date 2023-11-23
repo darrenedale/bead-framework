@@ -642,7 +642,10 @@ class Validator
 
             // intersection types aren't viable for rule constructors. they only make sense for object types, and the
             // only object type supported is DateTime, so there's nothing it can legitimately intersect with
-            if ($type instanceof ReflectionIntersectionType) {
+            //
+            // we can't use instanceof because we support PHP 8.0+ and ReflectionIntersectionType was not introduced
+            // until 8.1
+            if ("ReflectionIntersectionType" === get_class($type)) {
                 throw new InvalidArgumentException("The {$constructorParams[$idx]->getName()} parameter cannot be provided using a rule alias because its type is an intersection type.");
             }
 

@@ -7,11 +7,13 @@ namespace BeadTests\Validation\useBead\Validator;
 use Bead\Testing\StaticXRay;
 use Bead\Validation\Rule;
 use Bead\Validation\Validator;
+use BeadTests\Framework\RuleTestCase;
 use BeadTests\Framework\TestCase;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
+use InvalidArgumentException;
 use Mockery;
 use ReflectionNamedType;
 
@@ -469,5 +471,33 @@ final class ValidatorTest extends TestCase
         self::assertCount(1, $args);
         self::assertIsString($args[0]);
         self::assertEquals("3.1415927", $args[0]);
+    }
+
+    /** Ensure exception is thrown when a rule constructor has an intersection type.. */
+    public function testConvertRuleConstructorArgs10(): void
+    {
+        // NOTE we can't use an actual intersection type because we supporte PHP 8.0 and intersection types aren't
+        // syntactically valid before 8.1, so we have to mock get_class() to test the expectation
+        $rule = new class ("") implements Rule {
+            public function __construct(string $value)
+            {
+            }
+
+            public function passes(string $field, mixed $data): bool
+            {
+                return false;
+            }
+
+            public function message(string $field): string
+            {
+                return "";
+            }
+        };
+
+        $this->mockFunction("get_class", "ReflectionIntersectionType");
+        $validator = new StaticXRay(Validator::class);
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("The value parameter cannot be provided using a rule alias because its type is an intersection type.");
+        $validator->convertRuleConstructorArgs(["3.1415927"], $rule::class);
     }
 }
