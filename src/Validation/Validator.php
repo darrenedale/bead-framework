@@ -12,6 +12,7 @@ namespace Bead\Validation;
 
 use ArgumentCountError;
 use DateTime;
+use DateTimeImmutable;
 use Bead\Exceptions\ValidationException;
 use Bead\Validation\Rules\After;
 use Bead\Validation\Rules\Alpha;
@@ -60,7 +61,12 @@ use Exception;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionClass;
+use ReflectionIntersectionType;
+use ReflectionNamedType;
+use ReflectionUnionType;
 use RuntimeException;
+
+use function Bead\Helpers\Iterable\grammaticalImplode;
 
 /**
  * A class that validates datasets.
@@ -526,6 +532,78 @@ class Validator
     }
 
     /**
+     * Attempt to onvert a rule constructor argument to the required type.
+     *
+     * Returns a tuple of the converted value (if possible) and whether or not it was possible to convert.
+     *
+     * @param string $arg The value provided in the rule definition string.
+     * @param ReflectionNamedType $type The type it needs to be converted to.
+     *
+     * @return array{0:mixed,1:bool}
+     */
+    private static function convertRuleConstructorArg(string $arg, ReflectionNamedType $type): array
+    {
+        switch ($type->getName()) {
+            case "int":
+                $arg = filter_var($arg, FILTER_VALIDATE_INT);
+                return [$arg, false !== $arg,];
+
+            // scalar double can't be a named type - type declarations don't support type aliases
+            case "float":
+                $arg = filter_var($arg, FILTER_VALIDATE_FLOAT);
+                return [$arg, false !== $arg,];
+
+            // scalar boolean can't be a named type - type declarations don't support type aliases
+            case "bool":
+                // filter_var accepts empty or whitespace strings as false; we don't want that
+                if ("" === trim($arg)) {
+                    return [$arg, false,];
+                }
+
+                $arg = filter_var($arg, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]);
+                return [$arg, null !== $arg,];
+
+            case "string":
+                return [$arg, true,];
+
+            case "array":
+                if ("" === $arg) {
+                    return [[], true,];
+                }
+
+                return [explode(",", $arg), true,];
+
+            case "DateTime":
+            case "DateTimeInterface":
+                // filter_var() accepts empty or whitespace strings as a being "now"; we don't want that
+                if ("" === trim($arg)) {
+                    return [null, false,];
+                }
+
+                try {
+                    return [new DateTime($arg), true,];
+                } catch (Exception $err) {
+                    return [null, false,];
+                }
+
+            case "DateTimeImmutable":
+                // filter_var() accepts empty or whitespace strings as a being "now"; we don't want that
+                if ("" === trim($arg)) {
+                    return [null, false,];
+                }
+
+                try {
+                    return [new DateTimeImmutable($arg), true,];
+                } catch (Exception $err) {
+                    return [null, false,];
+                }
+
+            default:
+                return [null, false,];
+        }
+    }
+
+    /**
      * Takes the args extracted from a rule expressed as a string and converts them to the appropriate types for the
      * rule constructor, if possible.
      *
@@ -560,49 +638,57 @@ class Validator
                 break;
             }
 
-            switch ($constructorParams[$idx]->getType()->getName()) {
-                case "int":
-                    $args[$idx] = filter_var($args[$idx], FILTER_VALIDATE_INT);
+            $type = $constructorParams[$idx]->getType();
 
-                    if (false === $args[$idx]) {
-                        throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter must be an int.");
-                    }
+            // intersection types aren't viable for rule constructors. they only make sense for object types, and the
+            // only object type supported is DateTime, so there's nothing it can legitimately intersect with
+            if ($type instanceof ReflectionIntersectionType) {
+                throw new InvalidArgumentException("The {$constructorParams[$idx]->getName()} parameter cannot be provided using a rule alias because its type is an intersection type.");
+            }
+
+            if ($type instanceof ReflectionUnionType) {
+                $types = $type->getTypes();
+
+                // currently, types are returned in a consistent, but undocumented, order. to ensure we always provide
+                // predictable results, we order the types from the union ourselves
+                // scalar boolean and double can't be a named type - type declarations don't support type aliases
+                $precedence = array_flip([
+                    "int",
+                    "float",
+                    "bool",
+                    "DateTime",
+                    "DateTimeInterface",
+                    "DateTimeImmutable",
+                    "array",
+                    "string",
+                ]);
+
+                usort(
+                    $types,
+                    fn (ReflectionNamedType $first, ReflectionNamedType $second): int => ($precedence[$first->getName()] ?? PHP_INT_MAX) <=> ($precedence[$second->getName()] ?? PHP_INT_MAX)
+                );
+            } else {
+                $types = [$type,];
+            }
+
+            $argConverted = false;
+
+            foreach ($types as $type) {
+                [$arg, $argConverted,] = self::convertRuleConstructorArg($args[$idx], $type);
+
+                if ($argConverted) {
+                    $args[$idx] = $arg;
                     break;
+                }
+            }
 
-                case "float":
-                case "double":
-                    $args[$idx] = filter_var($args[$idx], FILTER_VALIDATE_FLOAT);
-
-                    if (false === $args[$idx]) {
-                        throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter must be a float.");
-                    }
-                    break;
-
-                case "bool":
-                    $args[$idx] = filter_var($args[$idx], FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]);
-
-                    if (!isset($args[$idx])) {
-                        throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter must be a bool.");
-                    }
-                    break;
-
-                case "string":
-                    break;
-
-                case "array":
-                    $args[$idx] = explode(",", $args[$idx]);
-                    break;
-
-                case "DateTime":
-                    try {
-                        $args[$idx] = new DateTime($args[$idx]);
-                    } catch (Exception $err) {
-                        throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter is not a valid DateTime.", 0, $err);
-                    }
-                    break;
-
-                default:
-                    throw new InvalidArgumentException("The {$constructorParams[$idx]->getName()} parameter cannot be provided using a rule alias because its type is {$constructorParams[$idx]->getType()->getName()}.");
+            if (!$argConverted) {
+                $types = grammaticalImplode(
+                    array_map(fn (ReflectionNamedType $type): string => $type->getName(), $types),
+                    ", ",
+                    " or "
+                );
+                throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter must be a {$types}.", 0);
             }
         }
 
