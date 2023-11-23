@@ -185,12 +185,12 @@ final class ValidatorTest extends TestCase
     /** Ensure union types are handled for rule constructors. */
     public function testConvertRuleConstructorArgs1(): void
     {
-        $rule = new class(0) implements Rule {
+        $rule = new class (0) implements Rule {
             public function __construct(string|DateTimeImmutable|DateTimeInterface|DateTime|array|bool|float|int $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
@@ -241,12 +241,12 @@ final class ValidatorTest extends TestCase
     /** Ensure float is preferred over string for int strings when int isn't one of the types but float is */
     public function testConvertRuleConstructorArgs2(): void
     {
-        $rule = new class(0) implements Rule {
+        $rule = new class (0) implements Rule {
             public function __construct(string|float $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
@@ -282,12 +282,12 @@ final class ValidatorTest extends TestCase
     /** Ensure bool is preferred over string for numeric data when int/float isn't one of the types but bool is. */
     public function testConvertRuleConstructorArgs3(): void
     {
-        $rule = new class("") implements Rule {
+        $rule = new class ("") implements Rule {
             public function __construct(string|bool $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
@@ -313,12 +313,12 @@ final class ValidatorTest extends TestCase
     /** Ensure string is used for int strings when int is not one of the types. */
     public function testConvertRuleConstructorArgs4(): void
     {
-        $rule = new class("") implements Rule {
+        $rule = new class ("") implements Rule {
             public function __construct(string|DateTime $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
@@ -339,12 +339,12 @@ final class ValidatorTest extends TestCase
     /** Ensure string is used for float strings when float is not one of the types. */
     public function testConvertRuleConstructorArgs5(): void
     {
-        $rule = new class("") implements Rule {
+        $rule = new class ("") implements Rule {
             public function __construct(string|DateTime $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
@@ -365,12 +365,12 @@ final class ValidatorTest extends TestCase
     /** Ensure string is used for bool strings when bool is not one of the types. */
     public function testConvertRuleConstructorArgs6(): void
     {
-        $rule = new class("") implements Rule {
+        $rule = new class ("") implements Rule {
             public function __construct(string|DateTime $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
@@ -396,12 +396,12 @@ final class ValidatorTest extends TestCase
     /** Ensure string is used for array-like strings when array is not one of the types. */
     public function testConvertRuleConstructorArgs7(): void
     {
-        $rule = new class("") implements Rule {
+        $rule = new class ("") implements Rule {
             public function __construct(string|DateTime $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
@@ -422,12 +422,12 @@ final class ValidatorTest extends TestCase
     /** Ensure string is used for date-time strings when DateTime is not one of the types. */
     public function testConvertRuleConstructorArgs8(): void
     {
-        $rule = new class("") implements Rule {
+        $rule = new class ("") implements Rule {
             public function __construct(string|int $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
@@ -448,12 +448,12 @@ final class ValidatorTest extends TestCase
     /** Ensure floats are not converted to ints when float is not one of the types but int is. */
     public function testConvertRuleConstructorArgs9(): void
     {
-        $rule = new class("") implements Rule {
+        $rule = new class ("") implements Rule {
             public function __construct(string|int $value)
             {
             }
 
-            public function passes(string $field, mixed $value): bool
+            public function passes(string $field, mixed $data): bool
             {
                 return false;
             }
