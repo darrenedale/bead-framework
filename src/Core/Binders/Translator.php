@@ -10,6 +10,7 @@ use Bead\Core\Application;
 use Bead\Core\Translator as BeadTranslator;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
+use InvalidArgumentException;
 
 use function gettype;
 use function is_string;
@@ -26,15 +27,19 @@ class Translator implements BinderContract
      */
     protected static function createTranslator(Application $app): TranslatorContract
     {
-        $translator = new BeadTranslator();
-        $translator->addSearchPath("{$app->rootDir()}/i18n");
         $language = $app->config("app.language", "en-GB");
 
         if (!is_string($language)) {
             throw new InvalidConfigurationException("app.language", "Expected valid language, found " . gettype($language));
         }
 
-        $translator->setLanguage($language);
+        try {
+            $translator = new BeadTranslator($language);
+        } catch (InvalidArgumentException $err) {
+            throw new InvalidConfigurationException("app.language", $err->getMessage(), previous: $err);
+        }
+
+        $translator->addSearchPath("{$app->rootDir()}/i18n");
         return $translator;
     }
 
