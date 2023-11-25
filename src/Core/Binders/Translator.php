@@ -18,14 +18,15 @@ use function is_string;
 class Translator implements BinderContract
 {
     /**
+     * Create the Translator instance to bind to the contract.
+     *
      * @param Application $app
-     * @throws InvalidConfigurationException if the language is misconfigured.
-     * @throws ServiceAlreadyBoundException if a translator is already bound.
+     * @return TranslatorContract
      */
-    public function bindServices(Application $app): void
+    protected static function createTranslator(Application $app): TranslatorContract
     {
         $translator = new BeadTranslator();
-        $translator->addSearchPath("i18n");
+        $translator->addSearchPath("{$app->rootDir()}/i18n");
         $language = $app->config("app.language", "en-GB");
 
         if (!is_string($language)) {
@@ -33,6 +34,16 @@ class Translator implements BinderContract
         }
 
         $translator->setLanguage($language);
-        $app->bindService(TranslatorContract::class, $translator);
+        return $translator;
+    }
+
+    /**
+     * @param Application $app
+     * @throws InvalidConfigurationException if the language is misconfigured.
+     * @throws ServiceAlreadyBoundException if a translator is already bound.
+     */
+    public function bindServices(Application $app): void
+    {
+        $app->bindService(TranslatorContract::class, static::createTranslator($app));
     }
 }

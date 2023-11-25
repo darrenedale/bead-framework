@@ -11,6 +11,7 @@ use BeadTests\Framework\TestCase;
 use Mockery;
 use Mockery\MockInterface;
 
+use PDOException;
 use function array_keys;
 
 /** Test the bundled database binder. */
@@ -546,6 +547,15 @@ final class DatabaseTest extends TestCase
             ],
             "sqlsrv:Database=the_bead_db;Server=db.bead.com;ConnectionPooling=0"
         ];
+
+        yield "timeout" => [
+            [
+                "host" => "db.bead.com",
+                "name" => "the_bead_db",
+                "timeout" => "30",
+            ],
+            "sqlsrv:Database=the_bead_db;Server=db.bead.com;LoginTimeout=30"
+        ];
     }
 
     /**
@@ -610,6 +620,14 @@ final class DatabaseTest extends TestCase
             "host" => "localhost",
             "name" => "bead-unrecognised-db",
         ]);
+    }
+
+    /** Ensure connection() attempts to create a database connection. */
+    public function testConnection(): void
+    {
+        self::expectException(PDOException::class);
+        $database = new StaticXRay(DatabaseBinder::class);
+        $database->connection("", "", "");
     }
 
     public static function dataForTestBindServices1(): iterable

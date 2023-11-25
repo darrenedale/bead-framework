@@ -18,6 +18,21 @@ use Bead\Exceptions\ServiceAlreadyBoundException;
 class Crypter implements Binder
 {
     /**
+     * Create the Crypter instance to bind to the contracts.
+     *
+     * @param array $config The crypto configuration.
+     * @return CrypterContract
+     */
+    protected static function createCrypter(array $config): CrypterContract
+    {
+        return match ($config["driver"]) {
+            "openssl" => new OpenSslCrypter($config["algorithm"] ?? "", $config["key"] ?? ""),
+            "sodium" => new SodiumCrypter($config["key"] ?? ""),
+            default => throw new InvalidConfigurationException("crypto.driver", "Expected valid crypto driver, found {$config["driver"]}"),
+        };
+    }
+
+    /**
      * @param Application $app
      * @throws InvalidConfigurationException if the language is misconfigured.
      * @throws ServiceAlreadyBoundException if a Crypter, Decrypter or Encrypter is already bound.
@@ -30,11 +45,7 @@ class Crypter implements Binder
             return;
         }
 
-        $crypter = match ($cryptConfig["driver"]) {
-            "openssl" => new OpenSslCrypter($cryptConfig["algorithm"] ?? "", $cryptConfig["key"] ?? ""),
-            "sodium" => new SodiumCrypter($cryptConfig["key"] ?? ""),
-            default => throw new InvalidConfigurationException("crypto.driver", "Expected valid crypto driver, found {$cryptConfig["driver"]}"),
-        };
+        $crypter = static::createCrypter($cryptConfig);
 
         $app->bindService(DecrypterContract::class, $crypter);
         $app->bindService(EncrypterContract::class, $crypter);
