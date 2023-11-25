@@ -10,8 +10,8 @@ use Bead\Core\Application;
 use Bead\Core\Translator as BeadTranslator;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
-
 use InvalidArgumentException;
+
 use function gettype;
 use function is_string;
 
