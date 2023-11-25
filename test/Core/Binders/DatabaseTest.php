@@ -10,8 +10,8 @@ use Bead\Testing\StaticXRay;
 use BeadTests\Framework\TestCase;
 use Mockery;
 use Mockery\MockInterface;
-
 use PDOException;
+
 use function array_keys;
 
 /** Test the bundled database binder. */

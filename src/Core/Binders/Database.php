@@ -9,6 +9,7 @@ use Bead\Core\Application;
 use Bead\Database\Connection;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
+use PDOException;
 
 use function array_key_exists;
 use function is_array;
@@ -140,6 +141,8 @@ class Database implements Binder
      * Helper to create a connection.
      *
      * Abstracted primarily to make createDatabaseConnection() testable.
+     *
+     * @throws PDOException
      */
     private static function connection(string $dsn, string $user, string $password): Connection
     {
@@ -151,6 +154,8 @@ class Database implements Binder
      *
      * @param array $config The database configuration.
      * @return Connection
+     * @throws InvalidConfigurationException if the database configuration is not valid.
+     * @throws PDOException if the database connection cannot be created.
      */
     protected static function createDatabaseConnection(array $config): Connection
     {
@@ -172,6 +177,7 @@ class Database implements Binder
      * @throws InvalidConfigurationException if the database configuration is not valid.
      * @throws ServiceAlreadyBoundException if a database connection has already been bound into the application service
      * container.
+     * @throws PDOException if the database connection cannot be created.
      */
     public function bindServices(Application $app): void
     {

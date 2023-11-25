@@ -22,6 +22,7 @@ class Translator implements BinderContract
      *
      * @param Application $app
      * @return TranslatorContract
+     * @throws InvalidConfigurationException
      */
     protected static function createTranslator(Application $app): TranslatorContract
     {
