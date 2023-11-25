@@ -12,9 +12,9 @@ use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Facades\Log;
 use Bead\Session\Session;
 use DirectoryIterator;
-use Exception;
 use RuntimeException;
 use SplFileInfo;
+use Throwable;
 
 use function Bead\Helpers\Str\random;
 
@@ -436,7 +436,7 @@ class File implements SessionHandler
                 if ($session->canBePurged()) {
                     $session->destroy();
                 }
-            } catch (Exception $err) {
+            } catch (Throwable $err) {
                 Log::error("Exception reading session file {$file->getRealPath()} when purging session directory: {$err->getMessage()}");
             }
         }
