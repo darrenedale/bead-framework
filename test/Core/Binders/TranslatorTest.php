@@ -22,6 +22,7 @@ final class TranslatorTest extends TestCase
     {
         $this->translator = new TranslatorBinder();
         $this->app = Mockery::mock(Application::class);
+        $this->app->shouldReceive("rootDir")->andReturn("/")->byDefault();
     }
 
     public function tearDown(): void
