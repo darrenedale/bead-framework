@@ -3,7 +3,7 @@
 namespace Bead\Session;
 
 use Bead\Contracts\SessionHandler;
-use Bead\Core\WebApplication;
+use Bead\Core\Application;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
 use Bead\Exceptions\Session\SessionExpiredException;
@@ -113,7 +113,7 @@ class Session implements DataAccessor
      */
     public static function sessionIdleTimeoutPeriod(): int
     {
-        return WebApplication::instance()->config("session.idle-timeout-period", self::DefaultSessionIdleTimeoutPeriod);
+        return Application::instance()->config("session.idle-timeout-period", self::DefaultSessionIdleTimeoutPeriod);
     }
 
     /**
@@ -125,7 +125,7 @@ class Session implements DataAccessor
      */
     public static function sessionIdRegenerationPeriod(): int
     {
-        return WebApplication::instance()->config("session.id-regeneration-period", self::DefaultSessionRegenerationPeriod);
+        return Application::instance()->config("session.id-regeneration-period", self::DefaultSessionRegenerationPeriod);
     }
 
     /**
@@ -139,7 +139,7 @@ class Session implements DataAccessor
      */
     public static function expiredSessionGracePeriod(): int
     {
-        return WebApplication::instance()->config("session.expired.grace-period", self::DefaultExpiryGracePeriod);
+        return Application::instance()->config("session.expired.grace-period", self::DefaultExpiryGracePeriod);
     }
 
     /**
@@ -419,7 +419,7 @@ class Session implements DataAccessor
      */
     protected static function createHandler(?string $id): SessionHandler
     {
-        $type = WebApplication::instance()->config("session.handler", "file");
+        $type = Application::instance()->config("session.handler", "file");
         $class = self::$m_handlerClasses[$type] ?? null;
 
         if (!isset($class)) {
