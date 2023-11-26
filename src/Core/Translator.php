@@ -304,13 +304,15 @@ class Translator implements TranslatorContract
     }
 
     /**
-     * Check whether a translation file for the current language has been loaded.
+     * Check whether a translation file for a language has been loaded.
      *
-     * @return bool _true_ if the translation file has been loaded, _false_ if not.
+     * @param string $language
+     *
+     * @return bool `true` if the translation file has been loaded, `false` if not.
      */
-    private function isLoaded(): bool
+    private function isLanguageLoaded(string $language): bool
     {
-        return array_key_exists($this->m_languages[0], $this->m_cache);
+        return array_key_exists($language, $this->m_cache);
     }
 
     /**
@@ -328,36 +330,32 @@ class Translator implements TranslatorContract
     }
 
     /**
-     * Attempt to find and load a translation file for the current language.
+     * Attempt to find and load a translation file for a language.
      *
-     * This method will discard any existing loaded translation file for the current language and will attempt to find
-     * and load another. The paths will be scanned in the order in which they were added, and the first translation file
-     * for the current language that is encountered will be loaded. The scan will stop either when a file is loaded or
-     * all the paths have been scanned, whichever occurs sooner.
+     * This method will discard any existing loaded translation file for the language and will attempt to find and load
+     * another. The paths will be scanned in the order in which they were added, and the first translation file for the
+     * language that is encountered will be loaded. The scan will stop either when a file is loaded or all the paths
+     * have been scanned, whichever occurs sooner.
      */
-    private function load(): void
+    private function loadLanguage(string $language): void
     {
-        if (!empty($this->m_languages)) {
-            foreach ($this->m_languages as $language) {
-                foreach ($this->m_searchPaths as $path) {
-                    $filePath = "{$path}/" . strtolower($language) . ".csv";
+        foreach ($this->m_searchPaths as $path) {
+            $filePath = "{$path}/" . strtolower($language) . ".csv";
 
-                    if (file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
-                        $f = fopen($filePath, "r");
-                        $this->m_cache[$language] = [];
+            if (file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
+                $f = fopen($filePath, "r");
+                $this->m_cache[$language] = [];
 
-                        while (false !== ($line = fgetcsv($f))) {
-                            $myFile = empty($line[self::FileColumnIndex]) ? null : $line[self::FileColumnIndex];
-                            $myLine = empty($line[self::LineColumnIndex]) ? null : (intval($line[self::LineColumnIndex]) ?: null);
-                            $myOrig = $line[self::TokenColumnIndex];
-                            $myTrans = $line[self::TranslationColumnIndex];
+                while (false !== ($line = fgetcsv($f))) {
+                    $myFile = empty($line[self::FileColumnIndex]) ? null : $line[self::FileColumnIndex];
+                    $myLine = empty($line[self::LineColumnIndex]) ? null : (intval($line[self::LineColumnIndex]) ?: null);
+                    $myOrig = $line[self::TokenColumnIndex];
+                    $myTrans = $line[self::TranslationColumnIndex];
 
-                            $this->m_cache[$language][self::cacheKey($myOrig, $myFile, $myLine)] = $myTrans;
-                        }
-
-                        fclose($f);
-                    }
+                    $this->m_cache[$language][self::cacheKey($myOrig, $myFile, $myLine)] = $myTrans;
                 }
+
+                fclose($f);
             }
         }
     }
@@ -377,21 +375,19 @@ class Translator implements TranslatorContract
      */
     public function hasTranslation(string $string, ?string $file = null, ?int $line = null): bool
     {
-        if (!$this->isLoaded()) {
-            $this->load();
-        }
-
         $cacheKey = self::cacheKey($string, $file, $line);
 
-        return
-            $this->isLoaded()
-            && (
-                (
-                    isset($this->m_cache[$this->m_languages[0]][$cacheKey]) && !empty($this->m_cache[$this->m_languages[0]][$cacheKey])
-                ) || (
-                    1 < count($this->m_languages) && isset($this->m_cache[$this->m_languages[1]][$cacheKey]) && !empty($this->m_cache[$this->m_languages[1]][$cacheKey])
-                )
-            );
+        foreach ($this->m_languages as $language) {
+            if (!$this->isLanguageLoaded($language)) {
+                $this->loadLanguage($language);
+            }
+
+            if (!empty($this->m_cache[$language][$cacheKey])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -417,24 +413,22 @@ class Translator implements TranslatorContract
      */
     public function translate(string $string, string $file = null, int $line = null): string
     {
-        if (!$this->isLoaded()) {
-            $this->load();
-        }
+        $keys = [
+            [$string, $file, $line],
+            [$string, $file, null],
+            [$string, null, null],
+        ];
 
-        if ($this->isLoaded()) {
-            $keys = [
-                [$string, $file, $line],
-                [$string, $file, null],
-                [$string, null, null],
-            ];
+        foreach ($this->m_languages as $language) {
+            if (!$this->isLanguageLoaded($language)) {
+                $this->loadLanguage($language);
+            }
 
-            foreach ($this->m_languages as $language) {
-                foreach ($keys as [$string, $file, $line]) {
-                    $cacheKey = self::cacheKey($string, $file, $line);
+            foreach ($keys as [$string, $file, $line]) {
+                $cacheKey = self::cacheKey($string, $file, $line);
 
-                    if (!empty($this->m_cache[$language][$cacheKey])) {
-                        return $this->m_cache[$language][$cacheKey];
-                    }
+                if (!empty($this->m_cache[$language][$cacheKey])) {
+                    return $this->m_cache[$language][$cacheKey];
                 }
             }
         }
