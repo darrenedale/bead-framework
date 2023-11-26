@@ -32,35 +32,10 @@ class ErrorHandler implements ErrorHandlerContract
     }
 
     /**
-     * Fetch the name of the view to use to render exceptions.
-     *
-     * This is used to display exception details when the web app is in debug mode.
-     *
-     * @return string The view name.
-     */
-    protected function exceptionDisplayViewName(): string
-    {
-        return "errors.exception";
-    }
-
-    /**
-     * Fetch the name of the view to use when exceptions are not being shown.
-     *
-     * This means the user is not greeted with an entirely blank page when an error occurs and the web app is not in
-     * debug mode (i.e. in production).
-     *
-     * @return string The view name.
-     */
-    protected function errorPageViewName(): string
-    {
-        return "errors.error";
-    }
-
-    /**
      * Display a given exception.
      *
-     * Display will be to the WebApplication's page (if it has one, a default page if it does not); or to standard
-     * output if the application is not a WebApplication.
+     * Display will be to the configured view (or a plain default one if no view is configured) for WebApplications; or
+     * to standard error if the application is not a WebApplication.
      *
      * @param Throwable $error The exception to display.
      */
@@ -73,6 +48,18 @@ class ErrorHandler implements ErrorHandlerContract
         } else {
             $this->outputToStream($error, STDERR);
         }
+    }
+
+    /**
+     * Fetch the name of the view to use to render exceptions.
+     *
+     * This is used to display exception details when the web app is in debug mode.
+     *
+     * @return string The view name.
+     */
+    protected function exceptionDisplayViewName(): string
+    {
+        return "errors.exception";
     }
 
     /**
@@ -112,15 +99,28 @@ class ErrorHandler implements ErrorHandlerContract
                 });
             }
         } catch (Throwable $err) {
-            // we're displaying the requested error rather than the one we've just caught
+            // display of last resort - we're displaying the requested error rather than the one we've just caught
             echo $error->getMessage();
         }
     }
 
     /**
+     * Fetch the name of the view to use when exceptions are not being shown.
+     *
+     * This means the user is not greeted with an entirely blank page when an error occurs and the web app is not in
+     * debug mode (i.e. in live environments).
+     *
+     * @return string The view name.
+     */
+    protected function errorPageViewName(): string
+    {
+        return "errors.error";
+    }
+
+    /**
      * Display the generic error page.
      *
-     * This is used in a web app when the error handler indicates error details should not be displayed.
+     * This is used in a web app when the error handler indicates error details should *not* be displayed.
      */
     protected function showErrorPage(): void
     {
@@ -183,7 +183,7 @@ HTML;
                 });
             }
         } catch (Throwable $err) {
-            // if we can't even emptythe output buffer, just echo to it
+            // error "page" of last resort - if we can't even empty the output buffer, just echo to it
             echo "An application error has occurred. It has been reported and should be investigated and fixed in due course.";
         }
     }
@@ -229,17 +229,18 @@ HTML;
     /**
      * Handle an error.
      *
-     * The error is converted to an `Error` exception and the script exits.
+     * The error is converted to an `Error` exception.
      *
      * @param int $type The error type.
      * @param string $message The error message.
      * @param string $file The file where the error occurred.
      * @param int $line The line on which the error occurred.
+     *
+     * @throws Error An Error exception representing the PHP error that was triggered.
      */
     public function handleError(int $type, string $message, string $file, int $line): void
     {
-        $this->handleException(new Error("PHP error {$file}@{$line}: {$message}", $type));
-        exit($type);
+        throw new Error("PHP error {$file}@{$line}: {$message}", $type);
     }
 
     /**
@@ -253,14 +254,15 @@ HTML;
     public function handleException(Throwable $error): void
     {
         $this->report($error);
-        $displayed = true;
+        $displayed = false;
 
         if (Application::instance() instanceof WebApplication && $error instanceof Response) {
             // if the exception is itself a response, send it
             try {
                 WebApplication::instance()->sendResponse($error);
+                $displayed = true;
             } catch (Throwable $err) {
-                $displayed = false;
+                // nothing to do here - the block below will take over sending something
             }
         }
 
@@ -269,7 +271,7 @@ HTML;
                 // display the error information
                 $this->display($error);
             } elseif (Application::instance() instanceof WebApplication) {
-                // in production, just show the generic error page
+                // in live environments, just show the generic error page
                 $this->showErrorPage();
             }
         }

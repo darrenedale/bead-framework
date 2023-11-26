@@ -9,10 +9,8 @@ use Throwable;
 /**
  * Exception thrown when a request fails CSRF validation.
  */
-class CsrfTokenVerificationException extends Exception
+class CsrfTokenVerificationException extends HttpException
 {
-    private Request $m_request;
-
     /**
      * Initialise a new instance of the exception.
      *
@@ -23,17 +21,16 @@ class CsrfTokenVerificationException extends Exception
      */
     public function __construct(Request $request, string $message = "", int $code = 0, Throwable $previous = null)
     {
-        parent::__construct($message, $code, $previous);
-        $this->m_request = $request;
+        parent::__construct($request, $message, $code, $previous);
     }
 
     /**
-     * Fetch the request that failed CSRF validation.
+     * The HTTP status code.
      *
-     * @return Request The request.
+     * @return int 400 (Bad request).
      */
-    public function getRequest(): Request
+    public function statusCode(): int
     {
-        return $this->m_request;
+        return 400;
     }
 }
