@@ -6,6 +6,7 @@ use Bead\Contracts\SessionHandler;
 use Bead\Core\Application;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
+use Bead\Exceptions\Session\SessionException;
 use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\Handlers\File as FileSessionHandler;
@@ -40,6 +41,9 @@ class Session implements DataAccessor
 
     /** @var int The default number of seconds after which an unused session is considered dead. */
     public const DefaultSessionIdleTimeoutPeriod = 1800;
+
+    /** @var string The session key under which the transient key data is stored. */
+    private const TransientKeysSessionKey = "__bead_transient_keys";
 
     /** @var SessionHandler The session handler. */
     private SessionHandler $m_handler;
@@ -90,6 +94,21 @@ class Session implements DataAccessor
             $this->regenerateId();
         }
 
+        $transientKeys = $this->handler()->get(self::TransientKeysSessionKey);
+
+        if (!is_array($transientKeys)) {
+            $transientKeys = [];
+        } else {
+            if (!all($transientKeys, "is_int")) {
+                throw new SessionException("Session data is corrupt.");
+            }
+
+            if (!all(array_keys($transientKeys), "is_string")) {
+                throw new SessionException("Session data is corrupt.");
+            }
+        }
+
+        $this->m_transientKeys = $transientKeys;
         setcookie(Session::CookieName, $this->id());
     }
 
@@ -101,7 +120,7 @@ class Session implements DataAccessor
     public function __destruct()
     {
         $this->pruneTransientData();
-        $this->handler()->commit();
+        $this->commit();
     }
 
     /**
@@ -324,6 +343,7 @@ class Session implements DataAccessor
          * remove() to throw.
          */
         $this->remove($remove);
+        $remove = array_keys($remove);
 
         $this->m_transientKeys = array_filter($this->m_transientKeys, function (string $key) use ($remove): bool {
             return !in_array($key, $remove);
@@ -381,6 +401,7 @@ class Session implements DataAccessor
      */
     public function commit(): void
     {
+        $this->handler()->set(self::TransientKeysSessionKey, $this->m_transientKeys);
         $this->handler()->commit();
     }
 
