@@ -148,6 +148,15 @@ class TranslatorTest extends TestCase
         self::assertTrue($actual);
     }
 
+    /** Ensure we get true when the main translation file doesn't exist but the generic-language one does and has a translation. */
+    public function testHasTranslation5(): void
+    {
+        $this->m_translator->addSearchPath(__DIR__ . "/files/translations/");
+        $this->m_translator->setLanguage("es-CL");
+        $actual = $this->m_translator->hasTranslation("door");
+        self::assertTrue($actual);
+    }
+
     /** Ensure we can add a search path. */
     public function testAddSearchPath1(): void
     {
@@ -263,5 +272,14 @@ class TranslatorTest extends TestCase
         $this->m_translator->setLanguage("fr-FR");
         $actual = $this->m_translator->translate("fork");
         self::assertEquals("forchette", $actual);
+    }
+
+    /** Ensure we get the generic translation when the main translation file doesn't exist but the generic-language one does. */
+    public function testTranslate6(): void
+    {
+        $this->m_translator->addSearchPath(__DIR__ . "/files/translations/");
+        $this->m_translator->setLanguage("es-CL");
+        $actual = $this->m_translator->translate("door");
+        self::assertEquals("puerta", $actual);
     }
 }
