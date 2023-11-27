@@ -109,7 +109,7 @@ class Session implements DataAccessor
         }
 
         $this->m_transientKeys = $transientKeys;
-        setcookie(Session::CookieName, $this->id());
+        $this->setCookie();
     }
 
     /**
@@ -121,6 +121,18 @@ class Session implements DataAccessor
     {
         $this->pruneTransientData();
         $this->commit();
+    }
+
+    /** Helper to set the session cookie in a consistent way. */
+    private function setCookie(): void
+    {
+        setcookie(self::CookieName, $this->id(), 0, "/");
+    }
+
+    /** Helper to delete the session cookie in a consistent way. */
+    private function deleteCookie(): void
+    {
+        setcookie(self::CookieName, $this->id(), time() - 3600, "/");
     }
 
     /**
@@ -334,20 +346,15 @@ class Session implements DataAccessor
      */
     public function pruneTransientData(): void
     {
-        $remove = array_filter($this->m_transientKeys, function (int $count): bool {
-            return 0 >= $count;
-        });
+        $remove = array_filter($this->m_transientKeys, fn (int $count): bool => 0 >= $count);
+        $remove = array_keys($remove);
 
         /**
          * @psalm-suppress MissingThrowsDocblock $remove is an array of strings which won't trigger
          * remove() to throw.
          */
         $this->remove($remove);
-        $remove = array_keys($remove);
-
-        $this->m_transientKeys = array_filter($this->m_transientKeys, function (string $key) use ($remove): bool {
-            return !in_array($key, $remove);
-        });
+        $this->m_transientKeys = array_filter($this->m_transientKeys, fn (string $key): bool => !in_array($key, $remove), ARRAY_FILTER_USE_KEY);
 
         foreach ($this->m_transientKeys as &$count) {
             --$count;
@@ -415,7 +422,7 @@ class Session implements DataAccessor
     public function regenerateId(): void
     {
         $this->handler()->regenerateId();
-        setcookie(Session::CookieName, $this->id());
+        $this->setCookie();
     }
 
     /**
@@ -427,6 +434,7 @@ class Session implements DataAccessor
      */
     public function destroy(): void
     {
+        $this->deleteCookie();
         $this->handler()->destroy();
     }
 

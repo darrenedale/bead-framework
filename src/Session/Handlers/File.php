@@ -300,7 +300,7 @@ class File implements SessionHandler
     public function idHasExpired(): bool
     {
         $this->throwIfDestroyed();
-        return isset($this->m_expiredAt);
+        return isset($this->m_idExpiredAt);
     }
 
     /**
