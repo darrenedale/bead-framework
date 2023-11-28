@@ -14,6 +14,7 @@ use Bead\Session\Handlers\Php as PhpSessionHandler;
 use Exception;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 use function Bead\Helpers\Iterable\all;
 
@@ -23,7 +24,7 @@ use function Bead\Helpers\Iterable\all;
  * This class replaces PHP's native sessions with an implementation that contains better security features and is more
  * flexible. It supports different storage backends, auto-expiration of data, automatic session ID regeneration,
  * automatic idle session expiry, multiple concurrent sessions (if you really need to). Backends to use PHP's native
- * sessions (`PhpSessionHandler`) and the local filesystem (`FileSessionHandler`) are included with Bead.
+ * sessions and the local filesystem are included with Bead.
  */
 class Session implements DataAccessor
 {
@@ -50,7 +51,7 @@ class Session implements DataAccessor
 
     /** @var array<string, int> Stores the keys in the session that are transient, and how many more requests they will
      * last before being removed. */
-    private array $m_transientKeys = [];
+    private array $m_transientKeys;
 
     /** @var array<string,class-string> The known session handler types. */
     private static array $m_handlerClasses = [
@@ -80,7 +81,7 @@ class Session implements DataAccessor
             if ($this->handler()->idExpiredAt() < time() - self::expiredSessionGracePeriod()) {
                 // expired and beyond the grace period
                 $this->destroy();
-                throw new ExpiredSessionIdUsedException($id, "The provided session ID is not valid.");
+                throw new ExpiredSessionIdUsedException($this->handler()->id(), "The provided session ID is not valid.");
             } else {
                 // expired and within the grace period, promote to the regenerated ID for the old session ID
                 $this->m_handler = self::createHandler($this->handler()->replacementId());
@@ -88,7 +89,7 @@ class Session implements DataAccessor
         } elseif ($this->lastUsedAt() < time() - self::sessionIdleTimeoutPeriod()) {
             // not used for too long
             $this->destroy();
-            throw new SessionExpiredException($id, "The session with the provided ID has been unused for more than " . self::sessionIdleTimeoutPeriod() . " seconds.");
+            throw new SessionExpiredException($this->handler()->id(), "The session with the provided ID has been unused for more than " . self::sessionIdleTimeoutPeriod() . " seconds.");
         } elseif ($this->handler()->idGeneratedAt() < time() - self::sessionIdRegenerationPeriod()) {
             // due to expire but not so old that we don't trust it
             $this->regenerateId();
@@ -421,6 +422,7 @@ class Session implements DataAccessor
      */
     public function regenerateId(): void
     {
+        $this->deleteCookie();
         $this->handler()->regenerateId();
         $this->setCookie();
     }
@@ -452,12 +454,12 @@ class Session implements DataAccessor
         $class = self::$m_handlerClasses[$type] ?? null;
 
         if (!isset($class)) {
-            throw new InvalidSessionHandlerException("Session handler '{$type}' configured in session config file is not recognised.");
+            throw new InvalidSessionHandlerException($type, "Session handler '{$type}' configured in session config file is not recognised.");
         }
 
         try {
             return new $class($id);
-        } catch (Exception $err) {
+        } catch (Throwable $err) {
             throw new SessionNotFoundException($id ?? "", "Exception creating {$type} session handler ({$class}).", 0, $err);
         }
     }
@@ -491,7 +493,7 @@ class Session implements DataAccessor
             throw new RuntimeException("The session key '{$key}' does not contain an array.");
         }
 
-        $arr = array_merge($arr, $data);
+        $arr = [...$arr, ...$data,];
         /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
         $this->set($key, $arr);
     }
@@ -514,10 +516,13 @@ class Session implements DataAccessor
             throw new RuntimeException("The session key '{$key}' does not contain an array.");
         }
 
-        if (1 === $n) {
+        if (0 === $n) {
+            return null;
+        } elseif (1 === $n) {
             $value = array_pop($arr);
         } else {
-            $value = array_splice($arr, -$n);
+            // ensure the popped items are in the order they would be popped individually
+            $value = array_reverse(array_splice($arr, -$n));
         }
 
         /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
