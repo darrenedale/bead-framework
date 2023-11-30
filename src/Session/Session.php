@@ -67,6 +67,7 @@ class Session implements DataAccessor
      *
      * @param string|null $id The optional session ID. If not provided, a new ID will be generated.
      *
+     * @throws SessionException If the expected internal data is not found in the session.
      * @throws SessionNotFoundException If the ID provided does not identify an existing session.
      * @throws ExpiredSessionIdUsedException If the ID provided is for a session that has had its ID cycled.
      * @throws SessionExpiredException If the session identified hasn't been used for more than the threshold duration.

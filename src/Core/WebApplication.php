@@ -11,6 +11,7 @@ use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
 use Bead\Exceptions\NotFoundException;
+use Bead\Exceptions\Session\SessionException;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
 use Bead\Exceptions\Session\SessionExpiredException;
@@ -278,9 +279,10 @@ class WebApplication extends Application
     /**
      * Initialise the application session data.
      *
-     * @throws ExpiredSessionIdUsedException if the session ID has timed out
      * @throws RuntimeException if the CSRF token needs to be refereshed but fails
      * @throws LogicException if the session has already been started
+     * @throws SessionException If the expected internal data is not found in the session.
+     * @throws ExpiredSessionIdUsedException if the session ID has timed out
      * @throws SessionExpiredException if the current session has expired
      * @throws SessionNotFoundException If the ID provided does not identify an existing session.
      * @throws InvalidSessionHandlerException if the session handler specified in the configuration file is not

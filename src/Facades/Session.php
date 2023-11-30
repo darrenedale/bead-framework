@@ -52,6 +52,7 @@ final class Session
      * @return BeadSession The session.
      *
      * @throws LogicException if the session has already been started
+     * @throws SessionException If the expected internal data is not found in the session.
      * @throws ExpiredSessionIdUsedException if the session identified by the session cookie has expired
      * @throws SessionExpiredException if the current session has expired
      * @throws SessionNotFoundException If the ID provided does not identify an existing session.
