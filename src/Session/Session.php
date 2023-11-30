@@ -493,7 +493,7 @@ class Session implements DataAccessor
             throw new RuntimeException("The session key '{$key}' does not contain an array.");
         }
 
-        $arr = [...$arr, ...$data,];
+        $arr = array_merge($arr, $data);
         /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
         $this->set($key, $arr);
     }

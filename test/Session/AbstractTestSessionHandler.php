@@ -6,6 +6,7 @@ namespace BeadTests\Session;
 
 use Bead\Contracts\SessionHandler;
 
+/** A handler to use as a test double in the SessionTest. */
 abstract class AbstractTestSessionHandler implements SessionHandler
 {
     protected string $id = "";
