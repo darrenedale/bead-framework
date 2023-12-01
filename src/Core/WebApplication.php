@@ -2,10 +2,12 @@
 
 namespace Bead\Core;
 
+use Bead\Contracts\RequestPreprocessor;
 use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
 use Bead\Database\Connection;
 use Bead\Exceptions\CsrfTokenVerificationException;
+use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\InvalidPluginException;
 use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
@@ -694,6 +696,52 @@ class WebApplication extends Application
     }
 
     /**
+     * @throws RuntimeException if the preprocessor does not exist or can't be instantiated.
+     */
+    protected function instantiatePreprocessor(string $preprocessor): RequestPreprocessor
+    {
+        if (!class_exists($preprocessor)) {
+            throw new RuntimeException("Preprocessor class {$preprocessor} does not exist.");
+        }
+
+        if (!is_subclass_of($preprocessor, RequestPreprocessor::class, true)) {
+            throw new RuntimeException("Preprocessor class {$preprocessor} does not implement RequestPreprocessor.");
+        }
+
+        return new $preprocessor();
+    }
+
+    /** @throws InvalidConfigurationException if the list of preprocessors is not valid. */
+    protected function preprocessRequest(Request $request): ?Response
+    {
+        $preprocessors = $this->config("app.preprocessors", []);
+
+        if (!is_array($preprocessors)) {
+            throw new InvalidConfigurationException("app.preprocessors", "Expected array of preprocessor classes.");
+        }
+
+        foreach ($preprocessors as $preprocessor) {
+            if (!is_string($preprocessor)) {
+                throw new InvalidConfigurationException("app.preprocessors", "Expected valid preprocessor name, found " . gettype($preprocessor));
+            }
+
+            try {
+                $preprocessor = $this->instantiatePreprocessor($preprocessor);
+            } catch (RuntimeException $err) {
+                throw new InvalidConfigurationException("app.preprocessors", "Expected valid preprocessor, found \"{$preprocessor}\"");
+            }
+
+            $response = $preprocessor->preprocessRequest($request);
+
+            if (null !== $reponse) {
+                return $response;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Handle a request.
      *
      * This method submits a request to the application for processing. Processing of the request starts immediately and
@@ -703,6 +751,7 @@ class WebApplication extends Application
      *
      * @return Response An optional Response to send to the client. For legacy support, if no response is returned
      * exec() assumes that content has been added to the Page instance and that is output instead.
+     * @throws InvalidConfigurationException if an invalid set of preprocessors is found
      * @throws CsrfTokenVerificationException if the request requires CSRF verification and fails
      * @throws NotFoundException if the request can't be routed
      */
@@ -712,6 +761,14 @@ class WebApplication extends Application
         $this->verifyCsrf($request);
 
         try {
+            $this->emitEvent("application.handlerequest.preprocessing", $request);
+            $response = $this->preprocessRequest($request);
+            $this->emitEvent("application.handlerequest.preprocessed", $request);
+
+            if (null !== $response) {
+                return $response;
+            }
+
             $this->emitEvent("application.handlerequest.routing", $request);
             $response = $this->router()->route($request);
             $this->emitEvent("application.handlerequest.routed", $request);
