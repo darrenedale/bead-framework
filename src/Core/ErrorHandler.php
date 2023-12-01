@@ -72,7 +72,7 @@ class ErrorHandler implements ErrorHandlerContract
         try {
             try {
                 WebApplication::instance()->sendResponse(new View($this->exceptionDisplayViewName(), compact("error")));
-            } catch (Throwable $err) {
+            } catch (Throwable) {
                 // extremely basic fallback display
                 WebApplication::instance()->sendResponse(new class ($error) extends AbstractResponse {
                     private Throwable $m_error;
@@ -127,7 +127,7 @@ class ErrorHandler implements ErrorHandlerContract
         try {
             try {
                 WebApplication::instance()->sendResponse(new View($this->errorPageViewName()));
-            } catch (ViewNotFoundException $error) {
+            } catch (ViewNotFoundException) {
                 // extremely basic fallback display
                 WebApplication::instance()->sendResponse(new class extends AbstractResponse {
                     public function statusCode(): int
@@ -182,7 +182,7 @@ HTML;
                     }
                 });
             }
-        } catch (Throwable $err) {
+        } catch (Throwable) {
             // error "page" of last resort - if we can't even empty the output buffer, just echo to it
             echo "An application error has occurred. It has been reported and should be investigated and fixed in due course.";
         }
@@ -240,7 +240,7 @@ HTML;
      */
     public function handleError(int $type, string $message, string $file, int $line): void
     {
-        throw new Error("PHP error {$file}@{$line}: {$message}", $type);
+        throw new Error("PHP error in {$file}@{$line}: {$message}", $type);
     }
 
     /**
@@ -261,7 +261,7 @@ HTML;
             try {
                 WebApplication::instance()->sendResponse($error);
                 $displayed = true;
-            } catch (Throwable $err) {
+            } catch (Throwable) {
                 // nothing to do here - the block below will take over sending something
             }
         }
