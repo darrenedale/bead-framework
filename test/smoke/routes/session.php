@@ -6,45 +6,14 @@ use Bead\Contracts\Router;
 use Bead\Request;
 use Bead\Facades\Session;
 use Bead\View;
+use BeadTests\smoke\app\Controllers\SessionController;
 
-$router->registerGet("/session", function(Request $request): View {
-    function formatTime($time): string
-    {
-        if (is_int($time)) {
-            $time = new DateTime("@{$time}");
-        }
+$router->registerGet("/session", [SessionController::class, "showDetails",]);
 
-        return $time->format("H:i:s");
-    }
+$router->registerGet("/prefixed-session", [SessionController::class, "prefixedSession",]);
 
-    $data = [
-        "previousRandom" => Session::get("random-number", "undefined"),
-        "createdAt" => formatTime(Session::createdAt()),
-        "lastUsedAt" => formatTime(Session::lastUsedAt()),
-        "idGeneratedAt" => formatTime(Session::handler()->idGeneratedAt()),
-        "idExpiresAt" => formatTime(Session::handler()->idGeneratedAt() + Session::sessionIdRegenerationPeriod()),
-        "sessionExpiresAt" => formatTime(Session::lastUsedAt() + Session::sessionIdleTimeoutPeriod()),
-        "now" => formatTime(time()),
-    ];
+$router->registerGet("/session/transient/refresh", [SessionController::class, "refreshTransientData",]);
 
-    Session::set("random-number", mt_rand(0,100));
-    $data["currentRandom"] = Session::get("random-number");
-    Session::set("session-id", Session::id());
-    return new View("session", $data);
-});
+$router->registerGet("/session/transient/add", [SessionController::class, "addTransientData",]);
 
-$router->registerGet("/prefixed-session", function(Request $request): View {
-    $session = Session::prefixed("foo.");
-    $session->set([
-        "bar" => "bar",
-        "baz" => "baz",
-        "fizz" => "fizz",
-        "buzz" => "buzz",
-        "quux" => "quux",
-    ]);
-
-    $session["flox"] = "flux";
-
-    $extracted = $session->extract(["fizz", "buzz",]);
-    return new View("prefixed-session", compact("extracted"));
-});
+$router->registerGet("/session/set", [SessionController::class, "set",]);

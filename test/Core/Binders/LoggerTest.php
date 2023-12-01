@@ -28,6 +28,8 @@ final class LoggerTest extends TestCase
     {
         $this->logger = new LoggerBinder();
         $this->app = Mockery::mock(Application::class);
+        $this->mockMethod(Application::class, "instance", $this->app);
+        $this->app->shouldReceive("rootDir")->andReturn("/")->byDefault();
     }
 
     public function tearDown(): void
@@ -37,7 +39,7 @@ final class LoggerTest extends TestCase
         parent::tearDown();
     }
 
-    public static function dataForTestFileLogger1(): iterable
+    public static function dataForTestCreateFileLogger1(): iterable
     {
         $config = [
             "driver" => "file",
@@ -70,20 +72,25 @@ final class LoggerTest extends TestCase
     /**
      * Ensure file loggers are created with the appropriate path.
      *
-     * @dataProvider dataForTestFileLogger1
+     * @dataProvider dataForTestCreateFileLogger1
      * @param array $config
      * @param string $root
      * @param $expectedPath
      */
-    public function testFileLogger1(array $config, string $root, $expectedPath): void
+    public function testCreateFileLogger1(array $config, string $root, $expectedPath): void
     {
+        $this->app->shouldReceive("rootDir")
+            ->atMost()
+            ->once()
+            ->andReturn($root);
+
         $logger = new StaticXRay(LoggerBinder::class);
-        $actualLogger = $logger->fileLogger($config, $root);
+        $actualLogger = $logger->createFileLogger($config);
         self::assertInstanceOf(FileLogger::class, $actualLogger);
         self::assertEquals($expectedPath, $actualLogger->fileName());
     }
 
-    public static function dataForTestFileLogger2(): iterable
+    public static function dataForTestCreateFileLogger2(): iterable
     {
         $config = [
             "driver" => "file",
@@ -110,19 +117,44 @@ final class LoggerTest extends TestCase
     /**
      * Ensure we can't create file loggers with .. in the path.
      *
-     * @dataProvider dataForTestFileLogger2
+     * @dataProvider dataForTestCreateFileLogger2
      */
-    public function testFileLogger2(array $config): void
+    public function testCreateFileLogger2(array $config): void
     {
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessageMatches("/^Expected log file path without directory traversal components, found \".*\\.\\..*\"\$/");
         $logger = new StaticXRay(LoggerBinder::class);
-        $logger->fileLogger($config, "");
+        $logger->createFileLogger($config);
+    }
+
+    /** Ensure createFileLogger() throws when the "file" config key is missing. */
+    public function testCreateFileLogger3(): void
+    {
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessage("Expected file configuration, none found");
+        $logger = new StaticXRay(LoggerBinder::class);
+        $logger->createFileLogger([
+            "driver" => "file",
+        ]);
+    }
+
+    /** Ensure createFileLogger() throws when the "path" config key is missing. */
+    public function testCreateFileLogger4(): void
+    {
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessage("Expected log file path, none found");
+        $logger = new StaticXRay(LoggerBinder::class);
+        $logger->createFileLogger([
+            "driver" => "file",
+            "file" => [
+                "flags" => FileLogger::FlagAppend,
+            ],
+        ]);
     }
 
     public static function dataForTestBindServices1(): iterable
     {
-        yield from self::dataForTestFileLogger1();
+        yield from self::dataForTestCreateFileLogger1();
     }
 
     /**
@@ -146,6 +178,7 @@ final class LoggerTest extends TestCase
             ->andReturn($config);
 
         $this->app->shouldReceive("rootDir")
+            ->atMost()
             ->once()
             ->andReturn($root);
 
