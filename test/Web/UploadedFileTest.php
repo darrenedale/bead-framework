@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BeadTests;
+namespace BeadTests\Web;
 
 use Bead\Contracts\Logger as LoggerContract;
 use Bead\Core\Application;

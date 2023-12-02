@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace BeadTests\Web;
 
-use;
 use Bead\Contracts\Logger;
 use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
@@ -27,6 +26,7 @@ use Closure;
 use InvalidArgumentException;
 use Mockery;
 use ReflectionProperty;
+
 use function array_unique;
 use function Bead\Helpers\Iterable\accumulate;
 use function count;

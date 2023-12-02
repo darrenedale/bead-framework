@@ -3,7 +3,7 @@
 namespace Bead;
 
 use Bead\Contracts\Response;
-use Bead\Exceptions\InternalServerErrorException;
+use Bead\Exceptions\Http\InternalServerErrorException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
 use Bead\Facades\WebApplication as WebApp;

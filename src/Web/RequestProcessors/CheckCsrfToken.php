@@ -1,10 +1,10 @@
 <?php
 
-namespace Bead\Web\Preprocessors;
+namespace Bead\Web\RequestProcessors;
 
 use Bead\Contracts\RequestPreprocessor;
 use Bead\Contracts\Response;
-use Bead\Exceptions\CsrfTokenVerificationException;
+use Bead\Exceptions\Http\CsrfTokenVerificationException;
 use Bead\Facades\WebApplication as WebApp;
 use Bead\Web\Request;
 

@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use Bead\Contracts\Router;
-use Bead\Exceptions\CsrfTokenVerificationException;
+use Bead\Exceptions\Http\CsrfTokenVerificationException;
+use Bead\Facades\WebApplication as WebApp;
 use Bead\View;
 use Bead\Web\Request;
-use Bead\Facades\WebApplication as WebApp;
 
 /** @var Router $router */
 

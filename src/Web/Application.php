@@ -8,12 +8,12 @@ use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
 use Bead\Core\Application as CoreApplication;
 use Bead\Core\Plugin;
+use Bead\Exceptions\Http\NotFoundException;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\InvalidPluginException;
 use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
-use Bead\Exceptions\NotFoundException;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
 use Bead\Exceptions\Session\SessionException;
@@ -22,7 +22,7 @@ use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
 use Bead\Session\DataAccessor as SessionDataAccessor;
-use Bead\Web\Preprocessors\CheckCsrfToken;
+use Bead\Web\RequestProcessors\CheckCsrfToken;
 use DirectoryIterator;
 use Exception;
 use InvalidArgumentException;
@@ -156,11 +156,8 @@ class Application extends CoreApplication
     /** @var string The default namespace for plugin classes. */
     protected const DefaultPluginsNamespace = "App\\Plugins";
 
-    /** @var RequestPreprocessor[] The request pre-processors that have been added. */
-    private array $m_requestPreprocessors = [];
-
-    /** @var RequestPostprocessor[] The request post-processors that have been added. */
-    private array $m_requestPostprocessors = [];
+    /** @var RequestPreprocessor|RequestPostprocessor[] The request pre-processors that have been added. */
+    private array $m_requestProcessors = [];
 
     /** @var string Where plugins are loaded from. */
     private string $m_pluginsDirectory = self::DefaultPluginsPath;
@@ -194,8 +191,7 @@ class Application extends CoreApplication
         parent::__construct($appRoot);
 
         // initialise the fixed pre- and post-processors
-        $this->initialiseRequestPreprocessors();
-        $this->initialiseRequestPostprocessors();
+        $this->initialiseRequestProcessors();
 
         $this->initialiseSession();
         $this->m_session = $this->sessionData(self::SessionDataContext);
@@ -652,9 +648,9 @@ class Application extends CoreApplication
      *
      * Reimplement this to customise this list.
      */
-    protected function initialiseRequestPreprocessors(): void
+    protected function initialiseRequestProcessors(): void
     {
-        $this->m_requestPreprocessors = [
+        $this->m_requestProcessors = [
             new CheckCsrfToken(),
         ];
     }
@@ -667,7 +663,7 @@ class Application extends CoreApplication
      *
      * @throws InvalidConfigurationException if the list of preprocessors is not valid.
      */
-    protected function loadRequestPreprocessors(): void
+    protected function loadRequestProcessors(): void
     {
         static $done = false;
 
@@ -676,105 +672,41 @@ class Application extends CoreApplication
         }
 
         $done = true;
-        $preprocessors = $this->config("app.preprocessors", []);
+        $preprocessors = $this->config("app.processors", []);
 
         if (!is_array($preprocessors)) {
-            throw new InvalidConfigurationException("app.preprocessors", "Expected array of preprocessor classes.");
+            throw new InvalidConfigurationException("app.processors", "Expected array of request processor classes.");
         }
 
         foreach ($preprocessors as $preprocessor) {
             if (!is_string($preprocessor)) {
-                throw new InvalidConfigurationException("app.preprocessors", "Expected valid preprocessor name, found " . gettype($preprocessor));
+                throw new InvalidConfigurationException("app.processors", "Expected valid request processor name, found " . gettype($preprocessor));
             }
 
             try {
-                $preprocessor = $this->instantiatePreprocessor($preprocessor);
+                $preprocessor = $this->instantiateRequestProcessor($preprocessor);
             } catch (RuntimeException) {
-                throw new InvalidConfigurationException("app.preprocessors", "Expected valid preprocessor, found \"{$preprocessor}\"");
+                throw new InvalidConfigurationException("app.processors", "Expected valid preprocessor, found \"{$preprocessor}\"");
             }
 
-            $this->m_requestPreprocessors[] = $preprocessor;
-        }
-    }
-
-    /**
-     * Load the preprocessors that the application kernel always uses.
-     *
-     * Reimplement this to customise this list.
-     */
-    protected function initialiseRequestPostprocessors(): void
-    {
-        $this->m_requestPostprocessors = [];
-    }
-
-    /**
-     * Load the additional preprocessors configured in the app config.
-     *
-     * The default implementation loads all preprocessors listed in app.preprocessors. Reimplement this if you need more
-     * control over which preprocessors are loaded.
-     *
-     * @throws InvalidConfigurationException if the list of preprocessors is not valid.
-     */
-    protected function loadRequestPostprocessors(): void
-    {
-        static $done = false;
-
-        if ($done) {
-            return;
-        }
-
-        $done = true;
-        $postprocessors = $this->config("app.postprocessors", []);
-
-        if (!is_array($postprocessors)) {
-            throw new InvalidConfigurationException("app.postprocessors", "Expected array of postprocessor classes.");
-        }
-
-        foreach ($postprocessors as $postprocessor) {
-            if (!is_string($postprocessor)) {
-                throw new InvalidConfigurationException("app.postprocessors", "Expected valid postprocessor name, found " . gettype($postprocessor));
-            }
-
-            try {
-                $postprocessor = $this->instantiatePostprocessor($postprocessor);
-            } catch (RuntimeException) {
-                throw new InvalidConfigurationException("app.postprocessors", "Expected valid postprocessor, found \"{$postprocessor}\"");
-            }
-
-            $this->m_requestPostprocessors[] = $postprocessor;
+            $this->m_requestProcessors[] = $preprocessor;
         }
     }
 
     /**
      * @throws RuntimeException if the preprocessor does not exist or can't be instantiated.
      */
-    protected function instantiatePreprocessor(string $preprocessor): RequestPreprocessor
+    protected function instantiateRequestProcessor(string $processor): RequestPreprocessor|RequestPostprocessor
     {
-        if (!class_exists($preprocessor)) {
-            throw new RuntimeException("Preprocessor class {$preprocessor} does not exist.");
+        if (!class_exists($processor)) {
+            throw new RuntimeException("Processor class {$processor} does not exist.");
         }
 
-        if (!is_subclass_of($preprocessor, RequestPreprocessor::class)) {
-            throw new RuntimeException("Preprocessor class {$preprocessor} does not implement RequestPreprocessor.");
+        if (!is_subclass_of($processor, RequestPreprocessor::class) && !is_subclass_of($processor, RequestPostprocessor::class)) {
+            throw new RuntimeException("Class {$processor} does not implement RequestPreprocessor or RequestPostprocessor.");
         }
 
-        return new $preprocessor();
-    }
-
-    /**
-     * @throws RuntimeException if the postprocessor does not exist or can't be instantiated.
-     */
-    protected function instantiatePostprocessor(string $postprocessor): RequestPreprocessor
-    {
-        if (!class_exists($postprocessor)) {
-            throw new RuntimeException("Postprocessor class {$postprocessor} does not exist.");
-        }
-
-        if (!is_subclass_of($postprocessor, RequestPostprocessor::class)) {
-            throw new RuntimeException("Postprocessor class {$postprocessor} does not implement RequestPostprocessor.");
-        }
-
-        return new $postprocessor();
+        return new $processor();
     }
 
     /**
@@ -789,7 +721,11 @@ class Application extends CoreApplication
      */
     protected function preprocessRequest(Request $request): ?Response
     {
-        foreach ($this->m_requestPreprocessors as $preprocessor) {
+        foreach ($this->m_requestProcessors as $preprocessor) {
+            if (!$preprocessor instanceof RequestPreprocessor) {
+                continue;
+            }
+
             $response = $preprocessor->preprocessRequest($request);
 
             if (null !== $response) {
@@ -812,7 +748,11 @@ class Application extends CoreApplication
      */
     protected function postprocessRequest(Request $request, Response $response): ?Response
     {
-        foreach ($this->m_requestPostprocessors as $postprocessor) {
+        foreach ($this->m_requestProcessors as $postprocessor) {
+            if (!$postprocessor instanceof RequestPostprocessor) {
+                continue;
+            }
+
             $replacementResponse = $postprocessor->postprocessRequest($request, $response);
 
             if (null !== $replacementResponse) {
@@ -853,7 +793,7 @@ class Application extends CoreApplication
             $this->emitEvent("application.handlerequest.routed", $request);
 
             $this->emitEvent("application.handlerequest.postprocessing", $request);
-            $postResponse = $this->postprocessRequest($request);
+            $postResponse = $this->postprocessRequest($request, $response);
             $this->emitEvent("application.handlerequest.postprocessed", $request);
 
             if (null !== $postResponse) {
@@ -900,8 +840,7 @@ class Application extends CoreApplication
         }
 
         $this->m_isRunning = true;
-        $this->loadRequestPreprocessors();
-        $this->loadRequestPostprocessors();
+        $this->loadRequestProcessors();
         $this->loadPlugins();
         $this->loadRoutes();
 

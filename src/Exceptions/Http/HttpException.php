@@ -1,13 +1,15 @@
 <?php
 
-namespace Bead\Exceptions;
+namespace Bead\Exceptions\Http;
 
 use Bead\Contracts\Response;
+use Bead\Exceptions\ViewNotFoundException;
+use Bead\Exceptions\ViewRenderingException;
 use Bead\Responses\DoesntHaveHeaders;
 use Bead\Responses\NaivelySendsContent;
 use Bead\View;
-use Bead\Web\Request;
 use Bead\Web\Application;
+use Bead\Web\Request;
 use Exception;
 use Throwable;
 

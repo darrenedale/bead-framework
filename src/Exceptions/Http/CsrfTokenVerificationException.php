@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Exceptions;
+namespace Bead\Exceptions\Http;
 
 use Bead\Web\Request;
 use Throwable;

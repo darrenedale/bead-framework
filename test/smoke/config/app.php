@@ -2,7 +2,8 @@
 
 use Bead\Core\Binders\Crypter;
 use Bead\Core\Binders\Logger;
-use Bead\Web\Preprocessors\CheckCsrfToken;
+use Bead\Web\RequestProcessors\CheckMaintenanceMode;
+use Bead\Web\RequestProcessors\LogRequestDuration;
 use BeadTests\smoke\app\Web\Preprocessors\AddRequestTimestamp;
 
 return [
@@ -22,8 +23,10 @@ return [
     ],
 
     // define additional preprocessors that get to see the request before it's routed (note that by default the
-    // CheckCsrfToken preprocessor is always used
-    "preprocessors" => [
-        AddRequestTimestamp::class
+    // CheckCsrfToken preprocessor is always used)
+    "processors" => [
+        AddRequestTimestamp::class,
+        CheckMaintenanceMode::class,
+        LogRequestDuration::class,
     ],
 ];

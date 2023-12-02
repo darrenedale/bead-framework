@@ -63,7 +63,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /**
      * @param string $appRoot
-     * @param Connection|null $db
      *
      * @throws RuntimeException if the singleton already exists or if the provided root directory does not exist.
      * @throws ServiceAlreadyBoundException if any of the service bindings set up by the Application is already bound..
@@ -105,6 +104,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
         return (self::$s_instance instanceof static) ? self::$s_instance : null;
     }
 
+    /** @throws ServiceAlreadyBoundException */
     private function bindServices(): void
     {
         $binders = $this->config("app.binders");
