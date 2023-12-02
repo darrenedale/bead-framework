@@ -2,8 +2,7 @@
 
 namespace Bead\Exceptions;
 
-use Bead\Request;
-use Exception;
+use Bead\Web\Request;
 use Throwable;
 
 /**

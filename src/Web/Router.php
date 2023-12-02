@@ -7,21 +7,20 @@
 
 declare(strict_types=1);
 
-namespace Bead\Core;
+namespace Bead\Web;
 
 use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
+use Bead\Core\Application;
 use Bead\Exceptions\ConflictingRouteException;
 use Bead\Exceptions\DuplicateRouteParameterNameException;
 use Bead\Exceptions\InvalidRouteParameterNameException;
 use Bead\Exceptions\UnroutableRequestException;
-use Bead\Request;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionClass;
 use ReflectionFunction;
 use Throwable;
-
 use function Bead\Helpers\Iterable\all;
 use function Bead\Helpers\Iterable\isSubsetOf;
 
@@ -70,7 +69,7 @@ class Router implements RouterContract
     /**
      * Fetch the route definition that matches a request, if any.
      *
-     * @param \Bead\Request $request
+     * @param \Bead\Web\Request $request
      *
      * @return string|null
      */
@@ -163,7 +162,7 @@ class Router implements RouterContract
      * Given a route that's been matched to a request, extract the route's arguments from the request's URI.
      *
      * @param string $route The matched route definition.
-     * @param \Bead\Request $request The request that it was matched to.
+     * @param \Bead\Web\Request $request The request that it was matched to.
      *
      * @return array The arguments for the route's parameters, keyed by the parameter name.
      */
@@ -189,7 +188,7 @@ class Router implements RouterContract
      *
      * @param callable|array<class-string, string> $handler The handler that has been matched to the request.
      * @param string $route The route definition that matched the request.
-     * @param \Bead\Request $request The request.
+     * @param \Bead\Web\Request $request The request.
      *
      * @return array The argument list for the handle.r
      *

@@ -257,7 +257,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @throws ServiceAlreadyBoundException if there is already a service bound to the identifier.
      */
-    public function bindService(string $service, $instance): void
+    public function bindService(string $service, mixed $instance): void
     {
         if ($this->serviceIsBound($service)) {
             throw new ServiceAlreadyBoundException($service, "The service '{$service}' is already bound to the Application instance.");

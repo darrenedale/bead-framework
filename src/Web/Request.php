@@ -1,9 +1,9 @@
 <?php
 
-namespace Bead;
+namespace Bead\Web;
 
-use TypeError;
 use InvalidArgumentException;
+use TypeError;
 
 /**
  * Abstract representation of an incoming HTTP request.

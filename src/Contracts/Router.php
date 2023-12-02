@@ -8,7 +8,7 @@
 namespace Bead\Contracts;
 
 use Bead\Exceptions\UnroutableRequestException;
-use Bead\Request;
+use Bead\Web\Request;
 
 /**
  * Contract for classes that want to route requests for a WebApplication.

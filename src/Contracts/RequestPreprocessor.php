@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Contracts;
 
-use Bead\Request;
+use Bead\Web\Request;
 
 interface RequestPreprocessor
 {

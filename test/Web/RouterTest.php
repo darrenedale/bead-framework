@@ -7,26 +7,26 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Core;
+namespace BeadTests\Web;
 
+use;
 use Bead\Contracts\Logger;
 use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
 use Bead\Core\Application;
-use Bead\Core\Router;
 use Bead\Exceptions\ConflictingRouteException;
 use Bead\Exceptions\DuplicateRouteParameterNameException;
 use Bead\Exceptions\InvalidRouteParameterNameException;
 use Bead\Exceptions\UnroutableRequestException;
-use Bead\Request;
 use Bead\Responses\AbstractResponse;
 use Bead\Testing\XRay;
+use Bead\Web\Request;
+use Bead\Web\Router;
 use BeadTests\Framework\TestCase;
 use Closure;
 use InvalidArgumentException;
 use Mockery;
 use ReflectionProperty;
-
 use function array_unique;
 use function Bead\Helpers\Iterable\accumulate;
 use function count;
@@ -76,7 +76,7 @@ class RouterTest extends TestCase
      * @param string $pathInfo The path_info for the request (used in route matching).
      * @param string $method The HTTP method.
      *
-     * @return \Bead\Request
+     * @return \Bead\Web\Request
      */
     protected static function makeRequest(string $pathInfo, string $method = RouterContract::GetMethod): Request
     {

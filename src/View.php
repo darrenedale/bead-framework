@@ -3,17 +3,16 @@
 namespace Bead;
 
 use Bead\Contracts\Response;
-use Bead\Core\Application;
-use Bead\Core\WebApplication;
 use Bead\Exceptions\InternalServerErrorException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
+use Bead\Facades\WebApplication as WebApp;
 use Bead\Responses\DoesntHaveHeaders;
 use Bead\Responses\NaivelySendsContent;
+use Bead\Web\Application as WebApplication;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
-
 use function Bead\Helpers\Iterable\some;
 use function Bead\Helpers\Str\html;
 
@@ -184,7 +183,7 @@ class View implements Response
      */
     public static function viewDirectory(): string
     {
-        return Application::instance()->rootDir() . "/" . Application::instance()->config("view.directory", "views");
+        return WebApp::rootDir() . "/" . WebApp::config("view.directory", "views");
     }
 
     /**
@@ -676,7 +675,7 @@ class View implements Response
      */
     public static function csrf(): void
     {
-        echo "<input type=\"hidden\" name=\"_token\" value=\"" . html(WebApplication::instance()->csrf()) . "\" />";
+        echo "<input type=\"hidden\" name=\"_token\" value=\"" . html(WebApp::csrf()) . "\" />";
     }
 
     /**
@@ -826,7 +825,7 @@ class View implements Response
         try {
             return $this->render();
         } catch (ViewRenderingException $err) {
-            throw new InternalServerErrorException(WebApplication::instance()->request(), "Error rendering view '{$this->name()}': {$err->getMessage()}", previous: $err);
+            throw new InternalServerErrorException(WebApp::request(), "Error rendering view '{$this->name()}': {$err->getMessage()}", previous: $err);
         }
     }
 }

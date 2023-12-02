@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests;
 
-use Bead\Request;
+use Bead\Web\Request;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
 use ReflectionClass;

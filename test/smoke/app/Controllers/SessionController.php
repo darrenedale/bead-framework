@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace BeadTests\smoke\app\Controllers;
 
-use Bead\Request;
 use Bead\Facades\Session;
 use Bead\View;
+use Bead\Web\Request;
 use DateTime;
 
 class SessionController

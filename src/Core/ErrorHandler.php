@@ -8,6 +8,7 @@ use Bead\Exceptions\ViewNotFoundException;
 use Bead\Facades\Log;
 use Bead\Responses\AbstractResponse;
 use Bead\View;
+use Bead\Web\Application as WebApplication;
 use Error;
 use Throwable;
 
