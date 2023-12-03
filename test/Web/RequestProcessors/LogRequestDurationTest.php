@@ -40,7 +40,7 @@ class LogRequestDurationTest extends TestCase
     public function testLogLevel1(): void
     {
         $processor = new XRay($this->processor);
-        self::assertEquals(LoggerContract::InformationLevel, $processor->logLevel());
+        self::assertEquals(LoggerContract::DebugLevel, $processor->logLevel());
     }
 
     /** Ensure preprocessRequest() stores the correct start time. */
@@ -65,7 +65,7 @@ class LogRequestDurationTest extends TestCase
         $log = Mockery::mock(LoggerContract::class);
 
         $log->shouldReceive("log")
-            ->with(LoggerContract::InformationLevel, "Request /bead/framework from 172.16.1.1 took 99999ns (0.00010s)")
+            ->with(LoggerContract::DebugLevel, "Request /bead/framework from 172.16.1.1 took 99999ns (0.00010s)")
             ->once();
 
         $app = Mockery::mock(Application::class);

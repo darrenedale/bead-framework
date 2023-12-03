@@ -1,9 +1,10 @@
 <?php
 
 /** @var array<string, mixed> $data */
-/** @var \Bead\Web\Application $app */
+/** @var Application $app */
 
 use Bead\View;
+use Bead\Web\Application;
 
 ?>
 

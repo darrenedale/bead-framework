@@ -76,7 +76,7 @@ class RouterTest extends TestCase
      * @param string $pathInfo The path_info for the request (used in route matching).
      * @param string $method The HTTP method.
      *
-     * @return \Bead\Web\Request
+     * @return Request
      */
     protected static function makeRequest(string $pathInfo, string $method = RouterContract::GetMethod): Request
     {

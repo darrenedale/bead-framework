@@ -9,6 +9,7 @@ use Bead\Contracts\Response;
 use Bead\Facades\Log;
 use Bead\Web\Request;
 
+/** Request pre- and post-processor to time how long requests take to process. */
 class LogRequestDuration implements RequestPostprocessor, RequestPreprocessor
 {
     private int $m_started = 0;
@@ -22,7 +23,7 @@ class LogRequestDuration implements RequestPostprocessor, RequestPreprocessor
     /** The level at which the request duration should be logged. */
     protected function logLevel(): int
     {
-        return LoggerContract::InformationLevel;
+        return LoggerContract::DebugLevel;
     }
 
     /** Capture the start time of the request so we can calculate the duration. */

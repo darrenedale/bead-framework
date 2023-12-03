@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * @var \Bead\Web\Application $app
+ * @var Application $app
  * @var array $data
  * @var Throwable $error
  */

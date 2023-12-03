@@ -34,7 +34,6 @@ use SplFileInfo;
 use UnexpectedValueException;
 
 use function Bead\Helpers\Str\random;
-use function gettype;
 
 /**
  * Core Application class for sites/applications using the framework.
@@ -693,9 +692,7 @@ class Application extends CoreApplication
         }
     }
 
-    /**
-     * @throws RuntimeException if the preprocessor does not exist or can't be instantiated.
-     */
+    /** @throws RuntimeException if the preprocessor does not exist or can't be instantiated. */
     protected function instantiateRequestProcessor(string $processor): RequestPreprocessor|RequestPostprocessor
     {
         if (!class_exists($processor)) {
@@ -771,7 +768,7 @@ class Application extends CoreApplication
      *
      * @param $request Request The request to handle.
      *
-     * @return Response An Response to send to the client.
+     * @return Response A Response to send to the client.
      * @throws InvalidConfigurationException if an invalid set of preprocessors is found
      * @throws NotFoundException if the request can't be routed
      */

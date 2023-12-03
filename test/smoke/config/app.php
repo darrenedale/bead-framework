@@ -22,8 +22,8 @@ return [
         Crypter::class,
     ],
 
-    // define additional preprocessors that get to see the request before it's routed (note that by default the
-    // CheckCsrfToken preprocessor is always used)
+    // define additional pre- and post-processors that get to see the request before it's routed (note that by default
+    // the CheckCsrfToken preprocessor is added by the app when it boots)
     "processors" => [
         AddRequestTimestamp::class,
         CheckMaintenanceMode::class,

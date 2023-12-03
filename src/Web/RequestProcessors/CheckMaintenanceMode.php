@@ -11,6 +11,7 @@ use Bead\View;
 use Bead\Web\Request;
 use RuntimeException;
 
+/** Pre-processor to render the maintenance-mode page (or send a 503 response) when the app is in maintenance mode. */
 class CheckMaintenanceMode implements RequestPreprocessor
 {
     /**

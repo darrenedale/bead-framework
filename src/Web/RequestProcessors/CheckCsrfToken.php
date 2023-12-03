@@ -10,6 +10,7 @@ use Bead\Web\Request;
 
 use function hash_equals;
 
+/** Pre-processor to ensure the CSRF token is verified. */
 class CheckCsrfToken implements RequestPreprocessor
 {
     /**
