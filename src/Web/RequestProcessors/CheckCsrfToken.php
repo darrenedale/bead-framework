@@ -22,7 +22,7 @@ class CheckCsrfToken implements RequestPreprocessor
      *
      * @return bool `true` if the request requires CSRF validation, `false` if not.
      */
-    protected function requestRequiresCsrf(Request $request): bool
+    protected function requiresCsrf(Request $request): bool
     {
         return match ($request->method()) {
             "GET", "HEAD", "OPTIONS" => false,
@@ -42,7 +42,7 @@ class CheckCsrfToken implements RequestPreprocessor
      *
      * @return string|null The token, or `null` if no CSRF token is found in the request.
      */
-    protected function csrfTokenFromRequest(Request $request): ?string
+    protected function retrieveCsrfToken(Request $request): ?string
     {
         return $request->postData("_token") ?? $request->header("X-CSRF-TOKEN");
     }
@@ -59,7 +59,7 @@ class CheckCsrfToken implements RequestPreprocessor
      */
     protected function verifyCsrf(Request $request): void
     {
-        $requestCsrf = $this->csrfTokenFromRequest($request);
+        $requestCsrf = $this->retrieveCsrfToken($request);
 
         if (!isset($requestCsrf) || !hash_equals(WebApp::csrf(), $requestCsrf)) {
             throw new CsrfTokenVerificationException($request, "The CSRF token is missing from the request or is invalid.");
@@ -76,7 +76,7 @@ class CheckCsrfToken implements RequestPreprocessor
      */
     public function preprocessRequest(Request $request): ?Response
     {
-        if ($this->requestRequiresCsrf($request)) {
+        if ($this->requiresCsrf($request)) {
             $this->verifyCsrf($request);
         }
 
