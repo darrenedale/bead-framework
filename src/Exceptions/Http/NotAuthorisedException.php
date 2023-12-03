@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Exceptions;
+namespace Bead\Exceptions\Http;
 
 /**
  * Exception-response to use when a user has attempted something they're not authorised to do.

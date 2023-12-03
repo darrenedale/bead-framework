@@ -1,25 +1,28 @@
 <?php
 
-namespace Bead\Core;
+namespace Bead\Web;
 
+use Bead\Contracts\RequestPostprocessor;
+use Bead\Contracts\RequestPreprocessor;
 use Bead\Contracts\Response;
 use Bead\Contracts\Router as RouterContract;
-use Bead\Database\Connection;
-use Bead\Exceptions\CsrfTokenVerificationException;
+use Bead\Core\Application as CoreApplication;
+use Bead\Core\Plugin;
+use Bead\Exceptions\Http\NotFoundException;
+use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\InvalidPluginException;
 use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
-use Bead\Exceptions\NotFoundException;
-use Bead\Exceptions\Session\SessionException;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
+use Bead\Exceptions\Session\SessionException;
 use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
-use Bead\Request;
 use Bead\Session\DataAccessor as SessionDataAccessor;
+use Bead\Web\RequestProcessors\CheckCsrfToken;
 use DirectoryIterator;
 use Exception;
 use InvalidArgumentException;
@@ -141,7 +144,7 @@ use function Bead\Helpers\Str\random;
  *
  * @method static self instance()
  */
-class WebApplication extends Application
+class Application extends CoreApplication
 {
     /** @var string The context name for this class's session data. */
     public const SessionDataContext = "application";
@@ -151,6 +154,9 @@ class WebApplication extends Application
 
     /** @var string The default namespace for plugin classes. */
     protected const DefaultPluginsNamespace = "App\\Plugins";
+
+    /** @var RequestPreprocessor|RequestPostprocessor[] The request pre-processors that have been added. */
+    private array $m_requestProcessors = [];
 
     /** @var string Where plugins are loaded from. */
     private string $m_pluginsDirectory = self::DefaultPluginsPath;
@@ -176,13 +182,16 @@ class WebApplication extends Application
      * WebApplication is a singleton class. Once an instance has been created, attempts to create another will throw.
      *
      * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
-     * @param $db Connection|null The data controller for the application.
      *
-     * @throws \Exception if an Application instance has already been created.
+     * @throws Exception if an Application instance has already been created.
      */
     public function __construct(string $appRoot)
     {
         parent::__construct($appRoot);
+
+        // initialise the fixed pre- and post-processors
+        $this->initialiseRequestProcessors();
+
         $this->initialiseSession();
         $this->m_session = $this->sessionData(self::SessionDataContext);
         $this->setRouter(new Router());
@@ -377,7 +386,7 @@ class WebApplication extends Application
             throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a file or is not readable.");
         }
 
-        if (".php" != substr($path, -4)) {
+        if (!str_ends_with($path, ".php")) {
             throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a PHP file.");
         }
 
@@ -548,6 +557,7 @@ class WebApplication extends Application
     /**
      * Fetch the list of loaded plugins.
      *
+     * @api
      * @return array<string> The names of the loaded plugins.
      */
     public function loadedPlugins(): array
@@ -561,6 +571,7 @@ class WebApplication extends Application
      * If the plugin has been loaded, the created instance of that plugin will be returned. The provided class name must
      * be fully-qualified with its namespace.
      *
+     * @api
      * @param $name string The class name of the plugin.
      *
      * @return Plugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
@@ -608,7 +619,8 @@ class WebApplication extends Application
      *
      * @return string The token.
      *
-     * @throws RuntimeException
+     * @throws RuntimeException if the token needs to be refreshed but cryptographically-secure random bytes cannot be
+     * generated.
      */
     public function csrf(): string
     {
@@ -624,7 +636,7 @@ class WebApplication extends Application
      *
      * By default a 64-character random string is generated.
      *
-     * @throws RuntimeException
+     * @throws RuntimeException if cryptographically-secure random bytes cannot be generated.
      */
     public function regenerateCsrf(): void
     {
@@ -632,65 +644,121 @@ class WebApplication extends Application
     }
 
     /**
-     * Determine whether the incoming request must pass CSRF verification.
+     * Load the preprocessors that the application kernel always uses.
      *
-     * The default behaviour is to require verification for all requests that don't use the GET, HEAD or OPTIONS HTTP
-     * methods. Use this method as a customisation point in your WebApplication subclass to implement more detailed
-     * logic.
-     *
-     * @param Request $request The incoming request.
-     *
-     * @return bool `true` if the request requires CSRF validation, `false` if not.
+     * Reimplement this to customise this list.
      */
-    protected function requestRequiresCsrf(Request $request): bool
+    protected function initialiseRequestProcessors(): void
     {
-        switch ($request->method()) {
-            case "GET":
-            case "HEAD":
-            case "OPTIONS":
-                return false;
-        }
-
-        return true;
+        $this->m_requestProcessors = [
+            new CheckCsrfToken(),
+        ];
     }
 
     /**
-     * Extract the CSRF token submitted with a request.
+     * Load the additional preprocessors configured in the app config.
      *
-     * Use this as a customisation point in your WebApplication subclass if you need custom logic to obtain the token
-     * from Requests. The default behaviour is to look for a `_token` POST field, or an X-CSRF-TOKEN header if the
-     * field is not present (the latter case is primarily for AJAX requests).
+     * The default implementation loads all preprocessors listed in app.preprocessors. Reimplement this if you need more
+     * control over which preprocessors are loaded.
      *
-     * @param Request $request The request from which to extract the CSRF token.
-     *
-     * @return string|null The token, or `null` if no CSRF token is found in the request.
+     * @throws InvalidConfigurationException if the list of preprocessors is not valid.
      */
-    protected function csrfTokenFromRequest(Request $request): ?string
+    protected function loadRequestProcessors(): void
     {
-        return $request->postData("_token") ?? $request->header("X-CSRF-TOKEN");
-    }
+        static $done = false;
 
-    /**
-     * Helper to verify the CSRF token in an incoming request is correct, if necessary.
-     *
-     * Not all requests require CSRF verification. requestRequiresCsrf() is used to determine whether the request
-     * requires it. The CSRF token is extracted from the request by csrfTokenFromRequest().
-     *
-     * @param Request $request The incoming request.
-     *
-     * @throws CsrfTokenVerificationException if the CSRF token in the request is not verified.
-     */
-    protected function verifyCsrf(Request $request): void
-    {
-        if (!$this->requestRequiresCsrf($request)) {
+        if ($done) {
             return;
         }
 
-        $requestCsrf = $this->csrfTokenFromRequest($request);
+        $done = true;
+        $preprocessors = $this->config("app.processors", []);
 
-        if (!isset($requestCsrf) || !hash_equals($this->csrf(), $requestCsrf)) {
-            throw new CsrfTokenVerificationException($request, "The CSRF token is missing from the request or is invalid.");
+        if (!is_array($preprocessors)) {
+            throw new InvalidConfigurationException("app.processors", "Expected array of request processor classes.");
         }
+
+        foreach ($preprocessors as $preprocessor) {
+            if (!is_string($preprocessor)) {
+                throw new InvalidConfigurationException("app.processors", "Expected valid request processor name, found " . gettype($preprocessor));
+            }
+
+            try {
+                $preprocessor = $this->instantiateRequestProcessor($preprocessor);
+            } catch (RuntimeException) {
+                throw new InvalidConfigurationException("app.processors", "Expected valid preprocessor, found \"{$preprocessor}\"");
+            }
+
+            $this->m_requestProcessors[] = $preprocessor;
+        }
+    }
+
+    /** @throws RuntimeException if the preprocessor does not exist or can't be instantiated. */
+    protected function instantiateRequestProcessor(string $processor): RequestPreprocessor|RequestPostprocessor
+    {
+        if (!class_exists($processor)) {
+            throw new RuntimeException("Processor class {$processor} does not exist.");
+        }
+
+        if (!is_subclass_of($processor, RequestPreprocessor::class) && !is_subclass_of($processor, RequestPostprocessor::class)) {
+            throw new RuntimeException("Class {$processor} does not implement RequestPreprocessor or RequestPostprocessor.");
+        }
+
+        return new $processor();
+    }
+
+    /**
+     * Feeds the request to the preprocessors.
+     *
+     * If any preprocessor returns a response, that response is returned and any following preprocessors are ignored.
+     * If any preprocessor throws, that exception is used to determine the response and any following preprocessors are
+     * ignored.
+     *
+     * @return Response|null The Response provided by the first preprocessor that returns one, or null if none of them
+     * return a Response.
+     */
+    protected function preprocessRequest(Request $request): ?Response
+    {
+        foreach ($this->m_requestProcessors as $preprocessor) {
+            if (!$preprocessor instanceof RequestPreprocessor) {
+                continue;
+            }
+
+            $response = $preprocessor->preprocessRequest($request);
+
+            if (null !== $response) {
+                return $response;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Feeds the request to the postprocessors.
+     *
+     * If any postprocessor returns a response, that response is returned and any following postprocessor are ignored.
+     * If any postprocessor throws, that exception is used to determine the response and any following postprocessor are
+     * ignored.
+     *
+     * @return Response|null The Response provided by the first postprocessor that returns one, or null if none of them
+     * return a Response.
+     */
+    protected function postprocessRequest(Request $request, Response $response): ?Response
+    {
+        foreach ($this->m_requestProcessors as $postprocessor) {
+            if (!$postprocessor instanceof RequestPostprocessor) {
+                continue;
+            }
+
+            $replacementResponse = $postprocessor->postprocessRequest($request, $response);
+
+            if (null !== $replacementResponse) {
+                return $replacementResponse;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -701,20 +769,34 @@ class WebApplication extends Application
      *
      * @param $request Request The request to handle.
      *
-     * @return Response An optional Response to send to the client. For legacy support, if no response is returned
-     * exec() assumes that content has been added to the Page instance and that is output instead.
-     * @throws CsrfTokenVerificationException if the request requires CSRF verification and fails
+     * @return Response A Response to send to the client.
+     * @throws InvalidConfigurationException if an invalid set of preprocessors is found
      * @throws NotFoundException if the request can't be routed
      */
     public function handleRequest(Request $request): Response
     {
         $this->emitEvent("application.handlerequest.requestreceived", $request);
-        $this->verifyCsrf($request);
 
         try {
+            $this->emitEvent("application.handlerequest.preprocessing", $request);
+            $response = $this->preprocessRequest($request);
+            $this->emitEvent("application.handlerequest.preprocessed", $request);
+
+            if (null !== $response) {
+                return $response;
+            }
+
             $this->emitEvent("application.handlerequest.routing", $request);
             $response = $this->router()->route($request);
             $this->emitEvent("application.handlerequest.routed", $request);
+
+            $this->emitEvent("application.handlerequest.postprocessing", $request);
+            $postResponse = $this->postprocessRequest($request, $response);
+            $this->emitEvent("application.handlerequest.postprocessed", $request);
+
+            if (null !== $postResponse) {
+                return $postResponse;
+            }
         } catch (UnroutableRequestException $err) {
             throw new NotFoundException($request, "", 0, $err);
         }
@@ -740,7 +822,6 @@ class WebApplication extends Application
      * @throws InvalidRoutesDirectoryException
      * @throws InvalidRoutesFileException
      * @throws RuntimeException
-     * @throws CsrfTokenVerificationException
      * @throws NotFoundException
      */
     public function exec(): int
@@ -756,8 +837,10 @@ class WebApplication extends Application
         }
 
         $this->m_isRunning = true;
+        $this->loadRequestProcessors();
         $this->loadPlugins();
         $this->loadRoutes();
+
         $this->emitEvent("application.executionstarted");
         $response = $this->handleRequest(Request::originalRequest());
         $this->emitEvent("application.executionfinished");

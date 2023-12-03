@@ -2,7 +2,7 @@
 
 namespace Bead\Exceptions;
 
-use Bead\Request;
+use Bead\Web\Request;
 use Exception;
 use Throwable;
 
@@ -16,7 +16,7 @@ class UnroutableRequestException extends Exception
     /**
      * Initialise a new UnroutableRequestException.
      *
-     * @param \Bead\Request $request The request that could not be routed.
+     * @param Request $request The request that could not be routed.
      * @param string $message The optional error message. Defaults to an empty string.
      * @param int $code The optional error code. Defaults to 0.
      * @param Throwable|null $previous The previous throwable, if any. Defaults to null.
@@ -30,7 +30,7 @@ class UnroutableRequestException extends Exception
     /**
      * The request that could not be routed.
      *
-     * @return \Bead\Request The request.
+     * @return Request The request.
      */
     public function getRequest(): Request
     {

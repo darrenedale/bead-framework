@@ -1,9 +1,8 @@
 <?php
 
-namespace Bead\Exceptions;
+namespace Bead\Exceptions\Http;
 
-use Bead\Request;
-use Exception;
+use Bead\Web\Request;
 use Throwable;
 
 /**

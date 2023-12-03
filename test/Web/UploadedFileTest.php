@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace BeadTests;
+namespace BeadTests\Web;
 
 use Bead\Contracts\Logger as LoggerContract;
 use Bead\Core\Application;
 use Bead\Facades\Log;
 use Bead\Logging\NullLogger;
-use Bead\UploadedFile;
+use Bead\Web\UploadedFile;
 use BeadTests\Framework\TestCase;
 use Mockery;
 use ReflectionClass;

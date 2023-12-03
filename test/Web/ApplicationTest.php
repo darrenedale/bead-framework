@@ -2,16 +2,15 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Core;
+namespace BeadTests\Web;
 
-use Bead\Core\Application;
-use Bead\Core\WebApplication;
 use Bead\Facades\Session;
 use Bead\Testing\XRay;
+use Bead\Web\Application as WebApplication;
 use BeadTests\Framework\TestCase;
 use ReflectionProperty;
 
-class WebApplicationTest extends TestCase
+class ApplicationTest extends TestCase
 {
     public function setUp(): void
     {
@@ -21,7 +20,7 @@ class WebApplicationTest extends TestCase
 
     public function tearDown(): void
     {
-        $instance = new ReflectionProperty(Application::class, "s_instance");
+        $instance = new ReflectionProperty(WebApplication::class, "s_instance");
         $instance->setAccessible(true);
         $instance->setValue(null);
 

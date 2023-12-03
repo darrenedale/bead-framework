@@ -3,9 +3,6 @@
 /** @var Router $router */
 
 use Bead\Contracts\Router;
-use Bead\Request;
-use Bead\Facades\Session;
-use Bead\View;
 use BeadTests\smoke\app\Controllers\SessionController;
 
 $router->registerGet("/session", [SessionController::class, "showDetails",]);

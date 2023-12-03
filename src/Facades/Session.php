@@ -10,7 +10,7 @@ use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\PrefixedAccessor;
 use Bead\Session\Session as BeadSession;
-use Bead\Session\SessionHandler;
+use Bead\Contracts\SessionHandler;
 use Exception;
 use LogicException;
 

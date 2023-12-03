@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead;
+namespace Bead\Web;
 
 use Bead\Facades\Log;
 use SplFileInfo;

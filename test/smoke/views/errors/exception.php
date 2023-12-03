@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 /**
- * @var WebApplication $app
+ * @var Application $app
  * @var array $data
  * @var Throwable $error
  */
 
-use Bead\Core\WebApplication;
 use Bead\View;
+use Bead\Web\Application;
 
 ?>
 

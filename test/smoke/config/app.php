@@ -2,6 +2,9 @@
 
 use Bead\Core\Binders\Crypter;
 use Bead\Core\Binders\Logger;
+use Bead\Web\RequestProcessors\CheckMaintenanceMode;
+use Bead\Web\RequestProcessors\LogRequestDuration;
+use BeadTests\smoke\app\Web\Preprocessors\AddRequestTimestamp;
 
 return [
     // set this to true to put the app into debug mode. this can be queried from the Application singleton, and your
@@ -17,5 +20,13 @@ return [
     "binders" => [
         Logger::class,
         Crypter::class,
+    ],
+
+    // define additional pre- and post-processors that get to see the request before it's routed (note that by default
+    // the CheckCsrfToken preprocessor is added by the app when it boots)
+    "processors" => [
+        AddRequestTimestamp::class,
+        CheckMaintenanceMode::class,
+        LogRequestDuration::class,
     ],
 ];

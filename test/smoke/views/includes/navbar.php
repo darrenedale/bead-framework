@@ -8,4 +8,6 @@
 <div><a href="/csrf/regenerate">Regenerate CSRF</a></div>
 <div><a href="/csrf/fail">Fail CSRF Verification</a></div>
 <div class="separator"></div>
+<div><a href="/preprocessor/timestamp">Preprocessor timestamp</a></div>
+<div class="separator"></div>
 <div><a href="/uri-signer">UriSigner test</a></div>
