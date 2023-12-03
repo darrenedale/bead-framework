@@ -39,17 +39,11 @@ class WebApplication extends Application
      *
      * @param string $method The method to forward.
      * @param array $args The method arguments.
-     *
-     * @throws RuntimeException if there is no Web\Application instance
      */
     public static function __callStatic(string $method, array $args)
     {
         $app = BeadWebApplication::instance();
-
-        if (null === $app) {
-            throw new RuntimeException("There is no Bead\Web\Application instance.");
-        }
-
+        assert($app instanceof BeadWebApplication, new RuntimeException("There is no Application instance."));
         assert(method_exists($app, $method), new BadMethodCallException("The method '{$method}' does not exist in the Application class."));
         return [$app, $method,](...$args);
     }

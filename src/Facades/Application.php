@@ -43,17 +43,11 @@ class Application
      *
      * @param string $method The method to forward.
      * @param array $args The method arguments.
-     *
-     * @throws RuntimeException if there is no Application instance
      */
     public static function __callStatic(string $method, array $args)
     {
         $app = CoreApplication::instance();
-
-        if (null === $app) {
-            throw new RuntimeException("There is no Application instance.");
-        }
-
+        assert($app instanceof CoreApplication, new RuntimeException("There is no Application instance."));
         assert(method_exists($app, $method), new BadMethodCallException("The method '{$method}' does not exist in the Application class."));
         return [$app, $method,](...$args);
     }

@@ -11,6 +11,7 @@ use Bead\View;
 use Bead\Web\Application;
 use Bead\Web\Request;
 use Exception;
+use RuntimeException;
 use Throwable;
 
 /**

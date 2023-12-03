@@ -9,7 +9,6 @@ use Bead\Exceptions\ViewNotFoundException;
 use Bead\Facades\Application as App;
 use Bead\View;
 use Bead\Web\Request;
-use RuntimeException;
 
 /** Pre-processor to render the maintenance-mode page (or send a 503 response) when the app is in maintenance mode. */
 class CheckMaintenanceMode implements RequestPreprocessor
@@ -31,7 +30,6 @@ class CheckMaintenanceMode implements RequestPreprocessor
      * maintenance mode; if it's falsy or not set, the app is not in maintenance mode.
      *
      * @return bool `true` if the app is in maintenance, `false` if not.
-     * @throws RuntimeException if there is no Application instance.
      */
     protected function isInMaintenanceMode(): bool
     {
@@ -44,7 +42,6 @@ class CheckMaintenanceMode implements RequestPreprocessor
      * If the application is in maintenance mode a Response is returned. This is either the view named by viewName(),
      * or a 503 HTTP exception if there is no named view or the view cannot be located.
      *
-     * @throws RuntimeException if there is no Application instance.
      * @throws ServiceUnavailableException if no maintenance mode view is available.
      */
     public function preprocessRequest(Request $request): ?Response

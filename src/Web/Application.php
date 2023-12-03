@@ -619,7 +619,8 @@ class Application extends CoreApplication
      *
      * @return string The token.
      *
-     * @throws RuntimeException
+     * @throws RuntimeException if the token needs to be refreshed but cryptographically-secure random bytes cannot be
+     * generated.
      */
     public function csrf(): string
     {
@@ -635,7 +636,7 @@ class Application extends CoreApplication
      *
      * By default a 64-character random string is generated.
      *
-     * @throws RuntimeException
+     * @throws RuntimeException if cryptographically-secure random bytes cannot be generated.
      */
     public function regenerateCsrf(): void
     {
