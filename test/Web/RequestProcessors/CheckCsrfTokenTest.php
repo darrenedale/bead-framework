@@ -24,8 +24,9 @@ class CheckCsrfTokenTest extends TestCase
 
     public function tearDown(): void
     {
-        \Mockery::close();
+        Mockery::close();
         unset($this->processor);
+        parent::tearDown();
     }
 
     /** @return Request|MockInterface */
