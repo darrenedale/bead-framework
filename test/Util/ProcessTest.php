@@ -18,9 +18,9 @@ class ProcessTest extends TestCase
     /**
      * Test data for testCleanupTimeout
      *
-     * @return array The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestCleanupTimeout(): \Generator
+    public function dataForTestCleanupTimeout(): iterable
     {
         yield from [
             "typical10" => [10,],
