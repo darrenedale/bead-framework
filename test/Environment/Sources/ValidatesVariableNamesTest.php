@@ -15,7 +15,7 @@ class ValidatesVariableNamesTest extends TestCase
         $this->instance = new class {
             use ValidatesVariableNames;
 
-            public function delegateValidateVariableName(string $name): string
+            public function forwardValidateVariableName(string $name): ?string
             {
                 return self::validateVariableName($name);
             }
@@ -33,7 +33,7 @@ class ValidatesVariableNamesTest extends TestCase
      * 
      * @return iterable The test data.
      */
-    public function dataForTestValidateVariableName(): iterable
+    public function dataForTestValidateVariableName1(): iterable
     {
         yield ["KEY_1", "KEY_1",];
         yield ["_KEY_1", "_KEY_1",];
@@ -52,13 +52,13 @@ class ValidatesVariableNamesTest extends TestCase
     /**
      * Ensure validateVariableName successfully validates valid names.
      * 
-     * @dataProvider dataForTestValidateVariableName
+     * @dataProvider dataForTestValidateVariableName1
      * @param string $name The name to validate.
      * @param string $expected The exptected validated name.
      */
-    public function testValidateVariableName(string $name, string $expected): void
+    public function testValidateVariableName1(string $name, string $expected): void
     {
-        self::assertEquals($expected, $this->instance->delegateValidateVariableName($name));
+        self::assertEquals($expected, $this->instance->forwardValidateVariableName($name));
     }
 
     /**
@@ -66,7 +66,7 @@ class ValidatesVariableNamesTest extends TestCase
      * 
      * @return iterable The test data.
      */
-    public function dataForTestValidateVariableNameFails(): iterable
+    public function dataForTestValidateVariableName2(): iterable
     {
         yield ["1",];
         yield ["",];
@@ -77,11 +77,11 @@ class ValidatesVariableNamesTest extends TestCase
     /**
      * Ensure validateVariableName throws with invalid names.
      * 
-     * @dataProvider dataForTestValidateVariableNameThrows
+     * @dataProvider dataForTestValidateVariableName2
      * @param string $name The name to validate.
      */
-    public function testValidateVariableNameFails(string $name): void
+    public function testValidateVariableName2(string $name): void
     {
-        self::assertNull($this->instance->delegateValidateVariableName($name));
+        self::assertNull($this->instance->forwardValidateVariableName($name));
     }
 }

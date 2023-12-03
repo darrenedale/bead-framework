@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BeadTests\Environment\Sources;
 
 use Bead\Environment\Sources\StaticArray;
-use Bead\Exceptions\Environment\Exception as EnvironmentException;
+use Bead\Exceptions\EnvironmentException;
 use BeadTests\Framework\TestCase;
 
 final class StaticArrayTest extends TestCase
@@ -25,8 +25,14 @@ final class StaticArrayTest extends TestCase
         $this->envArray = new StaticArray(self::TEST_ARRAY);
     }
 
+    public function tearDown(): void
+    {
+        unset($this->envArray);
+        parent::tearDown();
+    }
+
     /** Ensure has() returns true for variables set, false for variables not set. */
-    public function testHas()
+    public function testHas1(): void
     {
         self::assertFalse($this->envArray->has("KEY"));
         self::assertFalse($this->envArray->has("KEY_0"));
@@ -39,7 +45,7 @@ final class StaticArrayTest extends TestCase
     }
 
     /** Ensure get() returns variable values, and an empty string for variables not set. */
-    public function testGet()
+    public function testGet(): void
     {
         self::assertEquals("", $this->envArray->get("KEY"));
         self::assertEquals("", $this->envArray->get("KEY_0"));
@@ -52,11 +58,11 @@ final class StaticArrayTest extends TestCase
     }
 
     /**
-     * Test data for testConstructorThrowsWithInvalidValues()
+     * Test data for testConstructor1()
      *
      * @return iterable The test data.
      */
-    public function dataForTestConstructorThrowsWithInvalidValues(): iterable
+    public function dataForTestConstructor1(): iterable
     {
         yield "bool" => [["key_1" => "value_1", "key_2" => true, "key_3" => "value_3",]];
         yield "array" => [["key_1" => "value_1", "key_2" => ["key_2" => "value_2",], "key_3" => "value_3",]];
@@ -66,11 +72,11 @@ final class StaticArrayTest extends TestCase
     /**
      * Ensure constructor throws when given an array with values that aren't valid for environment variables.
      *
-     * @dataProvider dataForTestConstructorThrowsWithInvalidValues
+     * @dataProvider dataForTestConstructor1
      *
      * @param array $data The test data
      */
-    public function testConstructorThrowsWithInvalidValues(array $data): void
+    public function testConstructor1(array $data): void
     {
         self::expectException(EnvironmentException::class);
         self::expectExceptionMessage("Values for environment variable arrays must be ints, floats or strings.");
@@ -78,11 +84,11 @@ final class StaticArrayTest extends TestCase
     }
 
     /**
-     * Test data for testConstructorThrowsWithInvalidValues()
+     * Test data for testConstructor2()
      *
      * @return iterable The test data.
      */
-    public function dataForTestConstructorThrowsWithInvalidKey(): iterable
+    public function dataForTestConstructor2(): iterable
     {
         yield "empty" => [["" => "value_1", "key_2" => "value_2", "key_3" => "value_3",]];
         yield "whitespace" => [["   " => "value_1", "key_2" => "value_2", "key_3" => "value_3",]];
@@ -93,11 +99,11 @@ final class StaticArrayTest extends TestCase
     /**
      * Ensure constructor throws when given an array with keys that aren't valid for environment variables names.
      *
-     * @dataProvider dataForTestConstructorThrowsWithInvalidKey
+     * @dataProvider dataForTestConstructor2
      *
      * @param array $data The test data
      */
-    public function testConstructorThrowsWithInvalidKey(array $data): void
+    public function testConstructor2(array $data): void
     {
         self::expectException(EnvironmentException::class);
         self::expectExceptionMessageMatches("/^'.*' is not a valid environment variable name.\$/");

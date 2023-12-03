@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Contracts;
 
-/**
- * Interface for accessing environment variables.
- */
+/** Interface for accessing environment variables. */
 interface Environment
 {
     /**

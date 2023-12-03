@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BeadTests\Environment\Sources;
 
 use Bead\Environment\Sources\File;
-use Bead\Exceptions\Environment\Exception as EnvironmentException;
+use Bead\Exceptions\EnvironmentException;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 
@@ -20,8 +20,14 @@ final class FileTest extends TestCase
         $this->envFile = new File(__DIR__ . "/files/test-01.env");
     }
 
+    public function tearDown(): void
+    {
+        unset($this->envFile);
+        parent::tearDown();
+    }
+
     /** Ensure has() provides the expected results for a valid test file. */
-    public function testHas()
+    public function testHas1(): void
     {
         self::assertFalse($this->envFile->has('key'));
         self::assertFalse($this->envFile->has('key_0'));
@@ -41,7 +47,7 @@ final class FileTest extends TestCase
     }
 
     /** Ensure get() provides the expected results for a valid test file. */
-    public function testGet()
+    public function testGet1(): void
     {
         self::assertEquals("", $this->envFile->get('key'));
         self::assertEquals("", $this->envFile->get('key_0'));
@@ -61,13 +67,13 @@ final class FileTest extends TestCase
     }
 
     /** Ensure we can fetch the filename. */
-    public function testFileName()
+    public function testFileName1(): void
     {
         self::assertEquals(__DIR__ . "/files/test-01.env", $this->envFile->fileName());
     }
 
     /** Ensure an unreadable file throws the expected exception. */
-    public function testParseThrowsWithUnreadableFile(): void
+    public function testParse1(): void
     {
         $envFile = new XRay(new File(__DIR__ . "/files/does-not-exist.env"));
         self::expectException(EnvironmentException::class);
@@ -76,7 +82,7 @@ final class FileTest extends TestCase
     }
 
     /** Ensure a file with a non-empty, non-comment line with no assignment throws the expected exception. */
-    public function testParseThrowsWithInvalidLine(): void
+    public function testParse2(): void
     {
         $envFile = new XRay(new File(__DIR__ . "/files/test-invalid-line.env"));
         self::expectException(EnvironmentException::class);
@@ -85,7 +91,7 @@ final class FileTest extends TestCase
     }
 
     /** Ensure a file with an invalid variable name throws the expected exception. */
-    public function testParseThrowsWithInvalidName(): void
+    public function testParse3(): void
     {
         $envFile = new XRay(new File(__DIR__ . "/files/test-invalid-name.env"));
         self::expectException(EnvironmentException::class);
@@ -94,7 +100,7 @@ final class FileTest extends TestCase
     }
 
     /** Ensure a file with an invalid variable name throws the expected exception. */
-    public function testParseThrowsWithDuplicateName(): void
+    public function testParse4(): void
     {
         $envFile = new XRay(new File(__DIR__ . "/files/test-duplicate-name.env"));
         self::expectException(EnvironmentException::class);

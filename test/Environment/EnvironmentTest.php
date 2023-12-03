@@ -5,19 +5,21 @@ declare(strict_types=1);
 namespace BeadTests\Environment;
 
 use Bead\AppLog;
+use Bead\Contracts\Logger;
+use Bead\Core\Application;
 use Bead\Environment\Environment;
 use Bead\Environment\Sources\StaticArray;
 use Bead\Exceptions\Environment\Exception;
+use Bead\Exceptions\EnvironmentException;
 use Bead\Testing\XRay;
 use BeadTests\Environment\Sources\StaticArrayTest;
 use BeadTests\Framework\TestCase;
+use Mockery;
 
 final class EnvironmentTest extends TestCase
 {
     /** @var string[] content for the test environment provider. */
-    private const TestEnvironment = [
-        "KEY_1" => "value-1",
-    ];
+    private const TestEnvironment = ["KEY_1" => "value-1",];
 
     /** @var Environment The environment under test. */
     private Environment $env;
@@ -30,80 +32,49 @@ final class EnvironmentTest extends TestCase
 
     public function tearDown(): void
     {
-        unset ($this->env);
+        Mockery::close();
+        unset($this->env);
         parent::tearDown();
     }
 
     /** Ensure we can add a provider. */
-    public function testAddProvider()
+    public function testAddProvider1(): void
     {
-        $provider = new StaticArray([
-            "KEY_1" => "value-2",
-        ]);
-
-        $this->env->addSource($provider);
+        $source = new StaticArray(["KEY_1" => "value-2",]);
+        $this->env->addSource($source);
         $env = new XRay($this->env);
-        self::assertCount(2, $env->providers);
-        self::assertSame($provider, $env->providers[0]);
+        self::assertCount(2, $env->sources);
+        self::assertSame($source, $env->sources[0]);
     }
 
     /** Ensure get() reads a value that exists in the environment. */
-    public function testGetWithExisting()
+    public function testGet1(): void
     {
         self::assertEquals("value-1", $this->env->get("KEY_1"));
     }
 
     /** Ensure get() retruns an empty string for a key that does not exist in the environment. */
-    public function testGetWithMissing()
+    public function testGet2(): void
     {
         self::assertEquals("", $this->env->get("KEY_2"));
     }
 
     /** Ensure get() returns the value from the provider with the highest precedence. */
-    public function testGetProviderHonoursPrecedence(): void
+    public function testGet3(): void
     {
-        $this->env->addSource(new StaticArray([
-            "KEY_1" => "value-2",
-        ]));
-
+        $this->env->addSource(new StaticArray(["KEY_1" => "value-2",]));
         self::assertEquals("value-2", $this->env->get("KEY_1"));
     }
 
     /** Ensure get() uses providers with lower precedence when key missing in higher-precedence providers. */
-    public function testGetProviderFallsBack(): void
+    public function testGet4(): void
     {
-        $this->env->addSource(new StaticArray([
-            "KEY_2" => "value-2",
-        ]));
-
+        $this->env->addSource(new StaticArray(["KEY_2" => "value-2",]));
         self::assertEquals("value-1", $this->env->get("KEY_1"));
     }
 
-    /** Ensure has() returns true for a value that exists in the environment. */
-    public function testHasWithExisting()
-    {
-        self::assertTrue($this->env->has("KEY_1"));
-    }
-
-    /** Ensure has() retruns false for a key that does not exist in the environment. */
-    public function testHasWithMissing()
-    {
-        self::assertFalse($this->env->has("KEY_2"));
-    }
-
-    /** Ensure has() checks all providers if necessary. */
-    public function testHasChecksAllProviders(): void
-    {
-        $this->env->addSource(new StaticArray([
-            "KEY_2" => "value-2",
-        ]));
-
-        self::assertTrue($this->env->has("KEY_1"));
-        self::assertTrue($this->env->has("KEY_2"));
-    }
-
     /** Ensure get() logs a warning if a provider throws. */
-    public function testGetLogsExceptionMessage(): void
+    public function testGet5(): void
     {
         $messageLogged = false;
 
@@ -111,34 +82,46 @@ final class EnvironmentTest extends TestCase
         {
             public function has(string $key): bool
             {
-                throw new Exception("Unable to check for variable {$key}.");
+                throw new EnvironmentException("Unable to check for variable {$key}.");
             }
         };
 
-        $logger = new class($messageLogged) extends AppLog {
-            private bool $messageLogged;
-            public function __construct(bool & $messageLogged)
-            {
-                parent::__construct("");
-                $this->messageLogged =& $messageLogged;
-            }
+        $app = Mockery::mock(Application::class);
+        $log = Mockery::mock(Logger::class);
 
-            public function isOpen(): bool
-            {
-                return true;
-            }
+        $log->shouldReceive("warning")
+            ->once()
+            ->with(Mockery::on(
+                fn (string $message):  bool => (bool) preg_match("/^Environment exception querying environment source of type .*: Unable to check for variable KEY_1\\.\$/", $message)
+            ));
 
-            public function write(string $msg): bool
-            {
-                TestCase::assertMatchesRegularExpression("/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2} \\?\\?\\(\\?\\?\\) WRN Environment exception querying environment provider of type .*: Unable to check for variable KEY_1.\$/", $msg);
-                $this->messageLogged = true;
-                return true;
-            }
-        };
+        $app->shouldReceive("get")
+            ->with(Logger::class)
+            ->once()
+            ->andReturn($log);
 
-        AppLog::setWarningLog($logger);
+        $this->mockMethod(Application::class, "instance", $app);
         $this->env->addSource($provider);
         self::assertEquals("value-1", $this->env->get("KEY_1"));
-        self::assertTrue($messageLogged);
+    }
+
+    /** Ensure has() returns true for a value that exists in the environment. */
+    public function testHas1(): void
+    {
+        self::assertTrue($this->env->has("KEY_1"));
+    }
+
+    /** Ensure has() retruns false for a key that does not exist in the environment. */
+    public function testHas2()
+    {
+        self::assertFalse($this->env->has("KEY_2"));
+    }
+
+    /** Ensure has() checks all providers if necessary. */
+    public function testHas3(): void
+    {
+        $this->env->addSource(new StaticArray(["KEY_2" => "value-2",]));
+        self::assertTrue($this->env->has("KEY_1"));
+        self::assertTrue($this->env->has("KEY_2"));
     }
 }

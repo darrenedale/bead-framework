@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Bead\Environment\Sources;
 
 use Bead\Contracts\Environment;
-use Bead\Exceptions\Environment\Exception as EnvironmentException;
+use Bead\Exceptions\EnvironmentException;
 
 use function is_float;
 use function is_int;

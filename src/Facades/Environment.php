@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Bead\Facades;
 
 use BadMethodCallException;
-use Bead\Application;
+use Bead\Core\Application;
 use Bead\Contracts\Environment as EnvironmentContract;
 use LogicException;
 

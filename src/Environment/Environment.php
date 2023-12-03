@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Bead\Environment;
 
 use Bead\Contracts\Environment as EnvironmentContract;
-use Bead\Exceptions\Environment\Exception as EnvironmentException;
+use Bead\Exceptions\EnvironmentException;
 use Bead\Facades\Log;
 
 use function array_unshift;
