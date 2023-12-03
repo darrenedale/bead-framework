@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Bead\Environment\Sources;
 
+use function preg_match;
+use function trim;
+
 trait ValidatesVariableNames
 {
     /**

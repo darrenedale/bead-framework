@@ -38,7 +38,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
     protected static ?Application $s_instance = null;
 
     /** @var string The application's root directory. */
-    private string $appRoot;
+    private string $m_appRoot;
 
     /** @var string Optional application version string. */
     protected string $m_version = "";
@@ -82,8 +82,8 @@ abstract class Application implements ServiceContainer, ContainerInterface
             throw new RuntimeException("Application root directory '{$appRoot}' does not exist.");
         }
 
-        $this->appRoot = $realAppRoot;
-        $this->loadConfig("{$this->appRoot}/config");
+        $this->m_appRoot = $realAppRoot;
+        $this->loadConfig("{$this->m_appRoot}/config");
         $this->bindServices();
     }
 
@@ -165,7 +165,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function rootDir(): string
     {
-        return $this->appRoot;
+        return $this->m_appRoot;
     }
 
     /**
