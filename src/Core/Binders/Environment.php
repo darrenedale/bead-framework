@@ -11,9 +11,18 @@ use Bead\Environment\Environment as BeadEnvironment;
 use Bead\Environment\Sources\Environment as EnvironmentSource;
 use Bead\Environment\Sources\File;
 use Bead\Environment\Sources\StaticArray;
+use Bead\Exceptions\EnvironmentException;
 use Bead\Exceptions\InvalidConfigurationException;
+use Bead\Exceptions\ServiceAlreadyBoundException;
 
+use function array_key_exists;
 use function Bead\Helpers\Iterable\all;
+use function get_class;
+use function gettype;
+use function is_array;
+use function is_string;
+use function realpath;
+use function str_starts_with;
 
 /**
  * Bind an Environment instance into the Application based on configuration read from the env config file.
@@ -24,6 +33,7 @@ class Environment implements Binder
      * Read the sources that are configured for use in the env config file.
      *
      * @return string[]
+     * @throws InvalidConfigurationException
      */
     protected function environmentSources(Application $app): array
     {
@@ -46,6 +56,7 @@ class Environment implements Binder
      * @param string $source The name of the configured source.
      * @param Application $app
      * @return array THe configuration for the source.
+     * @throws InvalidConfigurationException
      */
     protected function sourceConfig(string $source, Application $app): array
     {
@@ -75,9 +86,10 @@ class Environment implements Binder
      *
      * @param array $config The config for the source from the env config file.
      * @param Application $app
-     * @return StaticArray
+     * @return File
+     * @throws InvalidConfigurationException
      */
-    protected final function createFileSource(array $config, Application $app): File
+    final protected function createFileSource(array $config, Application $app): File
     {
         if (!array_key_exists("path", $config)) {
             throw new InvalidConfigurationException("env.sources", "Expecting valid path for File environment source, found none");
@@ -97,7 +109,11 @@ class Environment implements Binder
             throw new InvalidConfigurationException("env.sources", "Expecting path inside application root directory, found '{$config["path"]}'");
         }
 
-        return new File($path);
+        try {
+            return new File($path);
+        } catch (EnvironmentException $err) {
+            throw new InvalidConfigurationException("Exception parsing environment file \"{$path}\": {$err->getMessage()}", previous: $err);
+        }
     }
 
     /**
@@ -106,8 +122,9 @@ class Environment implements Binder
      * @param array $config The config for the source from the env config file.
      * @param Application $app
      * @return StaticArray
+     * @throws InvalidConfigurationException
      */
-    protected final function createArraySource(array $config, Application $app): StaticArray
+    final protected function createArraySource(array $config, Application $app): StaticArray
     {
         if (!array_key_exists("env", $config)) {
             throw new InvalidConfigurationException("env.sources", "Expecting array of environment variables for StaticArray environment source, found none");
@@ -117,7 +134,11 @@ class Environment implements Binder
             throw new InvalidConfigurationException("env.sources", "Expecting array of environment variables for StaticArray environment source, found " . gettype($config["env"]));
         }
 
-        return new StaticArray($config["env"]);
+        try {
+            return new StaticArray($config["env"]);
+        } catch (EnvironmentException $err) {
+            throw new InvalidConfigurationException("env.sources", "Exception creating array environment source: {$err->getMessage()}", previous: $err);
+        }
     }
 
     /**
@@ -126,6 +147,7 @@ class Environment implements Binder
      * @param array $config The config for the source.
      * @param Application $app
      * @return EnvironmentContract
+     * @throws InvalidConfigurationException
      */
     protected function createSource(array $config, Application $app): EnvironmentContract
     {
@@ -137,7 +159,7 @@ class Environment implements Binder
             throw new InvalidConfigurationException("env.sources", "Expecting valid environment source driver, found " . gettype($config["driver"]));
         }
 
-        return match($config["driver"]) {
+        return match ($config["driver"]) {
             "file" => $this->createFileSource($config, $app),
             "array" => $this->createArraySource($config, $app),
             "environment" => new EnvironmentSource(),
@@ -150,6 +172,7 @@ class Environment implements Binder
      *
      * @param Application $app
      * @return BeadEnvironment
+     * @throws InvalidConfigurationException
      */
     protected function createEnvironment(Application $app): BeadEnvironment
     {
@@ -164,6 +187,8 @@ class Environment implements Binder
 
     /**
      * Bind the service to the Environment contract.
+     * @throws InvalidConfigurationException
+     * @throws ServiceAlreadyBoundException
      */
     public function bindServices(Application $app): void
     {

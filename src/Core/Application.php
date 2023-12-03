@@ -3,15 +3,11 @@
 namespace Bead\Core;
 
 use Bead\Contracts\Binder;
-use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\ErrorHandler as BeadErrorHandler;
 use Bead\Database\Connection;
-use Bead\Environment\Environment;
-use Bead\Environment\Sources\Environment as EnvironmentProvider;
-use Bead\Environment\Sources\File as FileProvider;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;

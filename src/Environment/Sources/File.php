@@ -9,6 +9,13 @@ use Bead\Exceptions\EnvironmentException;
 use RuntimeException;
 use SplFileInfo;
 
+use function array_key_exists;
+use function array_keys;
+use function count;
+use function explode;
+use function substr;
+use function trim;
+
 /** Sources environment variables from a file. */
 class File implements EnvironmentContract
 {
@@ -21,21 +28,15 @@ class File implements EnvironmentContract
     private ?array $data = null;
 
     /**
-     * Initialise a new reader.
-     *
-     * Env files are parsed on-demand - construction is a very cheap operation.
+     * Initialise a new environment source with a given environment file.
      *
      * @param string $fileName The file to read.
+     * @throws EnvironmentException if the file is not a valid environment file.
      */
     public function __construct(string $fileName)
     {
         $this->fileName = $fileName;
-    }
-
-    /** Check whether the file has been parsed. */
-    protected function isParsed(): bool
-    {
-        return isset($this->data);
+        $this->parse();
     }
 
     /**
@@ -73,11 +74,11 @@ class File implements EnvironmentContract
             $key = self::validateVariableName($keyValue[0]);
 
             if (!isset($key)) {
-                throw new EnvironmentException("Invalid varaible name '{$keyValue[0]}' at line {$lineNumber} in '{$this->fileName()}'.");
+                throw new EnvironmentException("Invalid variable name '{$keyValue[0]}' at line {$lineNumber} in '{$this->fileName()}'.");
             }
 
             if (array_key_exists($key, $data)) {
-                throw new EnvironmentException("Varaible name '{$key}' at line {$lineNumber} has been defined previously in '{$this->fileName()}'.");
+                throw new EnvironmentException("Variable name '{$key}' at line {$lineNumber} has been defined previously in '{$this->fileName()}'.");
             }
 
             $data[$key] = self::extractValue($keyValue[1]);
@@ -123,14 +124,9 @@ class File implements EnvironmentContract
      * @param string $name The key to check for.
      *
      * @return bool true if the key is defined in tne env file, false if not.
-     * @throws EnvironmentException
      */
     public function has(string $name): bool
     {
-        if (!$this->isParsed()) {
-            $this->parse();
-        }
-
         return isset($this->data[$name]);
     }
 
@@ -143,10 +139,6 @@ class File implements EnvironmentContract
      */
     public function get(string $name): string
     {
-        if (!$this->isParsed()) {
-            $this->parse();
-        }
-
         return $this->data[$name] ?? "";
     }
 
@@ -157,24 +149,16 @@ class File implements EnvironmentContract
      */
     public function names(): array
     {
-        if (!$this->isParsed()) {
-            $this->parse();
-        }
-
         return array_keys($this->data);
     }
 
     /**
      * Fetch all the environment variables.
      *
-     * @return array<string,mixed>
+     * @return array<string,string>
      */
     public function all(): array
     {
-        if (!$this->isParsed()) {
-            $this->parse();
-        }
-
         return $this->data;
     }
 }

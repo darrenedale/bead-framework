@@ -3,10 +3,9 @@
 namespace BeadTests\Environment\Sources;
 
 use Bead\Environment\Sources\ValidatesVariableNames;
-use Bead\Testing\StaticXRay;
 use BeadTests\Framework\TestCase;
 
-class ValidatesVariableNamesTest extends TestCase
+final class ValidatesVariableNamesTest extends TestCase
 {
     private $instance;
 
@@ -21,16 +20,16 @@ class ValidatesVariableNamesTest extends TestCase
             }
         };
     }
-    
+
     public function tearDown(): void
     {
-        unset ($this->instance);
+        unset($this->instance);
         parent::tearDown();
     }
 
     /**
      * Test data for testValidateVariableName.
-     * 
+     *
      * @return iterable The test data.
      */
     public function dataForTestValidateVariableName1(): iterable
@@ -51,7 +50,7 @@ class ValidatesVariableNamesTest extends TestCase
 
     /**
      * Ensure validateVariableName successfully validates valid names.
-     * 
+     *
      * @dataProvider dataForTestValidateVariableName1
      * @param string $name The name to validate.
      * @param string $expected The exptected validated name.
@@ -63,7 +62,7 @@ class ValidatesVariableNamesTest extends TestCase
 
     /**
      * Test data for testValidateVariableName.
-     * 
+     *
      * @return iterable The test data.
      */
     public function dataForTestValidateVariableName2(): iterable
@@ -76,7 +75,7 @@ class ValidatesVariableNamesTest extends TestCase
 
     /**
      * Ensure validateVariableName throws with invalid names.
-     * 
+     *
      * @dataProvider dataForTestValidateVariableName2
      * @param string $name The name to validate.
      */

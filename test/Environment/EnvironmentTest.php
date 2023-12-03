@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace BeadTests\Environment;
 
-use Bead\AppLog;
 use Bead\Contracts\Logger;
 use Bead\Core\Application;
 use Bead\Environment\Environment;
 use Bead\Environment\Sources\StaticArray;
-use Bead\Exceptions\Environment\Exception;
 use Bead\Exceptions\EnvironmentException;
 use Bead\Testing\XRay;
-use BeadTests\Environment\Sources\StaticArrayTest;
 use BeadTests\Framework\TestCase;
 use Mockery;
 
+use function array_keys;
+use function preg_match;
+
 final class EnvironmentTest extends TestCase
 {
-    /** @var string[] content for the test environment provider. */
+    /** @var string[] content for the test environment source. */
     private const TestEnvironment = [
         "KEY_1" => "value-1",
         "KEY_3" => "third-value",
@@ -40,7 +40,7 @@ final class EnvironmentTest extends TestCase
         parent::tearDown();
     }
 
-    /** Ensure we can add a provider. */
+    /** Ensure we can add a source. */
     public function testAddProvider1(): void
     {
         $source = new StaticArray(["KEY_1" => "value-2",]);
@@ -62,24 +62,24 @@ final class EnvironmentTest extends TestCase
         self::assertEquals("", $this->env->get("KEY_2"));
     }
 
-    /** Ensure get() returns the value from the provider with the highest precedence. */
+    /** Ensure get() returns the value from the source with the highest precedence. */
     public function testGet3(): void
     {
         $this->env->addSource(new StaticArray(["KEY_1" => "value-2",]));
         self::assertEquals("value-2", $this->env->get("KEY_1"));
     }
 
-    /** Ensure get() uses providers with lower precedence when key missing in higher-precedence providers. */
+    /** Ensure get() uses sources with lower precedence when key missing in higher-precedence sources. */
     public function testGet4(): void
     {
         $this->env->addSource(new StaticArray(["KEY_2" => "value-2",]));
         self::assertEquals("value-1", $this->env->get("KEY_1"));
     }
 
-    /** Ensure get() logs a warning if a provider throws. */
+    /** Ensure get() logs a warning if a source throws. */
     public function testGet5(): void
     {
-        $provider = new class([]) extends StaticArray
+        $source = new class ([]) extends StaticArray
         {
             public function has(string $name): bool
             {
@@ -93,7 +93,7 @@ final class EnvironmentTest extends TestCase
         $log->shouldReceive("warning")
             ->once()
             ->with(Mockery::on(
-                fn (string $message):  bool => (bool) preg_match("/^Environment exception querying environment source of type .*: Unable to check for variable KEY_1\\.\$/", $message)
+                fn (string $message): bool => (bool) preg_match("/^Environment exception querying environment source of type .*: Unable to check for variable KEY_1\\.\$/", $message)
             ));
 
         $app->shouldReceive("get")
@@ -102,7 +102,7 @@ final class EnvironmentTest extends TestCase
             ->andReturn($log);
 
         $this->mockMethod(Application::class, "instance", $app);
-        $this->env->addSource($provider);
+        $this->env->addSource($source);
         self::assertEquals("value-1", $this->env->get("KEY_1"));
     }
 
@@ -118,7 +118,7 @@ final class EnvironmentTest extends TestCase
         self::assertFalse($this->env->has("KEY_2"));
     }
 
-    /** Ensure has() checks all providers if necessary. */
+    /** Ensure has() checks all sources if necessary. */
     public function testHas3(): void
     {
         $this->env->addSource(new StaticArray(["KEY_2" => "value-2",]));

@@ -3,6 +3,7 @@
 namespace Bead\Facades;
 
 use Bead\Core\Application;
+use Bead\Exceptions\ServiceNotFoundException;
 use LogicException;
 
 abstract class ApplicationServiceFacade
@@ -19,7 +20,7 @@ abstract class ApplicationServiceFacade
      * @param array $args The method arguments.
      *
      * @return mixed The value returned by the method call.
-     * @throws \Bead\Exceptions\ServiceNotFoundException if no instance is bound to the named interface in the
+     * @throws ServiceNotFoundException if no instance is bound to the named interface in the
      * application.
      */
     public static function __callStatic(string $method, array $args): mixed

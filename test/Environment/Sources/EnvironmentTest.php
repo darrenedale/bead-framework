@@ -7,6 +7,8 @@ namespace BeadTests\Environment\Sources;
 use Bead\Environment\Sources\Environment;
 use BeadTests\Framework\TestCase;
 
+use function putenv;
+
 final class EnvironmentTest extends TestCase
 {
     private Environment $env;
@@ -40,7 +42,7 @@ final class EnvironmentTest extends TestCase
     /** Ensure names() returns the expected variable names. */
     public function testNames1(): void
     {
-        $mock = function(?string $key = null): array {
+        $mock = function (?string $key = null): array {
             TestCase::assertNull($key);
             return [
                 "ENVIRONMENT_TEST_VARIABLE" => "value1",
@@ -55,7 +57,7 @@ final class EnvironmentTest extends TestCase
     /** Ensure all() returns the expected variables. */
     public function testAll1(): void
     {
-        $mock = function(?string $key = null): array {
+        $mock = function (?string $key = null): array {
             TestCase::assertNull($key);
             return [
                 "ENVIRONMENT_TEST_VARIABLE" => "value1",

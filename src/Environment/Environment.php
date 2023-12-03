@@ -8,8 +8,11 @@ use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Exceptions\EnvironmentException;
 use Bead\Facades\Log;
 
+use function array_key_exists;
+use function array_keys;
 use function array_unshift;
 use function Bead\Helpers\Iterable\some;
+use function in_array;
 
 /**
  * Provide flexible access to environment variables.
@@ -18,11 +21,8 @@ use function Bead\Helpers\Iterable\some;
  * reads the actual environment variables, and add extra sources to override/augment those values with variables from
  * other sources (for example .env files).
  *
- * The Environment service binder sets up an instance that is bound to the Environment contract, and is available from
- * the environment() method for convenience (or by using the Environment facade). The sources for this service are
- * defined in the env config file.
- *
- * The Environment facade can be used to get quick access to this variables in this instance.
+ * The Environment service binder sets up an instance that is bound to the Environment contract, and is available using
+ * the Environment facade. The sources for this service are defined in the env config file.
  */
 class Environment implements EnvironmentContract
 {
@@ -30,9 +30,9 @@ class Environment implements EnvironmentContract
     private array $sources = [];
 
     /**
-     * Add a provider to the environment.
+     * Add a source to the environment.
      *
-     * @param EnvironmentContract $provider The provider to add.
+     * @param EnvironmentContract $provider The source to add.
      */
     public function addSource(EnvironmentContract $provider): void
     {
@@ -40,33 +40,33 @@ class Environment implements EnvironmentContract
     }
 
     /**
-     * Check whether a key is present in one of the environment's providers.
+     * Check whether a key is present in one of the environment's sources.
      *
-     * @param string $key The key to check.
+     * @param string $name The key to check.
      *
-     * @return bool true if the key exists in one or more providers, false if not.
+     * @return bool true if the key exists in one or more sources, false if not.
      */
-    public function has(string $key): bool
+    public function has(string $name): bool
     {
-        return some($this->sources, fn(EnvironmentContract $provider) => $provider->has($key));
+        return some($this->sources, fn (EnvironmentContract $provider) => $provider->has($name));
     }
 
     /**
      * Retrieve a value from the environment.
      *
-     * The environment providers are queried in the reverse order in which they were added - more recently added
-     * providers override earlier ones.
+     * The environment sources are queried in the reverse order in which they were added - more recently added sources
+     * override earlier ones.
      *
-     * @param string $key The key to fetch.
+     * @param string $name The key to fetch.
      *
-     * @return string The environment value for the key, or an empty string if no provider contains the key.
+     * @return string The environment value for the key, or an empty string if no source contains the key.
      */
-    public function get(string $key): string
+    public function get(string $name): string
     {
         foreach ($this->sources as $source) {
             try {
-                if ($source->has($key)) {
-                    return $source->get($key);
+                if ($source->has($name)) {
+                    return $source->get($name);
                 }
             } catch (EnvironmentException $err) {
                 Log::warning("Environment exception querying environment source of type " . $source::class . ": {$err->getMessage()}");
@@ -86,7 +86,7 @@ class Environment implements EnvironmentContract
         $names = [];
 
         foreach ($this->sources as $source) {
-            foreach ($source->all() as $name => $value) {
+            foreach (array_keys($source->all()) as $name) {
                 if (in_array($name, $names)) {
                     continue;
                 }

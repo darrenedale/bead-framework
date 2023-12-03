@@ -17,7 +17,7 @@ interface Environment
     public function has(string $name): bool;
 
     /**
-     * Fetch the value for an environment varaible.
+     * Fetch the value for an environment variable.
      *
      * @param string $name The name of the variable to fetch.
      *
@@ -35,7 +35,7 @@ interface Environment
     /**
      * Fetch all the environment variables.
      *
-     * @return array<string,mixed>
+     * @return array<string,string>
      */
     public function all(): array;
 }

@@ -7,6 +7,7 @@ namespace Bead\Environment\Sources;
 use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Exceptions\EnvironmentException;
 
+use function array_keys;
 use function is_float;
 use function is_int;
 use function is_string;
@@ -23,12 +24,15 @@ class StaticArray implements EnvironmentContract
     /**
      * Initialise a new StaticArray environment provider.
      *
+     * Variable values can be set using strings, ints and floats, but when retrieved from the environment will always be
+     * returned as strings. The conversion is a simple (cast), so be wary of formatting issues for floats.
+     *
      * @param array<string,string|int|float> $data The environment variables.
      * @throws EnvironmentException
      */
     public function __construct(array $data)
     {
-        if (!all($data, fn(mixed $value): bool => is_string($value) || is_int($value) || is_float($value))) {
+        if (!all($data, fn (mixed $value): bool => is_string($value) || is_int($value) || is_float($value))) {
             throw new EnvironmentException("Values for environment variable arrays must be ints, floats or strings.");
         }
 
@@ -64,7 +68,7 @@ class StaticArray implements EnvironmentContract
      */
     public function get(string $name): string
     {
-        return (string) ($this->data[$name] ?? "");
+        return $this->data[$name] ?? "";
     }
 
     /**
@@ -80,7 +84,7 @@ class StaticArray implements EnvironmentContract
     /**
      * Fetch all the environment variables.
      *
-     * @return array<string,mixed>
+     * @return array<string,string>
      */
     public function all(): array
     {

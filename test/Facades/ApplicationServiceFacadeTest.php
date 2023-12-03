@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
+namespace BeadTests\Facades;
+
 use Bead\Core\Application;
-use \Bead\Exceptions\ServiceNotFoundException;
-use Bead\Facades\ApplicationServiceFacade;
-use BeadTests\Facades\TestApplicationService;
-use BeadTests\Facades\TestApplicationServiceFacade;
 use BeadTests\Framework\TestCase;
+use Error;
+use LogicException;
 use Mockery;
 use Mockery\MockInterface;
 
@@ -29,7 +29,7 @@ final class ApplicationServiceFacadeTest extends TestCase
         $this->mockMethod(Application::class, "instance", $this->app);
     }
 
-    public function tearDonw(): void
+    public function tearDown(): void
     {
         Mockery::close();
         unset($this->app);

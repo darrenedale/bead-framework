@@ -10,8 +10,6 @@ use Bead\Environment\Environment;
 use Bead\Environment\Sources\StaticArray;
 use Bead\Facades\Environment as EnvironmentFacade;
 use BeadTests\Framework\TestCase;
-use Error;
-use LogicException;
 use Mockery;
 use Mockery\MockInterface;
 
@@ -25,6 +23,7 @@ final class EnvironmentTest extends TestCase
         $environment = new Environment();
         $environment->addSource(new StaticArray([
             "KEY_1" => "value-1",
+            "KEY_3" => "value-3",
         ]));
 
         $this->app = Mockery::mock(Application::class);
@@ -38,7 +37,7 @@ final class EnvironmentTest extends TestCase
     public function tearDown(): void
     {
         Mockery::close();
-        unset ($this->app);
+        unset($this->app);
         parent::tearDown();
     }
 
@@ -54,5 +53,18 @@ final class EnvironmentTest extends TestCase
     {
         self::assertEquals("value-1", EnvironmentFacade::get("KEY_1"));
         self::assertEquals("", EnvironmentFacade::get("KEY_2"));
+    }
+
+    /** Ensure teh facade's names() method provides the expected values. */
+    public function testNames1(): void
+    {
+        // deliberately test keys in a different order so we don't fall into inadvertent-required-ordering territory
+        self::assertEqualsCanonicalizing(["KEY_1", "KEY_3",], EnvironmentFacade::names());
+    }
+
+    /** Ensure teh facade's all() method provides the expected values. */
+    public function testAll1(): void
+    {
+        self::assertEquals(["KEY_1" => "value-1", "KEY_3" => "value-3",], EnvironmentFacade::all());
     }
 }

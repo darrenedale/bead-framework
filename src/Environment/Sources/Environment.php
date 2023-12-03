@@ -6,7 +6,10 @@ namespace Bead\Environment\Sources;
 
 use Bead\Contracts\Environment as EnvironmentContract;
 
-/** Source environment variables from the actual environment. */
+use function array_keys;
+use function getenv;
+
+/** Source environment variables from the host environment. */
 class Environment implements EnvironmentContract
 {
     /**
@@ -46,7 +49,7 @@ class Environment implements EnvironmentContract
     /**
      * Fetch all the environment variables.
      *
-     * @return array<string,mixed>
+     * @return array<string,string>
      */
     public function all(): array
     {
