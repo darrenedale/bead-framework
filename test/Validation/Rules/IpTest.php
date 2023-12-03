@@ -6,7 +6,6 @@ namespace BeadTests\Validation\Rules;
 
 use Bead\Validation\Rule;
 use Bead\Validation\Rules\Ip;
-use Generator;
 use BeadTests\Framework\RuleTestCase;
 use TypeError;
 
@@ -26,9 +25,9 @@ class IpTest extends RuleTestCase
     /**
      * Data provider for testPasses().
      *
-     * @return \Generator The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestPasses(): Generator
+    public function dataForTestPasses(): iterable
     {
         yield from [
             "typicalLocalhost" => ["field", "127.0.0.1", true,],

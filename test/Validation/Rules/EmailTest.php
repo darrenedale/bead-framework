@@ -6,7 +6,6 @@ namespace BeadTests\Validation\Rules;
 
 use Bead\Validation\Rule;
 use Bead\Validation\Rules\Email;
-use Generator;
 use BeadTests\Framework\RuleTestCase;
 use TypeError;
 
@@ -26,9 +25,9 @@ class EmailTest extends RuleTestCase
     /**
      * Data provider for testPasses().
      *
-     * @return \Generator The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestPasses(): Generator
+    public function dataForTestPasses(): iterable
     {
         yield from [
             "typicalAddress" => ["field", "darren@example.com", true,],
