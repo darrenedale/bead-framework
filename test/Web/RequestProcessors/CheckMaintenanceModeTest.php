@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace BeadTests\Web\RequestProcessors;
 
-use Bead\Core\Application;
+use Bead\Core\Application as CoreApplication;
+use Bead\Web\Application as WebApplication;
 use Bead\Exceptions\Http\ServiceUnavailableException;
 use Bead\Testing\XRay;
 use Bead\View;
@@ -71,8 +72,8 @@ class CheckMaintenanceModeTest extends TestCase
      */
     public function testIsInMaintenanceMode1(mixed $config, bool $expected): void
     {
-        $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $app = Mockery::mock(WebApplication::class);
+        $this->mockMethod(CoreApplication::class, "instance", $app);
 
         $app->shouldReceive("config")
             ->with("app.maintenance", false)
@@ -87,8 +88,8 @@ class CheckMaintenanceModeTest extends TestCase
     public function testPreprocessRequest1(): void
     {
         $request = Mockery::mock(Request::class);
-        $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $app = Mockery::mock(WebApplication::class);
+        $this->mockMethod(CoreApplication::class, "instance", $app);
 
         $app->shouldReceive("config")
             ->with("app.maintenance", false)
@@ -98,14 +99,12 @@ class CheckMaintenanceModeTest extends TestCase
         self::assertNull($this->processor->preprocessRequest($request));
     }
 
-    /**
-     * Ensure preprocessRequest() uses the correct view when in maintenance mode.
-     */
+    /** Ensure preprocessRequest() uses the correct view when in maintenance mode. */
     public function testPreprocessRequest2(): void
     {
         $request = Mockery::mock(Request::class);
-        $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $app = Mockery::mock(WebApplication::class);
+        $this->mockMethod(CoreApplication::class, "instance", $app);
 
         $app->shouldReceive("rootDir")->once()->andReturn(__DIR__ . "/files");
 
@@ -129,8 +128,8 @@ class CheckMaintenanceModeTest extends TestCase
     {
         $this->mockMethod(CheckMaintenanceMode::class, "viewName", null);
         $request = Mockery::mock(Request::class);
-        $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $app = Mockery::mock(WebApplication::class);
+        $this->mockMethod(CoreApplication::class, "instance", $app);
 
         $app->shouldReceive("config")
             ->with("app.maintenance", false)
@@ -150,8 +149,8 @@ class CheckMaintenanceModeTest extends TestCase
     {
         $this->mockMethod(CheckMaintenanceMode::class, "viewName", "this-view-does-not-exist");
         $request = Mockery::mock(Request::class);
-        $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $app = Mockery::mock(WebApplication::class);
+        $this->mockMethod(CoreApplication::class, "instance", $app);
 
         $app->shouldReceive("rootDir")->once()->andReturn(__DIR__ . "/files");
 
