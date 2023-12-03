@@ -11,11 +11,13 @@ use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\PrefixedAccessor;
 use Bead\Session\Session as BeadSession;
 use Bead\Contracts\SessionHandler;
-use Exception;
 use LogicException;
 
 /**
  * Facade for easy access to the current session.
+ *
+ * @mixin BeadSession
+ * @psalm-seal-methods
  *
  * @method static int sessionIdleTimeoutPeriod()
  * @method static int sessionIdRegenerationPeriod()
@@ -92,19 +94,11 @@ final class Session
      * @param array $args The method arguments.
      *
      * @return mixed
-     * @throws Exception if the session has not been started.
      * @throws BadMethodCallException if the method does not exist in the Session class.
      */
     public static function __callStatic(string $method, array $args)
     {
-        if (!isset(self::$session)) {
-            throw new Exception("Session not started.");
-        }
-
-        if (!method_exists(self::$session, $method)) {
-            throw new BadMethodCallException("The method '{$method}' does not exist in the Session class.");
-        }
-
+        assert(null !== self::$session, new LogicException("Session not started."));
         return [self::$session, $method](...$args);
     }
 }

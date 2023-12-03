@@ -2,12 +2,11 @@
 
 namespace Bead\Facades;
 
-use BadMethodCallException;
 use Bead\Contracts\ErrorHandler as ErrorHandlerContract;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\Application as CoreApplication;
 use Bead\Database\Connection;
-use RuntimeException;
+use LogicException;
 
 /**
  * @mixin CoreApplication
@@ -47,8 +46,7 @@ class Application
     public static function __callStatic(string $method, array $args)
     {
         $app = CoreApplication::instance();
-        assert($app instanceof CoreApplication, new RuntimeException("There is no Application instance."));
-        assert(method_exists($app, $method), new BadMethodCallException("The method '{$method}' does not exist in the Application class."));
+        assert($app instanceof CoreApplication, new LogicException("There is no Application instance."));
         return [$app, $method,](...$args);
     }
 }

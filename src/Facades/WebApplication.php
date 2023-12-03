@@ -8,7 +8,7 @@ use Bead\Contracts\Router as RouterContract;
 use Bead\Core\Plugin;
 use Bead\Web\Application as BeadWebApplication;
 use Bead\Web\Request;
-use RuntimeException;
+use LogicException;
 
 use function assert;
 use function method_exists;
@@ -43,8 +43,7 @@ class WebApplication extends Application
     public static function __callStatic(string $method, array $args)
     {
         $app = BeadWebApplication::instance();
-        assert($app instanceof BeadWebApplication, new RuntimeException("There is no Application instance."));
-        assert(method_exists($app, $method), new BadMethodCallException("The method '{$method}' does not exist in the Application class."));
+        assert($app instanceof BeadWebApplication, new LogicException("There is no Application instance."));
         return [$app, $method,](...$args);
     }
 }
