@@ -10,4 +10,6 @@
 <div class="separator"></div>
 <div><a href="/preprocessor/timestamp">Preprocessor timestamp</a></div>
 <div class="separator"></div>
+<div><a href="/env">Environment</a></div>
+<div class="separator"></div>
 <div><a href="/uri-signer">UriSigner test</a></div>
