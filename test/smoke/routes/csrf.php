@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 use Bead\Contracts\Router;
-use Bead\Core\WebApplication;
-use Bead\Request;
+use Bead\Exceptions\Http\CsrfTokenVerificationException;
+use Bead\Facades\WebApplication as WebApp;
 use Bead\View;
+use Bead\Web\Request;
 
 /** @var Router $router */
 
@@ -17,6 +20,10 @@ $router->registerPost("/csrf", function(Request $request): View {
 });
 
 $router->registerGet("/csrf/regenerate", function (): View {
-	WebApplication::instance()->regenerateCsrf();
+    WebApp::regenerateCsrf();
 	return new View("csrf");
+});
+
+$router->registerGet("/csrf/fail", function(Request $request): void {
+    throw new CsrfTokenVerificationException($request);
 });

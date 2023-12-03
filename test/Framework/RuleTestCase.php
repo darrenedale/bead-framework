@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace BeadTests\Framework;
 
 use Bead\Validation\Rule;
-use Bead\Validation\Rules\Integer;
 use TypeError;
 
 /**
@@ -64,7 +63,7 @@ abstract class RuleTestCase extends TestCase
             $this->expectException($exceptionClass);
         }
 
-        $rule = new Integer();
+        $rule = $this->ruleInstance();
         self::assertIsString($rule->message($field), "The message method did not produce a string.");
     }
 }

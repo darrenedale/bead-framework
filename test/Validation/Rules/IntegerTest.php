@@ -6,7 +6,6 @@ namespace BeadTests\Validation\Rules;
 
 use Bead\Validation\Rule;
 use Bead\Validation\Rules\Integer;
-use Generator;
 use BeadTests\Framework\RuleTestCase;
 use TypeError;
 
@@ -23,9 +22,9 @@ class IntegerTest extends RuleTestCase
     /**
      * Data provider for testPasses().
      *
-     * @return \Generator The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestPasses(): Generator
+    public function dataForTestPasses(): iterable
     {
         yield from [
             "typicalPositiveInt" => ["field", 123, true,],
@@ -108,9 +107,9 @@ class IntegerTest extends RuleTestCase
     /**
      * Data provider for testConvert().
      *
-     * @return \Generator The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestConvert(): Generator
+    public function dataForTestConvert(): iterable
     {
         yield from [
             "typicalPositiveInt" => [123, 123,],

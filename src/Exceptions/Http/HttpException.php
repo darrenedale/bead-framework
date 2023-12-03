@@ -1,14 +1,17 @@
 <?php
 
-namespace Bead\Exceptions;
+namespace Bead\Exceptions\Http;
 
 use Bead\Contracts\Response;
-use Bead\Core\WebApplication;
-use Bead\Request;
+use Bead\Exceptions\ViewNotFoundException;
+use Bead\Exceptions\ViewRenderingException;
 use Bead\Responses\DoesntHaveHeaders;
 use Bead\Responses\NaivelySendsContent;
 use Bead\View;
+use Bead\Web\Application;
+use Bead\Web\Request;
 use Exception;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -54,7 +57,7 @@ abstract class HttpException extends Exception implements Response
 
     public function content(): string
     {
-        $viewPath = WebApplication::instance()->config("app.http.error.view.path");
+        $viewPath = Application::instance()->config("app.http.error.view.path");
 
         if (isset($viewPath)) {
             try {

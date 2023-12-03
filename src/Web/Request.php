@@ -1,9 +1,9 @@
 <?php
 
-namespace Bead;
+namespace Bead\Web;
 
-use TypeError;
 use InvalidArgumentException;
+use TypeError;
 
 /**
  * Abstract representation of an incoming HTTP request.
@@ -21,7 +21,7 @@ class Request
     /** @var string The HTTPS protocol. */
     public const HttpsProtocol = "https";
 
-    /** @var \Bead\Request|null The request parsed from the superglobals. */
+    /** @var Request|null The request parsed from the superglobals. */
     private static ?Request $s_originalRequest = null;
 
     /** @var array<string, string> The request's URL parameters. */

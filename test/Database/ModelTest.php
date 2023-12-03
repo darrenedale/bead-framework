@@ -7,10 +7,8 @@ use BeadTests\Framework\TestCase;
 use DateTime;
 use Bead\Database\Model;
 use Bead\Exceptions\Database\ModelPropertyCastException;
-use Generator;
 use LogicException;
 use PDO;
-use Prophecy\Call\Call;
 use ReflectionProperty;
 use TypeError;
 
@@ -55,11 +53,11 @@ class ModelTest extends TestCase
     /**
      * Data provider for testProperty().
      *
-     * @return Generator
+     * @return iterable
      *
      * @noinspection PhpDocMissingThrowsInspection DateTime constructor won't throw with our test data.
      */
-    public function dataForTestProperties(): Generator
+    public function dataForTestProperties(): iterable
     {
         yield from [
             "typicalStringProperty" => [
