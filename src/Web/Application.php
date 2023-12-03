@@ -799,7 +799,6 @@ class Application extends CoreApplication
             if (null !== $postResponse) {
                 return $postResponse;
             }
-
         } catch (UnroutableRequestException $err) {
             throw new NotFoundException($request, "", 0, $err);
         }

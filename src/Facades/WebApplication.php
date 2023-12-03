@@ -2,7 +2,6 @@
 
 namespace Bead\Facades;
 
-
 use BadMethodCallException;
 use Bead\Contracts\Response as ResponseContract;
 use Bead\Contracts\Router as RouterContract;
@@ -11,7 +10,13 @@ use Bead\Web\Application as BeadWebApplication;
 use Bead\Web\Request;
 use RuntimeException;
 
+use function assert;
+use function method_exists;
+
 /**
+ * @mixin BeadWebApplication
+ * @psalm-seal-methods
+ *
  * @method bool isRunning()
  * @method string routesDirectory()
  * @method string pluginsDirectory()
@@ -29,6 +34,14 @@ use RuntimeException;
  */
 class WebApplication extends Application
 {
+    /**
+     * Forward static calls on the facade to the underlying Web\Application instance.
+     *
+     * @param string $method The method to forward.
+     * @param array $args The method arguments.
+     *
+     * @throws RuntimeException if there is no Web\Application instance
+     */
     public static function __callStatic(string $method, array $args)
     {
         $app = BeadWebApplication::instance();
@@ -37,10 +50,7 @@ class WebApplication extends Application
             throw new RuntimeException("There is no Bead\Web\Application instance.");
         }
 
-        if (!method_exists($app, $method)) {
-            throw new BadMethodCallException("The method '{$method}' does not exist in the Bead\Web\Application class.");
-        }
-
+        assert(method_exists($app, $method), new BadMethodCallException("The method '{$method}' does not exist in the Application class."));
         return [$app, $method,](...$args);
     }
 }

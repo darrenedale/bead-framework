@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace BeadTests\Web\RequestProcessors;
@@ -29,7 +30,7 @@ class CheckCsrfTokenTest extends TestCase
         parent::tearDown();
     }
 
-    /** @return Request|MockInterface */
+    /** @return Request&MockInterface */
     private static function createRequest(string $method = "GET", string $url = "/"): Request
     {
         $request = Mockery::mock(Request::class);

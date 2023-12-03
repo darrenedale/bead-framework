@@ -8,9 +8,10 @@ use Bead\Exceptions\Http\CsrfTokenVerificationException;
 use Bead\Facades\WebApplication as WebApp;
 use Bead\Web\Request;
 
+use function hash_equals;
+
 class CheckCsrfToken implements RequestPreprocessor
 {
-
     /**
      * Determine whether the incoming request must pass CSRF verification.
      *

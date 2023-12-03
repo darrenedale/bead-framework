@@ -10,6 +10,9 @@ use Bead\Database\Connection;
 use RuntimeException;
 
 /**
+ * @mixin CoreApplication
+ * @psalm-seal-methods
+ *
  * @method static string rootDir()
  * @method static mixed config(string $key, mixed $default = null)
  * @method static string title()
@@ -41,7 +44,7 @@ class Application
      * @param string $method The method to forward.
      * @param array $args The method arguments.
      *
-     * @return mixed
+     * @throws RuntimeException if there is no Application instance
      */
     public static function __callStatic(string $method, array $args)
     {
@@ -51,10 +54,7 @@ class Application
             throw new RuntimeException("There is no Application instance.");
         }
 
-        if (!method_exists($app, $method)) {
-            throw new BadMethodCallException("The method '{$method}' does not exist in the Application class.");
-        }
-
+        assert(method_exists($app, $method), new BadMethodCallException("The method '{$method}' does not exist in the Application class."));
         return [$app, $method,](...$args);
     }
 }

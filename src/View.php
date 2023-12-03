@@ -13,6 +13,7 @@ use Bead\Web\Application as WebApplication;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
+
 use function Bead\Helpers\Iterable\some;
 use function Bead\Helpers\Str\html;
 
@@ -163,6 +164,7 @@ class View implements Response
      * @param array $data
      *
      * @throws ViewNotFoundException
+     * @throws RuntimeException if there is no application instance.
      */
     public function __construct(string $name, array $data = [])
     {
@@ -180,6 +182,8 @@ class View implements Response
      * The full path to the directory where view files are stored.
      *
      * @return string The directory.
+     *
+     * @throws RuntimeException if there is no application instance.
      */
     public static function viewDirectory(): string
     {
@@ -248,6 +252,8 @@ class View implements Response
      * @param string $name The view to check.
      *
      * @return bool `true` if the view exists, `false` if not.
+     *
+     * @throws RuntimeException if there is no Application instance.
      */
     public static function exists(string $name): bool
     {
@@ -282,6 +288,7 @@ class View implements Response
      *
      * @param string $name The name of the layout view.
      * @throws ViewNotFoundException
+     * @throws RuntimeException if there is no Application instance.
      * @throws LogicException if layout() is called outside the context of rendering a view or the view already has a
      * layout
      */
@@ -311,6 +318,7 @@ class View implements Response
      *
      * @throws ViewNotFoundException
      * @throws ViewRenderingException
+     * @throws RuntimeException if there is no Application instance.
      * @throws LogicException if include() is called outside the context of rendering a view
      */
     public static function include(string $name, array $data = []): void
@@ -383,6 +391,7 @@ class View implements Response
      *
      * @throws ViewNotFoundException
      * @throws ViewRenderingException
+     * @throws RuntimeException if there is no Application instance.
      * @throws LogicException if no view is rendering or there is no matching component() call
      */
     public static function endComponent(): void
@@ -819,6 +828,7 @@ class View implements Response
      * The HTTP response content.
      * @return string The HTML for the view.
      * @throws InternalServerErrorException
+     * @throws RuntimeException if the view throws when rendering and there is no Application instance.
      */
     public function content(): string
     {

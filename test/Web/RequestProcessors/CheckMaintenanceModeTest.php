@@ -1,10 +1,14 @@
 <?php
+
 declare(strict_types=1);
 
 namespace BeadTests\Web\RequestProcessors;
 
 use Bead\Core\Application;
+use Bead\Exceptions\Http\ServiceUnavailableException;
 use Bead\Testing\XRay;
+use Bead\View;
+use Bead\Web\Request;
 use Bead\Web\RequestProcessors\CheckMaintenanceMode;
 use Mockery;
 use BeadTests\Framework\TestCase;
@@ -68,29 +72,103 @@ class CheckMaintenanceModeTest extends TestCase
     public function testIsInMaintenanceMode1(mixed $config, bool $expected): void
     {
         $app = Mockery::mock(Application::class);
+        $this->mockMethod(Application::class, "instance", $app);
 
         $app->shouldReceive("config")
             ->with("app.maintenance", false)
             ->once()
             ->andReturn($config);
 
-        $this->mockMethod(Application::class, "instance", $app);
         $processor = new XRay($this->processor);
         self::assertEquals($expected, $processor->isInMaintenanceMode());
     }
 
-    /** Ensure isInMaintenanceMode() returns false when the config is not set.*/
-    public function testIsInMaintenanceMode2(): void
+    /** Ensure preprocessRequest() returns null when app is not in maintenance mode. */
+    public function testPreprocessRequest1(): void
     {
+        $request = Mockery::mock(Request::class);
         $app = Mockery::mock(Application::class);
+        $this->mockMethod(Application::class, "instance", $app);
 
         $app->shouldReceive("config")
             ->with("app.maintenance", false)
             ->once()
-            ->andReturn(null);
+            ->andReturn(false);
 
+        self::assertNull($this->processor->preprocessRequest($request));
+    }
+
+    /**
+     * Ensure preprocessRequest() uses the correct view when in maintenance mode.
+     */
+    public function testPreprocessRequest2(): void
+    {
+        $request = Mockery::mock(Request::class);
+        $app = Mockery::mock(Application::class);
         $this->mockMethod(Application::class, "instance", $app);
-        $processor = new XRay($this->processor);
-        self::assertFalse($processor->isInMaintenanceMode());
+
+        $app->shouldReceive("rootDir")->once()->andReturn(__DIR__ . "/files");
+
+        $app->shouldReceive("config")
+            ->with("app.maintenance", false)
+            ->once()
+            ->andReturn(true);
+
+        $app->shouldReceive("config")
+            ->with("view.directory", "views")
+            ->once()
+            ->andReturn("views");
+
+        $actual = $this->processor->preprocessRequest($request);
+        self::assertInstanceOf(View::class, $actual);
+        self::assertStringContainsString("<p>This is the maintenance mode view.</p>", $actual->content());
+    }
+
+    /** Ensure preprocessRequest() throws ServiceUnavailableException when in maintenance mode and viewName() is null. */
+    public function testPreprocessRequest3(): void
+    {
+        $this->mockMethod(CheckMaintenanceMode::class, "viewName", null);
+        $request = Mockery::mock(Request::class);
+        $app = Mockery::mock(Application::class);
+        $this->mockMethod(Application::class, "instance", $app);
+
+        $app->shouldReceive("config")
+            ->with("app.maintenance", false)
+            ->once()
+            ->andReturn(true);
+
+        self::expectException(ServiceUnavailableException::class);
+        self::expectExceptionMessage("Application is currently down for maintenance");
+        $actual = $this->processor->preprocessRequest($request);
+    }
+
+    /**
+     * Ensure preprocessRequest() throws ServiceUnavailableException when in maintenance mode and the view does not
+     * exist.
+     */
+    public function testPreprocessRequest4(): void
+    {
+        $this->mockMethod(CheckMaintenanceMode::class, "viewName", "this-view-does-not-exist");
+        $request = Mockery::mock(Request::class);
+        $app = Mockery::mock(Application::class);
+        $this->mockMethod(Application::class, "instance", $app);
+
+        $app->shouldReceive("rootDir")->once()->andReturn(__DIR__ . "/files");
+
+        $app->shouldReceive("config")
+            ->with("app.maintenance", false)
+            ->once()
+            ->andReturn(true);
+
+        $app->shouldReceive("config")
+            ->with("view.directory", "views")
+            ->once()
+            ->andReturn("views");
+
+        self::expectException(ServiceUnavailableException::class);
+        self::expectExceptionMessage("Application is currently down for maintenance");
+        $actual = $this->processor->preprocessRequest($request);
+        self::assertInstanceOf(View::class, $actual);
+        self::assertStringContainsString("<p>This is the maintenance mode view.</p>", $actual->content());
     }
 }
