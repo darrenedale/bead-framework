@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Environment\Sources;
 
-use Bead\Contracts\Environment;
+use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Exceptions\EnvironmentException;
 
 use function is_float;
@@ -13,7 +13,7 @@ use function is_string;
 use function Bead\Helpers\Iterable\all;
 
 /** An environment variable source that uses a PHP associative array to provide named values. */
-class StaticArray implements Environment
+class StaticArray implements EnvironmentContract
 {
     use ValidatesVariableNames;
 
@@ -65,5 +65,25 @@ class StaticArray implements Environment
     public function get(string $name): string
     {
         return (string) ($this->data[$name] ?? "");
+    }
+
+    /**
+     * Fetch the names of all defined variables.
+     *
+     * @return string[]
+     */
+    public function names(): array
+    {
+        return array_keys($this->data);
+    }
+
+    /**
+     * Fetch all the environment variables.
+     *
+     * @return array<string,mixed>
+     */
+    public function all(): array
+    {
+        return $this->data;
     }
 }

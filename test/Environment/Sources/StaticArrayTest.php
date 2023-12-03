@@ -109,4 +109,32 @@ final class StaticArrayTest extends TestCase
         self::expectExceptionMessageMatches("/^'.*' is not a valid environment variable name.\$/");
         $env = new StaticArray($data);
     }
+
+    /** Ensure names() returns the expected variable names. */
+    public function testNames1(): void
+    {
+        self::assertEquals(
+            [
+                "KEY_1",
+                "KEY_2",
+                "KEY_4",
+                "KEY_5",
+            ],
+            $this->envArray->names()
+        );
+    }
+
+    /** Ensure all() returns the expected variables. */
+    public function testAll1(): void
+    {
+        self::assertEquals(
+            [
+                "KEY_1" => "value-1",
+                "KEY_2" => "value-2",
+                "KEY_4" => "value-4",
+                "KEY_5" => "value-5",
+            ],
+            $this->envArray->all()
+        );
+    }
 }

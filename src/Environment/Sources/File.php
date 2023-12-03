@@ -17,7 +17,7 @@ class File implements EnvironmentContract
     /** @var string The env file to read. */
     private string $fileName;
 
-    /** @var string The environment variables read from the file. */
+    /** @var array<string,mixed> The environment variables read from the file. */
     private ?array $data = null;
 
     /**
@@ -120,33 +120,61 @@ class File implements EnvironmentContract
      *
      * Calling this will trigger the file to be parsed if it hasn't been already.
      *
-     * @param string $key The key to check for.
+     * @param string $name The key to check for.
      *
      * @return bool true if the key is defined in tne env file, false if not.
      * @throws EnvironmentException
      */
-    public function has(string $key): bool
+    public function has(string $name): bool
     {
         if (!$this->isParsed()) {
             $this->parse();
         }
 
-        return isset($this->data[$key]);
+        return isset($this->data[$name]);
     }
 
     /**
      * Fetch a value from the environment file.
      *
-     * @param string $key The key of the value sought.
+     * @param string $name The key of the value sought.
      *
      * @return string The value, or an empty string if the file does not have a value for the key.
      */
-    public function get(string $key): string
+    public function get(string $name): string
     {
         if (!$this->isParsed()) {
             $this->parse();
         }
 
-        return $this->data[$key] ?? "";
+        return $this->data[$name] ?? "";
+    }
+
+    /**
+     * Fetch the names of all defined variables.
+     *
+     * @return string[]
+     */
+    public function names(): array
+    {
+        if (!$this->isParsed()) {
+            $this->parse();
+        }
+
+        return array_keys($this->data);
+    }
+
+    /**
+     * Fetch all the environment variables.
+     *
+     * @return array<string,mixed>
+     */
+    public function all(): array
+    {
+        if (!$this->isParsed()) {
+            $this->parse();
+        }
+
+        return $this->data;
     }
 }

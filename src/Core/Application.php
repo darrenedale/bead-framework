@@ -86,9 +86,8 @@ abstract class Application implements ServiceContainer, ContainerInterface
             throw new RuntimeException("Application root directory '{$appRoot}' does not exist.");
         }
 
-        $this->m_appRoot = $realAppRoot;
-        $this->setupEnvironment();
-        $this->loadConfig("{$this->m_appRoot}/config");
+        $this->appRoot = $realAppRoot;
+        $this->loadConfig("{$this->appRoot}/config");
         $this->bindServices();
     }
 
@@ -137,45 +136,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
         foreach ($instances as $binder) {
             $binder->bindServices($this);
         }
-    }
-
-    /**
-     * Provide the list of environment files that should be loeaded.
-     *
-     * Reimplement this method to customise the set of environment files loaded by your app. If you reimplement this
-     * method, your implementation may rely on the application root directory being set but cannot rely on the
-     * configuration being loaded.
-     *
-     * Files in the returned array should be in reverse order of precedence.
-     *
-     * @return string[] The environment files to load.
-     */
-    protected function environmentFiles(): array
-    {
-        $envFile = "{$this->rootDir()}/.env";
-
-        if (file_exists($envFile)) {
-            return [$envFile];
-        }
-
-        return [];
-    }
-
-    /**
-     * Set up the application's environment.
-     *
-     * The environment is bound to the EnvironmentProvider in the container.
-     */
-    protected function setupEnvironment(): void
-    {
-        $environment = new Environment();
-        $environment->addSource(new EnvironmentProvider());
-
-        foreach ($this->environmentFiles() as $file) {
-            $environment->addSource(new FileProvider($file));
-        }
-
-        $this->bindService(EnvironmentContract::class, $environment);
     }
 
     /**

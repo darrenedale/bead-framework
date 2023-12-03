@@ -30,6 +30,26 @@ class Environment implements EnvironmentContract
      */
     public function get(string $name): string
     {
-        return (string) getenv($name);
+        return (string) (getenv($name) ?? "");
+    }
+
+    /**
+     * Fetch the names of all defined variables.
+     *
+     * @return string[]
+     */
+    public function names(): array
+    {
+        return array_keys(getenv());
+    }
+
+    /**
+     * Fetch all the environment variables.
+     *
+     * @return array<string,mixed>
+     */
+    public function all(): array
+    {
+        return getenv();
     }
 }

@@ -14,12 +14,13 @@ use function Bead\Helpers\Iterable\some;
 /**
  * Provide flexible access to environment variables.
  *
- * The variables are read from one or more providers. Typically you will set up an instance of this with a provider that
- * reads the actual environment variables, and add extra providers to override/augment those values with variables from
+ * The variables are read from one or more sources. Typically, you will set up an instance of this with a source that
+ * reads the actual environment variables, and add extra sources to override/augment those values with variables from
  * other sources (for example .env files).
  *
- * The Application constructor sets up an instance that is available from the environment() method. By default this
- * reads the actual environment and the .env file in the root directory of the application, if present.
+ * The Environment service binder sets up an instance that is bound to the Environment contract, and is available from
+ * the environment() method for convenience (or by using the Environment facade). The sources for this service are
+ * defined in the env config file.
  *
  * The Environment facade can be used to get quick access to this variables in this instance.
  */
@@ -73,5 +74,49 @@ class Environment implements EnvironmentContract
         }
 
         return "";
+    }
+
+    /**
+     * Fetch the names of all defined variables.
+     *
+     * @return string[]
+     */
+    public function names(): array
+    {
+        $names = [];
+
+        foreach ($this->sources as $source) {
+            foreach ($source->all() as $name => $value) {
+                if (in_array($name, $names)) {
+                    continue;
+                }
+
+                $names[] = $name;
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * Fetch all the environment variables.
+     *
+     * @return array<string,mixed>
+     */
+    public function all(): array
+    {
+        $data = [];
+
+        foreach ($this->sources as $source) {
+            foreach ($source->all() as $key => $value) {
+                if (array_key_exists($key, $data)) {
+                    continue;
+                }
+
+                $data[$key] = $value;
+            }
+        }
+
+        return $data;
     }
 }

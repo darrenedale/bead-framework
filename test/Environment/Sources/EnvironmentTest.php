@@ -36,4 +36,41 @@ final class EnvironmentTest extends TestCase
         self::assertTrue($this->env->has("ENVIRONMENT_TEST_VARIABLE"));
         self::assertFalse($this->env->has("ENVIRONMENT_MISSING_TEST_VARIABLE"));
     }
+
+    /** Ensure names() returns the expected variable names. */
+    public function testNames1(): void
+    {
+        $mock = function(?string $key = null): array {
+            TestCase::assertNull($key);
+            return [
+                "ENVIRONMENT_TEST_VARIABLE" => "value1",
+                "ENVIRONMENT_TEST_VARIABLE_2" => "value2",
+            ];
+        };
+
+        $this->mockFunction("getenv", $mock);
+        self::assertEqualsCanonicalizing(["ENVIRONMENT_TEST_VARIABLE_2", "ENVIRONMENT_TEST_VARIABLE",], $this->env->names());
+    }
+
+    /** Ensure all() returns the expected variables. */
+    public function testAll1(): void
+    {
+        $mock = function(?string $key = null): array {
+            TestCase::assertNull($key);
+            return [
+                "ENVIRONMENT_TEST_VARIABLE" => "value1",
+                "ENVIRONMENT_TEST_VARIABLE_2" => "value2",
+            ];
+        };
+
+        $this->mockFunction("getenv", $mock);
+
+        self::assertEquals(
+            [
+                "ENVIRONMENT_TEST_VARIABLE_2" => "value2",
+                "ENVIRONMENT_TEST_VARIABLE" => "value1",
+            ],
+            $this->env->all()
+        );
+    }
 }

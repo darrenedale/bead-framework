@@ -1,6 +1,7 @@
 <?php
 
 use Bead\Core\Binders\Crypter;
+use Bead\Core\Binders\Environment;
 use Bead\Core\Binders\Logger;
 use Bead\Web\RequestProcessors\CheckMaintenanceMode;
 use Bead\Web\RequestProcessors\LogRequestDuration;
@@ -20,6 +21,7 @@ return [
     "binders" => [
         Logger::class,
         Crypter::class,
+        Environment::class,
     ],
 
     // define additional pre- and post-processors that get to see the request before it's routed (note that by default

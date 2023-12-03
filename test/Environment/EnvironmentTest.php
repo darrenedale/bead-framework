@@ -19,7 +19,10 @@ use Mockery;
 final class EnvironmentTest extends TestCase
 {
     /** @var string[] content for the test environment provider. */
-    private const TestEnvironment = ["KEY_1" => "value-1",];
+    private const TestEnvironment = [
+        "KEY_1" => "value-1",
+        "KEY_3" => "third-value",
+    ];
 
     /** @var Environment The environment under test. */
     private Environment $env;
@@ -53,7 +56,7 @@ final class EnvironmentTest extends TestCase
         self::assertEquals("value-1", $this->env->get("KEY_1"));
     }
 
-    /** Ensure get() retruns an empty string for a key that does not exist in the environment. */
+    /** Ensure get() returns an empty string for a key that does not exist in the environment. */
     public function testGet2(): void
     {
         self::assertEquals("", $this->env->get("KEY_2"));
@@ -76,13 +79,11 @@ final class EnvironmentTest extends TestCase
     /** Ensure get() logs a warning if a provider throws. */
     public function testGet5(): void
     {
-        $messageLogged = false;
-
         $provider = new class([]) extends StaticArray
         {
-            public function has(string $key): bool
+            public function has(string $name): bool
             {
-                throw new EnvironmentException("Unable to check for variable {$key}.");
+                throw new EnvironmentException("Unable to check for variable {$name}.");
             }
         };
 
@@ -123,5 +124,51 @@ final class EnvironmentTest extends TestCase
         $this->env->addSource(new StaticArray(["KEY_2" => "value-2",]));
         self::assertTrue($this->env->has("KEY_1"));
         self::assertTrue($this->env->has("KEY_2"));
+    }
+
+    /** Ensure names() returns the names of all the variables in a single-source environment. */
+    public function testNames1(): void
+    {
+        self::assertEqualsCanonicalizing(array_keys(self::TestEnvironment), $this->env->names());
+    }
+
+    /** Ensure names() returns the names of all the variables from all sources. */
+    public function testNames2(): void
+    {
+        $this->env->addSource(new StaticArray(["KEY_2" => "value-2",]));
+        self::assertEqualsCanonicalizing([... array_keys(self::TestEnvironment), "KEY_2",], $this->env->names());
+    }
+
+    /** Ensure names() skips names it's already encountered (regression coverage). */
+    public function testNames3(): void
+    {
+        $this->env->addSource(new StaticArray(["KEY_1" => "value-1A",]));
+        self::assertEqualsCanonicalizing(array_keys(self::TestEnvironment), $this->env->names());
+    }
+
+    /** Ensure all() returns all the variables in a single-source environment. */
+    public function testAll1(): void
+    {
+        self::assertEquals(self::TestEnvironment, $this->env->all());
+    }
+
+    /** Ensure all() returns all the variables from all sources. */
+    public function testAll2(): void
+    {
+        $this->env->addSource(new StaticArray(["KEY_2" => "value-2",]));
+        $expected = self::TestEnvironment;
+        $expected["KEY_2"] = "value-2";
+        self::assertEquals($expected, $this->env->all());
+    }
+
+    /** Ensure all() applies the variable precedence rules. */
+    public function testAll3(): void
+    {
+        // overwrites KEY_1 and adds KEY_2; KEY_3 should still come from the original source
+        $this->env->addSource(new StaticArray(["KEY_1" => "value-1A", "KEY_2" => "value-2",]));
+        $expected = self::TestEnvironment;
+        $expected["KEY_1"] = "value-1A";
+        $expected["KEY_2"] = "value-2";
+        self::assertEquals($expected, $this->env->all());
     }
 }

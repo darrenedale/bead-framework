@@ -107,4 +107,48 @@ final class FileTest extends TestCase
         self::expectExceptionMessage("Varaible name 'key_1' at line 5 has been defined previously in '{$envFile->fileName()}'.");
         $envFile->parse();
     }
+
+    /** Ensure names() returns the expected variable names. */
+    public function testNames1(): void
+    {
+        self::assertEquals(
+            [
+                "key_1",
+                "key_2",
+                "key_3",
+                "key_4",
+                "key_5",
+                "key_6",
+                "key_7",
+                "key_8",
+                "key_9",
+                "key_a",
+                "key_b",
+                "key_c",
+            ],
+            $this->envFile->names()
+        );
+    }
+
+    /** Ensure all() returns the expected variables. */
+    public function testAll1(): void
+    {
+        self::assertEquals(
+            [
+                "key_1" => "value_1",
+                "key_2" => "value_2",
+                "key_3" => "value_3",
+                "key_4" => "value_4",
+                "key_5" => "value_5",
+                "key_6" => "value_6",
+                "key_7" => " value_7 ",
+                "key_8" => " value_8 ",
+                "key_9" => "",
+                "key_a" => "",
+                "key_b" => "",
+                "key_c" => "a value with an = in it",
+            ],
+            $this->envFile->all()
+        );
+    }
 }
