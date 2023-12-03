@@ -2,9 +2,6 @@
 
 namespace Bead\Exceptions\Http;
 
-use Bead\Web\Request;
-use Throwable;
-
 /** Exception thrown when a request fails CSRF verification. */
 class CsrfTokenVerificationException extends HttpException
 {
