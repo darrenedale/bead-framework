@@ -3,11 +3,15 @@
 namespace Bead\Core;
 
 use Bead\Contracts\Binder;
+use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\ErrorHandler as BeadErrorHandler;
 use Bead\Database\Connection;
+use Bead\Environment\Environment;
+use Bead\Environment\Sources\Environment as EnvironmentSource;
+use Bead\Environment\Sources\File;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -83,6 +87,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
         }
 
         $this->m_appRoot = $realAppRoot;
+        $this->initialiseEnvironment();
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->bindServices();
     }
@@ -104,6 +109,24 @@ abstract class Application implements ServiceContainer, ContainerInterface
         return (self::$s_instance instanceof static) ? self::$s_instance : null;
     }
 
+    /**
+     * Initialise the app environment so that the Env facade is available while config is being loaded.
+     *
+     * @return void
+     * @throws ServiceAlreadyBoundException
+     */
+    protected function initialiseEnvironment(): void
+    {
+        $env = new Environment();
+        $env->addSource(new EnvironmentSource());
+
+        if (file_exists("{$this->rootDir()}/.env")) {
+            $env->addSource(new File("{$this->rootDir()}/.env"));
+        }
+
+        $this->bindService(EnvironmentContract::class, $env);
+    }
+
     /** @throws ServiceAlreadyBoundException */
     private function bindServices(): void
     {
@@ -113,7 +136,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
             return;
         }
 
-        // instantiate all binders before bnding their services
+        // instantiate all binders before binding their services
         $instances = [];
 
         foreach ($binders as $binder) {
@@ -141,7 +164,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @throws RuntimeException If an unreadable or invalid configuration file is found.
      */
-    protected function loadConfig(string $path): void
+    private function loadConfig(string $path): void
     {
         $this->m_config = [];
 
@@ -154,7 +177,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
                 throw new RuntimeException("config file '{$configFile->getFilename()}' is not valid or is not readable.");
             }
 
-            $this->m_config[$configFile->getBasename(".php")] = include($configFile->getRealPath());
+            $this->m_config[$configFile->getBasename(".php")] = include $configFile->getRealPath();
         }
     }
 

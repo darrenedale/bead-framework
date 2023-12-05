@@ -15,6 +15,7 @@ use Bead\Exceptions\EnvironmentException;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 
+use Bead\Exceptions\ServiceNotFoundException;
 use function array_key_exists;
 use function Bead\Helpers\Iterable\all;
 use function get_class;
@@ -60,22 +61,18 @@ class Environment implements Binder
      */
     protected function sourceConfig(string $source, Application $app): array
     {
-        static $config = null;
-
-        if (null === $config) {
-            $config = $app->config("env.sources");
-        }
+        $config = $app->config("env.sources");
 
         if (!is_array($config)) {
-            throw new InvalidConfigurationException("env.sources", "Expected configuration for environment sources to be array, found " . get_class($config));
+            throw new InvalidConfigurationException("env.sources", "Expected configuration for environment sources to be an array, found " . gettype($config));
         }
 
         if (!array_key_exists($source, $config)) {
-            throw new InvalidConfigurationException("env.sources", "Expected configuration for source {$source}, none found");
+            throw new InvalidConfigurationException("env.sources", "Expected configuration for source \"{$source}\", none found");
         }
 
         if (!is_array($config[$source])) {
-            throw new InvalidConfigurationException("env.sources", "Expected configuration for source {$source} to be array, found " . gettype($config[$source]));
+            throw new InvalidConfigurationException("env.sources", "Expected configuration for source \"{$source}\" to be an array, found " . gettype($config[$source]));
         }
 
         return $config[$source];
@@ -102,11 +99,11 @@ class Environment implements Binder
         $path = realpath($app->rootDir() . "/{$config["path"]}");
 
         if (false === $path) {
-            throw new InvalidConfigurationException("env.sources", "Expecting valid path for File environment source, found '{$config["path"]}'");
+            throw new InvalidConfigurationException("env.sources", "Expecting valid path for File environment source, found \"{$config["path"]}\"");
         }
 
         if (!str_starts_with($path, $app->rootDir())) {
-            throw new InvalidConfigurationException("env.sources", "Expecting path inside application root directory, found '{$config["path"]}'");
+            throw new InvalidConfigurationException("env.sources", "Expecting path inside application root directory, found \"{$config["path"]}\"");
         }
 
         try {
@@ -171,27 +168,30 @@ class Environment implements Binder
      * Create the Environment service from the env config.
      *
      * @param Application $app
-     * @return BeadEnvironment
      * @throws InvalidConfigurationException
      */
-    protected function createEnvironment(Application $app): BeadEnvironment
+    protected function addEnvironmentSources(Application $app): void
     {
-        $env = new BeadEnvironment();
+        try {
+            $env = $app->service(EnvironmentContract::class);
+        } catch (ServiceNotFoundException) {
+            $env = new BeadEnvironment();
+            /** @psalm-suppress MissingThrowsDocblock we already know it's not bound */
+            $app->bindService(EnvironmentContract::class, $env);
+        }
 
         foreach ($this->environmentSources($app) as $source) {
             $env->addSource($this->createSource($this->sourceConfig($source, $app), $app));
         }
-
-        return $env;
     }
 
     /**
      * Bind the service to the Environment contract.
      * @throws InvalidConfigurationException
-     * @throws ServiceAlreadyBoundException
      */
     public function bindServices(Application $app): void
     {
-        $app->bindService(EnvironmentContract::class, $this->createEnvironment($app));
+        // the Application class sets up a basic environment, so we just add sources
+        $this->addEnvironmentSources($app);
     }
 }
