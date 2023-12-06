@@ -13,12 +13,10 @@ use Bead\Environment\Sources\File;
 use Bead\Environment\Sources\StaticArray;
 use Bead\Exceptions\EnvironmentException;
 use Bead\Exceptions\InvalidConfigurationException;
-use Bead\Exceptions\ServiceAlreadyBoundException;
-
 use Bead\Exceptions\ServiceNotFoundException;
+
 use function array_key_exists;
 use function Bead\Helpers\Iterable\all;
-use function get_class;
 use function gettype;
 use function is_array;
 use function is_string;
@@ -109,7 +107,7 @@ class Environment implements Binder
         try {
             return new File($path);
         } catch (EnvironmentException $err) {
-            throw new InvalidConfigurationException("Exception parsing environment file \"{$path}\": {$err->getMessage()}", previous: $err);
+            throw new InvalidConfigurationException("env.sources", "Exception parsing environment file \"{$path}\": {$err->getMessage()}", previous: $err);
         }
     }
 
@@ -160,7 +158,7 @@ class Environment implements Binder
             "file" => $this->createFileSource($config, $app),
             "array" => $this->createArraySource($config, $app),
             "environment" => new EnvironmentSource(),
-            default => throw new InvalidConfigurationException("env.sources", "Expecting valid environment source driver, found {$config["driver"]}")
+            default => throw new InvalidConfigurationException("env.sources", "Expecting valid environment source driver, found \"{$config["driver"]}\"")
         };
     }
 

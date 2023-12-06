@@ -12,6 +12,7 @@ use Bead\Database\Connection;
 use Bead\Environment\Environment;
 use Bead\Environment\Sources\Environment as EnvironmentSource;
 use Bead\Environment\Sources\File;
+use Bead\Exceptions\EnvironmentException;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -110,10 +111,15 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
-     * Initialise the app environment so that the Env facade is available while config is being loaded.
+     * Initialise the core app environment so that Env is available as early as possible.
+     *
+     * The default implementation sets up an environment that has the platform environment variables plus the variables
+     * defined in .env in the application root. Reimplement this method if you want to do something different. The
+     * Environment binder, if/when run, wil **add** to this environment the sources defined in the env.php config file.
      *
      * @return void
      * @throws ServiceAlreadyBoundException
+     * @throws EnvironmentException if the .env file in the app root is not valid
      */
     protected function initialiseEnvironment(): void
     {

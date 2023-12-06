@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace BeadTests\Core\Binders;
 
+use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Core\Application;
-use Bead\Core\Binders\Environment;
-use Bead\Environment\Sources\File;
+use Bead\Core\Binders\Environment as EnvironmentBinder;
+use Bead\Environment\Environment;
+use Bead\Environment\Sources\Environment as EnvironmentSource;
+use Bead\Environment\Sources\File as FileSource;
+use Bead\Environment\Sources\StaticArray as StaticArraySource;
 use Bead\Exceptions\InvalidConfigurationException;
+use Bead\Exceptions\ServiceNotFoundException;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use Mockery;
@@ -15,11 +20,13 @@ use Mockery\MockInterface;
 
 class EnvironmentTest extends TestCase
 {
-    private Environment $environment;
+    private const TestArrayEnvironmentSource = ["BEAD" => "FRAMEWORK",];
+
+    private EnvironmentBinder $environment;
 
     public function setUp(): void
     {
-        $this->environment = new Environment();
+        $this->environment = new EnvironmentBinder();
     }
 
     public function tearDown(): void
@@ -41,6 +48,7 @@ class EnvironmentTest extends TestCase
     public function testEnvironmentSources1(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("config")
             ->with("env.environments")
             ->once()
@@ -54,6 +62,7 @@ class EnvironmentTest extends TestCase
     public function testEnvironmentSources2(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("config")
             ->with("env.environments")
             ->once()
@@ -69,6 +78,7 @@ class EnvironmentTest extends TestCase
     public function testEnvironmentSources3(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("config")
             ->with("env.environments")
             ->once()
@@ -84,6 +94,7 @@ class EnvironmentTest extends TestCase
     public function testSourceConfig1(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("config")
             ->with("env.sources")
             ->twice()
@@ -112,6 +123,7 @@ class EnvironmentTest extends TestCase
     public function testSourceConfig2(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("config")
             ->with("env.sources")
             ->once()
@@ -127,6 +139,7 @@ class EnvironmentTest extends TestCase
     public function testSourceConfig3(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("config")
             ->with("env.sources")
             ->once()
@@ -142,6 +155,7 @@ class EnvironmentTest extends TestCase
     public function testSourceConfig4(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("config")
             ->with("env.sources")
             ->once()
@@ -161,6 +175,7 @@ class EnvironmentTest extends TestCase
     public function testSourceConfig5(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("config")
             ->with("env.sources")
             ->once()
@@ -176,13 +191,14 @@ class EnvironmentTest extends TestCase
     public function testCreateFileSource1(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("rootDir")
             ->twice()
             ->andReturn(__DIR__);
 
         $environment = new XRay($this->environment);
         $file = $environment->createFileSource(["path" => "files/test-environment-file-01.env",], $app);
-        self::assertInstanceOf(File::class, $file);
+        self::assertInstanceOf(FileSource::class, $file);
         self::assertTrue($file->has("BEAD"));
         self::assertEquals("FRAMEWORK", $file->get("BEAD"));
         self::assertCount(1, $file->all());
@@ -210,6 +226,7 @@ class EnvironmentTest extends TestCase
     public function testCreateFileSource4(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("rootDir")
             ->once()
             ->andReturn(__DIR__);
@@ -224,6 +241,7 @@ class EnvironmentTest extends TestCase
     public function testCreateFileSource5(): void
     {
         $app = $this->createMockApplication();
+
         $app->shouldReceive("rootDir")
             ->twice()
             ->andReturn(__DIR__ . "/files");
@@ -238,6 +256,249 @@ class EnvironmentTest extends TestCase
     /** Ensure createFileSource() throws when the File source constructor throws. */
     public function testCreateFileSource6(): void
     {
+        $app = $this->createMockApplication();
 
+        $app->shouldReceive("rootDir")
+            ->twice()
+            ->andReturn(__DIR__);
+
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessageMatches("#^Exception parsing environment file \".*/files/test-environment-file-02\\.env\": .*\$#");
+        $environment = new XRay($this->environment);
+        // contains an invalid key
+        $environment->createFileSource(["path" => "files/test-environment-file-02.env",], $app);
+    }
+
+    /** Ensure a StaticArray environment source can successfully be created. */
+    public function testCreateArraySource1(): void
+    {
+        $environment = new XRay($this->environment);
+        $arrayEnv = $environment->createArraySource(["env" => self::TestArrayEnvironmentSource,], $this->createMockApplication());
+        self::assertInstanceOf(StaticArraySource::class, $arrayEnv);
+        self::assertTrue($arrayEnv->has("BEAD"));
+        self::assertEquals("FRAMEWORK", $arrayEnv->get("BEAD"));
+        self::assertCount(1, $arrayEnv->all());
+    }
+
+    /** Ensure createArraySource() throws when the config has no env key. */
+    public function testCreateArraySource2(): void
+    {
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessage("Expecting array of environment variables for StaticArray environment source, found none");
+        $environment = new XRay($this->environment);
+        $environment->createArraySource(["env " => self::TestArrayEnvironmentSource,], $this->createMockApplication());
+    }
+
+    /** Ensure createArraySource() throws when the config's env key is not an array. */
+    public function testCreateArraySource3(): void
+    {
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessage("Expecting array of environment variables for StaticArray environment source, found string");
+        $environment = new XRay($this->environment);
+        $environment->createArraySource(["env" => "BEAD",], $this->createMockApplication());
+    }
+
+    /** Ensure createArraySource() throws when the StaticArray source constructor throws. */
+    public function testCreateArraySource4(): void
+    {
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessageMatches("/^Exception creating array environment source: .*\$/");
+        $environment = new XRay($this->environment);
+        $environment->createArraySource(["env" => ["BEAD" => ["FRAMEWORK",],],], $this->createMockApplication());
+    }
+
+    public static function dataForTestCreateSource1(): iterable
+    {
+        yield "file" => [["driver" => "file", "path" => "/files/test-environment-file-01.env",], FileSource::class,];
+        yield "array" => [["driver" => "array", "env" => self::TestArrayEnvironmentSource,], StaticArraySource::class,];
+        yield "env" => [["driver" => "environment",], EnvironmentSource::class,];
+    }
+
+    /**
+     * Ensure we get the appropriate source type.
+     *
+     * @dataProvider dataForTestCreateSource1
+     * @param array $config
+     * @param class-string $class The source class we expect to be created.
+     */
+    public function testCreateSource1(array $config, string $class): void
+    {
+        $app = $this->createMockApplication();
+
+        $app->shouldReceive("rootDir")
+            ->andReturn(__DIR__)
+            ->byDefault();
+
+        $environment = new XRay($this->environment);
+        self::assertInstanceOf($class, $environment->createSource($config, $app));
+    }
+
+    /** Ensure createSource() throws when the driver is not recognised. */
+    public function testCreateSource2(): void
+    {
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessage("Expecting valid environment source driver, found \"none\"");
+        $environment = new XRay($this->environment);
+        $environment->createSource(["driver" => "none"], $this->createMockApplication());
+    }
+
+    /** Ensure createSource() throws when the driver is not specified. */
+    public function testCreateSource3(): void
+    {
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessage("Expecting valid environment source driver, none found");
+        $environment = new XRay($this->environment);
+        $environment->createSource(["driver " => "none",], $this->createMockApplication());
+    }
+
+    /** Ensure createSource() throws when the driver is not a string. */
+    public function testCreateSource4(): void
+    {
+        self::expectException(InvalidConfigurationException::class);
+        self::expectExceptionMessage("Expecting valid environment source driver, found array");
+        $environment = new XRay($this->environment);
+        $environment->createSource(["driver" => ["none",],], $this->createMockApplication());
+    }
+
+    /** Ensure existing service is used if bound. */
+    public function testAddEnvironmentSources1(): void
+    {
+        $env = Mockery::mock(Environment::class);
+
+        $env->shouldReceive("addSource")
+            ->with(Mockery::on(fn (mixed $source): bool => $source instanceof StaticArraySource))
+            ->once();
+
+        $app = $this->createMockApplication();
+
+        $app->shouldReceive("service")
+            ->with(EnvironmentContract::class)
+            ->once()
+            ->andReturn($env);
+
+        $app->shouldReceive("config")
+            ->with("env.environments")
+            ->once()
+            ->andReturn(["array"]);
+
+        $app->shouldReceive("config")
+            ->with("env.sources")
+            ->once()
+            ->andReturn(["array" => ["driver" => "array", "env" => self::TestArrayEnvironmentSource,]]);
+
+        $environmentBinder = new XRay($this->environment);
+        $environmentBinder->addEnvironmentSources($app);
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure a new service is bound if there isn't one already. */
+    public function testAddEnvironmentSources2(): void
+    {
+        $app = $this->createMockApplication();
+
+        $app->shouldReceive("service")
+            ->with(EnvironmentContract::class)
+            ->once()
+            ->andThrow(new ServiceNotFoundException(EnvironmentContract::class, ""));
+
+        $app->shouldReceive("config")
+            ->with("env.environments")
+            ->once()
+            ->andReturn(["array",]);
+
+        $app->shouldReceive("config")
+            ->with("env.sources")
+            ->once()
+            ->andReturn(["array" => ["driver" => "array", "env" => self::TestArrayEnvironmentSource,],]);
+
+        $app->shouldReceive("bindService")
+            ->once()
+            ->with(EnvironmentContract::class, Mockery::on(fn (mixed $env): bool => $env instanceof Environment));
+
+        $environmentBinder = new XRay($this->environment);
+        $environmentBinder->addEnvironmentSources($app);
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure configured sources are added. */
+    public function testAddEnvironmentSources3(): void
+    {
+        $env = Mockery::mock(Environment::class);
+
+        $env->shouldReceive("addSource")
+            ->with(Mockery::on(fn (mixed $source): bool => $source instanceof StaticArraySource))
+            ->once()
+            ->ordered();
+
+        $env->shouldReceive("addSource")
+            ->with(Mockery::on(fn (mixed $source): bool => $source instanceof FileSource))
+            ->once()
+            ->ordered();
+
+        $app = $this->createMockApplication();
+
+        $app->shouldReceive("rootDir")
+            ->andReturn(__DIR__)
+            ->byDefault();
+
+        $app->shouldReceive("service")
+            ->with(EnvironmentContract::class)
+            ->once()
+            ->andReturn($env);
+
+        $app->shouldReceive("config")
+            ->with("env.environments")
+            ->once()
+            ->andReturn(["array", "file",]);
+
+        $app->shouldReceive("config")
+            ->with("env.sources")
+            ->twice()
+            ->andReturn(
+                [
+                    "array" => [
+                        "driver" => "array",
+                        "env" => self::TestArrayEnvironmentSource,
+                    ],
+                    "file" => [
+                        "driver" => "file",
+                        "path" => "files/test-environment-file-01.env",
+                    ],
+                ]
+            );
+
+        $environmentBinder = new XRay($this->environment);
+        $environmentBinder->addEnvironmentSources($app);
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure bindServices() delegates to addEnvironmentSources() */
+    public function testBindServices(): void
+    {
+        $env = Mockery::mock(Environment::class);
+
+        $env->shouldReceive("addSource")
+            ->with(Mockery::on(fn (mixed $source): bool => $source instanceof StaticArraySource))
+            ->once();
+
+        $app = $this->createMockApplication();
+
+        $app->shouldReceive("service")
+            ->with(EnvironmentContract::class)
+            ->once()
+            ->andReturn($env);
+
+        $app->shouldReceive("config")
+            ->with("env.environments")
+            ->once()
+            ->andReturn(["array"]);
+
+        $app->shouldReceive("config")
+            ->with("env.sources")
+            ->once()
+            ->andReturn(["array" => ["driver" => "array", "env" => self::TestArrayEnvironmentSource,]]);
+
+        $this->environment->bindServices($app);
+        self::markTestAsExternallyVerified();
     }
 }
