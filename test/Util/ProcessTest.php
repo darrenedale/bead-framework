@@ -712,6 +712,7 @@ class ProcessTest extends TestCase
         $stdOut = "";
         $stdErr = "";
 
+        /** @var Process|null $process */
         $process = null;
         $process = new Process(
             $command,
