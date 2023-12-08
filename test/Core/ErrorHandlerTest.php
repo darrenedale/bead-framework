@@ -43,6 +43,13 @@ class ErrorHandlerTest extends TestCase
         return $mock;
     }
 
+    /** Ensure the default implementation of shouldReport() returns true. */
+    public function testShouldReport1(): void
+    {
+        $handler = new XRay($this->handler);
+        self::assertTrue($handler->shouldReport(new RuntimeException("Test exception")));
+    }
+
     /** Ensure shouldDisplay() returns true when the app is in debug mode. */
     public function testShouldDisplay1(): void
     {
@@ -532,7 +539,7 @@ class ErrorHandlerTest extends TestCase
     /**
      * Ensure handleException() outputs the exception details to stderr for non-web applications.
      */
-    public function testOutputToStream(): void
+    public function testOutputToStream1(): void
     {
         $bufferCallbackCalled = false;
         $handler = new XRay($this->handler);

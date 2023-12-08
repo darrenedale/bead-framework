@@ -18,6 +18,17 @@ use Throwable;
 class ErrorHandler implements ErrorHandlerContract
 {
     /**
+     * Determine whether an exception should be reported.
+     *
+     * @param Throwable $error
+     * @return bool
+     */
+    protected function shouldReport(Throwable $error): bool
+    {
+        return true;
+    }
+
+    /**
      * Determine whether the provided exception should be displayed.
      *
      * The default implementation will display the error if the Application is in debug mode.
@@ -254,7 +265,10 @@ HTML;
      */
     public function handleException(Throwable $error): void
     {
-        $this->report($error);
+        if ($this->shouldReport($error)) {
+            $this->report($error);
+        }
+
         $displayed = false;
 
         if (Application::instance() instanceof WebApplication && $error instanceof Response) {
