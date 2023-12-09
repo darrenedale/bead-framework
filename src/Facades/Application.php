@@ -22,7 +22,7 @@ use LogicException;
  * @method static void setMinimumPhpVersion(string $version)
  * @method static void bindService(string $service, mixed $instance)
  * @method static void replaceService(string $service, mixed $instance)
- * @method static bool service(string $service)
+ * @method static mixed service(string $service)
  * @method static bool has(string $id)
  * @method static mixed get(string $id)
  * @method static TranslatorContract|null translator(string $id)
