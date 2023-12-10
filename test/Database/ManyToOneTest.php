@@ -2,11 +2,11 @@
 
 namespace Database;
 
-use BeadTests\Framework\TestCase;
-use Bead\Application;
+use Bead\Core\Application;
 use Bead\Database\Connection;
 use Bead\Database\ManyToOne;
 use Bead\Database\Model;
+use BeadTests\Framework\TestCase;
 use Mockery;
 
 class ManyToOneTest extends TestCase

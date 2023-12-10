@@ -2,7 +2,7 @@
 
 namespace Bead\Responses;
 
-use Bead\Exceptions\HttpException;
+use Bead\Exceptions\Http\HttpException;
 
 /**
  * Trait for responses that simply send the status, headers and content without any further transformation.

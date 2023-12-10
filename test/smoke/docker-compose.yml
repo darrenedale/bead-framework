@@ -1,31 +1,23 @@
 version: "3.4"
+name: "bead-framework-smoke-test"
 
 services:
   web:
-    container_name: bead-smoke-web
-    build:
-      dockerfile: Dockerfile
-      target: web
+    container_name: "bead-smoke-test-web"
     depends_on:
-      - fpm
-    volumes:
-      - ../../:/bead
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    working_dir: /bead
+      - "fpm"
+    image: caddy
     ports:
       - "6080:80"
+    volumes:
+      - "../../:/srv/bead"
+      - "./docker/web/Caddyfile:/etc/caddy/Caddyfile"
 
   fpm:
-    container_name: bead-smoke-fpm
+    container_name: "bead-smoke-test-fpm"
     build:
-      dockerfile: Dockerfile
-      target: fpm
+      context: "./"
+      dockerfile: "docker/fpm/Dockerfile"
+    working_dir: "/srv/bead"
     volumes:
-      - ../../:/bead
-      - ./xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini:cached
-    working_dir: /bead
-    environment:
-      PHP_IDE_CONFIG: serverName=bead-smoke-test
-    extra_hosts:
-      - mail.bead-smoke-test.local:host-gateway
-      - xdebug-client:host-gateway
+      - "../../:/srv/bead"

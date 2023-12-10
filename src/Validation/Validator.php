@@ -12,6 +12,7 @@ namespace Bead\Validation;
 
 use ArgumentCountError;
 use DateTime;
+use DateTimeImmutable;
 use Bead\Exceptions\ValidationException;
 use Bead\Validation\Rules\After;
 use Bead\Validation\Rules\Alpha;
@@ -60,8 +61,12 @@ use Exception;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionClass;
+use ReflectionIntersectionType;
+use ReflectionNamedType;
+use ReflectionUnionType;
 use RuntimeException;
-use TypeError;
+
+use function Bead\Helpers\Iterable\grammaticalImplode;
 
 /**
  * A class that validates datasets.
@@ -219,6 +224,7 @@ class Validator
     /**
      * Check whether the validator is currently validating the data.
      *
+     * @api
      * @return bool `true` if it is, `false` otherwise.
      */
     public function isValidating(): bool
@@ -242,6 +248,7 @@ class Validator
      *
      * Setting fresh data clears any previous errors and validated data.
      *
+     * @api
      * @param array $data The data to validate.
      */
     public function setData(array $data): void
@@ -261,6 +268,7 @@ class Validator
     /**
      * Fetch the data under validation.
      *
+     * @api
      * @return array The data.
      */
     public function data(): array
@@ -271,10 +279,11 @@ class Validator
     /**
      * Fetch the rules the Validator will use to validate the dataset.
      *
+     * @api
      * @param string|null $field The field whose rules are sought. Defaults to `null` to return all the rules, keyed by
      * field.
      *
-     * @return array The rules (for the requested field), or `null` if the requested field is not under validation.
+     * @return array|null The rules (for the requested field), or `null` if the requested field is not under validation.
      */
     public function rules(?string $field = null): ?array
     {
@@ -284,6 +293,7 @@ class Validator
     /**
      * Fetch the fields under validation.
      *
+     * @api
      * @return array<string> The fields for which the validator contains rules.
      */
     public function fieldsUnderValidation(): array
@@ -311,6 +321,7 @@ class Validator
      *
      * If not field is specified, all errors are cleared.
      *
+     * @api
      * @param string|null $field The field to reset.
      */
     public function clearErrors(?string $field = null): void
@@ -327,6 +338,7 @@ class Validator
      *
      * If no field is given, all the remaining rules for all fields are skipped.
      *
+     * @api
      * @param string|null $field The field whose rules should be skipped.
      */
     public function skipRemainingRules(?string $field = null): void
@@ -354,6 +366,7 @@ class Validator
      * rules that failed, keyed by field, while validated() will provide the validated data if the validation passed. If
      * validation passes errors() will return an empty array; if validation fails, validated() will throw.
      *
+     * @api
      * @throws ValidationException If the data does not pass validation.
      * @throws LogicException if called while validation is already taking place.
      */
@@ -422,6 +435,7 @@ class Validator
     /**
      * Check whether the data passes validation.
      *
+     * @api
      * @return bool true if the data passes, false otherwise.
      * @throws LogicException if called while validation is taking place.
      */
@@ -435,7 +449,7 @@ class Validator
         if (!$this->hasValidated()) {
             try {
                 $this->validate();
-            } catch (ValidationException $err) {
+            } catch (ValidationException) {
                 return false;
             }
         }
@@ -446,6 +460,7 @@ class Validator
     /**
      * Check whether the validator fails.
      *
+     * @api
      * @return bool true if the original data fails validation, false if it passes.
      * @throws LogicException if called while validation is taking place.
      */
@@ -479,6 +494,7 @@ class Validator
      *
      * @return array<string, mixed> The validated data.
      *
+     * @api
      * @throws ValidationException if the data is not valid.
      * @throws LogicException if called while validation is taking place.
      */
@@ -507,11 +523,84 @@ class Validator
      * The errors are keyed by field. There can be multiple errors per field. If the data has not yet been subjected to
      * validation, the error messages will be empty.
      *
+     * @api
      * @return array<string, array<string>> The messages.
      */
     public function errors(): array
     {
         return $this->m_errors;
+    }
+
+    /**
+     * Attempt to onvert a rule constructor argument to the required type.
+     *
+     * Returns a tuple of the converted value (if possible) and whether or not it was possible to convert.
+     *
+     * @param string $arg The value provided in the rule definition string.
+     * @param ReflectionNamedType $type The type it needs to be converted to.
+     *
+     * @return array{0:mixed,1:bool}
+     */
+    private static function convertRuleConstructorArg(string $arg, ReflectionNamedType $type): array
+    {
+        switch ($type->getName()) {
+            case "int":
+                $arg = filter_var($arg, FILTER_VALIDATE_INT);
+                return [$arg, false !== $arg,];
+
+            // scalar double can't be a named type - type declarations don't support type aliases
+            case "float":
+                $arg = filter_var($arg, FILTER_VALIDATE_FLOAT);
+                return [$arg, false !== $arg,];
+
+            // scalar boolean can't be a named type - type declarations don't support type aliases
+            case "bool":
+                // filter_var accepts empty or whitespace strings as false; we don't want that
+                if ("" === trim($arg)) {
+                    return [$arg, false,];
+                }
+
+                $arg = filter_var($arg, FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]);
+                return [$arg, null !== $arg,];
+
+            case "string":
+                return [$arg, true,];
+
+            case "array":
+                if ("" === $arg) {
+                    return [[], true,];
+                }
+
+                return [explode(",", $arg), true,];
+
+            case "DateTime":
+            case "DateTimeInterface":
+                // filter_var() accepts empty or whitespace strings as a being "now"; we don't want that
+                if ("" === trim($arg)) {
+                    return [null, false,];
+                }
+
+                try {
+                    return [new DateTime($arg), true,];
+                } catch (Exception $err) {
+                    return [null, false,];
+                }
+
+            case "DateTimeImmutable":
+                // filter_var() accepts empty or whitespace strings as a being "now"; we don't want that
+                if ("" === trim($arg)) {
+                    return [null, false,];
+                }
+
+                try {
+                    return [new DateTimeImmutable($arg), true,];
+                } catch (Exception $err) {
+                    return [null, false,];
+                }
+
+            default:
+                return [null, false,];
+        }
     }
 
     /**
@@ -549,49 +638,60 @@ class Validator
                 break;
             }
 
-            switch ($constructorParams[$idx]->getType()->getName()) {
-                case "int":
-                    $args[$idx] = filter_var($args[$idx], FILTER_VALIDATE_INT);
+            $type = $constructorParams[$idx]->getType();
 
-                    if (false === $args[$idx]) {
-                        throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter must be an int.");
-                    }
+            // intersection types aren't viable for rule constructors. they only make sense for object types, and the
+            // only object type supported is DateTime, so there's nothing it can legitimately intersect with
+            //
+            // we can't use instanceof because we support PHP 8.0+ and ReflectionIntersectionType was not introduced
+            // until 8.1
+            if ("ReflectionIntersectionType" === get_class($type)) {
+                throw new InvalidArgumentException("The {$constructorParams[$idx]->getName()} parameter cannot be provided using a rule alias because its type is an intersection type.");
+            }
+
+            if ($type instanceof ReflectionUnionType) {
+                $types = $type->getTypes();
+
+                // currently, types are returned in a consistent, but undocumented, order. to ensure we always provide
+                // predictable results, we order the types from the union ourselves
+                // scalar boolean and double can't be a named type - type declarations don't support type aliases
+                $precedence = array_flip([
+                    "int",
+                    "float",
+                    "bool",
+                    "DateTime",
+                    "DateTimeInterface",
+                    "DateTimeImmutable",
+                    "array",
+                    "string",
+                ]);
+
+                usort(
+                    $types,
+                    fn (ReflectionNamedType $first, ReflectionNamedType $second): int => ($precedence[$first->getName()] ?? PHP_INT_MAX) <=> ($precedence[$second->getName()] ?? PHP_INT_MAX)
+                );
+            } else {
+                $types = [$type,];
+            }
+
+            $argConverted = false;
+
+            foreach ($types as $type) {
+                [$arg, $argConverted,] = self::convertRuleConstructorArg($args[$idx], $type);
+
+                if ($argConverted) {
+                    $args[$idx] = $arg;
                     break;
+                }
+            }
 
-                case "float":
-                case "double":
-                    $args[$idx] = filter_var($args[$idx], FILTER_VALIDATE_FLOAT);
-
-                    if (false === $args[$idx]) {
-                        throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter must be a float.");
-                    }
-                    break;
-
-                case "bool":
-                    $args[$idx] = filter_var($args[$idx], FILTER_VALIDATE_BOOLEAN, ["flags" => FILTER_NULL_ON_FAILURE,]);
-
-                    if (!isset($args[$idx])) {
-                        throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter must be a bool.");
-                    }
-                    break;
-
-                case "string":
-                    break;
-
-                case "array":
-                    $args[$idx] = explode(",", $args[$idx]);
-                    break;
-
-                case "DateTime":
-                    try {
-                        $args[$idx] = new DateTime($args[$idx]);
-                    } catch (Exception $err) {
-                        throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter is not a valid DateTime.", 0, $err);
-                    }
-                    break;
-
-                default:
-                    throw new InvalidArgumentException("The {$constructorParams[$idx]->getName()} parameter cannot be provided using a rule alias because its type is {$constructorParams[$idx]->getType()->getName()}.");
+            if (!$argConverted) {
+                $types = grammaticalImplode(
+                    array_map(fn (ReflectionNamedType $type): string => $type->getName(), $types),
+                    ", ",
+                    " or "
+                );
+                throw new InvalidArgumentException("The argument for the {$constructorParams[$idx]->getName()} parameter must be a {$types}.", 0);
             }
         }
 
@@ -601,6 +701,7 @@ class Validator
     /**
      * Add a rule to the validator.
      *
+     * @api
      * @param string $field The field for which the rule applies.
      * @param Rule|string $rule The rule.
      *
@@ -671,6 +772,7 @@ class Validator
      *
      * Your code is marginally faster if you don't use aliases, but other than that there's no difference.
      *
+     * @api
      * @param string $ruleName The name for the rule (its alias).
      * @param string $ruleClass The class name of the Rule object it represents.
      *

@@ -2,8 +2,8 @@
 
 namespace BeadTests\Facades;
 
-use Bead\Application;
 use Bead\Contracts\Encryption\Crypter as CrypterContract;
+use Bead\Core\Application;
 use Bead\Encryption\SerializationMode;
 use Bead\Facades\Crypt;
 use BeadTests\Framework\TestCase;

@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace BeadTests\Helpers;
 
-use Bead\Application;
 use Bead\Contracts\Translator;
+use Bead\Core\Application;
 use BeadTests\Framework\TestCase;
 use Mockery;
-use TypeError;
 
 use function Bead\Helpers\I18n\tr;
 

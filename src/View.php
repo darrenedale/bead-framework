@@ -3,15 +3,16 @@
 namespace Bead;
 
 use Bead\Contracts\Response;
-use Bead\Exceptions\InternalServerErrorException;
+use Bead\Exceptions\Http\InternalServerErrorException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
+use Bead\Facades\WebApplication as WebApp;
 use Bead\Responses\DoesntHaveHeaders;
 use Bead\Responses\NaivelySendsContent;
+use Bead\Web\Application as WebApplication;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
-use TypeError;
 
 use function Bead\Helpers\Iterable\some;
 use function Bead\Helpers\Str\html;
@@ -183,7 +184,7 @@ class View implements Response
      */
     public static function viewDirectory(): string
     {
-        return Application::instance()->rootDir() . "/" . Application::instance()->config("view.directory", "views");
+        return WebApp::rootDir() . "/" . WebApp::config("view.directory", "views");
     }
 
     /**
@@ -489,8 +490,7 @@ class View implements Response
     /**
      * Finish producing content for the current section in the current view's layout.
      *
-     * @throws LogicException if the view does not have a layout
-     * @throws RuntimeException if there is no matching section() call
+     * @throws LogicException if the view does not have a layout or there is no matching section() call
      */
     public static function endSection(): void
     {
@@ -671,11 +671,12 @@ class View implements Response
     /**
      * Add a hidden form element with the current CSRF token to the view.
      *
-     * @throws RuntimeException if the CSRF token is not available needs to be but can't be refreshed
+     * @throws RuntimeException if the CSRF needs to be regenerated but cryptigraphically-secure random bytes cannot be
+     * generated.
      */
     public static function csrf(): void
     {
-        echo "<input type=\"hidden\" name=\"_token\" value=\"" . html(WebApplication::instance()->csrf()) . "\" />";
+        echo "<input type=\"hidden\" name=\"_token\" value=\"" . html(WebApp::csrf()) . "\" />";
     }
 
     /**
@@ -825,7 +826,7 @@ class View implements Response
         try {
             return $this->render();
         } catch (ViewRenderingException $err) {
-            throw new InternalServerErrorException(WebApplication::instance()->request(), "Error rendering view '{$this->name()}': {$err->getMessage()}", previous: $err);
+            throw new InternalServerErrorException(WebApp::request(), "Error rendering view '{$this->name()}': {$err->getMessage()}", previous: $err);
         }
     }
 }

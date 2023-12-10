@@ -6,9 +6,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Database;
 
-use BeadTests\Framework\TestCase;
-use DateTime;
-use Bead\Application;
+use Bead\Core\Application;
 use Bead\Database\Connection;
 use Bead\Database\QueryBuilder;
 use Bead\Exceptions\Database\DuplicateColumnNameException;
@@ -21,6 +19,8 @@ use Bead\Exceptions\Database\InvalidOrderByDirectionException;
 use Bead\Exceptions\Database\InvalidQueryExpressionException;
 use Bead\Exceptions\Database\InvalidTableNameException;
 use Bead\Exceptions\Database\OrphanedJoinException;
+use BeadTests\Framework\TestCase;
+use DateTime;
 use InvalidArgumentException;
 use Mockery;
 use PDO;

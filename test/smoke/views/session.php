@@ -22,4 +22,22 @@ use Bead\View;
     <p>Time is <?= $now ?></p>
     <p>Session ID is <?= html(Session::id()) ?>
     <p>Session ID has <?= (Session::get("session-id") === Session::id() ? "not" : "") ?> been regenerated</p>
+
+    <a href="/session/set">Set the "some data" key</a>
+
+    <h2>String keys</h2>
+    <ul>
+        <?php foreach ($data["session"] ?? [] as $key => $value): ?>
+            <li><?= html($key) ?> = <?= html($value) ?></li>
+        <?php endforeach; ?>
+    </ul>
+
+    <h2>Transient data</h2>
+    <ul>
+        <?php foreach (Session::get("__bead_transient_keys") as $key => $ttl): ?>
+            <li>Key <strong><?= html($key) ?></strong> is transient with value <strong><?= Session::get($key) ?></strong> and has <?= html($ttl) ?> requests to live</li>
+        <?php endforeach; ?>
+    </ul>
+    <a href="/session/transient/add">Add some transient data</a>
+
 <?php View::endSection() ?>

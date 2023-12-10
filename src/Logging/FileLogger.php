@@ -10,12 +10,11 @@ use RuntimeException;
 use SplFileInfo;
 use SplFileObject;
 use Stringable;
+use Throwable;
 
 use function Bead\Helpers\Str\build;
 
-/**
- * Log messages to a named file.
- */
+/** Log messages to a named file. */
 class FileLogger extends PsrAbstractLogger implements LoggerContract
 {
     use HasLogLevel;
@@ -30,7 +29,7 @@ class FileLogger extends PsrAbstractLogger implements LoggerContract
     /** @var string The name of the log file. */
     private string $fileName;
 
-    /** @var SplFileObject The open log file. */
+    /** @var SplFileObject|null The open log file. */
     private ?SplFileObject $file;
 
     /**
@@ -59,7 +58,11 @@ class FileLogger extends PsrAbstractLogger implements LoggerContract
     /** Flush the log write buffer to the file on destruction. */
     public function __destruct()
     {
-        $this->file->fflush();
+        try {
+            $this->file?->fflush();
+        } catch (Throwable) {
+            // do nothing - we've tried to flush the log file, but if it hasn't worked there's not much else we can do
+        }
     }
 
     /**

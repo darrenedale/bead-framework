@@ -2,7 +2,7 @@
 
 namespace Database;
 
-use Bead\Application;
+use Bead\Core\Application;
 use Bead\Database\Connection;
 use Bead\Database\Model;
 use Bead\Database\OneToMany;
