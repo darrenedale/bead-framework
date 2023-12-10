@@ -4,6 +4,7 @@ namespace BeadTests\Email;
 
 use Bead\Email\Header;
 use Bead\Email\Part;
+use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
 
@@ -25,6 +26,7 @@ class PartTest extends TestCase
 
     public function setUp(): void
     {
+        parent::setUp();
         $this->part = new Part(self::TestContent);
     }
 
@@ -71,7 +73,7 @@ class PartTest extends TestCase
     }
 
     /** Ensure we can set the content type. */
-    public function testWithContentType(): void
+    public function testWithContentType1(): void
     {
         self::assertNotEquals("text/html", $this->part->contentType());
         $part = $this->part->withContentType("text/html");
@@ -95,7 +97,7 @@ class PartTest extends TestCase
     public function testWithContentType2(string $contentType): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage("Content type \"{$contentType}\" is not valid.");
+        self::expectExceptionMessage("Expected valid media type, found \"{$contentType}\"");
         $this->part->withContentType($contentType);
     }
 
@@ -163,18 +165,18 @@ class PartTest extends TestCase
     public function testWithContentEncoding2(string $encoding): void
     {
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage("Content encoding \"{$encoding}\" is not valid.");
+        self::expectExceptionMessage("Expecting valid content encoding, found \"{$encoding}\"");
         $this->part->withContentEncoding($encoding);
     }
 
     /** Ensure the content transfer encoding can be retrieved. */
-    public function testContentEncoding(): void
+    public function testContentEncoding1(): void
     {
         self::assertEquals("quoted-printable", $this->part->contentEncoding());
     }
 
     /** Ensure the body can be set. */
-    public function testWithBody(): void
+    public function testWithBody1(): void
     {
         $originalBody = $this->part->body();
         self::assertNotEquals(self::PlainTextContent, $this->part->body());
@@ -185,9 +187,19 @@ class PartTest extends TestCase
     }
 
     /** Ensure the part body can be retrieved. */
-    public function testBody(): void
+    public function testBody1(): void
     {
         self::assertEquals(self::TestContent, $this->part->body());
+    }
+
+    /** Ensure body member is nullified if the message has parts. */
+    public function testBody2(): void
+    {
+        $part = new XRay($this->part);
+        $part->parts = [new Part(self::PlainTextContent),];
+        self::assertIsString($part->body);
+        $this->part->body();
+        self::assertNull($part->body);
     }
 
     /** Ensure a header can be added using name and value. */

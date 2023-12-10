@@ -11,6 +11,7 @@ use Bead\Email\Mime;
 use Bead\Email\MimeBuilder;
 use Bead\Email\Part;
 use Bead\Exceptions\Email\MimeException;
+use Bead\Testing\StaticXRay;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
 
@@ -107,6 +108,14 @@ class MimeBuilderTest extends TestCase
         $builder = $this->builder->withMimeVersion("1.1");
         self::assertEquals(MimeBuilder::MimeVersion10, $this->builder->mimeVersion());
         self::assertEquals("1.1", $builder->mimeVersion());
+    }
+
+    /** Ensure setting MIME version throws with an unsupported version. */
+    public function testWithMimeVersion3(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("Expected supported MIME version, found \"1.1\"");
+        $builder = $this->builder->withMimeVersion("1.1");
     }
 
     /** Ensure we get back the expected line end. */
@@ -218,13 +227,13 @@ class MimeBuilderTest extends TestCase
 
         yield "multipart-message" => [
             (new Message("nobody@example.com", "Nothing"))
-                ->withContentType("multipart/mixed", ["boundary" => "bead-multipart-boundary",])
+                ->withContentType("multipart/mixed", ["boundary" => "\"bead-multipart-boundary\"",])
                 ->withPart(new Part("The first part."))
                 ->withPart(new Part("The second part.")),
             "content-transfer-encoding: quoted-printable\r\n" .
             "to: nobody@example.com\r\n" .
             "subject: Nothing\r\n" .
-            "content-type: multipart/mixed; boundary=bead-multipart-boundary\r\n" .
+            "content-type: multipart/mixed; boundary=\"bead-multipart-boundary\"\r\n" .
             "mime-version: 1.0\r\n" .
             "\r\n" .
             "\r\n" .
@@ -606,12 +615,6 @@ class MimeBuilderTest extends TestCase
     {
         yield "plain-text-message" => [
             new Message("nobody@example.com", "Nothing", "Plain text content."),
-            "content-type: text/plain\n" .
-            "content-transfer-encoding: quoted-printable\n" .
-            "to: nobody@example.com\n" .
-            "subject: Nothing\n" .
-            "mime-version: 1.0\n" .
-            "\n" .
             "Plain text content."
         ];
 
@@ -773,5 +776,25 @@ class MimeBuilderTest extends TestCase
         self::expectException(MimeException::class);
         self::expectExceptionMessage("Message or part has no parts or body.");
         $this->builder->body(new Part());
+    }
+
+    public static function dataForTestUnescapeQuotedHeaderContent(): iterable
+    {
+        yield "double-quoted" => ["\"  bead-framework  \"", "  bead-framework  ",];
+        yield "double-quoted-with-escaped-quotes" => ["\"  \\\"bead-framework\\\"  \"", "  \"bead-framework\"  ",];
+        yield "double-quoted-with-escaped-something-else" => ["\"  \\bead-framework\\\"  \"", "  \\bead-framework\"  ",];
+    }
+
+    /**
+     * Ensure quoted header values are unescaped as expected.
+     *
+     * @dataProvider dataForTestUnescapeQuotedHeaderContent
+     * @param string $quoted
+     * @param string $expected
+     */
+    public function testUnescapeQuotedHeaderContent(string $quoted, string $expected): void
+    {
+        $mimeBuilder = new StaticXRay(MimeBuilder::class);
+        self::assertEquals($expected, $mimeBuilder->unescapeQuotedHeaderContent($quoted));
     }
 }

@@ -81,7 +81,6 @@ final class Mime
         // having these as static vars makes the composed regex easier to read
         static $token = self::Rfc2045TokenPattern;
         static $quotedString = self::Rfc822QuotedStringPattern;
-        static $rxMimeType = null;        // initialised immediately before first use
 
         // a MIME type can be one of the discrete (text, image, audio, video, application) or composite types (message,
         // multipart) an x-token (basically a custom application-specific extension beginning with "x-") or an
@@ -99,11 +98,7 @@ final class Mime
             return true;
         }
 
-        if (null === $rxMimeType) {
-            $rxMimeType = "#^([a-z]+|x-{$token})/({$token})( *; *{$token} *= *(?:{$token}|{$quotedString}))*\$#";
-        }
-
-        return 1 === preg_match($rxMimeType, $type);
+        return 1 === preg_match("#^([a-z]+|x-{$token})/({$token})( *; *{$token} *= *(?:{$token}|{$quotedString}))*\$#", $type);
     }
 
     /** Generate a boundary string that can be used in multipart MIME messages. */

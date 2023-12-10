@@ -94,12 +94,14 @@ class MimeBuilder implements MimeBuilderContract
         $unquoted = substr($quoted,1, -1);
 
         for ($idx = 0; $idx < strlen($unquoted) - 1; ++$idx) {
-            if ("\\" === $unquoted[$idx] && "\"" === $unquoted[$idx + 1]) {
-                // unescape an escaped "
-                $unquoted = substr($unquoted, 0, $idx) . "\"" . substr($unquoted, $idx + 1);
-            } else {
-                // otherwise its escaping something else or is a literal \
-                ++$idx;
+            if ("\\" === $unquoted[$idx]) {
+                if ("\"" === $unquoted[$idx + 1]) {
+                    // unescape an escaped "
+                    $unquoted = substr($unquoted, 0, $idx) . substr($unquoted, $idx + 1);
+                } else {
+                    // otherwise its escaping something else or is a literal \
+                    ++$idx;
+                }
             }
         }
 
@@ -330,6 +332,8 @@ class MimeBuilder implements MimeBuilderContract
             $boundary = self::multipartBoundary($source);
 
             if (in_array($boundary, $boundaries)) {
+                $boundaries = [];
+                $recursionLevel = 0;
                 throw new MimeException("Message contains duplicate part boundary \"{$boundary}\"");
             }
 

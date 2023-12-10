@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Email\Transport;
 
-use Bead\Application;
+use Bead\Core\Application;
 use Bead\Contracts\Email\Message;
 use Bead\Contracts\Email\Transport;
 use Bead\Email\Mime;
@@ -20,17 +20,20 @@ class Mailgun implements Transport
     {
         $app = Application::instance();
 
-        return
-            "" !== (string) $app->config("mail.transport.mailgun.domain")
-            && class_exists(self::MailgunService)
-            && $app->has(self::MailgunService)
-            && $app->get(self::MailgunService) instanceof self::MailgunService;
+        if ("" === (string) $app->config("mail.transport.mailgun.domain")
+            || !class_exists(self::MailgunService)
+            || !$app->has(self::MailgunService)) {
+            return false;
+        }
+
+        $mailgun = $app->get(self::MailgunService);
+        return is_object($mailgun) && is_a($mailgun, self::MailgunService);
     }
 
     public function send(Message $message): void
     {
         if (!self::isAvailable()) {
-            throw new TransportException("Mailgun transport is not available.");
+            throw new TransportException("Mailgun transport is not available");
         }
 
         $app = Application::instance();
@@ -52,7 +55,7 @@ class Mailgun implements Transport
         );
 
         if (200 !== $response->getStatusCode()) {
-            throw new TransportException("Failed to transport message with subject {$message->subject()}: \"{$response->getReasonPhrase()}\"");
+            throw new TransportException("Failed to transport message with subject \"{$message->subject()}\": \"{$response->getReasonPhrase()}\"");
         }
     }
 }

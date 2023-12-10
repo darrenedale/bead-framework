@@ -6,11 +6,7 @@ namespace Bead\Email;
 
 use Bead\Contracts\Email\Part as PartContract;
 
-use function Bead\Helpers\Iterable\fill;
-use function Bead\Helpers\Iterable\toArray;
-use function implode;
 use function is_string;
-use function rand;
 
 trait HasParts
 {
@@ -46,6 +42,7 @@ trait HasParts
 
             if (is_string($contentEncoding)) {
                 $args[] = ($contentType ?? Part::DefaultContentType);
+                $args[] = $contentEncoding;
             } elseif (is_string($contentType)) {
                 $args[] = $contentType;
             }

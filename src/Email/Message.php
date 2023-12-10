@@ -128,7 +128,7 @@ class Message implements MessageContract, MutlipartContract
         $contentEncoding = trim($contentEncoding);
 
         if (!Mime::isValidContentTransferEncoding($contentEncoding)) {
-            throw new InvalidArgumentException("Expected valid content encoding type, found \"{$contentEncoding}\"");
+            throw new InvalidArgumentException("Expected valid content transfer encoding, found \"{$contentEncoding}\"");
         }
 
         return $this->withHeader(new Header("content-transfer-encoding", $contentEncoding, $parameters));
@@ -325,7 +325,7 @@ class Message implements MessageContract, MutlipartContract
     {
         $clone = clone $this;
         $clone->parts = [];
-        $this->body = $body;
+        $clone->body = $body;
         return $clone;
     }
 

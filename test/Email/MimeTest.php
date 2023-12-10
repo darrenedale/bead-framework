@@ -2292,4 +2292,19 @@ final class MimeTest extends TestCase
     {
         self::assertEquals($expected, Mime::isValidContentTransferEncoding($encoding));
     }
+
+    /** Ensure the multipart boundary uses 40 random characters. */
+    public function testGenerateMultipartBoundary1(): void
+    {
+        $callCount = 0;
+        $this->mockFunction("rand", function(int $low, int $high) use (&$callCount): int {
+            TestCase::assertEquals(0, $low);
+            TestCase::assertEquals(35, $high);
+            $ret = $callCount % ($high + 1);
+            ++$callCount;
+            return $ret;
+        });
+        self::assertEquals("--bead-email-part-abcdefghijklmnopqrstuvwxyz0123456789abcd--", Mime::generateMultipartBoundary());
+        self::assertEquals(40, $callCount);
+    }
 }

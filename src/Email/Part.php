@@ -113,7 +113,7 @@ class Part implements PartContract, MultipartContract
     public function withContentEncoding(string $contentEncoding): self
     {
         if (!Mime::isValidContentTransferEncoding($contentEncoding)) {
-            throw new InvalidArgumentException("Content encoding \"{$contentEncoding}\" is not valid.");
+            throw new InvalidArgumentException("Expecting valid content encoding, found \"{$contentEncoding}\"");
         }
 
         return $this->withHeader("content-transfer-encoding", $contentEncoding);
