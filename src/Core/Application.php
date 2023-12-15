@@ -219,12 +219,22 @@ abstract class Application implements ServiceContainer, ContainerInterface
             return $this->m_config;
         }
 
-        if (str_contains($key, ".")) {
-            [$file, $key] = explode(".", $key, 2);
-            return $this->m_config[$file][$key] ?? $default;
+        $config = $this->m_config;
+
+        while (str_contains($key, ".")) {
+            [$configKey, $key] = explode(".", $key, 2);
+            $config = $config[$configKey] ?? null;
+
+            if (!is_array($config)) {
+                return $default;
+            }
+
+            if (array_key_exists($key, $config)) {
+                return $config[$key];
+            }
         }
 
-        return $this->m_config[$key] ?? $default;
+        return $config[$key] ?? $default;
     }
 
     /** Fetch the application's title.
