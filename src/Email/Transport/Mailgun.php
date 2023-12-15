@@ -12,38 +12,43 @@ use Bead\Email\MimeBuilder;
 use Bead\Exceptions\Email\TransportException;
 use Bead\Facades\Log;
 use Mailgun\Exception\HttpClientException;
+use RuntimeException;
 
 class Mailgun implements Transport
 {
     private const MailgunService = "Mailgun\\Mailgun";
 
+    private \Mailgun\Mailgun $client;
+
+    private string $domain;
+
+    public function __construct(\Mailgun\Mailgun $client, string $domain)
+    {
+        $this->client = $client;
+        $this->domain = $domain;
+    }
+
     public static function isAvailable(): bool
     {
-        $app = Application::instance();
+        return class_exists(self::MailgunService);
+    }
 
-        if ("" === (string) $app->config("mail.transports.mailgun.domain")
-            || !class_exists(self::MailgunService)
-            || !$app->has(self::MailgunService)) {
-            return false;
+    public static function create(string $key, string $domain, string $endpoint = 'https://api.mailgun.net'): self
+    {
+        if (!self::isAvailable()) {
+            throw new RuntimeException("Mailgun is not installed.");
         }
 
-        $mailgun = $app->get(self::MailgunService);
-        return is_object($mailgun) && is_a($mailgun, self::MailgunService);
+        $client = [self::MailgunService, "create"]($key, $endpoint);
+        return new self($client, $domain);
     }
 
     public function send(Message $message): void
     {
-        if (!self::isAvailable()) {
-            throw new TransportException("Mailgun transport is not available");
-        }
-
         $app = Application::instance();
 
-        /** @var Mailgun\Mailgun $client */
-        $client = $app->get(self::MailgunService);
-
         /** @var Mailgun\Api\Message $messages */
-        $messageApi = $client->messages();
+        $messageApi = $this->client->messages();
 
         $builder = new MimeBuilder();
         $mime = $builder->headers($message) . Mime::Rfc822LineEnd . $builder->body($message);
@@ -51,10 +56,10 @@ class Mailgun implements Transport
         try {
             /** @var \Mailgun\Model\Message\SendResponse $response */
             $response = $messageApi->sendMime(
-                $app->config("mail.transports.mailgun.domain"),
+                $this->domain,
                 array_unique([...$message->to(), ...$message->cc(), ...$message->bcc()]),
                 $mime,
-                []
+                ["from" => $message->from(),]
             );
 
             Log::debug("Successfully transported message with subject \"{$message->subject()}\" using Mailgun: {$response->getMessage()}");
