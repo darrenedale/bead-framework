@@ -10,7 +10,8 @@ use Bead\Contracts\Email\Transport;
 use Bead\Email\Mime;
 use Bead\Email\MimeBuilder;
 use Bead\Exceptions\Email\TransportException;
-use Psr\Http\Message\ResponseInterface;
+use Bead\Facades\Log;
+use Mailgun\Exception\HttpClientException;
 
 class Mailgun implements Transport
 {
@@ -47,15 +48,18 @@ class Mailgun implements Transport
         $builder = new MimeBuilder();
         $mime = $builder->headers($message) . Mime::Rfc822LineEnd . $builder->body($message);
 
-        /** @var ResponseInterface $response */
-        $response = $messageApi->sendMime(
-            $app->config("mail.transports.mailgun.domain"),
-            array_unique([...$message->to(), ...$message->cc(), ...$message->bcc()]),
-            $mime
-        );
+        try {
+            /** @var \Mailgun\Model\Message\SendResponse $response */
+            $response = $messageApi->sendMime(
+                $app->config("mail.transports.mailgun.domain"),
+                array_unique([...$message->to(), ...$message->cc(), ...$message->bcc()]),
+                $mime,
+                []
+            );
 
-        if (200 !== $response->getStatusCode()) {
-            throw new TransportException("Failed to transport message with subject \"{$message->subject()}\": \"{$response->getReasonPhrase()}\"");
+            Log::debug("Successfully transported message with subject \"{$message->subject()}\" using Mailgun: {$response->getMessage()}");
+        } catch (HttpClientException $err) {
+            throw new TransportException("Failed to transport message with subject \"{$message->subject()}\" using Mailgun: \"{$err->getResponse()->getReasonPhrase()}\"");
         }
     }
 }
