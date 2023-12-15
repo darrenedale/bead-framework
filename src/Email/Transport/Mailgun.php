@@ -20,7 +20,7 @@ class Mailgun implements Transport
     {
         $app = Application::instance();
 
-        if ("" === (string) $app->config("mail.transport.mailgun.domain")
+        if ("" === (string) $app->config("mail.transports.mailgun.domain")
             || !class_exists(self::MailgunService)
             || !$app->has(self::MailgunService)) {
             return false;
@@ -49,7 +49,7 @@ class Mailgun implements Transport
 
         /** @var ResponseInterface $response */
         $response = $messageApi->sendMime(
-            $app->config("mail.transport.mailgun.domain"),
+            $app->config("mail.transports.mailgun.domain"),
             array_unique([...$message->to(), ...$message->cc(), ...$message->bcc()]),
             $mime
         );
