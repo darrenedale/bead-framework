@@ -83,6 +83,33 @@ main .main-content
 	padding: 20px;
 }
 
+main .email-view
+{
+	min-width: 500px;
+}
+
+main .email-view form label
+{
+	display: inline-block;
+	min-width: 50px;
+}
+
+main .email-view input[name=subject]
+{
+	width: 100%;
+}
+
+main .email-view .flex-h
+{
+	width: 100%;
+}
+
+main .email-view textarea[name=content]
+{
+	width: 100%;
+	height: 500px;
+}
+
 footer
 {
 	box-sizing: border-box;
@@ -106,4 +133,15 @@ p {
 a {
 	color: #3a275c;
 	text-decoration: underline;
+}
+
+.flex-h
+{
+	display: flex;
+	flex-flow: row;
+}
+
+.align-end
+{
+	justify-content: end;
 }

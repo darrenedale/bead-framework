@@ -4,11 +4,23 @@ declare(strict_types=1);
 
 namespace BeadTests\Framework;
 
+use ArrayAccess;
+use Bead\Contracts\Email\Header as HeaderContract;
+use Bead\Contracts\Email\Part as PartContract;
+use BeadTests\Framework\Constraints\ArrayHasEntry;
 use BeadTests\Framework\Constraints\AttributeIsInt;
-use BeadTests\Framework\Constraints\FlatArrayIsEquivalent;
+use BeadTests\Framework\Constraints\Email\HasEquivalentHeader;
+use BeadTests\Framework\Constraints\Email\HasEquivalentPart;
+use BeadTests\Framework\Constraints\Email\HasHeader;
+use BeadTests\Framework\Constraints\Email\HasPart;
 use Closure;
 use LogicException;
+use PHPUnit\Framework\Constraint\LogicalNot;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+
+use function uopz_get_return;
+use function uopz_set_return;
+use function uopz_unset_return;
 
 /**
  * Base class for test cases for the framework.
@@ -190,6 +202,128 @@ abstract class TestCase extends PhpUnitTestCase
     public static function assertAttributeIsInt(array $objectAndAttr, string $msg = ""): void
     {
         self::assertThat($objectAndAttr, new AttributeIsInt(), $msg);
+    }
+
+    /**
+     * Assert that an array-like value contains a given entry.
+     *
+     * @param mixed $key The required key.
+     * @param mixed $value The value required for the key.
+     * @param array|ArrayAccess $arr The array-like value to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertArrayHasEntry(mixed $key, mixed $value, array|ArrayAccess $arr, string $msg = ""): void
+    {
+        self::assertThat($arr, new ArrayHasEntry($key, $value), $msg);
+    }
+
+    /**
+     * Assert that an array-like value does not contain a given entry.
+     *
+     * @param mixed $key The key required to be absent or without the value.
+     * @param mixed $value The value required not to be the value of the key.
+     * @param array|ArrayAccess $arr The array-like value to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertArrayNotHasEntry(mixed $key, mixed $value, array|ArrayAccess $arr, string $msg = ""): void
+    {
+        self::assertThat($arr, new LogicalNot(new ArrayHasEntry($key, $value)), $msg);
+    }
+
+    /**
+     * Assert that a Message or Part has a given Header instance.
+     *
+     * @param HeaderContract $header The header instance the Message or Part must have.
+     * @param mixed $value The Message or Part to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertHasHeader(HeaderContract $header, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new HasHeader($header), $msg);
+    }
+
+    /**
+     * Assert that a Message or Part does not have a given Header instance.
+     *
+     * @param HeaderContract $header The header instance the Message or Part must NOT have.
+     * @param mixed $value The Message or Part to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertNotHasHeader(HeaderContract $header, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new LogicalNot(new HasHeader($header)), $msg);
+    }
+
+    /**
+     * Assert that a Message or Part has a header equivalent to a given Header instance.
+     *
+     * @param HeaderContract $header The header instance the Message or Part must have an equivalent of.
+     * @param mixed $value The Message or Part to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertHasEquivalentHeader(HeaderContract $header, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new HasEquivalentHeader($header), $msg);
+    }
+
+    /**
+     * Assert that a Message or Part does not have a header equivalent to a given Header instance.
+     *
+     * @param HeaderContract $header The header instance the Message or Part must NOT have an equivalent of.
+     * @param mixed $value The Message or Part to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertNotHasEquivalentHeader(HeaderContract $header, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new LogicalNot(new HasEquivalentHeader($header)), $msg);
+    }
+
+    /**
+     * Assert that a Message has a given Part instance.
+     *
+     * @param PartContract $part The Part instance the Message must have.
+     * @param mixed $value The Message to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertHasPart(PartContract $part, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new HasPart($part), $msg);
+    }
+
+    /**
+     * Assert that a Message does not have a given Part instance.
+     *
+     * @param PartContract $part The Part instance the Message must NOT have.
+     * @param mixed $value The Message to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertNotHasPart(PartContract $part, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new LogicalNot(new HasPart($part)), $msg);
+    }
+
+    /**
+     * Assert that a Message has a part equivalent to a given Part instance.
+     *
+     * @param PartContract $part The Part instance the Message must have an equivalent of.
+     * @param mixed $value The Message to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertHasEquivalentPart(PartContract $part, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new HasEquivalentPart($part), $msg);
+    }
+
+    /**
+     * Assert that a Message does not have a part equivalent to given Part instance.
+     *
+     * @param PartContract $part The Part instance the Message must NOT have and equivalent of.
+     * @param mixed $value The Message to test.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertNotHasEquivalentPart(PartContract $part, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new LogicalNot(new HasEquivalentPart($part)), $msg);
     }
 
     /**

@@ -1,0 +1,15 @@
+# use this as a basis for the ssmtp.conf file to copy into the Docker image
+root=postmaster
+
+# your SMTP server's hostname/IP and (optionally) port (e.g. smtp.gmail.com:587)
+mailhub=
+
+# Yes or No, depending on server features
+UseTLS=Yes
+UseSTARTTLS=Yes
+TLS_CA_FILE=/etc/ssl/certs/ca-certificates.crt
+
+# the username and password for the SMTP server
+AuthUser=
+AuthPass=
+AuthMethod=LOGIN

@@ -29,6 +29,9 @@
         <testsuite name="bead-framework Validator Rules">
             <directory>./Validation/Rules</directory>
         </testsuite>
+        <testsuite name="bead-framework Email">
+            <directory>./Email</directory>
+        </testsuite>
         <testsuite name="bead-framework Utils">
             <directory>./Util</directory>
         </testsuite>

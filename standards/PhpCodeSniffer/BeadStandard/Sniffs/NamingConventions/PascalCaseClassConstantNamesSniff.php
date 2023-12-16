@@ -20,7 +20,7 @@ use PHP_CodeSniffer\Util\Tokens;
  */
 class PascalCaseClassConstantNamesSniff implements Sniff
 {
-    private const Pattern = "^([A-Z]|([A-Z][a-z]+)+)\$";
+    private const Pattern = "^([A-Z]|([A-Z][a-z0-9]+)+)\$";
 
     private const RegExOptions = "d";
 

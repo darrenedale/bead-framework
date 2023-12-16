@@ -331,3 +331,22 @@ function recursiveCount(iterable $collection): int
 
     return $count;
 }
+
+/**
+ * Create a new iterable, using a callback to generate the values, and optionally another to generate the keys.
+ *
+ * The callbacks will be called $count times. On each call, they will be provided with the index of the item being
+ * generated, starting at 0. If no key-generating callback is given, the index will be used as the key.
+ *
+ * @param int $count The number of values to generate.
+ * @param callable $createValue The callback to generate the values.
+ * @param callable|null $createKey The callback to generate the keys.
+ *
+ * @return iterable
+ */
+function fill(int $count, callable $createValue, ?callable $createKey = null): iterable
+{
+    for ($idx = 0; $idx < $count; ++$idx) {
+        yield ($createKey ? $createKey($idx) : $idx) => $createValue($idx);
+    }
+}
