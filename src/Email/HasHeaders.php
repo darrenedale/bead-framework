@@ -29,7 +29,7 @@ trait HasHeaders
      */
     private static function parametersMatch(array $first, array $second): bool
     {
-        return count($first) === count($second) && all(array_keys($first), fn($name): bool => array_key_exists($name, $second) && $first[$name] === $second[$name]);
+        return count($first) === count($second) && all(array_keys($first), fn ($name): bool => array_key_exists($name, $second) && $first[$name] === $second[$name]);
     }
 
     /**
@@ -64,6 +64,8 @@ trait HasHeaders
      *
      * This violates the immutability of the object, so must only be used internally in the constructor, or when working
      * with the clone object in other methods.
+     *
+     * @throws InvalidArgumentException if the header name is not valid or any provided parameter is not valid.
      */
     private function setHeader(string $name, string $value, array $parameters = []): void
     {
@@ -171,7 +173,7 @@ trait HasHeaders
      */
     public function headersNamed(string $name): array
     {
-        return array_filter($this->headers(), fn(Header $header): bool => 0 === strcasecmp($header->name(), $name));
+        return array_filter($this->headers(), fn (Header $header): bool => 0 === strcasecmp($header->name(), $name));
     }
 
     /**

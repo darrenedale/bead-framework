@@ -10,6 +10,8 @@ use Bead\Core\Application;
 use Bead\Email\Transport\Mailgun;
 use Bead\Email\Transport\Php;
 use Bead\Exceptions\InvalidConfigurationException;
+use Bead\Exceptions\ServiceAlreadyBoundException;
+use RuntimeException;
 
 /**
  * Binds an implementation of the \Bead\Contracts\Email\Transport interface into an Application service container.
@@ -41,6 +43,8 @@ class MailTransport implements Binder
      * @param array $config The user-provided configuration for the transport.
      *
      * @return Mailgun The transport instance.
+     * @throws InvalidConfigurationException if the provided config has invalid values.
+     * @throws RuntimeException if mailgun is not installed.
      */
     protected function createMailgunTransport(string $transportName, array $config): Mailgun
     {
@@ -85,7 +89,8 @@ class MailTransport implements Binder
      * @param array $config The configuration for the named transport.
      *
      * @return TransportContract
-     * @throws InvalidConfigurationException
+     * @throws InvalidConfigurationException if the driver is not found or not supported, or the provided config has
+     * invalid values.
      */
     protected function createTransport(string $transportName, array $config): TransportContract
     {
@@ -99,6 +104,7 @@ class MailTransport implements Binder
     /**
      * @param Application $app The application service container into which to bind the mail transport services.
      * @throws InvalidConfigurationException if the transport specified in the mail config has an invalid configuration.
+     * @throws ServiceAlreadyBoundException if an implementation is already bound to the Transport contract.
      */
     public function bindServices(Application $app): void
     {

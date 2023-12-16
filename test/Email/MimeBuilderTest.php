@@ -56,7 +56,7 @@ class MimeBuilderTest extends TestCase
 
     /**
      * Ensure constructor throws with unsupported MIME version.
-     * 
+     *
      * @dataProvider dataForTestConstructor3
      */
     public function testConstructor3(string $mimeVersion): void

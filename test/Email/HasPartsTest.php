@@ -10,15 +10,15 @@ use Bead\Email\Part;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 
-class HasPartsTestTest extends TestCase
+class HasPartsTest extends TestCase
 {
     private const TestParts = [
         ["Plain text content", "text/plain", "quoted-printable",],
         ["Custom bead-framework content", "application/x-bead-framework", "x-bead-encoding",],
     ];
 
-    /** @var HasParts The instance under test. */
-    private mixed $instance;
+    /** @var object The instance under test. */
+    private object $instance;
 
     public function setUp(): void
     {
@@ -34,7 +34,7 @@ class HasPartsTestTest extends TestCase
 
     public function tearDown(): void
     {
-        unset ($this->instance);
+        unset($this->instance);
         parent::tearDown();
     }
 
@@ -89,7 +89,7 @@ class HasPartsTestTest extends TestCase
     /** Ensure we don't call generateMultipartBoundary when the part already has one. */
     public function testMultipartBoundary2(): void
     {
-        $this->mockMethod(Mime::class, "generateMultipartBoundary", fn (): mixed => self::fail("generateMultipartBoundary() should not be called."));
+        $this->mockMethod(Mime::class, "generateMultipartBoundary", fn () => self::fail("generateMultipartBoundary() should not be called."));
         $instance = new XRay($this->instance);
         $instance->multipartBoundary = "-112233-the-test-multipart-boundary-998877-";
         self::assertEquals("-112233-the-test-multipart-boundary-998877-", $this->instance->multipartBoundary());

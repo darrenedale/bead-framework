@@ -43,9 +43,11 @@ class Part implements PartContract, MultipartContract
      * @param $contentType string The content type for the message part.
      * @param $contentEncoding string The content encoding.
      */
-    function __construct(string|PartContract|null $content = null, string $contentType = self::DefaultContentType, string $contentEncoding = self::DefaultContentEncoding)
+    public function __construct(string|PartContract|null $content = null, string $contentType = self::DefaultContentType, string $contentEncoding = self::DefaultContentEncoding)
     {
+        /** @psalm-suppress MissingThrowsDocblock These args are guaranteed to be valid */
         $this->setHeader("content-type", $contentType);
+        /** @psalm-suppress MissingThrowsDocblock These args are guaranteed to be valid */
         $this->setHeader("content-transfer-encoding", $contentEncoding);
 
         if ($content instanceof PartContract) {
@@ -76,7 +78,8 @@ class Part implements PartContract, MultipartContract
      * @param $parameters array<string,string> the content type header parameters, if any.
      *
      * @return $this A clone of the Message, with the content type set to that provided.
-     * @throws InvalidArgumentException if the content type is not valid.
+     * @throws InvalidArgumentException if the content type is not valid or if any of the provided parameters is not
+     * valid
      */
     public function withContentType(string $contentType, array $parameters = []): self
     {
@@ -109,6 +112,7 @@ class Part implements PartContract, MultipartContract
      * @param $contentEncoding string is the content encoding. It is assumed to be a UTF-8 string.
      *
      * @return $this A clone of the Part with the given encoding.
+     * @throws InvalidArgumentException if the content transfer encoding is not valid.
      */
     public function withContentEncoding(string $contentEncoding): self
     {
@@ -116,6 +120,7 @@ class Part implements PartContract, MultipartContract
             throw new InvalidArgumentException("Expecting valid content encoding, found \"{$contentEncoding}\"");
         }
 
+        /** @psalm-suppress MissingThrowsDocblock These args are guaranteed to be valid. */
         return $this->withHeader("content-transfer-encoding", $contentEncoding);
     }
 

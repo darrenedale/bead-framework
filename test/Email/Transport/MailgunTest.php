@@ -52,7 +52,7 @@ class MailgunTest extends TestCase
     public function tearDown(): void
     {
         Mockery::close();
-        unset ($this->app, $this->transport);
+        unset($this->app, $this->transport);
         parent::tearDown();
     }
 
@@ -103,9 +103,9 @@ class MailgunTest extends TestCase
     {
         $client = Mockery::mock(MailgunClient::class);
 
-        $mock = function(string $key, string $endpoint = 'THE-DEFAULT-ENDPOINT') use ($expectedKey, $expectedEndpoint, &$called, $client): MailgunClient {
+        $mock = function (string $key, string $endpoint = "THE-DEFAULT-ENDPOINT") use ($expectedKey, $expectedEndpoint, &$called, $client): MailgunClient {
             TestCase::assertEquals($expectedKey, $key);
-            TestCase::assertEquals($expectedEndpoint ?? 'THE-DEFAULT-ENDPOINT', $endpoint);
+            TestCase::assertEquals($expectedEndpoint ?? "THE-DEFAULT-ENDPOINT", $endpoint);
             return $client;
         };
 
@@ -176,7 +176,7 @@ class MailgunTest extends TestCase
         self::markTestAsExternallyVerified();
     }
 
-    /** Ensure send() throws if Mailgun throws. */
+    /** Ensure send() throws if Mailgun throws a HttpClientException. */
     public function testSend2(): void
     {
         $messages = Mockery::mock(MessagesApi::class);
@@ -218,5 +218,42 @@ class MailgunTest extends TestCase
         self::expectException(TransportException::class);
         self::expectExceptionMessage("Failed to transport message with subject \"Test message\" using Mailgun: \"Bad mailgun request\"");
         $this->transport->send(new Message("recipient@example.com", "Test message", "Test plain text message."));
+    }
+
+    /** Ensure a TransportException is thrown when Mailgun throws any other exception. */
+    public function testSend3(): void
+    {
+        $messages = Mockery::mock(MessagesApi::class);
+
+        $this->mailgun->shouldReceive("messages")
+            ->once()
+            ->andReturn($messages);
+
+        $messages->shouldReceive("sendMime")
+            ->once()
+            ->with(
+                self::MailgunDomain,
+                ["recipient@example.com"],
+                "content-type: text/plain\r\ncontent-transfer-encoding: quoted-printable\r\nto: recipient@example.com\r\nsubject: Test message\r\nmime-version: 1.0\r\n\r\nTest plain text message.",
+                ["from" => ""]
+            )
+            ->andThrow(new RuntimeException("Test mailgun exception"));
+
+        self::expectException(TransportException::class);
+        self::expectExceptionMessage("Failed to transport message with subject \"Test message\" using Mailgun: \"Test mailgun exception\"");
+        $this->transport->send(new Message("recipient@example.com", "Test message", "Test plain text message."));
+    }
+
+    /** Ensure a TransportException is thrown when the MIME builder throws. */
+    public function testSend4(): void
+    {
+        // message is multipart but has no parts
+        $message = (new Message())
+            ->withSubject("Test message")
+            ->withContentType("multipart/mixed");
+
+        self::expectException(TransportException::class);
+        self::expectExceptionMessageMatches("/^Unable to generate MIME for message with subject \"Test message\": /");
+        $this->transport->send($message);
     }
 }

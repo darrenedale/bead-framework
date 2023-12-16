@@ -12,6 +12,7 @@ use Bead\Contracts\Email\Part as PartContract;
 use Bead\Exceptions\Email\MimeException;
 use InvalidArgumentException;
 use LogicException;
+use phpDocumentor\Reflection\Exception\PcreException;
 
 /**
  * Build a MIME message from a Message instance.
@@ -31,6 +32,7 @@ class MimeBuilder implements MimeBuilderContract
      * Initialise a new MIME message builder.
      *
      * @param string $mimeVersion The MIME version to use. Currently, the only MIME version in existence is 1.0.
+     * @throws InvalidArgumentException if the MIME version is not supported.
      */
     public function __construct(string $mimeVersion = self::MimeVersion10)
     {
@@ -91,7 +93,7 @@ class MimeBuilder implements MimeBuilderContract
     {
         assert("\"" === $quoted[0] && "\"" === $quoted[-1], new LogicException("This method must only be called with quoted content."));
 
-        $unquoted = substr($quoted,1, -1);
+        $unquoted = substr($quoted, 1, -1);
 
         for ($idx = 0; $idx < strlen($unquoted) - 1; ++$idx) {
             if ("\\" === $unquoted[$idx]) {
@@ -139,6 +141,7 @@ class MimeBuilder implements MimeBuilderContract
      * @param string $version
      *
      * @return $this The clone with the MIME version set.
+     * @throws InvalidArgumentException if the MIME version is not supported.
      */
     public function withMimeVersion(string $version): self
     {
@@ -190,7 +193,15 @@ class MimeBuilder implements MimeBuilderContract
         return $clone;
     }
 
-    /** Ensure a message or part has the required headers. */
+    /**
+     * Ensure a message or part has the required headers.
+     *
+     * @throws MimeException if:
+     * - the message or part is missing content-type and/or content-transfer-encoding headers; or
+     * - the message or part is multipart but does not have a multipart content type; or
+     * - the message or part is multipart but does not have a part boundary; or
+     * - the message has no recipients (only messages with throw for this reason, parts won't)
+     */
     public function checkHeaders(MessageContract|PartContract $source): void
     {
         $contentType = null;
@@ -244,7 +255,11 @@ class MimeBuilder implements MimeBuilderContract
         }
     }
 
-    /** Ensure a message or part has parts or a body. */
+    /**
+     * Ensure a message or part has parts or a body.
+     *
+     * @throws MimeException if the message or part is multipart and has no parts, or is not multiplart and has no body.
+     */
     public function checkBody(MessageContract|PartContract $source): void
     {
         if ($source instanceof MultipartContract && 0 < count($source->parts())) {
@@ -262,6 +277,7 @@ class MimeBuilder implements MimeBuilderContract
      * @param MessageContract $message The message to turn into MIME.
      *
      * @return string The MIME for the message.
+     * @throws MimeException if the message is multipart and has no parts, or is not multipart and has no body.
      */
     public function mime(MessageContract $message): string
     {
@@ -286,11 +302,13 @@ class MimeBuilder implements MimeBuilderContract
             for ($idx = 0; $idx < count($headers); ++$idx) {
                 if ("mime-version" === strtolower($headers[$idx]->name())) {
                     $haveMimeVersion = true;
+                    /** @psalm-suppress MissingThrowsDocblock These args are guaranteed to be valid. */
                     $headers[$idx] = new Header("mime-version", $this->mimeVersion());
                 }
             }
 
             if (!$haveMimeVersion) {
+                /** @psalm-suppress MissingThrowsDocblock These args are guaranteed to be valid. */
                 $headers[] = new Header("mime-version", $this->mimeVersion());
             }
         }
@@ -299,7 +317,7 @@ class MimeBuilder implements MimeBuilderContract
 
         return array_reduce(
             $headers,
-            fn(string $carry, HeaderContract $header): string => "{$carry}{$header->line()}{$lineEnd}",
+            fn (string $carry, HeaderContract $header): string => "{$carry}{$header->line()}{$lineEnd}",
             ""
         );
     }
@@ -315,6 +333,8 @@ class MimeBuilder implements MimeBuilderContract
      * @param MessageContract|PartContract $source
      *
      * @return string The MIME body.
+     * @throws MimeException if the message or part contains parts that are multipart and two or more of them are using
+     * the same boundary.
      */
     public function body(MessageContract|PartContract $source): string
     {

@@ -7,7 +7,8 @@ namespace BeadTests\Email\Transport;
 use Bead\Contracts\Logger;
 use Bead\Core\Application;
 use Bead\Email\Message;
-use Bead\Email\Transport\Log;
+use Bead\Email\Transport\Log as LogTransport;
+use Bead\Exceptions\Email\TransportException;
 use BeadTests\Framework\TestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -19,7 +20,7 @@ class LogTest extends TestCase
 
     private Logger $log;
 
-    private Log $transport;
+    private LogTransport $transport;
 
     public function setUp(): void
     {
@@ -32,7 +33,7 @@ class LogTest extends TestCase
             ->byDefault();
 
         $this->mockMethod(Application::class, "instance", $this->app);
-        $this->transport = new Log();
+        $this->transport = new LogTransport();
     }
 
     public function tearDown(): void
@@ -53,7 +54,7 @@ class LogTest extends TestCase
         $this->log->shouldReceive("info")
             ->once()
             ->ordered()
-            ->with(Mockery::on(function(string $message): bool {
+            ->with(Mockery::on(function (string $message): bool {
                 TestCase::assertEquals("content-type: text/plain\r\ncontent-transfer-encoding: quoted-printable\r\nto: recipient@example.com\r\nsubject: Test message\r\nmime-version: 1.0\r\n\r\nPlain text content.", $message);
                 return true;
             }));
@@ -64,5 +65,17 @@ class LogTest extends TestCase
             ->with("---  END  MIME Email message transport ---");
 
         $this->transport->send(new Message("recipient@example.com", "Test message", "Plain text content."));
+    }
+
+    /** Ensure send() throws a TransportException when the MimeBuilder throws. */
+    public function testSend2(): void
+    {
+        // message is multipart but has no parts
+        $message = (new Message())
+            ->withContentType("multipart/mixed");
+
+        self::expectException(TransportException::class);
+        self::expectExceptionMessageMatches("/^Unable to generate MIME message: /");
+        $this->transport->send($message);
     }
 }

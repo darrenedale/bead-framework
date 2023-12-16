@@ -136,7 +136,7 @@ class PartTest extends TestCase
         yield "x-token-upper-case" => ["X-BEAD-ENCODING"];
     }
 
-    /** 
+    /**
      * Ensure we can set the content encoding successfully.
      *
      * @dataProvider dataForTestWithContentEncoding1

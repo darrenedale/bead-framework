@@ -18,8 +18,8 @@ class HasHeadersTest extends TestCase
         "header-name-4" => "header-value-4",
     ];
 
-    /** @var HasHeaders The instance under test. */
-    private mixed $instance;
+    /** @var object The instance under test. */
+    private object $instance;
 
     public function setUp(): void
     {
@@ -35,7 +35,7 @@ class HasHeadersTest extends TestCase
 
     public function tearDown(): void
     {
-        unset ($this->instance);
+        unset($this->instance);
         parent::tearDown();
     }
 
@@ -117,7 +117,7 @@ class HasHeadersTest extends TestCase
     {
         self::assertEqualHeaders(
             [
-                new Header('header-name-1', "header-value-1"),
+                new Header("header-name-1", "header-value-1"),
             ],
             $this->instance->headersNamed("header-name-1")
         );
@@ -130,8 +130,8 @@ class HasHeadersTest extends TestCase
 
         self::assertEqualHeaders(
             [
-                new Header('header-name-1', "header-value-1"),
-                new Header('header-name-1', "header-value-5"),
+                new Header("header-name-1", "header-value-1"),
+                new Header("header-name-1", "header-value-5"),
             ],
             $this->instance->headersNamed("header-name-1")
         );
@@ -154,7 +154,7 @@ class HasHeadersTest extends TestCase
         self::assertEqualHeaders(
             self::headersFromArray(array_filter(
                 self::TestHeaders,
-                fn(string $header): bool => "header-name-2" !== $header,
+                fn (string $header): bool => "header-name-2" !== $header,
                 ARRAY_FILTER_USE_KEY
             )),
             $instance->headers()
@@ -172,7 +172,7 @@ class HasHeadersTest extends TestCase
         self::assertEqualHeaders(
             self::headersFromArray(array_filter(
                 self::TestHeaders,
-                fn(string $header): bool => "header-name-2" !== $header,
+                fn (string $header): bool => "header-name-2" !== $header,
                 ARRAY_FILTER_USE_KEY
             )),
             $instance->headers()
@@ -196,7 +196,7 @@ class HasHeadersTest extends TestCase
         self::assertEqualHeaders(
             self::headersFromArray(array_filter(
                 self::TestHeaders,
-                fn(string $header): bool => "header-name-2" !== $header,
+                fn (string $header): bool => "header-name-2" !== $header,
                 ARRAY_FILTER_USE_KEY
             )),
             $instance->headers()
@@ -214,7 +214,7 @@ class HasHeadersTest extends TestCase
         self::assertEqualHeaders(
             self::headersFromArray(array_filter(
                 self::TestHeaders,
-                fn(string $header): bool => "header-name-2" !== $header,
+                fn (string $header): bool => "header-name-2" !== $header,
                 ARRAY_FILTER_USE_KEY
             )),
             $instance->headers()

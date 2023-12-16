@@ -2271,7 +2271,7 @@ final class MimeTest extends TestCase
         }
 
         yield "x-bead-encoding" => ["x-bead-encoding", true,];
-        yield "invalid" => ['bead-encoding', false,];
+        yield "invalid" => ["bead-encoding", false,];
         yield "almost-valid" => ["7-bit", false];
         yield "leading-whitespace" => [" 7bit", false];
         yield "trailing-whitespace" => ["7bit ", false];
@@ -2297,7 +2297,7 @@ final class MimeTest extends TestCase
     public function testGenerateMultipartBoundary1(): void
     {
         $callCount = 0;
-        $this->mockFunction("rand", function(int $low, int $high) use (&$callCount): int {
+        $this->mockFunction("rand", function (int $low, int $high) use (&$callCount): int {
             TestCase::assertEquals(0, $low);
             TestCase::assertEquals(35, $high);
             $ret = $callCount % ($high + 1);

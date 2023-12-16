@@ -60,7 +60,7 @@ class Header implements HeaderContract, Stringable
      */
     public function __construct(string $name, string $value, array $params = [])
     {
-        assert(all(array_keys($params), fn($name): bool => is_string($name) && "" !== trim($name)), new InvalidArgumentException("All header parameter names must be strings."));
+        assert(all(array_keys($params), fn ($name): bool => is_string($name) && "" !== trim($name)), new InvalidArgumentException("All header parameter names must be strings."));
         assert(all($params, "is_string"), new InvalidArgumentException("All header parameters must be strings."));
         $name = trim($name);
         self::checkName($name);
@@ -70,6 +70,7 @@ class Header implements HeaderContract, Stringable
         $this->params = $params;
     }
 
+    /** @throws InvalidArgumentException if the name is not valid for a MIME header. */
     private static function checkName(string $name): void
     {
         if (!Mime::isValidHeaderName($name)) {

@@ -8,12 +8,15 @@ use Bead\Contracts\Email\Message;
 use Bead\Contracts\Email\Transport;
 use Bead\Email\Mime;
 use Bead\Email\MimeBuilder;
+use Bead\Exceptions\Email\MimeException;
 use Bead\Exceptions\Email\TransportException;
 use Bead\Facades\Log;
 use Mailgun\Exception\HttpClientException;
 use Mailgun\Mailgun as MailgunClient;
 use Mailgun\Model\Message\SendResponse;
+use Psr\Http\Client\ClientExceptionInterface;
 use RuntimeException;
+use Throwable;
 
 class Mailgun implements Transport
 {
@@ -49,6 +52,8 @@ class Mailgun implements Transport
      * @param string $domain The mailgun sending domain.
      * @param ?string $endpoint The endpoint to use, or null to use the default endpoint.
      * @return self
+     *
+     * @throws RuntimeException if Mailgun is not installed.
      */
     public static function create(string $key, string $domain, ?string $endpoint = null): self
     {
@@ -94,10 +99,12 @@ class Mailgun implements Transport
      */
     public function send(Message $message): void
     {
+        /** @psalm-suppress MissingThrowsDocblock default construction never throws. */
         $builder = new MimeBuilder();
-        $mime = $builder->headers($message) . Mime::Rfc822LineEnd . $builder->body($message);
 
         try {
+            $mime = $builder->headers($message) . Mime::Rfc822LineEnd . $builder->body($message);
+
             /** @var SendResponse $response */
             $response = $this->client->messages()->sendMime(
                 $this->domain,
@@ -107,8 +114,12 @@ class Mailgun implements Transport
             );
 
             Log::debug("Successfully transported message with subject \"{$message->subject()}\" using Mailgun: {$response->getMessage()}");
+        } catch (MimeException $err) {
+            throw new TransportException("Unable to generate MIME for message with subject \"{$message->subject()}\": {$err->getMessage()}", previous: $err);
         } catch (HttpClientException $err) {
-            throw new TransportException("Failed to transport message with subject \"{$message->subject()}\" using Mailgun: \"{$err->getResponse()->getReasonPhrase()}\"");
+            throw new TransportException("Failed to transport message with subject \"{$message->subject()}\" using Mailgun: \"{$err->getResponse()->getReasonPhrase()}\"", previous: $err);
+        } catch (Throwable $err) {
+            throw new TransportException("Failed to transport message with subject \"{$message->subject()}\" using Mailgun: \"{$err->getMessage()}\"", previous: $err);
         }
     }
 }

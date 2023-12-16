@@ -18,6 +18,4 @@ trait ConvertsHeadersToMaps
 
         return $arr;
     }
-
-
 }

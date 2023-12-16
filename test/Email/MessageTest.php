@@ -39,7 +39,7 @@ final class MessageTest extends TestCase
 
     public function tearDown(): void
     {
-        unset ($this->message);
+        unset($this->message);
         parent::tearDown();
     }
 
@@ -181,7 +181,7 @@ final class MessageTest extends TestCase
         self::assertEquals([self::TestMessageRecipient,], $this->message->to());
         self::assertEqualsCanonicalizing([self::TestMessageRecipient, "someone-else@example.com", "another-recipient@example.com",], $message->to());
     }
-    
+
     /** Ensure withTo() throws if any recipient is not a string. */
     public function testWithTo3(): void
     {
@@ -213,7 +213,7 @@ final class MessageTest extends TestCase
         self::assertEquals([self::TestMessageCarbonCopy,], $this->message->cc());
         self::assertEqualsCanonicalizing([self::TestMessageCarbonCopy, "someone-else@example.com", "another-recipient@example.com",], $message->cc());
     }
-    
+
     /** Ensure withCc() throws if any recipient is not a string. */
     public function testWithCc3(): void
     {
@@ -244,7 +244,7 @@ final class MessageTest extends TestCase
         self::assertEquals([self::TestMessageBlindCarbonCopy,], $this->message->bcc());
         self::assertEqualsCanonicalizing([self::TestMessageBlindCarbonCopy, "someone-else@example.com", "another-recipient@example.com",], $message->bcc());
     }
-    
+
     /** Ensure withBcc)( throws if any recipient is not a string. */
     public function testWithBcc3(): void
     {

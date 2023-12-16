@@ -63,7 +63,7 @@ final class Mime
     public static function isValidContentTransferEncoding(string $encoding): bool
     {
         return
-            in_array(strtolower($encoding),self::IetfContentTransferEncodings)
+            in_array(strtolower($encoding), self::IetfContentTransferEncodings)
             || 1 === preg_match("#^[xX]-" . self::Rfc2045TokenPattern . "\$#", $encoding);
     }
 
@@ -104,6 +104,6 @@ final class Mime
     /** Generate a boundary string that can be used in multipart MIME messages. */
     public static function generateMultipartBoundary(): string
     {
-        return "--bead-email-part-" . implode(toArray(fill(40, fn() => self::DelimiterAlphabet[rand(0, 35)]))) . "--";
+        return "--bead-email-part-" . implode(toArray(fill(40, fn () => self::DelimiterAlphabet[rand(0, 35)]))) . "--";
     }
 }

@@ -8,8 +8,8 @@ use Bead\Contracts\Email\Header as HeaderContract;
 use Bead\Contracts\Email\Message as MessageContract;
 use Bead\Contracts\Email\Multipart as MutlipartContract;
 use InvalidArgumentException;
-
 use LogicException;
+
 use function Bead\Helpers\Iterable\all;
 
 /**
@@ -70,7 +70,7 @@ class Message implements MessageContract, MutlipartContract
     public function contentType(): string
     {
         $contentType = $this->header("content-type");
-        assert ($contentType instanceof HeaderContract, new LogicException("It is an invariant that Message instances have a content-type header"));
+        assert($contentType instanceof HeaderContract, new LogicException("It is an invariant that Message instances have a content-type header"));
         return $contentType->value();
     }
 
@@ -107,7 +107,7 @@ class Message implements MessageContract, MutlipartContract
     public function contentTransferEncoding(): string
     {
         $contentEncoding = $this->header("content-transfer-encoding");
-        assert ($contentEncoding instanceof HeaderContract, new LogicException("It is an invariant that Message instances have a content-transfer-encoding header"));
+        assert($contentEncoding instanceof HeaderContract, new LogicException("It is an invariant that Message instances have a content-transfer-encoding header"));
         return $contentEncoding->value();
     }
 
@@ -122,6 +122,7 @@ class Message implements MessageContract, MutlipartContract
      * @param $parameters array<string,string> the content transfer encoding header parameters, if any.
      *
      * @return $this A clone of the Message, with the content transfer encoding set to that provided.
+     * @throws InvalidArgumentException if the transfer encoding is not valid.
      */
     public function withContentTransferEncoding(string $contentEncoding, array $parameters = []): self
     {
@@ -152,6 +153,7 @@ class Message implements MessageContract, MutlipartContract
      */
     public function withSubject(string $subject): self
     {
+        /** @psalm-suppress MissingThrowsDocblock these args are guaranteed to be valid. */
         return $this->withHeader("subject", $subject);
     }
 
@@ -173,6 +175,7 @@ class Message implements MessageContract, MutlipartContract
      *
      * @api
      * @param $address string|string[] the recipient address(es) to add.
+     * @throws InvalidArgumentException if an array of addresses is provided and not all are strings
      */
     public function withTo(string|array $address): self
     {
@@ -213,6 +216,7 @@ class Message implements MessageContract, MutlipartContract
      * rule is not strictly enforced (yet).
      *
      * @param $address string|string[] the CC recipient address(es) to add.
+     * @throws InvalidArgumentException if an array of addresses is provided and not all are strings
      */
     public function withCc(string|array $address): self
     {
@@ -252,6 +256,7 @@ class Message implements MessageContract, MutlipartContract
      * rule is not strictly enforced (yet).
      *
      * @param $address string|string[] the BCC recipient address(es) to add.
+     * @throws InvalidArgumentException if an array of addresses is provided and not all are strings
      */
     public function withBcc(string|array $address): self
     {
@@ -291,6 +296,7 @@ class Message implements MessageContract, MutlipartContract
      */
     public function withFrom(string $sender): self
     {
+        /** @psalm-suppress MissingThrowsDocblock These args are guaranteed to be valid. */
         return $this->withHeader("from", $sender);
     }
 
@@ -352,11 +358,11 @@ class Message implements MessageContract, MutlipartContract
      * @param $contentType string The MIME type of the attachment to add.
      * @param $contentEncoding string The transfer encoding of the attachment to add.
      * @param $filename string The name of the file to assign to the attachment when it is attached to the message.
+     *
+     * @throws InvalidArgumentException if the content type or content encoding (or both) are not valid.
      */
     public function withAttachment(string $content, string $contentType, string $contentEncoding, string $filename): self
     {
-        // TODO if the message has a body and no parts, convert the body to a part before adding the attachment?
-
         $dispositionHeader = new Header(
             "content-disposition",
             "attachment",

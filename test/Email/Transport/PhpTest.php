@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace BeadTests\Email\Transport;
 
 use Bead\Contracts\Email\Message as MessageContract;
-use Bead\Contracts\Email\Transport;
 use Bead\Email\Message;
-use Bead\Email\Transport\Php;
+use Bead\Email\Transport\Php as PhpTransport;
 use Bead\Exceptions\Email\TransportException;
 use BeadTests\Framework\TestCase;
 use Throwable;
 
-class PhpMailTest extends TestCase
+class PhpTest extends TestCase
 {
     private const TestSender = "sender@example.com";
 
@@ -32,7 +31,7 @@ class PhpMailTest extends TestCase
 
     private array $mockMailExpectations;
 
-    private Php $transport;
+    private PhpTransport $transport;
 
     private MessageContract $message;
 
@@ -41,17 +40,17 @@ class PhpMailTest extends TestCase
         ["arguments" => $expectedArguments, "return" => $returnValue] = $this->popMockMailExpectation();
 
         // current implementation always puts to, cc, bcc in this order in $to
-        self::assertEquals($expectedArguments['to'], $to);
-        self::assertEquals($expectedArguments['subject'], $subject);
-        self::assertEquals($expectedArguments['message'], $message);
+        self::assertEquals($expectedArguments["to"], $to);
+        self::assertEquals($expectedArguments["subject"], $subject);
+        self::assertEquals($expectedArguments["message"], $message);
 
         // we're not concerned about the order of headers
         if (is_string($additionalHeaders)) {
             $additionalHeaders = explode("\r\n", trim($additionalHeaders));
         }
 
-        self::assertEqualsCanonicalizing($expectedArguments['additionalHeaders'], $additionalHeaders);
-        self::assertEquals($expectedArguments['additionalParameters'], $additionalParameters);
+        self::assertEqualsCanonicalizing($expectedArguments["additionalHeaders"], $additionalHeaders);
+        self::assertEquals($expectedArguments["additionalParameters"], $additionalParameters);
 
         if (is_bool($returnValue)) {
             return $returnValue;
@@ -80,12 +79,12 @@ class PhpMailTest extends TestCase
     public function setUp(): void
     {
         $self = $this;
-        $this->mockFunction('mail', fn(mixed ... $args): bool => $self->mockMail(... $args));
+        $this->mockFunction("mail", fn (mixed ... $args): bool => $self->mockMail(... $args));
         // ensures that the message gets all 'a's as the part delimiter
         $this->mockFunction("rand", fn (int $min, int $max): int => 0);
         $this->mockMailExpectations = [];
         $this->message = new Message(self::TestRecipient, self::TestSubject, self::TestPlainTextBody);
-        $this->transport = new Php();
+        $this->transport = new PhpTransport();
     }
 
     public function tearDown(): void
@@ -101,8 +100,16 @@ class PhpMailTest extends TestCase
         $this->transport->send($this->message);
     }
 
-    /** Ensure we get a transport exception when mail() returns false. */
+    /** Ensure we get a transport exception when the MIME builder throws. */
     public function testSend2(): void
+    {
+        self::expectException(TransportException::class);
+        self::expectExceptionMessagematches("/^Unable to generate MIME for message with subject \"" . self::TestSubject . "\": /");
+        $this->transport->send((new Message())->withSubject(self::TestSubject));
+    }
+
+    /** Ensure we get a transport exception when mail() returns false. */
+    public function testSend3(): void
     {
         $this->expectMailCall(outcome: false);
         self::expectException(TransportException::class);
@@ -111,7 +118,7 @@ class PhpMailTest extends TestCase
     }
 
     /** Ensure we can send to multiple recipients. */
-    public function testSend3(): void
+    public function testSend4(): void
     {
         $message = $this->message->withTo("someone-else@example.com");
         $this->expectMailCall(to: self::TestRecipient . ",someone-else@example.com", additionalHeaders: [...self::TestPlainTextHeaders, "to: someone-else@example.com",]);
@@ -119,7 +126,7 @@ class PhpMailTest extends TestCase
     }
 
     /** Ensure we can send to cc recipients. */
-    public function testSend4(): void
+    public function testSend5(): void
     {
         $message = $this->message->withCc("someone-else@example.com");
         $this->expectMailCall(to: self::TestRecipient . ",someone-else@example.com", additionalHeaders: [...self::TestPlainTextHeaders, "cc: someone-else@example.com",]);
@@ -127,7 +134,7 @@ class PhpMailTest extends TestCase
     }
 
     /** Ensure we can send to bcc recipients. */
-    public function testSend5(): void
+    public function testSend6(): void
     {
         $message = $this->message->withBcc("someone-else@example.com");
         $this->expectMailCall(to: self::TestRecipient . ",someone-else@example.com", additionalHeaders: [...self::TestPlainTextHeaders, "bcc: someone-else@example.com",]);
@@ -135,7 +142,7 @@ class PhpMailTest extends TestCase
     }
 
     /** Ensure we can send to cc and bcc recipient at the same time. */
-    public function testSend6(): void
+    public function testSend7(): void
     {
         $message = $this->message->withCc("someone-else@example.com")->withBcc("another-person@example.com");
         $this->expectMailCall(to: self::TestRecipient . ",someone-else@example.com,another-person@example.com", additionalHeaders: [...self::TestPlainTextHeaders, "cc: someone-else@example.com", "bcc: another-person@example.com",]);
@@ -143,7 +150,7 @@ class PhpMailTest extends TestCase
     }
 
     /** Ensure duplicate recipients aren't duplicated in $to but are all present in headers. */
-    public function testSend7(): void
+    public function testSend8(): void
     {
         $message = $this->message
             ->withTo(self::TestRecipient)
@@ -155,7 +162,7 @@ class PhpMailTest extends TestCase
     }
 
     /** Ensure we can set the sender. */
-    public function testSend8(): void
+    public function testSend9(): void
     {
         $message = $this->message->withFrom(self::TestSender);
         $this->expectMailCall(additionalHeaders: [...self::TestPlainTextHeaders, "from: " . self::TestSender,]);
@@ -163,7 +170,7 @@ class PhpMailTest extends TestCase
     }
 
     /** Ensure custom headers are sent. */
-    public function testSend9(): void
+    public function testSend10(): void
     {
         $message = $this->message->withHeader("x-bead-header", "the-value");
         $this->expectMailCall(additionalHeaders: [...self::TestPlainTextHeaders, "x-bead-header: the-value",]);
