@@ -21,11 +21,12 @@ class MailTransport implements Binder
      *
      * There are currently no configuration options for this transport.
      *
+     * @param string $transportName The user-provided name of the transport being created
      * @param array $config The user-provided configuration for the transport.
      *
      * @return Php The transport instance.
      */
-    protected function createPhpTransport(array $config): Php
+    protected function createPhpTransport(string $transportName, array $config): Php
     {
         return new Php();
     }
@@ -36,15 +37,15 @@ class MailTransport implements Binder
      * The configuration must include the Mailgun API key and the sending domain. It may optionally also include the
      * Mailgun endpoint to communicate with. This defaults to https://api.mailgun.net
      *
+     * @param string $transportName The user-provided name of the transport being created
      * @param array $config The user-provided configuration for the transport.
      *
      * @return Mailgun The transport instance.
      */
-    protected function createMailgunTransport(array $config): Mailgun
+    protected function createMailgunTransport(string $transportName, array $config): Mailgun
     {
         $domain = $config["domain"] ?? null;
         $key = $config["key"] ?? null;
-        $endpoint = $config["endpoint"] ?? null;
 
         if (!is_string($domain) || "" === trim($domain)) {
             $domain = match (true) {
@@ -54,7 +55,7 @@ class MailTransport implements Binder
                 default => gettype($domain),
             };
 
-            throw new InvalidConfigurationException("mail.transports.*.domain", "Expected valid mailgun domain, found {$domain}");
+            throw new InvalidConfigurationException("mail.transports.{$transportName}.domain", "Expected valid mailgun domain, found {$domain}");
         }
 
         if (!is_string($key) || "" === trim($key)) {
@@ -65,13 +66,13 @@ class MailTransport implements Binder
                 default => gettype($key),
             };
 
-            throw new InvalidConfigurationException("mail.transports.*.key", "Expected valid mailgun key, found {$key}");
+            throw new InvalidConfigurationException("mail.transports.{$transportName}.key", "Expected valid mailgun key, found {$key}");
         }
 
-        $args = [$domain, $key,];
+        $args = [$key, $domain,];
 
-        if (null !== $endpoint) {
-            $args[] = $endpoint;
+        if (array_key_exists("endpoint", $config)) {
+            $args[] = $config["endpoint"];
         }
 
         return Mailgun::create(...$args);
@@ -80,18 +81,18 @@ class MailTransport implements Binder
     /**
      * Create the configured transport.
      *
-     * @param string $transport The name of the transport to create.
+     * @param string $transportName The name of the transport to create.
      * @param array $config The configuration for the named transport.
      *
      * @return TransportContract
      * @throws InvalidConfigurationException
      */
-    protected function createTransport(string $transport, array $config): TransportContract
+    protected function createTransport(string $transportName, array $config): TransportContract
     {
         return match ($config["driver"] ?? null) {
-            "php" => $this->createPhpTransport($config),
-            "mailgun" => $this->createMailgunTransport($config),
-            default => throw new InvalidConfigurationException("mail.transports.{$transport}.driver", "Expecting supported transport driver, found " . (is_string($config["driver"] ?? null) ? "\"{$config["driver"]}\"" : "none")),
+            "php" => $this->createPhpTransport($transportName, $config),
+            "mailgun" => $this->createMailgunTransport($transportName, $config),
+            default => throw new InvalidConfigurationException("mail.transports.{$transportName}.driver", "Expecting supported transport driver, found " . (is_string($config["driver"] ?? null) ? "\"{$config["driver"]}\"" : "none")),
         };
     }
 

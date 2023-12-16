@@ -17,6 +17,7 @@ use Mockery\MockInterface;
 
 class MailTransportTest extends TestCase
 {
+    /** @var MailTransport The binder instance under test. */
     private MailTransport $binder;
 
     /** @var Application&MockInterface  */
@@ -37,17 +38,10 @@ class MailTransportTest extends TestCase
         parent::tearDown();
     }
 
-    private function setMailConfig(array|null $config): void
-    {
-        $this->app->shouldReceive("config")
-            ->with("mail.transport")
-            ->andReturn($config ? ($config["transport"] ?? null) : null);
-    }
-
     public function testCreatePhpTransport1(): void
     {
         $binder = new XRay($this->binder);
-        self::assertInstanceOf(Php::class, $binder->createPhpTransport([]));
+        self::assertInstanceOf(Php::class, $binder->createPhpTransport("php", []));
     }
 
     public static function dataForTestCreateMailgunTransport1(): iterable
@@ -64,8 +58,26 @@ class MailTransportTest extends TestCase
     public function testCreateMailgunTransport1(array $config): void
     {
         $binder = new XRay($this->binder);
-        $actual = $binder->createMailgunTransport($config);
+        $called = false;
+
+        $mock = function (string $key, string $domain, ?string $endpoint = null) use ($config, &$called): Mailgun {
+            TestCase::assertEquals($config["key"], $key);
+            TestCase::assertEquals($config["domain"], $domain);
+
+            if (array_key_exists("endpoint", $config)) {
+                TestCase::assertEquals($config["endpoint"], $endpoint);
+            } else {
+                TestCase::assertNull($endpoint);
+            }
+
+            $called = true;
+            return Mockery::mock(Mailgun::class);
+        };
+
+        $this->mockMethod(Mailgun::class, "create", $mock);
+        $actual = $binder->createMailgunTransport("mailgun", $config);
         self::assertInstanceOf(Mailgun::class, $actual);
+        self::assertTrue($called);
     }
 
     /** Ensure createMailgunTransport() throws when no domain is given */
@@ -74,7 +86,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun domain, found none");
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["key" => "the-key",]);
+        $binder->createMailgunTransport("mailgun", ["key" => "the-key",]);
     }
 
     /** Ensure createMailgunTransport() throws when the domain is null. */
@@ -83,7 +95,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun domain, found none");
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["domain" => null, "key" => "the-key",]);
+        $binder->createMailgunTransport("mailgun", ["domain" => null, "key" => "the-key",]);
     }
 
     /** Ensure createMailgunTransport() throws when the domain is empty. */
@@ -92,7 +104,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun domain, found \"\"");
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["domain" => "", "key" => "the-key",]);
+        $binder->createMailgunTransport("mailgun", ["domain" => "", "key" => "the-key",]);
     }
 
     /** Ensure createMailgunTransport() throws when the domain is not a string. */
@@ -101,7 +113,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun domain, found int");
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["domain" => 42, "key" => "the-key",]);
+        $binder->createMailgunTransport("mailgun", ["domain" => 42, "key" => "the-key",]);
     }
 
     /** Ensure createMailgunTransport() throws when the domain is an object. */
@@ -110,7 +122,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun domain, found " . $this::class);
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["domain" => $this, "key" => "the-key",]);
+        $binder->createMailgunTransport("mailgun", ["domain" => $this, "key" => "the-key",]);
     }
 
     /** Ensure createMailgunTransport() throws when no key is given */
@@ -119,7 +131,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun key, found none");
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["domain" => "the-domain",]);
+        $binder->createMailgunTransport("mailgun", ["domain" => "the-domain",]);
     }
 
     /** Ensure createMailgunTransport() throws when the key is null. */
@@ -128,7 +140,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun key, found none");
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["key" => null, "domain" => "the-domain",]);
+        $binder->createMailgunTransport("mailgun", ["key" => null, "domain" => "the-domain",]);
     }
 
     /** Ensure createMailgunTransport() throws when the key is empty. */
@@ -137,7 +149,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun key, found \"\"");
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["key" => "", "domain" => "the-domain",]);
+        $binder->createMailgunTransport("mailgun", ["key" => "", "domain" => "the-domain",]);
     }
 
     /** Ensure createMailgunTransport() throws when the key is not a string. */
@@ -146,7 +158,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun key, found int");
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["key" => 42, "domain" => "the-domain",]);
+        $binder->createMailgunTransport("mailgun", ["key" => 42, "domain" => "the-domain",]);
     }
 
     /** Ensure createMailgunTransport() throws when the key is an object. */
@@ -155,7 +167,7 @@ class MailTransportTest extends TestCase
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected valid mailgun key, found " . $this::class);
         $binder = new XRay($this->binder);
-        $binder->createMailgunTransport(["key" => $this, "domain" => "the-domain",]);
+        $binder->createMailgunTransport("mailgun", ["key" => $this, "domain" => "the-domain",]);
     }
 
     public static function dataForTestCreateTransport1(): iterable
