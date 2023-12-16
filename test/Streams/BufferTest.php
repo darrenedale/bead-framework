@@ -69,7 +69,7 @@ class BufferTest extends TestCase
         self::assertEquals("", (string) $this->buffer);
         self::assertFalse($this->buffer->isOpen());
     }
-    
+
     /** Ensure calling close() closes the buffer. */
     public function testClose1(): void
     {
@@ -83,34 +83,34 @@ class BufferTest extends TestCase
     {
         self::assertNull($this->buffer->detach());
     }
-    
+
     /** Ensure isOpen() reports an open buffer as open. */
     public function testIsOpen1(): void
     {
         self::assertTrue($this->buffer->isOpen());
     }
-    
+
     /** Ensure isOpen() reports a closed buffer as not open. */
     public function testIsOpen2(): void
     {
         $this->buffer->close();
         self::assertFalse($this->buffer->isOpen());
     }
-    
+
     /** Ensure checkOpen() doesn't throw when the stream is open. */
     public function testCheckOpen1(): void
     {
         $threw = false;
-        
+
         try {
             (new XRay($this->buffer))->checkOpen();
         } catch (Throwable) {
             $threw = true;
         }
-        
+
         self::assertFalse($threw);
     }
-    
+
     /** Ensure checkOpen() throws when the stream is closed. */
     public function testCheckOpen2(): void
     {
@@ -119,14 +119,14 @@ class BufferTest extends TestCase
         self::expectExceptionMessage("The Buffer is not open");
         (new XRay($this->buffer))->checkOpen();
     }
-    
+
     /** Ensure eof() is false when the buffer has not been exhausted */
     public function testEof1(): void
     {
         self::assertEquals(0, $this->buffer->tell());
         self::assertFalse($this->buffer->eof());
     }
-    
+
     /** Ensure eof() is false when the buffer has been seeked partway through */
     public function testEof2(): void
     {
@@ -149,13 +149,13 @@ class BufferTest extends TestCase
         $this->buffer->close();
         self::assertFalse($this->buffer->eof());
     }
-    
+
     /** Ensure an open buffer is seekable. */
     public function testIsSeekable1(): void
     {
         self::assertTrue($this->buffer->isSeekable());
     }
-    
+
     /** Ensure an EOF buffer is seekable. */
     public function testIsSeekable2(): void
     {
@@ -163,20 +163,20 @@ class BufferTest extends TestCase
         self::assertTrue($this->buffer->eof());
         self::assertTrue($this->buffer->isSeekable());
     }
-    
+
     /** Ensure a closed buffer is not seekable. */
     public function testIsSeekable3(): void
     {
         $this->buffer->close();
         self::assertFalse($this->buffer->isSeekable());
     }
-    
+
     /** Ensure an open buffer is seadable. */
     public function testIsReadable1(): void
     {
         self::assertTrue($this->buffer->isReadable());
     }
-    
+
     /** Ensure an EOF buffer is readable. */
     public function testIsReadable2(): void
     {
@@ -184,7 +184,7 @@ class BufferTest extends TestCase
         self::assertTrue($this->buffer->eof());
         self::assertTrue($this->buffer->isReadable());
     }
-    
+
     /** Ensure a closed buffer is not readable. */
     public function testIsReadable3(): void
     {
