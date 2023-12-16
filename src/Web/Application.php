@@ -14,6 +14,7 @@ use Bead\Exceptions\InvalidPluginException;
 use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
+use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
 use Bead\Exceptions\Session\SessionException;
@@ -183,7 +184,12 @@ class Application extends CoreApplication
      *
      * @param $appRoot string The path to the root of the application. This helps locate files (e.g. config files).
      *
-     * @throws Exception if an Application instance has already been created.
+     * @throws RuntimeException if an Application instance has already been created.
+     * @throws ServiceAlreadyBoundException if an a service binder attempts to bind an implementation to a service that
+     * is already bound.
+     * @throws SessionException if the session can't be initialised
+     * @throws InvalidPluginsDirectoryException plugins are enabled and the plugins directory is not valid
+     * @throws LogicException if you've already initialised the session outside the Application
      */
     public function __construct(string $appRoot)
     {
@@ -193,10 +199,12 @@ class Application extends CoreApplication
         $this->initialiseRequestProcessors();
 
         $this->initialiseSession();
+        /** @psalm-suppress MissingThrowsDocblock $context is not empty */
         $this->m_session = $this->sessionData(self::SessionDataContext);
         $this->setRouter(new Router());
 
         if (!empty($this->config("app.plugins.path"))) {
+            /** @psalm-suppress MissingThrowsDocblock LogicException can't be thrown as the Appl can't be running. */
             $this->setPluginsDirectory($this->config("app.plugins.path"));
         }
 
