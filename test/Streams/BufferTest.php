@@ -258,7 +258,152 @@ class BufferTest extends TestCase
         $this->buffer->tell();
     }
 
-    /** TODO testSeek1()... */
+    public static function dataForTestSeek1(): iterable
+    {
+        yield "10 from beginning" => [0, 10, SEEK_CUR, 10,];
+        yield "5 from 10" => [10, 5, SEEK_CUR, 15,];
+        yield "-5 from 10" => [10, -5, SEEK_CUR, 5,];
+        yield "-5 from end" => [strlen(self::BufferContent), -5, SEEK_CUR, strlen(self::BufferContent) - 5,];
+        yield "set 10 from beginning" => [0, 10, SEEK_SET, 10,];
+        yield "set 15 from 10" => [10, 15, SEEK_SET, 15,];
+        yield "set 5 from 10" => [10, 5, SEEK_SET, 5,];
+        yield "set 10 from end" => [strlen(self::BufferContent), 10, SEEK_SET, 10,];
+        yield "set 0 from beginning" => [0, 0, SEEK_SET, 0,];
+        yield "set 0 from 10" => [10, 0, SEEK_SET, 0,];
+        yield "set 0 from end" => [strlen(self::BufferContent), 0, SEEK_SET, 0,];
+        yield "end 0 from beginning" => [0, 0, SEEK_END, strlen(self::BufferContent),];
+        yield "end -1 from beginning" => [0, -1, SEEK_END, strlen(self::BufferContent) - 1,];
+        yield "end 0 from 10" => [10, 0, SEEK_END, strlen(self::BufferContent),];
+        yield "end -1 from 10" => [10, -1, SEEK_END, strlen(self::BufferContent) - 1,];
+        yield "end 0 from end" => [strlen(self::BufferContent), 0, SEEK_END, strlen(self::BufferContent),];
+        yield "end -1 from end" => [strlen(self::BufferContent), -1, SEEK_END, strlen(self::BufferContent) - 1,];
+    }
+
+    /**
+     * Ensure seeking ends up in the expected location.
+     *
+     * @dataProvider dataForTestSeek1
+     */
+    public function testSeek1(int $preOffset, int $offset, int $whence, int $expectedTell): void
+    {
+        if (0 < $preOffset) {
+            $this->buffer->seek($preOffset);
+        }
+
+        self::assertEquals($preOffset, $this->buffer->tell());
+        $this->buffer->seek($offset, $whence);
+        self::assertEquals($expectedTell, $this->buffer->tell());
+    }
+
+    public static function dataForTestSeek2(): iterable
+    {
+        yield "empty string" => ["",];
+        yield "whitespace" => ["  ",];
+        yield "int string" => ["2",];
+        yield "float string" => ["3.14",];
+        yield "float" => [3.14,];
+        yield "array" => [[10],];
+        yield "true" => [true,];
+        yield "false" => [false,];
+        yield "null" => [null,];
+        yield "object" => [(object) ["int" => 10],];
+    }
+
+    /**
+     * Ensure seek() throws with non-int offset and SEEK_SET.
+     *
+     * @dataProvider dataForTestSeek2
+     */
+    public function testSeek2(mixed $offset): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Expecting int offset for Argument #1 \$offset of seek(), found " . gettype($offset));
+        $this->buffer->seek($offset, SEEK_SET);
+    }
+
+    /**
+     * Ensure seek() throws with non-int offset and SEEK_CUR.
+     *
+     * @dataProvider dataForTestSeek2
+     */
+    public function testSeek3(mixed $offset): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Expecting int offset for Argument #1 \$offset of seek(), found " . gettype($offset));
+        $this->buffer->seek($offset, SEEK_CUR);
+    }
+
+    /**
+     * Ensure seek() throws with non-int offset and SEEK_END.
+     *
+     * @dataProvider dataForTestSeek2
+     */
+    public function testSeek4(mixed $offset): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Expecting int offset for Argument #1 \$offset of seek(), found " . gettype($offset));
+        $this->buffer->seek($offset, SEEK_END);
+    }
+
+    /**
+     * Ensure seek() throws with non-int whence.
+     *
+     * @dataProvider dataForTestSeek2
+     */
+    public function testSeek5(mixed $whence): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Expecting SEEK_SET, SEEK_CUR or SEEK_END for Argument #2 \$whence of seek(), found " . gettype($whence));
+        $this->buffer->seek(10, $whence);
+    }
+
+    /** Ensure seeking a closed Buffer throws. */
+    public function testSeek6(): void
+    {
+        $this->buffer->close();
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("The Buffer is not open");
+        $this->buffer->seek(1);
+    }
+
+    public static function dataForTestSeek7(): iterable
+    {
+        for ($idx = -10; $idx < 10; ++$idx) {
+            if (SEEK_CUR === $idx || SEEK_SET === $idx || SEEK_END === $idx) {
+                continue;
+            }
+
+            yield "{$idx}" => [$idx,];
+        }
+    }
+
+    /**
+     * Ensure invalid $whence ints throw.
+     *
+     * @dataProvider dataForTestSeek7
+     */
+    public function testSeek7(int $whence): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Expecting SEEK_SET, SEEK_CUR or SEEK_END for Argument #2 \$whence of seek(), found {$whence}");
+        $this->buffer->seek(1, $whence);
+    }
+
+    /** Ensure seeking beyond the end of the buffer throws. */
+    public function testSeek8(): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Requested seek is beyond the bounds of the buffer");
+        $this->buffer->seek(1, SEEK_END);
+    }
+
+    /** Ensure seeking beyond the beginning of the buffer throws. */
+    public function testSeek9(): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Requested seek is beyond the bounds of the buffer");
+        $this->buffer->seek(-1, SEEK_SET);
+    }
 
     /** Ensure we can rewind to the start of the buffer. */
     public function testRewind1(): void
@@ -362,6 +507,15 @@ class BufferTest extends TestCase
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage("Expecting int >= 0 length for Argument #1 \$length of read(), found {$length}");
         $this->buffer->read($length);
+    }
+
+    /** Ensure we get an empty string when reading a closed buffer. */
+    public function testRead4(): void
+    {
+        $this->buffer->close();
+        $actual = $this->buffer->read(1);
+        self::assertIsString($actual);
+        self::assertEquals("", $actual);
     }
 
     /** Ensure the metadata is null */
