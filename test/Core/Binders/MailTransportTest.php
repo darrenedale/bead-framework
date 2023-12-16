@@ -172,7 +172,7 @@ class MailTransportTest extends TestCase
 
     public static function dataForTestCreateTransport1(): iterable
     {
-        yield "php" => ["php", ["driver"=> "php",], Php::class,];
+        yield "php" => ["php", ["driver" => "php",], Php::class,];
         yield "mailgun" => ["mailgun", ["driver" => "mailgun", "domain" => "domain", "key" => "key",], Mailgun::class,];
     }
 
