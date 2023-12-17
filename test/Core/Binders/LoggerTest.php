@@ -38,6 +38,7 @@ final class LoggerTest extends TestCase
     {
         Mockery::close();
         unset($this->logger, $this->app);
+        self::clearTempDir();
         parent::tearDown();
     }
 

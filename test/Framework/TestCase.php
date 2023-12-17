@@ -14,6 +14,7 @@ use BeadTests\Framework\Constraints\Email\HasEquivalentPart;
 use BeadTests\Framework\Constraints\Email\HasHeader;
 use BeadTests\Framework\Constraints\Email\HasPart;
 use Closure;
+use DirectoryIterator;
 use LogicException;
 use PHPUnit\Framework\Constraint\LogicalNot;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
@@ -36,6 +37,29 @@ abstract class TestCase extends PhpUnitTestCase
     public static function tempDir(): string
     {
         return "/tmp/bead-framework/test";
+    }
+
+    /** Helper to clear out a directory */
+    private static function clearDir(string $path): void
+    {
+        foreach (new DirectoryIterator($path) as $entry) {
+            if ($entry->isDot()) {
+                continue;
+            }
+
+            if ($entry->isDir()) {
+                self::clearDir($entry->getRealPath());
+                rmdir($entry->getRealPath());
+            } else {
+                unlink($entry->getRealPath());
+            }
+        }
+    }
+
+    /** Clear out the temp directory. */
+    protected static function clearTempDir(): void
+    {
+        self::clearDir(self::tempDir());
     }
 
     /** Subclasses that reimplement tearDown() must call the parent implementation. */
