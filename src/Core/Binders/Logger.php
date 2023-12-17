@@ -81,8 +81,12 @@ class Logger implements BinderContract
     /**
      * Create the Logger instance to bind to the contract in the service container.
      *
+     * @param string $loggerName
      * @param array $config
      * @return LoggerContract
+     *
+     * @throws InvalidConfigurationException If the configuration for the named logger is not found or has an
+     * unrecognised driver.
      */
     protected function createLogger(string $loggerName, array $config): LoggerContract
     {
