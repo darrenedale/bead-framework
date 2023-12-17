@@ -6,11 +6,13 @@ use Bead\Contracts\Logger as LoggerContract;
 use Bead\Core\Application;
 use Bead\Core\Binders\Logger as LoggerBinder;
 use Bead\Exceptions\InvalidConfigurationException;
+use Bead\Logging\CompositeLogger;
 use Bead\Logging\FileLogger;
 use Bead\Logging\NullLogger;
 use Bead\Logging\StandardErrorLogger;
 use Bead\Logging\StandardOutputLogger;
 use Bead\Testing\StaticXRay;
+use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use Mockery;
 use Mockery\MockInterface;
@@ -39,33 +41,51 @@ final class LoggerTest extends TestCase
         parent::tearDown();
     }
 
+    /** Ensure the default configuration is as expected. */
+    public function testDefaultConfiguration(): void
+    {
+        $logger = new XRay($this->logger);
+
+        self::assertEquals(
+            [
+                "loggers" => "file",
+                "logs" => [
+                    "file" => [
+                        "driver" => "file",
+                        "path" => "data/logs/bead-app.log",
+                        "flags" => FileLogger::FlagAppend,
+                    ],
+                ],
+            ],
+            $logger->defaultConfiguration()
+        );
+    }
+
     public static function dataForTestCreateFileLogger1(): iterable
     {
         $config = [
             "driver" => "file",
-            "file" => [
-                "path" => "the-bead-app-log.log",
-                "flags" => FileLogger::FlagAppend,
-            ],
+            "path" => "the-bead-app-log.log",
+            "flags" => FileLogger::FlagAppend,
         ];
 
         yield "relative file path" => [$config, self::tempDir(), self::tempDir() . "/the-bead-app-log.log"];
 
-        $config["file"]["path"] = self::tempDir() . "/the-absolute-bead-app-log.log";
+        $config["path"] = self::tempDir() . "/the-absolute-bead-app-log.log";
         yield "absolute file path" => [$config, "/some/other/path/that/is/not/used", self::tempDir() . "/the-absolute-bead-app-log.log"];
 
-        $config["file"]["path"] = "..the-bead-app-log.log";
+        $config["path"] = "..the-bead-app-log.log";
         yield "relative file path with legitimate leading .." => [$config, self::tempDir(), self::tempDir() . "/..the-bead-app-log.log"];
-        $config["file"]["path"] = "the-bead-app-log.log..";
+        $config["path"] = "the-bead-app-log.log..";
         yield "relative file path with legitimate trailing .." => [$config, self::tempDir(), self::tempDir() . "/the-bead-app-log.log.."];
-        $config["file"]["path"] = "the-bead-app-log..log";
+        $config["path"] = "the-bead-app-log..log";
         yield "relative file path with legitimate .. in middle" => [$config, self::tempDir(), self::tempDir() . "/the-bead-app-log..log"];
 
-        $config["file"]["path"] = self::tempDir() . "/..the-absolute-bead-app-log.log";
+        $config["path"] = self::tempDir() . "/..the-absolute-bead-app-log.log";
         yield "absolute file path with legitimate leading .." => [$config, "/some/other/path/that/is/not/used", self::tempDir() . "/..the-absolute-bead-app-log.log"];
-        $config["file"]["path"] = self::tempDir() . "/the-absolute-bead-app-log.log..";
+        $config["path"] = self::tempDir() . "/the-absolute-bead-app-log.log..";
         yield "absolute file path with legitimate trailing .." => [$config, "/some/other/path/that/is/not/used", self::tempDir() . "/the-absolute-bead-app-log.log.."];
-        $config["file"]["path"] = self::tempDir() . "/the-absolute-bead-app-log..log";
+        $config["path"] = self::tempDir() . "/the-absolute-bead-app-log..log";
         yield "absolute file path with legitimate .. in middle" => [$config, "/some/other/path/that/is/not/used", self::tempDir() . "/the-absolute-bead-app-log..log"];
     }
 
@@ -84,7 +104,7 @@ final class LoggerTest extends TestCase
             ->once()
             ->andReturn($root);
 
-        $logger = new StaticXRay(LoggerBinder::class);
+        $logger = new XRay($this->logger);
         $actualLogger = $logger->createFileLogger($config);
         self::assertInstanceOf(FileLogger::class, $actualLogger);
         self::assertEquals($expectedPath, $actualLogger->fileName());
@@ -94,9 +114,7 @@ final class LoggerTest extends TestCase
     {
         $config = [
             "driver" => "file",
-            "file" => [
-                "flags" => FileLogger::FlagAppend,
-            ],
+            "flags" => FileLogger::FlagAppend,
         ];
 
         $datasets = [
@@ -109,7 +127,7 @@ final class LoggerTest extends TestCase
         ];
 
         foreach ($datasets as $label => $path) {
-            $config["file"]["path"] = $path;
+            $config["path"] = $path;
             yield $label => [$config];
         }
     }
@@ -123,38 +141,41 @@ final class LoggerTest extends TestCase
     {
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessageMatches("/^Expected log file path without directory traversal components, found \".*\\.\\..*\"\$/");
-        $logger = new StaticXRay(LoggerBinder::class);
+        $logger = new XRay($this->logger);
         $logger->createFileLogger($config);
     }
 
-    /** Ensure createFileLogger() throws when the "file" config key is missing. */
+    /** Ensure createFileLogger() throws when the "path" config key is missing. */
     public function testCreateFileLogger3(): void
     {
         self::expectException(InvalidConfigurationException::class);
-        self::expectExceptionMessage("Expected file configuration, none found");
-        $logger = new StaticXRay(LoggerBinder::class);
+        self::expectExceptionMessage("Expected log file path, none found");
+        $logger = new XRay($this->logger);
         $logger->createFileLogger([
             "driver" => "file",
+            "flags" => FileLogger::FlagAppend,
         ]);
     }
 
-    /** Ensure createFileLogger() throws when the "path" config key is missing. */
-    public function testCreateFileLogger4(): void
+    /** Ensure createLogger() throws when the named logger is not found. */
+    public function testCreateLogger(): void
     {
         self::expectException(InvalidConfigurationException::class);
-        self::expectExceptionMessage("Expected log file path, none found");
-        $logger = new StaticXRay(LoggerBinder::class);
-        $logger->createFileLogger([
-            "driver" => "file",
-            "file" => [
-                "flags" => FileLogger::FlagAppend,
-            ],
-        ]);
+        self::expectExceptionMessage("Expected configuration array for \"file\", found none");
+        (new XRay($this->logger))->createLogger("file", [" file" => [],]);
     }
 
     public static function dataForTestBindServices1(): iterable
     {
-        yield from self::dataForTestCreateFileLogger1();
+        foreach (self::dataForTestCreateFileLogger1() as $key => $data) {
+            $config = $data[0];
+            $data[0]["loggers"] = "file";
+            $data[0]["logs"] = [
+                "file" => $config,
+            ];
+
+            yield $key => $data;
+        }
     }
 
     /**
@@ -170,12 +191,15 @@ final class LoggerTest extends TestCase
             return true;
         };
 
-        $defaultConfig = (new ReflectionClassConstant(LoggerBinder::class, "DefaultConfig"))->getValue();
+        $this->app->shouldReceive("config")
+            ->once()
+            ->with("log.loggers")
+            ->andReturn($config["loggers"]);
 
         $this->app->shouldReceive("config")
             ->once()
-            ->with("log", $defaultConfig)
-            ->andReturn($config);
+            ->with("log.logs")
+            ->andReturn($config["logs"]);
 
         $this->app->shouldReceive("rootDir")
             ->atMost()
@@ -187,7 +211,6 @@ final class LoggerTest extends TestCase
             ->with(LoggerContract::class, Mockery::on($match));
 
         $this->logger->bindServices($this->app);
-        self::markTestAsExternallyVerified();
     }
 
     /** Ensure we can successfully bind stdout logger. */
@@ -198,19 +221,21 @@ final class LoggerTest extends TestCase
             return true;
         };
 
-        $defaultConfig = (new ReflectionClassConstant(LoggerBinder::class, "DefaultConfig"))->getValue();
+        $this->app->shouldReceive("config")
+            ->once()
+            ->with("log.loggers")
+            ->andReturn("stdout");
 
         $this->app->shouldReceive("config")
             ->once()
-            ->with("log", $defaultConfig)
-            ->andReturn(["driver" => "stdout",]);
+            ->with("log.logs")
+            ->andReturn(["stdout" => ["driver" => "stdout",],]);
 
         $this->app->shouldReceive("bindService")
             ->once()
             ->with(LoggerContract::class, Mockery::on($match));
 
         $this->logger->bindServices($this->app);
-        self::markTestAsExternallyVerified();
     }
 
     /** Ensure we can successfully bind stderr logger. */
@@ -221,22 +246,24 @@ final class LoggerTest extends TestCase
             return true;
         };
 
-        $defaultConfig = (new ReflectionClassConstant(LoggerBinder::class, "DefaultConfig"))->getValue();
+        $this->app->shouldReceive("config")
+            ->once()
+            ->with("log.loggers")
+            ->andReturn("stderr");
 
         $this->app->shouldReceive("config")
             ->once()
-            ->with("log", $defaultConfig)
-            ->andReturn(["driver" => "stderr",]);
+            ->with("log.logs")
+            ->andReturn(["stderr" => ["driver" => "stderr",],]);
 
         $this->app->shouldReceive("bindService")
             ->once()
             ->with(LoggerContract::class, Mockery::on($match));
 
         $this->logger->bindServices($this->app);
-        self::markTestAsExternallyVerified();
     }
 
-    /** Ensure we can successfully bind stderr logger. */
+    /** Ensure we can successfully bind null logger. */
     public function testBindServices4(): void
     {
         $match = function (mixed $logger): bool {
@@ -244,48 +271,142 @@ final class LoggerTest extends TestCase
             return true;
         };
 
-        $defaultConfig = (new ReflectionClassConstant(LoggerBinder::class, "DefaultConfig"))->getValue();
+        $this->app->shouldReceive("config")
+            ->once()
+            ->with("log.loggers")
+            ->andReturn("null");
 
         $this->app->shouldReceive("config")
             ->once()
-            ->with("log", $defaultConfig)
-            ->andReturn(["driver" => "null",]);
+            ->with("log.logs")
+            ->andReturn(["null" => ["driver" => "null",],]);
 
         $this->app->shouldReceive("bindService")
             ->once()
             ->with(LoggerContract::class, Mockery::on($match));
 
         $this->logger->bindServices($this->app);
-        self::markTestAsExternallyVerified();
     }
 
-    /** Ensure bindServices() throws if the log driver is not specified. */
-    public function testBindServices5(): void
+    public static function dataForTestBindServices5(): iterable
     {
-        $defaultConfig = (new ReflectionClassConstant(LoggerBinder::class, "DefaultConfig"))->getValue();
+        yield "empty array" => [[]];
+        yield "int" => [42,];
+        yield "float" => [3.14159,];
+        yield "object" => [(object) [],];
+        yield "true" => [true,];
+        yield "false" => [false,];
+        yield "array with non-string" => [["file", 42,],];
+    }
 
+    /**
+     * Ensure bindServices() throws if invalid loggers are specified.
+     *
+     * @dataProvider dataForTestBindServices5
+     */
+    public function testBindServices5(mixed $loggers): void
+    {
         $this->app->shouldReceive("config")
             ->once()
-            ->with("log", $defaultConfig)
-            ->andReturn([]);
+            ->with("log.loggers")
+            ->andReturn($loggers);
 
         self::expectException(InvalidConfigurationException::class);
-        self::expectExceptionMessage("Expected log driver, none found");
+        self::expectExceptionMessage("Expected defined log name or array of such");
         $this->logger->bindServices($this->app);
     }
 
     /** Ensure bindServices() throws if the log driver is invalid. */
     public function testBindServices6(): void
     {
-        $defaultConfig = (new ReflectionClassConstant(LoggerBinder::class, "DefaultConfig"))->getValue();
+        $this->app->shouldReceive("config")
+            ->once()
+            ->with("log.loggers")
+            ->andReturn("file");
 
         $this->app->shouldReceive("config")
             ->once()
-            ->with("log", $defaultConfig)
-            ->andReturn(["driver" => "invalid-bead-log-driver",]);
+            ->with("log.logs")
+            ->andReturn(["file" => ["driver" => "invalid-bead-log-driver",],]);
 
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected recognised log driver, found \"invalid-bead-log-driver\"");
+        $this->logger->bindServices($this->app);
+    }
+
+    /** Ensure bindServices() uses the default configuration if no loggers are specified. */
+    public function testBindServices7(): void
+    {
+        $match = function (mixed $logger): bool {
+            self::assertInstanceOf(FileLogger::class, $logger);
+            self::assertEquals(self::tempDir() . "/data/logs/bead-app.log", $logger->fileName());
+            return true;
+        };
+
+        mkdir(self::tempDir() . "/data/logs/", 0777, true);
+
+        $this->app->shouldReceive("config")
+            ->once()
+            ->with("log.loggers")
+            ->andReturn(null);
+
+        $this->app->shouldNotReceive("config")
+            ->with("log.logs");
+
+        $this->app->shouldReceive("rootDir")
+            ->atMost()
+            ->once()
+            ->andReturn(self::tempDir());
+
+        $this->app->shouldReceive("bindService")
+            ->once()
+            ->with(LoggerContract::class, Mockery::on($match));
+
+        $this->logger->bindServices($this->app);
+    }
+
+    /** Ensure bindServices() binds a composite logger when multiple loggers are specified. */
+    public function testBindServices8(): void
+    {
+        $match = function (mixed $logger): bool {
+            self::assertInstanceOf(CompositeLogger::class, $logger);
+            self::assertCount(2, $logger);
+            self::assertInstanceOf(FileLogger::class, $logger[0]);
+            self::assertEquals(self::tempDir() . "/app.log", $logger[0]->fileName());
+            self::assertInstanceOf(StandardOutputLogger::class, $logger[1]);
+            return true;
+        };
+
+        $this->app->shouldReceive("config")
+            ->once()
+            ->with("log.loggers")
+            ->andReturn(["file", "stdout",]);
+
+        $this->app->shouldReceive("config")
+            ->once()
+            ->with("log.logs")
+            ->andReturn(
+                [
+                    "file" => [
+                        "driver" => "file",
+                        "path" => "app.log",
+                        "flags" => FileLogger::FlagAppend,
+                    ],
+                    "stdout" => [
+                        "driver" => "stdout",
+                    ],
+                ]
+            );
+
+        $this->app->shouldReceive("rootDir")
+            ->atMost()
+            ->once()
+            ->andReturn(self::tempDir());
+
+        $this->app->shouldReceive("bindService")
+            ->once()
+            ->with(LoggerContract::class, Mockery::on($match));
+
         $this->logger->bindServices($this->app);
     }
 }
