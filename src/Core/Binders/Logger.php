@@ -96,13 +96,16 @@ class Logger implements BinderContract
 
         $config = $config[$loggerName];
 
-        return match ($config["driver"] ?? null) {
+        $logger = match ($config["driver"] ?? null) {
             "file" => $this->createFileLogger($config),
             "stdout" => new StandardOutputLogger(),
             "stderr" => new StandardErrorLogger(),
             "null" => new NullLogger(),
             default => throw new InvalidConfigurationException("log.logs.{$loggerName}.driver", "Expected recognised log driver, found \"{$config["driver"]}\""),
         };
+
+        $logger->setLevel($config["level"] ?? LoggerContract::ErrorLevel);
+        return $logger;
     }
 
     /**

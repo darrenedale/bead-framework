@@ -158,11 +158,27 @@ final class LoggerTest extends TestCase
     }
 
     /** Ensure createLogger() throws when the named logger is not found. */
-    public function testCreateLogger(): void
+    public function testCreateLogger1(): void
     {
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expected configuration array for \"file\", found none");
         (new XRay($this->logger))->createLogger("file", [" file" => [],]);
+    }
+
+    /** Ensure createLogger() uses the configured log level. */
+    public function testCreateLogger2(): void
+    {
+        $logger = (new XRay($this->logger))->createLogger("null", ["null" => ["driver" => "null", "level" => LoggerContract::DebugLevel,],]);
+        self::assertInstanceOf(NullLogger::class, $logger);
+        self::assertEquals(LoggerContract::DebugLevel, $logger->level());
+    }
+
+    /** Ensure createLogger() uses the default log level when none is given. */
+    public function testCreateLogger3(): void
+    {
+        $logger = (new XRay($this->logger))->createLogger("null", ["null" => ["driver" => "null",],]);
+        self::assertInstanceOf(NullLogger::class, $logger);
+        self::assertEquals(LoggerContract::ErrorLevel, $logger->level());
     }
 
     public static function dataForTestBindServices1(): iterable
