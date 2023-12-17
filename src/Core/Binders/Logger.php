@@ -10,28 +10,43 @@ use Bead\Core\Application;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\Logging\FileLoggerException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
+use Bead\Logging\CompositeLogger;
 use Bead\Logging\FileLogger;
 use Bead\Logging\NullLogger;
 use Bead\Logging\StandardErrorLogger;
 use Bead\Logging\StandardOutputLogger;
 
 use function array_key_exists;
+use function Bead\Helpers\Iterable\all;
 use function str_starts_with;
 use function str_contains;
 
 /** Bind logging services into the application service container. */
 class Logger implements BinderContract
 {
-    private const DefaultConfig = [
-        "driver" => "file",
-        "file" => [
-            "path" => "logs/bead-app.log",
-            "flags" => FileLogger::FlagAppend,
-        ],
-    ];
+    /**
+     * The default logging configuration to use when there's no config file.
+     *
+     * The implementation here is to have a single log file data/logs/bead-app.log.
+     *
+     * @return array The configuration.
+     */
+    protected function defaultConfiguration(): array
+    {
+        return [
+            "loggers" => "file",
+            "logs" => [
+                "file" => [
+                    "driver" => "file",
+                    "path" => "data/logs/bead-app.log",
+                    "flags" => FileLogger::FlagAppend,
+                ],
+            ],
+        ];
+    }
 
     /**
-     * Generate a FileLogger from provided config.
+     * Create a FileLogger from provided config.
      *
      * If the config contains an absolute path, the path is used untouched. If the path is relative, it's relative to
      * the application root directory provided.
@@ -44,27 +59,23 @@ class Logger implements BinderContract
      * contains an invalid path.
      * @throws FileLoggerException if creating the logger fails.
      */
-    protected static function createFileLogger(array $config): FileLogger
+    protected function createFileLogger(array $config): FileLogger
     {
-        if (!array_key_exists("file", $config)) {
-            throw new InvalidConfigurationException("log.file", "Expected file configuration, none found");
+        if (!array_key_exists("path", $config)) {
+            throw new InvalidConfigurationException("log.logs.*.path", "Expected log file path, none found");
         }
 
-        if (!array_key_exists("path", $config["file"])) {
-            throw new InvalidConfigurationException("log.file.path", "Expected log file path, none found");
-        }
-
-        $path = $config["file"]["path"];
+        $path = $config["path"];
 
         if (!str_starts_with($path, "/")) {
             $path = Application::instance()->rootDir() . "/{$path}";
         }
 
         if (".." === $path || str_contains($path, "/../") || str_starts_with($path, "../") || str_ends_with($path, "/..")) {
-            throw new InvalidConfigurationException("log.file.path", "Expected log file path without directory traversal components, found \"{$path}\"");
+            throw new InvalidConfigurationException("log.logs.*.path", "Expected log file path without directory traversal components, found \"{$path}\"");
         }
 
-        return new FileLogger($path, $config["file"]["flags"] ?? FileLogger::FlagAppend);
+        return new FileLogger($path, $config["flags"] ?? FileLogger::FlagAppend);
     }
 
     /**
@@ -73,14 +84,20 @@ class Logger implements BinderContract
      * @param array $config
      * @return LoggerContract
      */
-    protected static function createLogger(array $config): LoggerContract
+    protected function createLogger(string $loggerName, array $config): LoggerContract
     {
-        return match ($config["driver"]) {
-            "file" => self::createFileLogger($config),
+        if (!is_array($config[$loggerName] ?? null)) {
+            throw new InvalidConfigurationException("log.logs.{$loggerName}", "Expected configuration array for \"{$loggerName}\", found none");
+        }
+
+        $config = $config[$loggerName];
+
+        return match ($config["driver"] ?? null) {
+            "file" => $this->createFileLogger($config),
             "stdout" => new StandardOutputLogger(),
             "stderr" => new StandardErrorLogger(),
             "null" => new NullLogger(),
-            default => throw new InvalidConfigurationException("log.driver", "Expected recognised log driver, found \"{$config["driver"]}\""),
+            default => throw new InvalidConfigurationException("log.logs.{$loggerName}.driver", "Expected recognised log driver, found \"{$config["driver"]}\""),
         };
     }
 
@@ -94,13 +111,27 @@ class Logger implements BinderContract
      */
     public function bindServices(Application $app): void
     {
-        $config = $app->config("log", self::DefaultConfig);
-        $driver = $config["driver"] ?? null;
+        $loggers = $app->config("log.loggers");
 
-        if (null === $driver) {
-            throw new InvalidConfigurationException("log.driver", "Expected log driver, none found");
+        if (null === $loggers) {
+            ["loggers" => $loggers, "logs" => $definitions,] = $this->defaultConfiguration();
+        } elseif (is_string($loggers) || (is_array($loggers) && 0 < count($loggers) && all($loggers, "is_string"))) {
+            $definitions = $app->config("log.logs");
+        } else {
+            throw new InvalidConfigurationException("log.loggers", "Expected defined log name or array of such");
         }
 
-        $app->bindService(LoggerContract::class, static::createLogger($config));
+        if (is_string($loggers)) {
+            $app->bindService(LoggerContract::class, static::createLogger($loggers, $definitions));
+            return;
+        }
+
+        $logger = new CompositeLogger();
+
+        foreach ($loggers as $loggerName) {
+            $logger->addLogger($this->createLogger($loggerName, $definitions));
+        }
+
+        $app->bindService(LoggerContract::class, $logger);
     }
 }
