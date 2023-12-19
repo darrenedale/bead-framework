@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Bead\Core\Binders;
+
 use Bead\Contracts\Binder as BinderContract;
 use Bead\Contracts\Hasher as HasherContract;
 use Bead\Core\Application;
@@ -20,7 +22,7 @@ class Hasher implements BinderContract
      * @return HasherContract
      * @throws InvalidConfigurationException
      */
-    protected static function createCrypter(array $config): HasherContract
+    protected static function createHasher(array $config): HasherContract
     {
         return match ($config["driver"]) {
             "bcrypt" => new BcryptHasher($config["cost"] ?? BcryptHasher::DefaultCost),

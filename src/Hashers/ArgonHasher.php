@@ -30,6 +30,8 @@ class ArgonHasher implements Hasher
      */
     public function __construct(int $memoryCost = self::DefaultMemoryCost, int $timeCost = self::DefaultTimeCost)
     {
+        self::checkMemoryCost($memoryCost);
+        self::checkTimeCost($timeCost);
         $this->memoryCost = $memoryCost;
         $this->timeCost = $timeCost;
     }
@@ -41,7 +43,7 @@ class ArgonHasher implements Hasher
      */
     private static function checkMemoryCost(int $memoryCost): void
     {
-        if (4 > $memoryCost || 31 < $memoryCost) {
+        if (1 > $memoryCost) {
             throw new InvalidArgumentException("Expected valid memory cost, found {$memoryCost}");
         }
     }
@@ -53,7 +55,7 @@ class ArgonHasher implements Hasher
      */
     private static function checkTimeCost(int $timeCost): void
     {
-        if (4 > $timeCost || 31 < $timeCost) {
+        if (1 > $timeCost) {
             throw new InvalidArgumentException("Expected valid time cost, found {$timeCost}");
         }
     }
