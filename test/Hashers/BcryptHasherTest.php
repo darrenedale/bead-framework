@@ -121,4 +121,16 @@ final class BcryptHasherTest extends TestCase
         $this->mockFunction("password_verify", true);
         self::assertTrue($this->hasher->verify("user-entered-password", "the-hashed-stored-password"));
     }
+
+    /** Ensure a known matching pair passes verification. */
+    public function testVerify4(): void
+    {
+        self::assertTrue($this->hasher->verify("bead-framework", "\$2y\$10\$wQEwKOx1xeSdZgjeU9q2bejEVgwxL3n1X0pK/MTJjshLvxQsYJida"));
+    }
+
+    /** Ensure a known non-matching pair fails verification. */
+    public function testVerify5(): void
+    {
+        self::assertFalse($this->hasher->verify("framework-bead", "\$2y\$10\$wQEwKOx1xeSdZgjeU9q2bejEVgwxL3n1X0pK/MTJjshLvxQsYJida"));
+    }
 }

@@ -166,4 +166,16 @@ final class ArgonHasherTest extends TestCase
         $this->mockFunction("password_verify", true);
         self::assertTrue($this->hasher->verify("user-entered-password", "the-hashed-stored-password"));
     }
+
+    /** Ensure a known matching pair passes verification. */
+    public function testVerify4(): void
+    {
+        self::assertTrue($this->hasher->verify("bead-framework", "\$argon2id\$v=19\$m=65536,t=4,p=1\$UWFvY3FZai5TYmVZejhRZg\$Gp5jtsszHekXgfFJ3h6werXvxJxDF7wuRhQAtEi6YFE"));
+    }
+
+    /** Ensure a known non-matching pair fails verification. */
+    public function testVerify5(): void
+    {
+        self::assertFalse($this->hasher->verify("framework-bead", "\$argon2id\$v=19\$m=65536,t=4,p=1\$UWFvY3FZai5TYmVZejhRZg\$Gp5jtsszHekXgfFJ3h6werXvxJxDF7wuRhQAtEi6YFE"));
+    }
 }
