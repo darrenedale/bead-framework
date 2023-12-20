@@ -14,7 +14,6 @@ final class BcryptHasherTest extends TestCase
 
     public function setUp(): void
     {
-        /** @psalm-suppress Default construction won't throw. */
         $this->hasher = new BcryptHasher();
     }
 

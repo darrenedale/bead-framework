@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace BeadTests\Core\Binders;
+
 use Bead\Contracts\Hasher as HasherContract;
 use Bead\Core\Application;
 use Bead\Core\Binders\Hasher as HasherBinder;
@@ -9,6 +11,8 @@ use Bead\Hashers\ArgonHasher;
 use Bead\Hashers\BcryptHasher;
 use BeadTests\Framework\TestCase;
 use Bead\Exceptions\InvalidConfigurationException;
+use Mockery;
+use Mockery\MockInterface;
 
 final class HasherTest extends TestCase
 {

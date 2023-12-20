@@ -8,7 +8,7 @@ use Bead\Contracts\Binder as BinderContract;
 use Bead\Contracts\Hasher as HasherContract;
 use Bead\Core\Application;
 use Bead\Exceptions\InvalidConfigurationException;
-use \Bead\Exceptions\ServiceAlreadyBoundException;
+use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Hashers\ArgonHasher;
 use Bead\Hashers\BcryptHasher;
 

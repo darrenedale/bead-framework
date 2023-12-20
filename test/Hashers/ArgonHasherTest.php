@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace BeadTests\Hashers;
+
 use Bead\Hashers\ArgonHasher;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
@@ -12,7 +14,6 @@ final class ArgonHasherTest extends TestCase
 
     public function setUp(): void
     {
-        /** @psalm-suppress Default construction won't throw. */
         $this->hasher = new ArgonHasher();
     }
 
@@ -121,7 +122,7 @@ final class ArgonHasherTest extends TestCase
     /** Ensure hash() calls password_hash() with the expected arguments. */
     public function testHash1(): void
     {
-        $mock = function(string $value, string $algorithm, array $options): string {
+        $mock = function (string $value, string $algorithm, array $options): string {
             TestCase::assertEquals("user-entered-password", $value);
             TestCase::assertEquals(PASSWORD_ARGON2ID, $algorithm);
             TestCase::assertEqualsCanonicalizing(
@@ -143,7 +144,7 @@ final class ArgonHasherTest extends TestCase
     /** Ensure verify() calls password_verify() with the expected arguments. */
     public function testVerify1(): void
     {
-        $mock = function(string $value, string $hash): bool {
+        $mock = function (string $value, string $hash): bool {
             TestCase::assertEquals("user-entered-password", $value);
             TestCase::assertEquals("the-hashed-stored-password", $hash);
             return true;

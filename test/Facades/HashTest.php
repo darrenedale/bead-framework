@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace BeadTests\Facades;
+
 use Bead\Contracts\Hasher as HasherContract;
 use Bead\Core\Application;
 use Bead\Facades\Hash;
