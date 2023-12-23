@@ -18,3 +18,9 @@ services:
       volumes:
         - ../:/bead
       working_dir: /bead
+
+  php83:
+      image: darrenedale/equit:php-8.3-fpm
+      volumes:
+        - ../:/bead
+      working_dir: /bead
