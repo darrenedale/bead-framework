@@ -9,6 +9,7 @@ use Bead\Contracts\Response;
  */
 class RedirectResponse implements Response
 {
+    use HasDefaultReasonPhrase;
     use DoesntHaveContent;
     use SendsHeaders;
 

@@ -6,6 +6,7 @@ use Bead\Contracts\Response;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
 use Bead\Responses\DoesntHaveHeaders;
+use Bead\Responses\HasDefaultReasonPhrase;
 use Bead\Responses\NaivelySendsContent;
 use Bead\View;
 use Bead\Web\Application;
@@ -22,6 +23,7 @@ use Throwable;
  */
 abstract class HttpException extends Exception implements Response
 {
+    use HasDefaultReasonPhrase;
     use DoesntHaveHeaders;
     use NaivelySendsContent;
 

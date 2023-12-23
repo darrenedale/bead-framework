@@ -42,7 +42,9 @@ trait NaivelySendsContent
      */
     public function send(): void
     {
-        http_response_code($this->statusCode());
+
+        $reasonPhrase = str_replace(["\n", "\r",], " ", $this->reasonPhrase());
+        header("HTTP/1.1 {$this->statusCode()} {$reasonPhrase}");
         header("content-type: {$this->contentType()}", true);
 
         foreach ($this->headers() as $header => $value) {

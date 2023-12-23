@@ -12,6 +12,7 @@ use Bead\Contracts\Response;
 abstract class AbstractResponse implements Response
 {
     use CanSetStatusCode;
+    use HasDefaultReasonPhrase;
     use CanSetContentType;
     use DoesntHaveHeaders;
     use NaivelySendsContent;
