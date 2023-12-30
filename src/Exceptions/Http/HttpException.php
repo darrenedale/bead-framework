@@ -5,6 +5,7 @@ namespace Bead\Exceptions\Http;
 use Bead\Contracts\Response;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
+use Bead\Facades\Application as App;
 use Bead\Responses\DoesntHaveHeaders;
 use Bead\Responses\HasDefaultReasonPhrase;
 use Bead\Responses\NaivelySendsContent;
@@ -12,8 +13,9 @@ use Bead\View;
 use Bead\Web\Application;
 use Bead\Web\Request;
 use Exception;
-use RuntimeException;
 use Throwable;
+
+use function Bead\Helpers\Str\html;
 
 /**
  * Base class for HTTP exceptions that can also act as responses.
@@ -64,13 +66,28 @@ abstract class HttpException extends Exception implements Response
         if (isset($viewPath)) {
             try {
                 return (new View("{$viewPath}.{$this->statusCode()}", ["message" => $this->getMessage()]))->render();
-            } catch (ViewNotFoundException $err) {
-                // TODO implement fallback
-            } catch (ViewRenderingException $err) {
-                // TODO implement fallback
+            } catch (ViewNotFoundException|ViewRenderingException) {
+                // we only want to catch these - any others should be handled by some other means
             }
         }
 
-        return "";
+        if (App::isInDebugMode() && "" !== $this->getMessage()) {
+            $message = "<p>" . html($this->getMessage()) . "</p>";
+        } else {
+            $message = "";
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>HTTP Error {$this->statusCode()}</title>
+</head>
+<body>
+<h1>HTTP Error {$this->statusCode()} {$this->reasonPhrase()}</h1>
+{$message}
+</body>
+</html>
+HTML;
     }
 }

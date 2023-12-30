@@ -8,6 +8,7 @@ use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
 use Bead\Facades\WebApplication as WebApp;
 use Bead\Responses\DoesntHaveHeaders;
+use Bead\Responses\HasDefaultReasonPhrase;
 use Bead\Responses\NaivelySendsContent;
 use Bead\Web\Application as WebApplication;
 use InvalidArgumentException;
@@ -102,6 +103,7 @@ use function Bead\Helpers\Str\html;
  */
 class View implements Response
 {
+    use HasDefaultReasonPhrase;
     use DoesntHaveHeaders;
     use NaivelySendsContent;
 

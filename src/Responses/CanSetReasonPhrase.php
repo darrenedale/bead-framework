@@ -17,7 +17,7 @@ trait CanSetReasonPhrase
      *
      * @return string The reason phrase.
      */
-    public function reaspnPhrase(): string
+    public function reasonPhrase(): string
     {
         return $this->m_reasonPhrase;
     }
