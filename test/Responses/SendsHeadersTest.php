@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BeadTests\Responses;
 
 use Bead\Responses\SendsHeaders;
@@ -14,7 +16,7 @@ final class SendsHeadersTest extends TestCase
     ];
 
     /** Helper to create a new instance of a class that imports the trait under test. */
-    private function createInstance(): mixed
+    private static function createInstance(): object
     {
         return new class
         {
@@ -54,7 +56,7 @@ final class SendsHeadersTest extends TestCase
             }
         );
 
-        $instance = new XRay($this->createInstance());
+        $instance = new XRay(self::createInstance());
         $instance->sendHeaders();
         self::assertEmpty($expectedHeaders, "Not all expected headers were generated.");
     }

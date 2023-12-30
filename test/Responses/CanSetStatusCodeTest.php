@@ -1,15 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BeadTests\Responses;
 
-use Bead\Contracts\Response;
 use Bead\Responses\CanSetStatusCode;
-use PHPUnit\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 
 final class CanSetStatusCodeTest extends TestCase
 {
     /** Helper to create a new instance of a class that imports the trait under test. */
-    private function createInstance(): mixed
+    private static function createInstance(): object
     {
         return new class
         {
@@ -24,15 +25,15 @@ final class CanSetStatusCodeTest extends TestCase
 
 
     /** Ensure we can fetch the status code. */
-    public function testStatusCode(): void
+    public function testStatusCode1(): void
     {
-        self::assertEquals(200, $this->createInstance()->statusCode());
+        self::assertEquals(200, self::createInstance()->statusCode());
     }
 
     /** Ensure we can set the status code. */
-    public function testSetStatusCode(): void
+    public function testSetStatusCode1(): void
     {
-        $instance = $this->createInstance();
+        $instance = self::createInstance();
         $instance->setStatusCode(400);
         self::assertEquals(400, $instance->statusCode());
     }

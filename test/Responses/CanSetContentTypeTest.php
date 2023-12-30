@@ -1,15 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BeadTests\Responses;
 
-use Bead\Contracts\Response;
 use Bead\Responses\CanSetContentType;
-use PHPUnit\Framework\TestCase;
+use BeadTests\Framework\TestCase;
 
 final class CanSetContentTypeTest extends TestCase
 {
     /** Helper to create a new instance of a class that imports the trait under test. */
-    private function createInstance(): mixed
+    private static function createInstance(): object
     {
         return new class
         {
@@ -18,15 +19,15 @@ final class CanSetContentTypeTest extends TestCase
     }
 
     /** Ensure we can fetch the content-type. */
-    public function testStatusCode(): void
+    public function testContentType1(): void
     {
-        self::assertEquals("application/octet-stream", $this->createInstance()->contentType());
+        self::assertEquals("application/octet-stream", self::createInstance()->contentType());
     }
 
     /** Ensure we can set the content-type. */
-    public function testSetStatusCode(): void
+    public function testSetContentType1(): void
     {
-        $instance = $this->createInstance();
+        $instance = self::createInstance();
         $instance->setContentType("application/json");
         self::assertEquals("application/json", $instance->contentType());
     }
