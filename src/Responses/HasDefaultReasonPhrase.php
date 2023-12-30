@@ -34,7 +34,6 @@ trait HasDefaultReasonPhrase
             303 => "See Other",
             304 => "Not Modified",
             305 => "Use Proxy",
-            306 => "(Unused)",
             307 => "Temporary Redirect",
             308 => "Permanent Redirect",
 
@@ -56,7 +55,7 @@ trait HasDefaultReasonPhrase
             415 => "Unsupported Media Type",
             416 => "Range Not Satisfiable",
             417 => "Expectation Failed",
-            418 => "(Unused)",
+            418 => "I'm a teapot",
 
             421 => "Misdirected Request",
             422 => "Unprocessable Content",

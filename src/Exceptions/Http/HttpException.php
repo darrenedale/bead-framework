@@ -77,6 +77,7 @@ abstract class HttpException extends Exception implements Response
             $message = "";
         }
 
+        // NOTE uses default reasonPhrase() so no need to escape for HTML as it's known to be safe
         return <<<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -84,7 +85,7 @@ abstract class HttpException extends Exception implements Response
 <title>HTTP Error {$this->statusCode()}</title>
 </head>
 <body>
-<h1>HTTP Error {$this->statusCode()} {$this->reasonPhrase()}</h1>
+<h2>HTTP Error {$this->statusCode()} <em>{$this->reasonPhrase()}</em></h2>
 {$message}
 </body>
 </html>
