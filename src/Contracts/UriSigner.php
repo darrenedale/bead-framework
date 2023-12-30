@@ -5,7 +5,7 @@ namespace Bead\Contracts;
 use DateTimeInterface;
 
 /**
- * Interface for imlementations of signed URI generators.
+ * Interface for implementations of signed URI generators.
  */
 interface UriSigner
 {
@@ -16,7 +16,7 @@ interface UriSigner
      *
      * @param string $secret The secret.
      *
-     * @return $this A UriSigner for further methdo chaining.
+     * @return $this A UriSigner for further method chaining.
      */
     public function usingSecret(string $secret): self;
 
@@ -44,7 +44,7 @@ interface UriSigner
     /**
      * Verify a signed URI.
      *
-     * @param string $uri The signed URI
+     * @param string $signedUri The signed URI
      * @param int|DateTimeInterface|null $at The point in time at which to verify the URI. Defaults to `null`, which
      * means verify at the current time.
      *

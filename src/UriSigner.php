@@ -18,7 +18,7 @@ class UriSigner implements UriSignerContract
     /**
      * The minimum required length for a secret.
      *
-     * This is not a recommendataion - it's not a very secure length - but the minimum that will be accepted.
+     * This is not a recommendation - it's not a very secure length - but the minimum that will be accepted.
      */
     public const MinimumSecretLength = 6;
 
@@ -199,13 +199,12 @@ class UriSigner implements UriSignerContract
      * @return string The signed URI.
      * @throws UriSignerException if the secret has not been set to a valid value
      */
-    public function sign(string $uri, array $parameters, $expires): string
+    public function sign(string $uri, array $parameters, int|DateTimeInterface $expires): string
     {
-        assert($expires instanceof DateTimeInterface || is_int($expires), new TypeError("Argument for parameter #3 '\$expires' is not valied - expected DateTimeInterface or int."));
         $parameters["expires"] = ($expires instanceof DateTimeInterface ? $expires->getTimestamp() : $expires);
         $queryString = self::queryString($parameters);
 
-        if (false === strpos($uri, "?")) {
+        if (!str_contains($uri, "?")) {
             $uri = "{$uri}?{$queryString}";
         } else {
             $uri = "{$uri}&{$queryString}";
@@ -223,16 +222,12 @@ class UriSigner implements UriSignerContract
      *
      * @return bool `true` if the signature is verified, `false` if not.
      */
-    public function verify(string $signedUri, $at = null): bool
+    public function verify(string $signedUri, int|DateTimeInterface|null $at = null): bool
     {
         if (!isset($at)) {
             $at = time();
-        } else {
-            assert($at instanceof DateTimeInterface || is_int($at), new TypeError("Argument for parameter #2 '\$at' is not valied - expected DateTimeInterface or int."));
-
-            if ($at instanceof DateTimeInterface) {
-                $at = $at->getTimestamp();
-            }
+        } elseif ($at instanceof DateTimeInterface) {
+            $at = $at->getTimestamp();
         }
 
         // NOTE signature MUST always be last URI parameter, this is mandated in sign() above
