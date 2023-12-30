@@ -12,7 +12,7 @@ class HasDefaultReasonPhraseTest extends TestCase
     /** Create an anonymous object that imports the trait under test. */
     private static function createInstance(int $statusCode): object
     {
-        return new class($statusCode)
+        return new class ($statusCode)
         {
             use HasDefaultReasonPhrase;
 

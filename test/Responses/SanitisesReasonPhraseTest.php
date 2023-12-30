@@ -12,7 +12,7 @@ class SanitisesReasonPhraseTest extends TestCase
     /** Create an anonymous object that imports the trait under test. */
     private static function createInstance(string $reasonPhrase): object
     {
-        return new class($reasonPhrase)
+        return new class ($reasonPhrase)
         {
             use SanitisesReasonPhrase;
 
