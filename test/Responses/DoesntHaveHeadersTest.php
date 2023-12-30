@@ -10,7 +10,7 @@ use BeadTests\Framework\TestCase;
 class DoesntHaveHeadersTest extends TestCase
 {
     /** Helper to create a new instance of a class that imports the trait under test. */
-    private function createInstance(): mixed
+    private static function createInstance(): object
     {
         return new class
         {
@@ -19,8 +19,8 @@ class DoesntHaveHeadersTest extends TestCase
     }
 
     /** Ensure the headers are an empty array. */
-    public function testHeaders(): void
+    public function testHeaders1(): void
     {
-        self::assertEquals([], $this->createInstance()->headers());
+        self::assertEquals([], self::createInstance()->headers());
     }
 }

@@ -5,14 +5,17 @@ namespace Bead\Exceptions\Http;
 use Bead\Contracts\Response;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
+use Bead\Facades\Application as App;
 use Bead\Responses\DoesntHaveHeaders;
+use Bead\Responses\HasDefaultReasonPhrase;
 use Bead\Responses\NaivelySendsContent;
 use Bead\View;
 use Bead\Web\Application;
 use Bead\Web\Request;
 use Exception;
-use RuntimeException;
 use Throwable;
+
+use function Bead\Helpers\Str\html;
 
 /**
  * Base class for HTTP exceptions that can also act as responses.
@@ -22,6 +25,7 @@ use Throwable;
  */
 abstract class HttpException extends Exception implements Response
 {
+    use HasDefaultReasonPhrase;
     use DoesntHaveHeaders;
     use NaivelySendsContent;
 
@@ -62,13 +66,29 @@ abstract class HttpException extends Exception implements Response
         if (isset($viewPath)) {
             try {
                 return (new View("{$viewPath}.{$this->statusCode()}", ["message" => $this->getMessage()]))->render();
-            } catch (ViewNotFoundException $err) {
-                // TODO implement fallback
-            } catch (ViewRenderingException $err) {
-                // TODO implement fallback
+            } catch (ViewNotFoundException | ViewRenderingException) {
+                // we only want to catch these - any others should be handled by some other means
             }
         }
 
-        return "";
+        if (App::isInDebugMode() && "" !== $this->getMessage()) {
+            $message = "<p>" . html($this->getMessage()) . "</p>";
+        } else {
+            $message = "";
+        }
+
+        // NOTE uses default reasonPhrase() so no need to escape for HTML as it's known to be safe
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>HTTP Error {$this->statusCode()}</title>
+</head>
+<body>
+<h2>HTTP Error {$this->statusCode()} <em>{$this->reasonPhrase()}</em></h2>
+{$message}
+</body>
+</html>
+HTML;
     }
 }
