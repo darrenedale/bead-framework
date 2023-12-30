@@ -6,8 +6,9 @@ namespace Bead\Responses;
 
 trait SanitisesReasonPhrase
 {
-    public abstract function reasonPhrase(): string;
+    abstract public function reasonPhrase(): string;
 
+    /** Sanitise the reason phrase for use in the HTTP status header. */
     public function sanitisedReasonPhrase(): string
     {
         return str_replace(["\r", "\n",], " ", $this->reasonPhrase());

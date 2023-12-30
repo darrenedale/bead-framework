@@ -6,12 +6,13 @@ namespace Bead\Responses;
 
 trait HasDefaultReasonPhrase
 {
-    public abstract function statusCode(): int;
+    abstract public function statusCode(): int;
 
+    /** Fetch the default reason phrase for the response's HTTP status. */
     public function reasonPhrase(): string
     {
         return match ($this->statusCode()) {
-            100	=> "Continue",
+            100 => "Continue",
             101 => "Switching Protocols",
             102 => "Processing",
             103 => "Early Hints",

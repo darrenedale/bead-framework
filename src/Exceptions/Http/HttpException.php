@@ -66,7 +66,7 @@ abstract class HttpException extends Exception implements Response
         if (isset($viewPath)) {
             try {
                 return (new View("{$viewPath}.{$this->statusCode()}", ["message" => $this->getMessage()]))->render();
-            } catch (ViewNotFoundException|ViewRenderingException) {
+            } catch (ViewNotFoundException | ViewRenderingException) {
                 // we only want to catch these - any others should be handled by some other means
             }
         }
