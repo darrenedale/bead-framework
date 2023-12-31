@@ -24,13 +24,16 @@
     "ext-shmop": "*",
     "ext-openssl": "*",
     "ext-sodium": "*",
+    "ext-sockets": "required to use RabbitMQ functionality",
     "ext-uopz": "^6||^7",
-    "mailgun/mailgun-php": "^3"
+    "mailgun/mailgun-php": "^3 is required to use the Mailgun mail transport",
+    "php-amqplib/php-amqplib": "^3 is required to use RabbitMQ queue functionality"
   },
   "require-dev": {
     "ext-uopz": "^6||^7",
     "guzzlehttp/guzzle": "^7",
     "mailgun/mailgun-php": "^3",
+    "php-amqplib/php-amqplib": "^3",
     "mockery/mockery": "^1.5",
     "phpunit/phpunit": "^9.5",
     "squizlabs/php_codesniffer": "^3.7",
