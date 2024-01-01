@@ -49,6 +49,7 @@ class RabbitQueue implements QueueContract
      */
     public function __construct(string $queueName, string $host, string $user, string $password, int $port = self::DefaultPort)
     {
+        assert(self::isAvailable(), new LogicException("RabbitMQ client library is not installed."));
         $this->name = $queueName;
 
         try {
@@ -67,22 +68,42 @@ class RabbitQueue implements QueueContract
         }
     }
 
+    /** Ensure the RabbitMQ resources are closed when destroyed. */
     public function __destruct()
     {
         $this->channel->close();
         $this->connection->close();
     }
 
+    /**
+     * Determine whether RabbitMQ client library is installed.
+     *
+     * Without this library, RabbitQueues cannot be used.
+     *
+     * @return bool
+     */
     public static function isAvailable(): bool
     {
         return class_exists(Connection::class);
     }
 
+    /** Fetch the queue name. */
     public function name(): string
     {
         return $this->name;
     }
 
+    /**
+     * Helper to fetch messages from the queue.
+     *
+     * @param int $n The number of messages. Must be > 0.
+     * @param bool $remove Whether to also remove the retrieved messages from the queue.
+     *
+     * @return RabbitMessage[] The retrieved messages.
+     *
+     * @throws LogicException if the number of messages to fetch is < 1.
+     * @throws QueueException if the underlying AMQP library throws.
+     */
     final protected function fetch(int $n, bool $remove = true): array
     {
         assert(0 < $n, new LogicException("Expected positive number of messages to fetch, found {$n}"));
@@ -107,31 +128,49 @@ class RabbitQueue implements QueueContract
             }
 
             --$n;
-            $messages[] = (new RabbitMessage($ampqMessage->getDeliveryTag(), $ampqMessage->getBody()))->withProperties($ampqMessage->get_properties());
+            $messages[] = (new RabbitMessage($ampqMessage->getDeliveryTag(), $this->channel->getChannelId(), $ampqMessage->getBody()))->withProperties($ampqMessage->get_properties());
         }
 
         return $messages;
     }
 
+    /** Retrieve one or more messages from the queue without removing them from it. */
     public function peek(int $n = 1): array
     {
         return $this->fetch($n, false);
     }
 
+    /** Retrieve and remove one or more messages from the queue. */
     public function get(int $n = 1): array
     {
         return $this->fetch($n);
     }
 
+    /**
+     * Delete a message from the queue.
+     *
+     * @param RabbitMessage $message The message retrieved from the queue to delete.
+     *
+     * @throws QueueException if the message was not retrieved from this queue, or cannot be deleted.
+     */
     public function delete(MessageContract $message): void
     {
         if (!$message instanceof RabbitMessage) {
             throw new QueueException("Expected message from RabbitMQ queue, found " . $message::class);
         }
 
-        $this->channel->basic_ack($message->id());
+        if (null !== $message->channelId() && null !== $this->channel->getChannelId() && $message->channelId() !== $this->channel->getChannelId()) {
+            throw new QueueException("Expected message from RabbitMQ queue #{$this->channel->getChannelId()} \"{$this->name()}\", found message from queue #{$message->channelId()}");
+        }
+
+        try {
+            $this->channel->basic_ack($message->id());
+        } catch (AMQPRuntimeException $err) {
+            throw new QueueException("Exception deleting message {$message->id()} from the \"{$this->name()}\" queue: {$err->getMessage()}", previous: $err);
+        }
     }
 
+    /** Place a message on the queue. */
     public function put(MessageContract $message): void
     {
         $ampqMessage = new AMQPMessage(
@@ -142,7 +181,7 @@ class RabbitQueue implements QueueContract
         try {
             $this->channel->basic_publish($ampqMessage, '', $this->name());
         } catch (AMQPRuntimeException $err) {
-            throw new QueueException("Unable to place message on queue {$this->name()}: {$err->getMessage()}", previous: $err);
+            throw new QueueException("Unable to place message on queue \"{$this->name()}\": {$err->getMessage()}", previous: $err);
         }
     }
 }
