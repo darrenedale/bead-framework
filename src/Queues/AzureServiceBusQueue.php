@@ -91,15 +91,12 @@ class AzureServiceBusQueue implements Queue
         return "https://{$this->namespace()}.servicebus.windows.net/{$this->name()}/messages";
     }
 
-    protected function headers(): array
+    final protected function sendRequest(string $method, string $uri, string $body = null, array $headers = []): ResponseInterface
     {
-        return [
-            "Authorization" => "Bearer {$this->token}",
-        ];
-    }
+        if (null === $this->token) {
+            $this->obtainToken();
+        }
 
-    final protected function sendRequest(string $method, string $uri, array $headers, string $body = null): ResponseInterface
-    {
         $retry = false;
 
         do {
@@ -113,8 +110,10 @@ class AzureServiceBusQueue implements Queue
             if (401 === $response->getStatusCode() && !$retry) {
                 $this->obtainToken();
                 $retry = true;
+            } else {
+                $retry = false;
             }
-        } while($retry);
+        } while ($retry);
 
         return $response;
     }
@@ -164,7 +163,7 @@ class AzureServiceBusQueue implements Queue
         $messages = [];
 
         while (0 < $n) {
-            $response = $this->sendRequest(($remove ? "DELETE" : "POST"), "{$this->baseUri()}/head", $this->headers());
+            $response = $this->sendRequest(($remove ? "DELETE" : "POST"), "{$this->baseUri()}/head");
 
             switch ($response->getStatusCode()) {
                 case 201:       // when POST
@@ -197,7 +196,7 @@ class AzureServiceBusQueue implements Queue
 
     public function put(MessageContract $message): void
     {
-        $this->sendRequest("POST", $this->baseUri(), $this->headers(), $message->payload());
+        $this->sendRequest("POST", $this->baseUri(), $message->payload());
     }
 
     public function delete(MessageContract $message): void
@@ -210,6 +209,6 @@ class AzureServiceBusQueue implements Queue
             throw new QueueException("Expected message peeked from AzureServiceBus queue - message may have been taken or may not have originated on a queue");
         }
 
-        $this->sendRequest("DELETE", "{$this->baseUri()}/{$message->id()}/{$message->lockToken()}", $this->headers());
+        $this->sendRequest("DELETE", "{$this->baseUri()}/{$message->id()}/{$message->lockToken()}");
     }
 }
