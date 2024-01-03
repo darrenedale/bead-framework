@@ -4,21 +4,25 @@ namespace Bead\Contracts\Azure;
 
 use DateTimeInterface;
 
-interface AccessToken
+abstract class AccessToken implements Authorisation
 {
-    public function token(): string;
+    abstract public function token(): string;
 
-    public function type(): string;
+    abstract public function type(): string;
 
-    public function notBefore(): int;
+    abstract public function notBefore(): int;
 
-    public function notBeforeDateTime(): DateTimeInterface;
-    public function expiresOn(): int;
+    abstract public function notBeforeDateTime(): DateTimeInterface;
 
-    public function expiresOnDateTime(): DateTimeInterface;
+    abstract public function expiresOn(): int;
 
-    public function resource(): string;
+    abstract public function expiresOnDateTime(): DateTimeInterface;
 
-    /** @return array<string,string> */
-    public function headers(): array;
+    abstract public function resource(): string;
+
+    public function hasExpired(): bool
+    {
+        $time = time();
+        return $this->notBefore() >= $time || $this->expiresOn() <= $time;
+    }
 }

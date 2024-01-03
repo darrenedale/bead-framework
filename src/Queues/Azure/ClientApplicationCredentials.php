@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Bead\Queues\Azure;
 
 // TODO move this trait to a more generic location
+use Bead\Contracts\Azure\OAuth2Authoriser as AzureOAuth2AuthoriserContract;
 use Bead\Contracts\Hashable as HashableContract;
 use Bead\Encryption\ScrubsStrings;
-use Bead\Contracts\Azure\Credentials as AzureCredentialsContract;
+use Bead\Contracts\Azure\ClientApplicationCredentials as AzureClientApplicationCredentialsContract;
+use Bead\Contracts\Azure\Authorisation as AzureAuthorisationContract;
 
-class Credentials implements AzureCredentialsContract, HashableContract
+class ClientApplicationCredentials implements AzureClientApplicationCredentialsContract, HashableContract
 {
     use ScrubsStrings;
 
@@ -25,7 +27,9 @@ class Credentials implements AzureCredentialsContract, HashableContract
 
     private ?string $hash = null;
 
-    public function __construct(string $tenantId, string $clientId, string $clientSecret)
+    private AzureOAuth2AuthoriserContract $authoriser;
+
+    public function __construct(string $tenantId, string $clientId, string $clientSecret, ?AzureOAuth2AuthoriserContract $authoriser = null)
     {
         if (null === self::$hashAlgorithm) {
             self::determineHashAlgorithm();
@@ -34,6 +38,7 @@ class Credentials implements AzureCredentialsContract, HashableContract
         $this->tenantId = $tenantId;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
+        $this->authoriser = $authoriser ?? new OAuth2Authoriser();
     }
 
     // TODO extract this to a trait?
@@ -107,5 +112,10 @@ class Credentials implements AzureCredentialsContract, HashableContract
         }
 
         return $this->hash;
+    }
+
+    public function authorise(string $resource, string $grantType): AzureAuthorisationContract
+    {
+        return $this->authoriser->authorise($resource, $grantType, $this);
     }
 }

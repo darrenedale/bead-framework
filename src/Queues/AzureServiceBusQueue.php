@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace Bead\Queues;
 
-use Bead\Contracts\Azure\AccessToken;
-use Bead\Contracts\Azure\Credentials as AzureCredentialsContract;
-use Bead\Contracts\Azure\OAuth2Authenticator as AzureOAuth2AuthenticatorContract;
+use Bead\Contracts\Azure\Authorisation as AzureAuthorisationContract;
+use Bead\Contracts\Azure\ClientApplicationCredentials as AzureClientApplicationCredentialsContract;
+use Bead\Contracts\Azure\OAuth2Authoriser as AzureOAuth2AuthenticatorContract;
 use Bead\Contracts\Queues\Message as MessageContract;
 use Bead\Contracts\Queues\Queue;
 use Bead\Encryption\ScrubsStrings;
-use Bead\Exceptions\Azure\AuthenticationException;
+use Bead\Exceptions\Azure\AuthorizationException;
 use Bead\Exceptions\QueueException;
-use Bead\Queues\Azure\BearerToken;
-use Bead\Queues\Azure\Credentials;
-use Bead\Queues\Azure\OAuth2Authenticator;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use JsonException;
@@ -32,11 +29,9 @@ class AzureServiceBusQueue implements Queue
 
     protected const Resource = AzureOAuth2AuthenticatorContract::ServiceBusResource;
 
-    private static ?AzureOAuth2AuthenticatorContract $authenticator = null;
+    private ?AzureAuthorisationContract $authorisation = null;
 
-    private ?AccessToken $token = null;
-
-    private AzureCredentialsContract $credentials;
+    private AzureClientApplicationCredentialsContract $credentials;
 
     private string $name;
 
@@ -44,31 +39,20 @@ class AzureServiceBusQueue implements Queue
 
     private ClientInterface $httpClient;
 
-    public function __construct(string $namespace, string $queueName, string $tenantId, string $clientId, string $secret, ?ClientInterface $httpClient = null)
+    public function __construct(string $namespace, string $queueName, AzureClientApplicationCredentialsContract $credentials, ?ClientInterface $httpClient = null)
     {
-        if (null === self::$authenticator) {
-            static::initialiseAuthenticator();
-        }
-
-        assert(self::$authenticator instanceof AzureOAuth2AuthenticatorContract);
-
-        $this->credentials = new Credentials($tenantId,  $clientId, $secret);
+        $this->credentials = $credentials;
         $this->namespace = $namespace;
         $this->name = $queueName;
         $this->httpClient = $httpClient ?? new Client();
     }
 
-    protected static function initialiseAuthenticator(): void
-    {
-        self::$authenticator = new OAuth2Authenticator(self::GrantType, self::Resource);
-    }
-
-    final protected function obtainToken(): void
+    final protected function authorise(): void
     {
         try {
             // TODO persist (encrypted) token in session?
-            $this->token = self::$authenticator->authenticateUsing($this->credentials);
-        } catch (AuthenticationException $err) {
+            $this->authorisation = $this->credentials->authorise(self::Resource, self::GrantType);
+        } catch (AuthorizationException $err) {
             throw new QueueException("Failed to obtain OAuth2 token for Azure service bus: {$err->getMessage()}", previous: $err);
         }
     }
@@ -90,23 +74,22 @@ class AzureServiceBusQueue implements Queue
 
     final protected function sendRequest(string $method, string $uri, string $body = null): ResponseInterface
     {
-        if (null === $this->token) {
-            $this->obtainToken();
+        if (null === $this->authorisation) {
+            $this->authorise();
         }
 
         $retry = false;
 
         do {
             try {
-                $response = $this->httpClient->sendRequest(new Request($method, $uri, ["Authorization" => "Bearer {$this->token}",], $body));
+                $response = $this->httpClient->sendRequest(new Request($method, $uri, $this->authorisation->headers(), $body));
             } catch (ClientExceptionInterface $err) {
                 throw new QueueException("Network error communicating with Azure service bus queue {$this->name()} in namespace {$this->namespace()}: {$err->getMessage()}", previous: $err);
             }
 
             // if authorization fails, try refreshing the token once and retrying
             if (401 === $response->getStatusCode() && !$retry) {
-                $this->obtainToken();
-                assert ($this->token instanceof BearerToken);
+                $this->authorise();
                 $retry = true;
             } else {
                 $retry = false;
@@ -133,16 +116,14 @@ class AzureServiceBusQueue implements Queue
                 throw new QueueException("Expected valid JSON BrokerProperties header, found {$header}: {$err->getMessage()}", previous: $err);
             }
 
+            print_r($properties);
             $id = $properties["MessageId"] ?? null;
-            $lockToken = $properties["LockToken"] ?? null;
 
             if (null === $id) {
                 throw new QueueException("Expected MessageId in BrokerProperties header, none found");
             }
 
-            if (null === $lockToken) {
-                throw new QueueException("Expected LockToken in BrokerProperties header, none found");
-            }
+            $lockToken = $properties["LockToken"] ?? "";
         } else {
             $id = "";
             $lockToken = "";
@@ -154,10 +135,6 @@ class AzureServiceBusQueue implements Queue
     final protected function fetch(int $n, bool $remove = true): array
     {
         assert(0 < $n, new LogicException("Expected positive number of messages to fetch, found {$n}"));
-        if (null === $this->token) {
-            $this->obtainToken();
-        }
-
         $messages = [];
 
         while (0 < $n) {

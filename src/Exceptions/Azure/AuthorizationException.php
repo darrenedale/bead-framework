@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace Bead\Exceptions\Azure;
 
-class AuthenticationException extends \RuntimeException
+class AuthorizationException extends \RuntimeException
 {
 }

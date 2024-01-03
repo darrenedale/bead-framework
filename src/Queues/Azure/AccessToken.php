@@ -5,14 +5,13 @@ namespace Bead\Queues\Azure;
 use Bead\Encryption\ScrubsStrings;
 use DateTimeImmutable;
 use DateTimeInterface;
-
-use Bead\Contracts\Azure\AccessToken as AzureAccessTokenContract;
+use Bead\Contracts\Azure\AccessToken as AzureAccessToken;
 use DateTimeZone;
 use Error;
 use JsonException;
 use TypeError;
 
-class AccessToken implements AzureAccessTokenContract
+class AccessToken extends AzureAccessToken
 {
     use ScrubsStrings;
 
@@ -27,21 +26,9 @@ class AccessToken implements AzureAccessTokenContract
         self:self::scrubString($this->token);
     }
 
-    public static function fromJson(string $json): static
+    public static function fromJson(string $json): self
     {
-        try {
-            $json = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            // TODO throw the correct type of exception
-            throw new \RuntimeException("Expected valid JSON Azure AccessToken data structure, found invalid JSON");
-        }
-
-        $type = $json["token_type"] ?? null;
-
-        $token = match ($type) {
-            "bearer" => new BearerToken(),
-            default => new self(),
-        };
+        $token = new self();
 
         try {
             [
@@ -50,7 +37,10 @@ class AccessToken implements AzureAccessTokenContract
                 "access_token" => $token->token,
                 "not_before" => $token->notBefore,
                 "expires_on" => $token->expiresOn,
-            ] = $json;
+            ] = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            // TODO throw the correct type of exception
+            throw new \RuntimeException("Expected valid JSON Azure AccessToken data structure, found invalid JSON");
         } catch (TypeError $err) {
             throw new \RuntimeException("Invalid data type found in Azure AccessToken data structure");
         } catch (Error $err) {
@@ -78,7 +68,7 @@ class AccessToken implements AzureAccessTokenContract
 
     public function notBeforeDateTime(): DateTimeInterface
     {
-        return new DateTimeImmutable::createFromFormat("U", $this->notBeforeDateTime(), new DateTimeZone("Z"));
+        return DateTimeImmutable::createFromFormat("U", $this->notBefore, new DateTimeZone("Z"));
     }
 
     public function expiresOn(): int
@@ -88,7 +78,7 @@ class AccessToken implements AzureAccessTokenContract
 
     public function expiresOnDateTime(): DateTimeInterface
     {
-        return new DateTimeImmutable::createFromFormat("U", $this->expiresOnDateTime(), new DateTimeZone("Z"));
+        return DateTimeImmutable::createFromFormat("U", $this->expiresOn, new DateTimeZone("Z"));
     }
 
     public function resource(): string
@@ -103,6 +93,6 @@ class AccessToken implements AzureAccessTokenContract
 
     public function headers(): array
     {
-        return [];
+        return ["Authorization" => "Bearer {$this->token()}",];
     }
 }
