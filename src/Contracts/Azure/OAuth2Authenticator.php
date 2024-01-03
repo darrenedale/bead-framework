@@ -17,5 +17,5 @@ interface OAuth2Authenticator
     public function resource(): string;
 
     /** @throws AuthenticationException on error */
-    public function authenticateUsing(Credentials $credentials): string;
+    public function authenticateUsing(Credentials $credentials): AccessToken;
 }
