@@ -45,6 +45,7 @@ class BeanstalkQueue implements QueueContract
     public function __construct(string $queueName, string $host, int $port = self::DefaultPort)
     {
         assert(self::isAvailable(), new LogicException("Beanstalk client library is not installed."));
+
         try {
             $this->tube = new TubeName($queueName);
             $this->client = Pheanstalk::create($host, $port);
@@ -88,53 +89,42 @@ class BeanstalkQueue implements QueueContract
     /**
      * Helper to fetch messages from the queue.
      *
-     * @param int $n The number of messages. Must be > 0.
      * @param bool $remove Whether to also remove the retrieved messages from the queue.
      *
-     * @return BeanstalkMessage[] The retrieved messages.
+     * @return BeanstalkMessage|null The retrieved messages.
      *
      * @throws LogicException if the number of messages to fetch is < 1.
      * @throws QueueException if the underlying AMQP library throws.
      */
-    final protected function fetch(int $n, bool $remove = true): array
+    final protected function fetch(bool $remove = true): ?BeanstalkMessage
     {
-        assert(0 < $n, new LogicException("Expected positive number of messages to fetch, found {$n}"));
-        $messages = [];
+        try {
+            $pheanstalkMessage = $this->client->reserveWithTimeout(0);
 
-        while (0 < $n) {
-            try {
-                $pheanstalkMessage = $this->client->reserveWithTimeout(0);
-
-                if (!$pheanstalkMessage) {
-                    break;
-                }
-
-                if ($remove) {
-                    $this->client->delete($pheanstalkMessage);
-                } else {
-                    $this->client->release($pheanstalkMessage);
-                }
-            } catch (DeadlineSoonException|MalformedResponseException|UnsupportedResponseException $err) {
-                throw new QueueException("Exception fetching messages from queue {$this->name()}: {$err->getMessage()}", previous: $err);
+            if (!$pheanstalkMessage) {
+                return null;
             }
 
-            --$n;
-            $messages[] = new BeanstalkMessage($pheanstalkMessage->getId(), $pheanstalkMessage->getData());
+            if ($remove) {
+                $this->client->delete($pheanstalkMessage);
+            }
+        } catch (DeadlineSoonException|MalformedResponseException|UnsupportedResponseException $err) {
+            throw new QueueException("Exception fetching messages from queue {$this->name()}: {$err->getMessage()}", previous: $err);
         }
 
-        return $messages;
+        return new BeanstalkMessage($pheanstalkMessage->getId(), $pheanstalkMessage->getData());
     }
 
     /** Retrieve one or more messages from the queue without removing them from it. */
-    public function peek(int $n = 1): array
+    public function peek(): ?BeanstalkMessage
     {
-        return $this->fetch($n, false);
+        return $this->fetch(false);
     }
 
     /** Retrieve and remove one or more messages from the queue. */
-    public function get(int $n = 1): array
+    public function get(): ?BeanstalkMessage
     {
-        return $this->fetch($n);
+        return $this->fetch();
     }
 
     /**
@@ -154,6 +144,26 @@ class BeanstalkQueue implements QueueContract
             $this->client->delete(new JobId($message->id()));
         } catch (JobNotFoundException|UnsupportedResponseException $err) {
             throw new QueueException("Exception deleting message {$message->id()} from the \"{$this->name()}\" queue: {$err->getMessage()}", previous: $err);
+        }
+    }
+
+    /**
+     * Release a locked message peeked from the queue.
+     *
+     * @param BeanstalkMessage $message The message retrieved from the queue to release.
+     *
+     * @throws QueueException if the message cannot be deleted.
+     */
+    public function release(MessageContract $message): void
+    {
+        if (!$message instanceof BeanstalkMessage) {
+            throw new QueueException("Expected message from beanstalkd queue, found " . $message::class);
+        }
+
+        try {
+            $this->client->release(new JobId($message->id()));
+        } catch (JobNotFoundException|UnsupportedResponseException $err) {
+            throw new QueueException("Exception releasing message {$message->id()} from the \"{$this->name()}\" queue: {$err->getMessage()}", previous: $err);
         }
     }
 

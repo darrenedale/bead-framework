@@ -96,54 +96,72 @@ class RabbitQueue implements QueueContract
     /**
      * Helper to fetch messages from the queue.
      *
-     * @param int $n The number of messages. Must be > 0.
      * @param bool $remove Whether to also remove the retrieved messages from the queue.
      *
-     * @return RabbitMessage[] The retrieved messages.
+     * @return RabbitMessage|null The retrieved messages.
      *
      * @throws LogicException if the number of messages to fetch is < 1.
      * @throws QueueException if the underlying AMQP library throws.
      */
-    final protected function fetch(int $n, bool $remove = true): array
+    final protected function fetch(bool $remove = true): ?RabbitMessage
     {
-        assert(0 < $n, new LogicException("Expected positive number of messages to fetch, found {$n}"));
-        $messages = [];
+        try {
+            $ampqMessage = $this->channel->basic_get($this->name());
 
-        while (0 < $n) {
-            try {
-                $ampqMessage = $this->channel->basic_get($this->name());
-
-                if (!$ampqMessage) {
-                    break;
-                }
-
-                if ($remove) {
-                    $ampqMessage->ack();
-                }
-            } catch (AMQPTimeoutException) {
-                Log::info("Timeout fetching messages from queue {$this->name()}");
-                break;
-            } catch (AMQPRuntimeException $err) {
-                throw new QueueException("Exception fetching messages from queue {$this->name()}: {$err->getMessage()}", previous: $err);
+            if (!$ampqMessage) {
+                return null;
             }
 
-            --$n;
-            $messages[] = (new RabbitMessage($ampqMessage->getDeliveryTag(), $this->channel->getChannelId(), $ampqMessage->getBody()))->withProperties($ampqMessage->get_properties());
+            if ($remove) {
+                $ampqMessage->ack();
+            }
+        } catch (AMQPTimeoutException) {
+            Log::info("Timeout fetching messages from queue {$this->name()}");
+            return null;
+        } catch (AMQPRuntimeException $err) {
+            throw new QueueException("Exception fetching messages from queue {$this->name()}: {$err->getMessage()}", previous: $err);
         }
 
-        return $messages;
+        return (new RabbitMessage($ampqMessage->getDeliveryTag(), $this->channel->getChannelId(), $ampqMessage->getBody()))->withProperties($ampqMessage->get_properties());
     }
 
     /** Retrieve one or more messages from the queue without removing them from it. */
-    public function peek(int $n = 1): array
+    public function peek(): ?RabbitMessage
     {
-        return $this->fetch($n, false);
+        return $this->fetch(false);
     }
 
     /** Retrieve and remove one or more messages from the queue. */
-    public function get(int $n = 1): array
+    public function get(): ?RabbitMessage
     {
-        return $this->fetch($n);
+        return $this->fetch();
+    }
+
+    /**
+     * Release a message back to the queue.
+     *
+     * Messages peeked from the queue can be released back to it. Messages retrieved using get() are destructively
+     * retrieved and can't be released back to the queue.
+     *
+     * @param RabbitMessage $message The message retrieved from the queue to release back to the queue.
+     *
+     * @throws QueueException if the message was not retrieved from this queue, or cannot be released.
+     */
+    public function release(MessageContract $message): void
+    {
+        if (!$message instanceof RabbitMessage) {
+            throw new QueueException("Expected message from RabbitMQ queue, found " . $message::class);
+        }
+
+        if (null !== $message->channelId() && null !== $this->channel->getChannelId() && $message->channelId() !== $this->channel->getChannelId()) {
+            throw new QueueException("Expected message from RabbitMQ queue #{$this->channel->getChannelId()} \"{$this->name()}\" to release, found message from queue #{$message->channelId()}");
+        }
+
+        try {
+            $this->channel->basic_reject($message->id(), true);
+        } catch (AMQPRuntimeException $err) {
+            throw new QueueException("Exception releasing message {$message->id()} from the \"{$this->name()}\" queue: {$err->getMessage()}", previous: $err);
+        }
     }
 
     /**
@@ -160,7 +178,7 @@ class RabbitQueue implements QueueContract
         }
 
         if (null !== $message->channelId() && null !== $this->channel->getChannelId() && $message->channelId() !== $this->channel->getChannelId()) {
-            throw new QueueException("Expected message from RabbitMQ queue #{$this->channel->getChannelId()} \"{$this->name()}\", found message from queue #{$message->channelId()}");
+            throw new QueueException("Expected message from RabbitMQ queue #{$this->channel->getChannelId()} \"{$this->name()}\" to delete, found message from queue #{$message->channelId()}");
         }
 
         try {

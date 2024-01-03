@@ -50,7 +50,6 @@ class AzureServiceBusQueue implements Queue
     final protected function authorise(): void
     {
         try {
-            // TODO persist (encrypted) token in session?
             $this->authorisation = $this->credentials->authorise(self::Resource, self::GrantType);
         } catch (AuthorizationException $err) {
             throw new QueueException("Failed to obtain OAuth2 token for Azure service bus: {$err->getMessage()}", previous: $err);
@@ -99,9 +98,16 @@ class AzureServiceBusQueue implements Queue
         return $response;
     }
 
+    /**
+     * Turn a HTTP response from Service Bus into a Message.
+     *
+     * @param ResponseInterface $response
+     * @return AzureServiceBusMessage
+     * @throws QueueException if the message can't be hydrated.
+     */
     protected function hydrateMessage(ResponseInterface $response): AzureServiceBusMessage
     {
-        assert(200 <= $response->getStatusCode() && 300 > $response->getStatusCode());
+        assert(200 <= $response->getStatusCode() && 300 > $response->getStatusCode(), new LogicException("Expecting success response, found {$response->getStatusCode()}"));
 
         if ($response->hasHeader("BrokerProperties")) {
             $header = $response->getHeader("BrokerProperties")[0];
@@ -116,7 +122,6 @@ class AzureServiceBusQueue implements Queue
                 throw new QueueException("Expected valid JSON BrokerProperties header, found {$header}: {$err->getMessage()}", previous: $err);
             }
 
-            print_r($properties);
             $id = $properties["MessageId"] ?? null;
 
             if (null === $id) {
@@ -132,46 +137,46 @@ class AzureServiceBusQueue implements Queue
         return new AzureServiceBusMessage($id, $lockToken, (string) $response->getBody());
     }
 
-    final protected function fetch(int $n, bool $remove = true): array
+    final protected function fetch(bool $remove = true): ?AzureServiceBusMessage
     {
-        assert(0 < $n, new LogicException("Expected positive number of messages to fetch, found {$n}"));
-        $messages = [];
+        $response = $this->sendRequest(($remove ? "DELETE" : "POST"), "{$this->baseUri()}/head");
 
-        while (0 < $n) {
-            $response = $this->sendRequest(($remove ? "DELETE" : "POST"), "{$this->baseUri()}/head");
-
-            switch ($response->getStatusCode()) {
-                case 201:       // when POST
-                case 200:       // when DELETE
-                    --$n;
-                    $messages[] = $this->hydrateMessage($response);
-                    break;
-
-                case 204:
-                    // no more messages available
-                    break 2;
-
-                default:
-                    throw new QueueException("Failed fetching messages from service bus queue {$this->name()} in namespace {$this->namespace()}: {$response->getReasonPhrase()}");
-            }
-        }
-
-        return $messages;
+        return match ($response->getStatusCode()) {
+            201 | 200 => $this->hydrateMessage($response),      // 200 when POST, 201 when DELETE
+            204 => null,                                        // no messages available
+            default => throw new QueueException("Failed fetching messages from service bus queue {$this->name()} in namespace {$this->namespace()}: {$response->getReasonPhrase()}"),
+        };
     }
 
-    public function peek(int $n = 1): array
+    /**
+     * The returned message will be locked on the queue unless deleted.
+     */
+    public function peek(): ?AzureServiceBusMessage
     {
-        return $this->fetch($n, false);
+        return $this->fetch(false);
     }
 
-    public function get(int $n = 1): array
+    public function get(): ?AzureServiceBusMessage
     {
-        return $this->fetch($n);
+        return $this->fetch();
     }
 
     public function put(MessageContract $message): void
     {
         $this->sendRequest("POST", $this->baseUri(), $message->payload());
+    }
+
+    public function release(MessageContract $message): void
+    {
+        if (!$message instanceof AzureServiceBusMessage) {
+            throw new QueueException("Expected message from AzureServiceBus queue, found " . $message::class);
+        }
+
+        if ("" === $message->id() || "" === $message->lockToken()) {
+            throw new QueueException("Expected message peeked from AzureServiceBus queue - message may have been taken or may not have originated on a queue");
+        }
+
+        $this->sendRequest("PUT", "{$this->baseUri()}/{$message->id()}/{$message->lockToken()}");
     }
 
     public function delete(MessageContract $message): void

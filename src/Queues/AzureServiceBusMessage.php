@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Bead\Queues;
 
-use Bead\Queues\Message;
-
 class AzureServiceBusMessage extends Message
 {
     private string $id;
