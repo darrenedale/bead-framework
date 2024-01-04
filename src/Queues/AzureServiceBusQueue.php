@@ -11,18 +11,17 @@ use Bead\Contracts\Azure\RestCommand;
 use Bead\Contracts\Queues\Message as MessageContract;
 use Bead\Contracts\Queues\Queue;
 use Bead\Encryption\ScrubsStrings;
-use Bead\Exceptions\Azure\AuthorizationException;
+use Bead\Exceptions\Azure\AuthorisationException;
 use Bead\Exceptions\QueueException;
+use Bead\Queues\Azure\RestClient;
 use Bead\Queues\Azure\RestClient as AzureRestClientInterface;
+use Bead\Queues\Azure\RestCommands\BatchSend;
 use Bead\Queues\Azure\RestCommands\Delete;
-use Bead\Queues\Azure\RestCommands\Get;
+use Bead\Queues\Azure\RestCommands\Receive;
 use Bead\Queues\Azure\RestCommands\Peek;
-use Bead\Queues\Azure\RestCommands\Put;
-use Bead\Queues\Azure\RestCommands\Release;
-use GuzzleHttp\Psr7\Request;
-use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\ResponseInterface;
+use Bead\Queues\Azure\RestCommands\Send;
+use Bead\Queues\Azure\RestCommands\Unlock;
+use function Bead\Helpers\Iterable\map;
 
 /* TODO support timeout URI parameter */
 class AzureServiceBusQueue implements Queue
@@ -56,7 +55,7 @@ class AzureServiceBusQueue implements Queue
         if (null === $this->authorisation || $this->authorisation->hasExpired()) {
             try {
                 $this->authorisation = $this->credentials->authorise(self::Resource, self::GrantType);
-            } catch (AuthorizationException $err) {
+            } catch (AuthorisationException $err) {
                 throw new QueueException("Failed to obtain OAuth2 token for Azure service bus: {$err->getMessage()}", previous: $err);
             }
         }
@@ -78,7 +77,7 @@ class AzureServiceBusQueue implements Queue
 
         try {
             return $this->restClient->send($command, $this->authorisation);
-        } catch (AuthorizationException $err) {
+        } catch (AuthorisationException $err) {
             // just in case we were right on the cusp of expiry when we checked above
             $this->checkAuthorisation();
             return $this->restClient->send($command, $this->authorisation);
@@ -95,12 +94,18 @@ class AzureServiceBusQueue implements Queue
 
     public function get(): ?AzureServiceBusMessage
     {
-        return $this->sendCommand(new Get($this->namespace(), $this->name()));
+        return $this->sendCommand(new Receive($this->namespace(), $this->name()));
     }
 
     public function put(MessageContract $message): void
     {
-        $this->sendCommand(new Put($this->namespace(), $this->name(), $message->payload()));
+        $this->sendCommand(new Send($this->namespace(), $this->name(), $message->payload()));
+    }
+
+    /** @param iterable<MessageContract> $messages */
+    public function putBatch(iterable $messages): void
+    {
+        $this->sendCommand(new BatchSend($this->namespace(), $this->name(), map($messages, fn (MessageContract $message): string => $message->payload())));
     }
 
     public function release(MessageContract $message): void
@@ -113,7 +118,7 @@ class AzureServiceBusQueue implements Queue
             throw new QueueException("Expected message peeked from AzureServiceBus queue - message may have been taken or may not have originated on a queue");
         }
 
-        $this->sendCommand(new Release($this->namespace(), $this->name(), $message));
+        $this->sendCommand(new Unlock($this->namespace(), $this->name(), $message));
     }
 
     public function delete(MessageContract $message): void

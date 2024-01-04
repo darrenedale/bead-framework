@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Bead\Queues\Azure;
 
 use Bead\Contracts\Azure\Authorisation as AzureAuthorisationContract;
+use Bead\Contracts\Azure\RestClient as AzureRestClientContract;
 use Bead\Contracts\Azure\RestCommand as AzureRestCommandContract;
-use Bead\Exceptions\Azure\AuthorizationException;
+use Bead\Exceptions\Azure\AuthorisationException;
 use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Psr7\Request;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 
-class RestClient
+class RestClient implements AzureRestClientContract
 {
     private ClientInterface $httpClient;
 
@@ -33,7 +35,7 @@ class RestClient
         return $clone;
     }
 
-    public function send(AzureRestCommandContract $command, AzureAuthorisationContract|null $authorisation = null): ResponseInterface
+    public function send(AzureRestCommandContract $command, ?AzureAuthorisationContract $authorisation = null): mixed
     {
         try {
             $headers = array_merge($command->headers(), $authorisation?->headers() ?? []);
@@ -43,9 +45,8 @@ class RestClient
             throw new \RuntimeException("Network error communicating with Azure REST API endpoint {$command->uri()}: {$err->getMessage()}", previous: $err);
         }
 
-        // if authorization fails, try refreshing the token once and retrying
         if (401 === $response->getStatusCode()) {
-            return new AuthorizationException("Azure REST API returned a 401 Not Authorised response: {$response->getReasonPhrase()}");
+            throw new AuthorisationException("Azure REST API returned a 401 Not Authorised response: {$response->getReasonPhrase()}");
         }
 
         return $command->parseResponse($response);

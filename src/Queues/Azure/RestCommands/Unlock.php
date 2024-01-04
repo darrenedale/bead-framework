@@ -2,15 +2,13 @@
 
 namespace Bead\Queues\Azure\RestCommands;
 
-use Bead\Contracts\Azure\ResponseInterface;
-use Bead\Exceptions\QueueException;
 use Bead\Queues\AzureServiceBusMessage;
-use Psr\Http\Message\StreamInterface;
 
-class Release extends AbstractQueueCommand
+class Unlock extends AbstractQueueCommand
 {
-    use DoesntHaveHeaders;
-    use DoesntHaveBody;
+    use HasNoHeaders;
+    use HasNoBody;
+    use ResponseHasNoBody;
 
     private AzureServiceBusMessage $message;
 
@@ -33,14 +31,5 @@ class Release extends AbstractQueueCommand
     public function method(): string
     {
         return "PUT";
-    }
-
-    public function parseResponse(ResponseInterface $response): mixed
-    {
-        if (200 <= $response->getStatusCode() && 300 > $response->getStatusCode()) {
-            return null;
-        }
-
-        throw new QueueException("Unable to release message {$this->message()->id()} on queue {$this->queue()} in namespace {$this->namespace()}: {$response->getReasonPhrase()}");
     }
 }

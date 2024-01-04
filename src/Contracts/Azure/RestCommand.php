@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Contracts\Azure;
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 interface RestCommand

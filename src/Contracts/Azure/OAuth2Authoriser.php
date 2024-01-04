@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Contracts\Azure;
 
-use Bead\Exceptions\Azure\AuthorizationException;
+use Bead\Exceptions\Azure\AuthorisationException;
 
 interface OAuth2Authoriser
 {
@@ -12,6 +12,6 @@ interface OAuth2Authoriser
 
     public const ServiceBusResource = "https://servicebus.azure.net";
 
-    /** @throws AuthorizationException on error */
+    /** @throws AuthorisationException on error */
     public function authorise(string $resource, string $grantType, ClientApplicationCredentials $credentials): Authorisation;
 }

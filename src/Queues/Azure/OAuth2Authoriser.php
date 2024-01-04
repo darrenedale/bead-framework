@@ -7,7 +7,7 @@ namespace Bead\Queues\Azure;
 use Bead\Contracts\Azure\Authorisation as AuthorizationContract;
 use Bead\Contracts\Azure\ClientApplicationCredentials;
 use Bead\Contracts\Azure\OAuth2Authoriser as OAuth2AuthoriserContract;
-use Bead\Exceptions\Azure\AuthorizationException;
+use Bead\Exceptions\Azure\AuthorisationException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Client\ClientInterface;
@@ -42,13 +42,13 @@ class OAuth2Authoriser implements OAuth2AuthoriserContract
     protected function processResponse(ResponseInterface $response): AuthorizationContract
     {
         if (200 !== $response->getStatusCode()) {
-            throw new AuthorizationException("Authentication failed: {$response->getReasonPhrase()}");
+            throw new AuthorisationException("Authentication failed: {$response->getReasonPhrase()}");
         }
 
         try {
             return AccessToken::fromJson((string) $response->getBody());
         } catch (Throwable $err) {
-            throw new AuthorizationException("Invalid JSON response from authentication server: {$err->getMessage()}", previous: $err);
+            throw new AuthorisationException("Invalid JSON response from authentication server: {$err->getMessage()}", previous: $err);
         }
     }
 
@@ -57,7 +57,7 @@ class OAuth2Authoriser implements OAuth2AuthoriserContract
         try {
             $response = $this->httpClient->sendRequest($this->createRequest($resource, $grantType, $credentials));
         } catch (\Throwable $err) {
-            throw new AuthorizationException("Network error authorising Azure access: {$err->getMessage()}", previous: $err);
+            throw new AuthorisationException("Network error authorising Azure access: {$err->getMessage()}", previous: $err);
         }
 
         return $this->processResponse($response);

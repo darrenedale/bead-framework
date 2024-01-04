@@ -2,8 +2,8 @@
 
 namespace Bead\Queues\Azure\RestCommands;
 
-use Bead\Contracts\Azure\ResponseInterface;
 use Bead\Contracts\Azure\RestCommand;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 abstract class AbstractQueueCommand implements RestCommand

@@ -1,17 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bead\Queues\Azure\RestCommands;
 
-use Bead\Exceptions\QueueException;
 use Bead\Queues\AzureServiceBusMessage;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 
-class Delete extends AbstractQueueCommand
+class RenewLock extends AbstractQueueCommand
 {
     use HasNoHeaders;
     use HasNoBody;
+    use ResponseHasNoBody;
 
     private AzureServiceBusMessage $message;
+
 
     public function __construct(string $namespace, string $queueName, AzureServiceBusMessage $message)
     {
@@ -31,15 +35,6 @@ class Delete extends AbstractQueueCommand
 
     public function method(): string
     {
-        return "DELETE";
-    }
-
-    public function parseResponse(ResponseInterface $response): mixed
-    {
-        if (200 <= $response->getStatusCode() && 300 > $response->getStatusCode()) {
-            return null;
-        }
-
-        throw new QueueException("Unable to delete message {$this->message()->id()} from queue {$this->queue()} in namespace {$this->namespace()}: {$response->getReasonPhrase()}");
+        return "POST";
     }
 }

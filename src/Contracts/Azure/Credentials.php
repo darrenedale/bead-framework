@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Contracts\Azure;
 
-use Bead\Exceptions\Azure\AuthorizationException;
+use Bead\Exceptions\Azure\AuthorisationException;
 
 interface Credentials
 {
@@ -12,6 +12,6 @@ interface Credentials
 
     public const ClientCredentialsGrantType = "client_credentials";
 
-    /** @throws AuthorizationException */
+    /** @throws AuthorisationException */
     public function authorise(string $resource, string $grantType): Authorisation;
 }

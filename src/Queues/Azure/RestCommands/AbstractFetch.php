@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace Bead\Queues\Azure\RestCommands;
 
-use Bead\Contracts\Azure\ResponseInterface;
-use Bead\Contracts\Azure\RestCommand;
 use Bead\Exceptions\QueueException;
 use Bead\Queues\AzureServiceBusMessage;
-use Psr\Http\Message\StreamInterface;
+use JsonException;
+use Psr\Http\Message\ResponseInterface;
 
 abstract class AbstractFetch extends AbstractQueueCommand
 {
-    use DoesntHaveHeaders;
-    use DoesntHaveBody;
+    use HasNoHeaders;
+    use HasNoBody;
 
     public function headers(): array
     {

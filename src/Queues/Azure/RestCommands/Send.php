@@ -2,14 +2,12 @@
 
 namespace Bead\Queues\Azure\RestCommands;
 
-use Bead\Contracts\Azure\ResponseInterface;
-use Bead\Contracts\Azure\RestCommand;
-use Bead\Exceptions\QueueException;
 use Psr\Http\Message\StreamInterface;
 
-class Put extends AbstractQueueCommand
+class Send extends AbstractQueueCommand
 {
-    use DoesntHaveHeaders;
+    use HasNoHeaders;
+    use ResponseHasNoBody;
 
     private string|StreamInterface $body;
 
@@ -32,14 +30,5 @@ class Put extends AbstractQueueCommand
     public function body(): string|StreamInterface
     {
         return $this->body;
-    }
-
-    public function parseResponse(ResponseInterface $response): mixed
-    {
-        if (200 <= $response->getStatusCode() && 300 > $response->getStatusCode()) {
-            return null;
-        }
-
-        throw new QueueException("Unable to publish message to queue {$this->queue()} in namespace {$this->namespace()}: {$response->getReasonPhrase()}");
     }
 }

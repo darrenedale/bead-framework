@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Bead\Queues\Azure\RestCommands;
 
-trait DoesntHaveHeaders
+trait HasNoBody
 {
-    public function headers(): array
+    public function body(): string
     {
-        return [];
+        return "";
     }
 }
