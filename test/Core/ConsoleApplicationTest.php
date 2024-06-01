@@ -38,10 +38,6 @@ final class ConsoleApplicationTest extends TestCase
 
             private Closure $m_run;
 
-            public string $output = "";
-
-            public string $errorOutput = "";
-
             public function __construct(string $root, array $args, Closure $configure, Closure $run)
             {
                 parent::__construct($root, $args);
@@ -57,16 +53,6 @@ final class ConsoleApplicationTest extends TestCase
             protected function configure(): void
             {
                 ($this->m_configure)();
-            }
-
-            public function line(string $line): void
-            {
-                $this->output .= "{$line}\n";
-            }
-
-            public function errorLine(string $line): void
-            {
-                $this->errorOutput .= "{$line}\n";
             }
         };
 
@@ -255,9 +241,9 @@ final class ConsoleApplicationTest extends TestCase
      */
     public function testDescription3(string $description): void
     {
-        $app = $this->createApplication(configure: fn() => $this->setDescription($description));
+        $app = new XRay($this->createApplication(configure: fn() => $this->setDescription($description)));
         self::assertEquals("", $app->description());
-        $app->exec();
+        $app->configure();
         self::assertNotEquals("", $app->description());
     }
 
@@ -286,6 +272,22 @@ final class ConsoleApplicationTest extends TestCase
         $app = new XRay($this->createApplication());
         $app->setDescription("  A command description ");
         self::assertEquals("A command description", $app->description());
+    }
+
+    /** Ensure configure() is covered. */
+    public function testConfigure1(): void
+    {
+        $app = new XRay(new class extends ConsoleApplication {
+            public function __construct()
+            {}
+
+            public function run(): int
+            {}
+        });
+
+        // this method is empty, this test is just for coverage completeness
+        $app->configure();
+        self::markTestAsExternallyVerified();
     }
 
     /** Ensure configure() is called by exec(). */
@@ -333,6 +335,8 @@ final class ConsoleApplicationTest extends TestCase
             }
         );
 
+        $stream = fopen("php://memory", "w");
+        $app->setOutStream($stream);
         $app->exec();
         self::assertFalse($runCalled);
     }
@@ -363,33 +367,93 @@ final class ConsoleApplicationTest extends TestCase
      */
     public function testShowHelp1(array $args): void
     {
+        $stream = fopen("php://memory", "w+");
         $app = $this->createApplication(
             args: $args,
             configure: function(): void {
+                $this->setDescription("Test command");
                 $this->addArgument("foo", "The foo argument will be ignored.", optional: true);
                 $this->addArgument("bar", "The bar argument will be ignored.", optional: true);
             },
         );
 
+        $app->setOutStream($stream);
         $app->exec();
+        fseek($stream, 0, SEEK_SET);
 
         self::assertEquals(
 <<<EOF
-command.php: 
-  -h --help --debug  [foo] [bar]
+command.php: Test command
+  [-h] [--help] [--debug] [foo] [bar]
+
+Flags
+    --help|-h Show the command's help message.
+    --debug Run the command in debug mode.
+
+Arguments
+    foo (any, optional) The foo argument will be ignored.
+    bar (any, optional) The bar argument will be ignored.
 
 EOF,
-            $app->output
+            fread($stream, 1024),
+        );
+    }
+
+
+    /** Ensure args, options and flags are present in the help. */
+    public function testShowHelp2(): void
+    {
+        $stream = fopen("php://memory", "w+");
+        $app = new XRay($this->createApplication(
+            args: ["test-command.php", "--bead", "framework", "foo-value",],
+            configure: function(): void {
+                $this->setDescription("Test command.");
+                $this->addFlag("test", description: "A test flag.");
+                $this->addFlag("another-test", "a", "Another test flag.", default: true);
+                $this->addArgument("foo", "The foo argument will be ignored.", type: self::TypeInt, optional: false);
+                $this->addArgument("bar", "The bar argument will be ignored.", optional: true, default: "baz");
+                $this->addOption("bead", description: "The bead option will be ignored.", type: self::TypeString, optional: false);
+                $this->addOption("framework", "f", "The framework option will be ignored.", type: self::TypeArray, optional: true, default: "bead");
+            },
+        ));
+
+        $app->setOutStream($stream);
+        $app->configure();
+        $app->showHelp();
+        fseek($stream, 0, SEEK_SET);
+
+        self::assertEquals(
+<<<EOF
+test-command.php: Test command.
+  [-ha] [--help] [--debug] [--test] [--another-test] --bead [--framework|-f...=bead] foo [bar]
+
+Flags
+    --help|-h Show the command's help message.
+    --debug Run the command in debug mode.
+    --test A test flag.
+    --another-test|-a Another test flag. (Default is on.)
+
+Options
+    --bead <string> The bead option will be ignored.
+    --framework|-f <any> (optional) The framework option will be ignored. (Can be specified more than once.) (Default is bead.)
+
+Arguments
+    foo (integer) The foo argument will be ignored.
+    bar (any, optional) The bar argument will be ignored. (Default is baz.)
+
+EOF,
+            fread($stream, 1024),
         );
     }
 
     /** Ensure --debug command-line flag puts app into debug mode. */
     public function testIsInDebugMode1(): void
     {
-        $app = $this->createApplication(args: ["command.php", "--debug",]);
+        $app = new XRay($this->createApplication(args: ["command.php", "--debug",]));
         // command-line flag not in play until exec() is called
         self::assertFalse($app->isInDebugMode());
-        $app->exec();
+        $app->configure();
+        $app->parseCommandLineArguments();
         self::assertTrue($app->isInDebugMode());
     }
 
@@ -454,7 +518,8 @@ EOF,
         self::assertTrue($app->nameIsDefined("help"));
         self::assertTrue($app->nameIsDefined("debug"));
 
-        $app->exec();
+        $app->configure();
+        $app->parseCommandLineArguments();
 
         // what we've configured
         self::assertTrue($app->nameIsDefined("bead"));
@@ -475,7 +540,8 @@ EOF,
             }
         ));
 
-        $app->exec();
+        $app->configure();
+        $app->parseCommandLineArguments();
 
         // names with whitespace don't match
         self::assertFalse($app->nameIsDefined(" help"));
@@ -508,7 +574,8 @@ EOF,
         // always defined
         self::assertTrue($app->shortNameIsDefined("h"));
 
-        $app->exec();
+        $app->configure();
+        $app->parseCommandLineArguments();
 
         // what we've configured
         self::assertTrue($app->shortNameIsDefined("b"));
@@ -529,7 +596,8 @@ EOF,
             }
         ));
 
-        $app->exec();
+        $app->configure();
+        $app->parseCommandLineArguments();
 
         self::assertFalse($app->shortNameIsDefined("b"));
         self::assertFalse($app->shortNameIsDefined("f"));
@@ -560,7 +628,57 @@ EOF,
         $app->shortNameIsDefined($shortName);
     }
 
-    protected static function dataForTestParseArguments1(): iterable
+    protected static function dataForTestIsCompressedFlags1(): iterable
+    {
+        yield "single-flag" => ["-a", false,];
+        yield "two-flags" => ["-ac", true,];
+        yield "long-name" => ["--flag", false,];
+        yield "argument" => ["flag", false,];
+        yield "many-flags" => ["-flagtext", true,];
+        yield "hyphen-only" => ["-", false,];
+        yield "contains-digits" => ["-abc1def", false,];
+        yield "empty" => ["", false,];
+        yield "whitespace" => [" ", false,];
+        yield "leading-whitespace" => [" -abc", false,];
+        yield "trailing-whitespace" => ["-abc ", false,];
+        yield "surrounding-whitespace" => [" -abc ", false,];
+        yield "multiple-whitespace" => ["   ", false,];
+    }
+
+    /**
+     * Ensure compressed flags are expanded correctly.
+     *
+     * @dataProvider dataForTestIsCompressedFlags1
+     * @param string $compressed The string of compressed flags, with the leading "-".
+     * @param bool $expected Whether the string represents a valid set of compressed flags.
+     */
+    public function testIsCompressedFlags1(string $arg, bool $expected): void
+    {
+        $consoleApplication = new StaticXRay(ConsoleApplication::class);
+        self::assertEquals($expected, $consoleApplication->isCompressedFlags($arg));
+    }
+
+    protected static function dataForTestExpandCompressedFlags1(): iterable
+    {
+        yield "single-flag" => ["-a", ["-a",],];
+        yield "two-flags" => ["-ac", ["-a", "-c",],];
+        yield "many-flags" => ["-acfbhnjCKgm", ["-a", "-c", "-f", "-b", "-h", "-n", "-j", "-C", "-K", "-g", "-m",],];
+    }
+
+    /**
+     * Ensure compressed flags are expanded correctly.
+     *
+     * @dataProvider dataForTestExpandCompressedFlags1
+     * @param string $compressed The string of compressed flags, with the leading "-".
+     * @param array $expected The expected array of uncompressed flags.
+     */
+    public function testExpandCompressedFlags1(string $compressed, array $expected): void
+    {
+        $consoleApplication = new StaticXRay(ConsoleApplication::class);
+        self::assertEquals($expected, $consoleApplication->expandCompressedFlags($compressed));
+    }
+
+    protected static function dataForTestParseCommandLineArguments1(): iterable
     {
         yield "all-long-flag-option-arg" => [["--bead", "--framework", "bead", "input-value",], true,];
         yield "all-long-flag-arg-option" => [["--bead", "input-value", "--framework", "bead",], true,];
@@ -572,9 +690,9 @@ EOF,
 
     /**
      * Ensure we can successfully parse valid command-line arguments.
-     * @dataProvider dataForTestParseArguments1
+     * @dataProvider dataForTestParseCommandLineArguments1
      */
-    public function testParseArguments1(array $args, bool $expectedFlagValue): void
+    public function testParseCommandLineArguments1(array $args, bool $expectedFlagValue): void
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", ...$args,],
@@ -586,13 +704,13 @@ EOF,
         ));
 
         $app->configure();
-        $app->parseArguments();
+        $app->parseCommandLineArguments();
         self::assertEquals("bead", $app->optionValue("framework"));
         self::assertSame($expectedFlagValue, $app->flagValue("bead"));
         self::assertEquals("input-value", $app->argumentValue("input"));
     }
 
-    protected static function dataForTestParseArguments2(): iterable
+    protected static function dataForTestParseCommandLineArguments2(): iterable
     {
         yield "duplicate-flag" => [["--bead", "--bead",], "--bead",];
         yield "duplicate-option" => [["--framework", "bead", "--framework", "another-bead",], "--framework",];
@@ -602,9 +720,9 @@ EOF,
 
     /**
      * Ensure we reject duplicate command-line arguments during parsing.
-     * @dataProvider dataForTestParseArguments2
+     * @dataProvider dataForTestParseCommandLineArguments2
      */
-    public function testParseArguments2(array $args, string $duplicateParameterName): void
+    public function testParseCommandLineArguments2(array $args, string $duplicateParameterName): void
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", ...$args,],
@@ -619,11 +737,11 @@ EOF,
 
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage("Command-line parameter {$duplicateParameterName} was given more than once, but it doesn't accept multiple values");
-        $app->parseArguments();
+        $app->parseCommandLineArguments();
     }
 
     /** Ensure we reject options in command-line arguments that aren't given with values. */
-    public function testParseArguments3(): void
+    public function testParseCommandLineArguments3(): void
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--bead", "input-value", "--framework",],
@@ -638,11 +756,11 @@ EOF,
 
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage("Command-line parameter --framework expects a value but none was given");
-        $app->parseArguments();
+        $app->parseCommandLineArguments();
     }
 
     /** Ensure we reject command-line arguments that aren't defined. */
-    public function testParseArguments4(): void
+    public function testParseCommandLineArguments4(): void
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--bead", "input-value", "--framework", "bead", "--undefined",],
@@ -657,7 +775,26 @@ EOF,
 
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage("Command-line argument --undefined is not recognised");
-        $app->parseArguments();
+        $app->parseCommandLineArguments();
+    }
+
+    /** Ensure compressed flags are expanded. */
+    public function testParseCommandLineArguments5(): void
+    {
+        $app = new XRay($this->createApplication(
+            args: ["command.php", "-abc",],
+            configure: function(): void {
+                $this->addFlag("another", "a", "Another flag");
+                $this->addFlag("bead", "b", "The bead flag");
+                $this->addFlag("configuration", "c", "The configuration flag");
+            }
+        ));
+
+        $app->configure();
+        $app->parseCommandLineArguments();
+        self::assertTrue($app->flagValue("another"));
+        self::assertTrue($app->flagValue("bead"));
+        self::assertTrue($app->flagValue("configuration"));
     }
 
     protected static function dataForTestValildateArguments1(): iterable
@@ -706,8 +843,8 @@ EOF,
         ));
 
         $app->configure();
-        $app->parseArguments();
-        $app->validateArguments();
+        $app->parseCommandLineArguments();
+        $app->validateCommandLineArguments();
         self::assertSame($expectedValue, $app->optionValue("test-option"));
     }
 
@@ -723,8 +860,8 @@ EOF,
         ));
 
         $app->configure();
-        $app->parseArguments();
-        $app->validateArguments();
+        $app->parseCommandLineArguments();
+        $app->validateCommandLineArguments();
         self::assertSame(["value-1", "value-2",], $app->optionValue("test-option"));
     }
 
@@ -893,7 +1030,7 @@ EOF,
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
-        self::expectExceptionMessage("Expected valid short option name, found \"{$name}\"");
+        self::expectExceptionMessage("Expected valid option short name, found \"{$name}\"");
         $app->addOption("test-option", shortName: $name, description: "Test option");
     }
 
@@ -1241,7 +1378,7 @@ EOF,
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
-        self::expectExceptionMessage("Expected valid short flag name, found \"{$name}\"");
+        self::expectExceptionMessage("Expected valid flag short name, found \"{$name}\"");
         $app->addFlag("test-flag", $name, "Test flag");
     }
 
@@ -1292,46 +1429,551 @@ EOF,
         $app->addFlag("debug", description: "Redefined debug flag");
     }
 
-    /** TODO Ensure write() writes to the expected stream. */
-    /** TODO Ensure line() writes to the output stream. */
-    /** TODO Ensure line() appends a newline. */
-    /** TODO Ensure errorLine() writes to the error stream. */
-    /** TODO Ensure errorLine() appends a newline. */
-    /** TODO Ensure errorLine() sets the text colour. */
-    /** TODO Ensure read() reads from the input stream. */
-    /** TODO Ensure read() writes the prompt to the output stream. */
-    /** TODO Ensure read() discards characters beyond max length. */
-    /** TODO Ensure read() trims the trailing newline. */
-    /** TODO Ensure readSecret() turns off input echo. */
-    /** TODO Ensure readSecret() turns input echo back on. */
-    /** TODO Ensure readSecret() writes a newline to the output stream. */
+    /** TODO Ensure flagDefinition() returns the correct definition. */
+    /** TODO Ensure flagDefinition() returns null for undefined flags. */
+    /** TODO Ensure flagDefinition() returns null for undefined flags when an option with the matching name exists. */
+    /** TODO Ensure flagDefinition() returns null for undefined flags when an argument with the matching name exists. */
+
+    /** TODO Ensure optionDefinition() returns the correct definition. */
+    /** TODO Ensure optionDefinition() returns null for undefined options. */
+    /** TODO Ensure optionDefinition() returns null for undefined options when a flag with the matching name exists. */
+    /** TODO Ensure optionDefinition() returns null for undefined options when an argument with the matching name exists. */
+
+    /** TODO Ensure argumentDefinition() returns the correct definition. */
+    /** TODO Ensure argumentDefinition() returns null for undefined arguments. */
+    /** TODO Ensure argumentDefinition() returns null for undefined arguments when an option with the matching name exists. */
+    /** TODO Ensure argumentDefinition() returns null for undefined arguments when a flag with the matching name exists. */
+
+    /** Ensure write() writes to the expected stream. */
+    public function testWrite1(): void
+    {
+        $stream = fopen("php://memory", "w+");
+        $app = new Xray($this->createApplication());
+        $app->write("test content", $stream);
+        fseek($stream, 0, SEEK_SET);
+        self::assertEquals("test content", fgets($stream));
+        fclose($stream);
+    }
+
+    /** Ensure line() writes to the output stream and appends a newline. */
+    public function testLine1(): void
+    {
+        $stream = fopen("php://memory", "w+");
+        $app = new XRay($this->createApplication());
+        $app->setOutStream($stream);
+        $app->line("test message");
+        fseek($stream, 0, SEEK_SET);
+        self::assertEquals("test message\n", fgets($stream));
+        fclose($stream);
+    }
+
+    /** Ensure errorLine() writes colour text to the error stream and appends a newline. */
+    public function testErrorLine1(): void
+    {
+        $stream = fopen("php://memory", "w+");
+        $app = new XRay($this->createApplication());
+        $app->setErrorStream($stream);
+        $app->errorLine("test error");
+        fseek($stream, 0, SEEK_SET);
+        self::assertEquals("\033[31mtest error\033[39m\n", fgets($stream));
+        fclose($stream);
+    }
+
+    /** Ensure read() reads a line from the input stream and discards the trailing newline. */
+    public function testRead1(): void
+    {
+        $stream = fopen("php://memory", "w+");
+        fputs($stream, "input-text\n");
+        fseek($stream, 0, SEEK_SET);
+        $app = new XRay($this->createApplication());
+        $app->setInStream($stream);
+        $actual = $app->read();
+        fclose($stream);
+        self::assertEquals("input-text", $actual);
+    }
+
+    /** Ensure read() writes the prompt to the output stream. */
+    public function testRead2(): void
+    {
+        $inStream = fopen("php://memory", "w+");
+        $outStream = fopen("php://memory", "w+");
+        fputs($inStream, "input-text\n");
+        fseek($inStream, 0, SEEK_SET);
+        $app = new XRay($this->createApplication());
+        $app->setInStream($inStream);
+        $app->setOutStream($outStream);
+        $actualInput = $app->read("input something: ");
+        fseek($outStream, 0, SEEK_SET);
+        $actualPrompt = fread($outStream, 1024);
+        fclose($inStream);
+        fclose($outStream);
+        self::assertEquals("input-text", $actualInput);
+        self::assertEquals("input something: ", $actualPrompt);
+    }
+
+    /** Ensure read() discards characters beyond max length. */
+    public function testRead3(): void
+    {
+        $stream = fopen("php://memory", "w+");
+        fputs($stream, "input-text\n");
+        fseek($stream, 0, SEEK_SET);
+        $app = new XRay($this->createApplication());
+        $app->setInStream($stream);
+        $actual = $app->read("", 6);
+        fclose($stream);
+        self::assertEquals("input-", $actual);
+    }
+
+    /** Ensure we get the expected exception when reading the input stream fails. */
+    public function testRead4(): void
+    {
+        $app = new XRay($this->createApplication());
+        $this->mockFunction("fgets", false);
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Failed to read from input stream");
+        $app->read();
+
+    }
+
+    /** Ensure readSecret() turns input echo off and back on. */
+    public function testReadSecret1(): void
+    {
+        $inStream = fopen("php://memory", "w+");
+        fputs($inStream, "secret-input");
+        fseek($inStream, 0, SEEK_SET);
+        $app = new XRay($this->createApplication());
+
+        $count = 0;
+
+        $shellExec = static function(string $command) use (&$count, $app, $inStream): string {
+            ++$count;
+
+            if (1 === $count) {
+                TestCase::assertEquals("stty -g", $command);
+                return "echo_back_on";
+            } elseif (2 === $count) {
+                TestCase::assertEquals("stty -echo", $command);
+
+                // once we receive this call, we want the app to read input from our test stream, otherwise it will lock
+                // waitin for actual user input
+                $app->setInStream($inStream);
+
+                return "-echo";
+            } elseif (3 === $count) {
+                TestCase::assertEquals("stty echo_back_on", $command);
+                return "-echo";
+            }
+
+            return "";
+        };
+
+        $this->mockFunction("shell_exec", $shellExec);
+
+        // stop readSecret() from writing a newline to stdout
+        $outStream = fopen("php://memory", "w+");
+        $app->setOutStream($outStream);
+
+        $app->readSecret();
+        fclose($outStream);
+        self::assertEquals(3, $count);
+    }
+
+    /** TODO Ensure readSecret() fails when input is not STDIN */
+    /** TODO Ensure linefeed is written to stdout in readSecret() */
+
     /** TODO Ensure confirm() accepts all expected positive responses. */
     /** TODO Ensure confirm() returns negative for all other responses. */
-    /** TODO Ensure we can set the output stream. */
-    /** TODO Ensure we can set the error stream. */
-    /** TODO Ensure we can set the input stream. */
-    /** TODO Ensure we can retrieve the output stream. */
-    /** TODO Ensure we can retrieve the error stream. */
-    /** TODO Ensure we can retrieve the input stream. */
-    /** TODO Ensure we can get the executed script. */
-    /** TODO Ensure we can get the raw command-line arguments. */
-    /** TODO Ensure we can check for defined argments. */
-    /** TODO Ensure we get false for options that aren't defined. */
-    /** TODO Ensure we can check for defined argments. */
-    /** TODO Ensure we get false for arguments that aren't defined. */
-    /** TODO Ensure we can check for defined argments. */
-    /** TODO Ensure we get false for flags that aren't defined. */
-    /** TODO Ensure we can check for argments that are set. */
-    /** TODO Ensure we get false for options that aren't set. */
-    /** TODO Ensure we can check for argments that are set. */
-    /** TODO Ensure we get false for arguments that aren't set. */
-    /** TODO Ensure we can get argument values. */
-    /** TODO Ensure get the expected exception when attempting to get the value for an argument that is not defined. */
-    /** TODO Ensure get the expected exception when attempting to get the value for an argument that is not set. */
-    /** TODO Ensure we can get option values. */
-    /** TODO Ensure get the expected exception when attempting to get the value for an option that is not defined. */
-    /** TODO Ensure get the expected exception when attempting to get the value for an option that is not set. */
-    /** TODO Ensure we can get flag values. */
-    /** TODO Ensure get the expected exception when attempting to get the value for an flag that is not defined. */
-    /** ... */
+
+    /** Ensure we can set the output stream. */
+    public function testSetOutputStream1(): void
+    {
+        $app = $this->createApplication();
+        $stream = fopen("php://memory", "w");
+        $app->setOutStream($stream);
+        self::assertSame($stream, $app->outStream());
+    }
+
+    /** Ensure we can set the error stream. */
+    public function testSetErrorStream1(): void
+    {
+        $app = $this->createApplication();
+        $stream = fopen("php://memory", "w");
+        $app->setErrorStream($stream);
+        self::assertSame($stream, $app->errorStream());
+    }
+
+    /** Ensure we can set the input stream. */
+    public function testSetInStream1(): void
+    {
+        $app = $this->createApplication();
+        $stream = fopen("php://memory", "r");
+        $app->setInStream($stream);
+        self::assertSame($stream, $app->inStream());
+    }
+
+    /** Ensure the output stream is STDOUT by default. */
+    public function testOutStream1(): void
+    {
+        $app = $this->createApplication();
+        self::assertSame(STDOUT, $app->outStream());
+    }
+
+    /** Ensure the error stream is STDERR by default. */
+    public function testErrorStream1(): void
+    {
+        $app = $this->createApplication();
+        self::assertSame(STDERR, $app->errorStream());
+    }
+
+    /** Ensure the output stream is STDIN by default. */
+    public function testInStream1(): void
+    {
+        $app = $this->createApplication();
+        self::assertSame(STDIN, $app->inStream());
+    }
+
+    protected static function dataForTestArguments1(): iterable
+    {
+        yield "no-args" => [["command.php",], []];
+        yield "one-arg" => [["command.php", "foo",], ["foo",]];
+        yield "one-flag" => [["command.php", "--foo",], ["--foo",]];
+        yield "one-short-flag" => [["command.php", "-f",], ["-f",]];
+        yield "one-option" => [["command.php", "--foo", "foo-value",], ["--foo", "foo-value",]];
+        yield "one-short-option" => [["command.php", "-f", "foo-value"], ["-f", "foo-value",]];
+        yield "arg-option-and-flag" => [["command.php", "-f", "foo-value", "--bar", "bar-value", "argument",], ["-f", "foo-value", "--bar", "bar-value", "argument",]];
+    }
+
+    /**
+     * Ensure we can get the raw command-line arguments.
+     * @dataProvider dataForTestArguments1
+     */
+    public function testArguments1(array $cliArgs, array $expectedArgs): void
+    {
+        $app = $this->createApplication(args: $cliArgs);
+        self::assertEquals($expectedArgs, $app->commandLineArguments());
+    }
+
+    /** Ensure we can check for defined arguments. */
+    public function testHasArgument1(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test-argument", "Test argument.");
+        self::assertTrue($app->hasArgument("test-argument"));
+    }
+
+    /** Ensure we get false for arguments that aren't defined. */
+    public function testHasArgument2(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("other-test-argument", "Other test argument.");
+        self::assertFalse($app->hasArgument("test-argument"));
+    }
+
+    /** Ensure we get false for arguments that aren't defined but an option with the same name is. */
+    public function testHasArgument3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test", description: "Test option.");
+        self::assertFalse($app->hasArgument("test"));
+    }
+
+    /** Ensure we get false for arguments that aren't defined but a flag with the same name is. */
+    public function testHasArgument4(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test", description: "Test flag.");
+        self::assertFalse($app->hasArgument("test"));
+    }
+
+    /** Ensure we can check for defined options. */
+    public function testHasOption1(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test", description: "Test option.");
+        self::assertTrue($app->hasOption("test"));
+    }
+
+    /** Ensure we can check for defined options by short name. */
+    public function testHasOption2(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test", "t", "Test option.");
+        self::assertTrue($app->hasOption("t"));
+    }
+
+    /** Ensure we get false for options that aren't defined. */
+    public function testHasOption3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("other-test", description: "Test option.");
+        self::assertFalse($app->hasOption("test"));
+    }
+
+    /** Ensure we get false for options that aren't defined but an argument with the same name is. */
+    public function testHasOption4(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test", "Test argument.");
+        self::assertFalse($app->hasOption("test"));
+    }
+
+    /** Ensure we get false for options that aren't defined but a flag with the same name is. */
+    public function testHasOption5(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test", description: "Test flag.");
+        self::assertFalse($app->hasOption("test"));
+    }
+
+    /** Ensure we get false for options that aren't defined but a flag with the same short name is. */
+    public function testHasOption6(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test", "t", "Test flag.");
+        self::assertFalse($app->hasOption("t"));
+    }
+
+    /** Ensure we can check for defined flags. */
+    public function testHasFlag1(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test", description: "Test flag.");
+        self::assertTrue($app->hasFlag("test"));
+    }
+
+    /** Ensure we can check for defined flags by short name. */
+    public function testHasFlag2(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test", "t", "Test flag.");
+        self::assertTrue($app->hasFlag("t"));
+    }
+
+    /** Ensure we get false for flags that aren't defined. */
+    public function testHasFlag3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("other-test", description: "Test option.");
+        self::assertFalse($app->hasFlag("test"));
+    }
+
+    /** Ensure we get false for flags that aren't defined but an argument with the same name is. */
+    public function testHasFlag4(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test", "Test argument.");
+        self::assertFalse($app->hasFlag("test"));
+    }
+
+    /** Ensure we get false for flags that aren't defined but an option with the same name is. */
+    public function testHasFlag5(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test", description: "Test option.");
+        self::assertFalse($app->hasFlag("test"));
+    }
+
+    /** Ensure we get false for flags that aren't defined but an option with the same short name is. */
+    public function testHasFlag6(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test", "t", "Test option.");
+        self::assertFalse($app->hasFlag("t"));
+    }
+
+    /** Ensure we can check for argments that are set. */
+    public function testArgumentIsSet1(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "test-value",]));
+        $app->addArgument("test", "Test argument.", optional: true);
+        $app->parseCommandLineArguments();
+        self::assertTrue($app->argumentIsSet("test"));
+    }
+
+    /** Ensure we get false for argments that aren't set. */
+    public function testArgumentIsSet2(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test", "Test argument.", optional: true);
+        $app->parseCommandLineArguments();
+        self::assertFalse($app->argumentIsSet("test"));
+    }
+
+    /** Ensure we get the expected exception for argments that aren't defined. */
+    public function testArgumentIsSet3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->parseCommandLineArguments();
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage("Argument \"test\" is not defined");
+        $app->argumentIsSet("test");
+    }
+
+    /** Ensure we can check for options that are set. */
+    public function testOptionIsSet1(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "--test", "test-value",]));
+        $app->addOption("test", description: "Test argument.", optional: true);
+        $app->parseCommandLineArguments();
+        self::assertTrue($app->optionIsSet("test"));
+    }
+
+    /** Ensure we can check for options that are set by short name. */
+    public function testOptionIsSet2(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "--test", "test-value",]));
+        $app->addOption("test", "t", "Test argument.", optional: true);
+        $app->parseCommandLineArguments();
+        self::assertTrue($app->optionIsSet("t"));
+    }
+
+    /** Ensure we get false for options that aren't set. */
+    public function testOptionIsSet3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test", description: "Test option.", optional: true);
+        $app->parseCommandLineArguments();
+        self::assertFalse($app->optionIsSet("test"));
+    }
+
+    /** Ensure we get false for options that aren't set using their short names. */
+    public function testOptionIsSet4(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test", "t", "Test option.", optional: true);
+        $app->parseCommandLineArguments();
+        self::assertFalse($app->optionIsSet("t"));
+    }
+
+    /** Ensure we get the expected exception for argments that aren't defined. */
+    public function testOptionIsSet5(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->parseCommandLineArguments();
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage("Option \"test\" is not defined");
+        $app->optionIsSet("test");
+    }
+
+    /** Ensure we can get argument values. */
+    public function testArgumentValue1(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "test-value",]));
+        $app->addArgument("test", "Test argument.");
+        $app->parseCommandLineArguments();
+        self::assertEquals("test-value", $app->argumentValue("test"));
+    }
+
+    /** Ensure we can get default value for optional arguments that aren't set but which have defaults. */
+    public function testArgumentValue2(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test", "Test argument.", optional: true, default: "default-test-value");
+        $app->parseCommandLineArguments();
+        self::assertEquals("default-test-value", $app->argumentValue("test"));
+    }
+
+    /** Ensure get the expected exception when attempting to get the value for an argument that is not defined. */
+    public function testArgumentValue3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->parseCommandLineArguments();
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage("Argument \"not-test\" is not defined");
+        $app->argumentValue("not-test");
+    }
+
+    /** Ensure we can get option values. */
+    public function testOptionValue1(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "--test", "test-value",]));
+        $app->addOption("test", description: "Test option.");
+        $app->parseCommandLineArguments();
+        self::assertEquals("test-value", $app->optionValue("test"));
+    }
+
+    /** Ensure we can get option values using their short names. */
+    public function testOptionValue2(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "--test", "test-value",]));
+        $app->addOption("test", "t", "Test option.");
+        $app->parseCommandLineArguments();
+        self::assertEquals("test-value", $app->optionValue("t"));
+    }
+
+    /** Ensure get the expected exception when attempting to get the value for an option that is not defined. */
+    public function testOptionValue3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->parseCommandLineArguments();
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage("Option \"not-test\" is not defined");
+        $app->optionValue("not-test");
+    }
+
+    /** Ensure we can get flag values. */
+    public function testFlagValue1(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "--test",]));
+        $app->addFlag("test", description: "Test flag.");
+        $app->parseCommandLineArguments();
+        self::assertTrue($app->flagValue("test"));
+    }
+
+    /** Ensure we can get flag values by their short names. */
+    public function testFlagValue2(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "--test",]));
+        $app->addFlag("test", "t", "Test flag.");
+        $app->parseCommandLineArguments();
+        self::assertTrue($app->flagValue("t"));
+    }
+
+    /** Ensure we can get flag values by short name when they're specified by long name. */
+    public function testFlagValue3(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "--test",]));
+        $app->addFlag("test", "t", "Test flag.");
+        $app->parseCommandLineArguments();
+        self::assertTrue($app->flagValue("t"));
+    }
+
+    /** Ensure we can get flag values by name when they're specified by short name. */
+    public function testFlagValue4(): void
+    {
+        $app = new XRay($this->createApplication(args: ["test-command.php", "-t",]));
+        $app->addFlag("test", "t", "Test flag.");
+        $app->parseCommandLineArguments();
+        self::assertTrue($app->flagValue("test"));
+    }
+
+    /** Ensure we can get flag values for unset flags. */
+    public function testFlagValue5(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test", description: "Test flag.");
+        $app->parseCommandLineArguments();
+        self::assertFalse($app->flagValue("test"));
+    }
+
+    /** Ensure we can get flag values for unset flags by their short names. */
+    public function testFlagValue6(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test", "t", "Test flag.");
+        $app->parseCommandLineArguments();
+        self::assertFalse($app->flagValue("t"));
+    }
+
+    /** Ensure get the expected exception when attempting to get the value for an flag that is not defined. */
+    public function testFlagValue7(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->parseCommandLineArguments();
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage("Flag \"test\" is not defined");
+        self::assertTrue($app->flagValue("test"));
+    }
+
+    /** TODO test validateCommandLineArguments() */
 }
