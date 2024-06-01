@@ -30,7 +30,7 @@ abstract class ConsoleApplication extends Application
      */
     private const Flag = 3;
 
-    // types for arguments
+    // types for arguments/option values
     public const TypeAny = 0;
 
     public const TypeString = 1;
@@ -41,7 +41,8 @@ abstract class ConsoleApplication extends Application
 
     public const TypeArray = 4;
 
-    private ?string $m_cmd = null;
+    /** @var string The script that was run to cause the command to be executed. */
+    private string $m_cmd;
 
     /** @var array The raw command-line arguments. */
     private array $m_args;
@@ -52,7 +53,13 @@ abstract class ConsoleApplication extends Application
     /** @var \StdClass[] */
     private array $m_parameterDefinitions = [];
 
-    /** @var array<string,string|bool> The values passed on the command-line for arguments. */
+    /**
+     * @var array<string,string|bool> The values passed on the command-line parsed into the configured parameters.
+     *
+     * These are always indexed by name, not short name. This applies to flags that are negatable - the value will be
+     * false for the flag name (i.e. if you configure the flag "bead", if the user specifies --not-bead on the command
+     * line, the value for "bead" will be false; there won't be a value for "not-bead").
+     */
     private array $m_parameterValues = [];
 
     /** @var resource The console application's output stream. */
@@ -71,16 +78,12 @@ abstract class ConsoleApplication extends Application
      * @throws RuntimeException if the singleton is already set or the root dir does not exist and cannot be created.
      * @throws ServiceAlreadyBoundException if any of the service bindings set up by the Application is already bound.
      */
-    public function __construct(string $rootDir, array $args = null)
+    public function __construct(string $rootDir, array $args = [])
     {
         parent::__construct($rootDir);
         $this->addFlag("help", "h", "Show the command's help message.", false);
-
-        if (!isset($args)) {
-            $args = [];
-        }
-
-        $this->m_cmd  = array_shift($args);
+        $this->addFlag("debug", null, "Run the command in debug mode.", false);
+        $this->m_cmd  = array_shift($args) ?? "";
         $this->m_args = $args;
     }
 
@@ -94,7 +97,7 @@ abstract class ConsoleApplication extends Application
     /** Check whether a parameter short name is valid. */
     private static function isValidShortParameterName(string $name): bool
     {
-        return (bool) preg_match("/^[a-z]$/", $name);
+        return (bool) preg_match("/^[a-zA-Z]$/", $name);
     }
 
     /** Check whether a data type is valid. */
@@ -124,37 +127,15 @@ abstract class ConsoleApplication extends Application
         };
     }
 
-    /**
-     * Helper to support short-format short flags (e.g. `-bfn` instead of `-b -f -n`).
-     *
-     * Any argument that is not a short-format flag is passed through intact.
-     *
-     * @param array $arguments The command-line arguments to process.
-     *
-     * @return array The expanded command-line arguments.
-     */
-    private static function expandFlags(array $arguments): array
-    {
-        $ret = [];
-
-        foreach ($arguments as $arg) {
-            if (str_starts_with("-", $arg) && !str_starts_with("--", $arg) && 2 < strlen($arg)) {
-                foreach (str_split(substr($arg, 1)) as $flag) {
-                    $ret[] = "-{$flag}";
-                }
-            } else {
-                $ret[] = $arg;
-            }
-        }
-
-        return $ret;
-    }
-
     /** Check whether a parameter's name has already been defined. */
     protected final function nameIsDefined(string $name): bool
     {
         foreach ($this->m_parameterDefinitions as $definition) {
             if ($definition->name === $name) {
+                return true;
+            }
+
+            if (self::Flag === $definition->type && $definition->negatedName === $name) {
                 return true;
             }
         }
@@ -168,7 +149,11 @@ abstract class ConsoleApplication extends Application
         assert (1 === strlen($name), new LogicException("Invalid short name \"{$name}\" provided to shortNameIsDefined() helper."));
 
         foreach ($this->m_parameterDefinitions as $definition) {
-            if ($definition->shortName === $name) {
+            if (($definition->shortName ?? null) === $name) {
+                return true;
+            }
+
+            if (self::Flag === $definition->type && $definition->negatedShortName === $name) {
                 return true;
             }
         }
@@ -177,35 +162,70 @@ abstract class ConsoleApplication extends Application
     }
 
     /**
-     * Given a command-line argument, attempt to locate the definition it matches.
+     * Given a name or short name extracted from a command-line argument, find the flag it corresponds to.
      *
-     * @param string $name The command-line argument.
-     *
-     * @return StdClass|null
+     * Negatable flags are accommodated - passing "not-bead" will match the flag defined with the name "bead" if it was
+     * configured as negatable.
      */
-    private function identifyArgument(string $name): StdClass|null
+    protected final function flagDefinition(string $name): ?StdClass
     {
-        // flags and options can start with - or --
-        $couldBeFlagOrOption = str_starts_with($name, "-");
+        foreach ($this->m_parameterDefinitions as $definition) {
+            if (self::Flag !== $definition->type) {
+                continue;
+            }
 
-        if ($couldBeFlagOrOption) {
-            $name = self::extractName($name);
-        };
+            if ($name === $definition->name || $name === $definition->shortName) {
+                return $definition;
+            }
 
-        $definition = $this->m_parameterDefinitions[$name] ?? null;
-
-        if (!$definition) {
-            return null;
+            // check if it's a negated flag
+            if ($name === $definition->negatedName || $name === $definition->negatedShortName) {
+                return $definition;
+            }
         }
 
-        if ($couldBeFlagOrOption) {
-            return match ($definition->type) {
-                self::Flag, self::Option => $definition,
-                default => null,
-            };
+        return null;
+    }
+
+    /** Given a name or short name extracted from a command-line argument, find the option it corresponds to. */
+    protected final function optionDefinition(string $name): ?StdClass
+    {
+        foreach ($this->m_parameterDefinitions as $definition) {
+            if (self::Option !== $definition->type) {
+                continue;
+            }
+
+            if ($name === $definition->name || $name === $definition->shortName) {
+                return $definition;
+            }
         }
 
-        return $definition->type === self::Argument ? $definition : null;
+        return null;
+    }
+
+    /** Find the definition of a named argument. */
+    protected final function argumentDefinition(string $name): ?StdClass
+    {
+        foreach ($this->m_parameterDefinitions as $definition) {
+            if (self::Argument === $definition->type && ($name === $definition->name || $name === $definition->shortName)) {
+                return $definition;
+            }
+        }
+
+        return null;
+    }
+
+    protected static final function isCompressedFlags(string $arg): bool
+    {
+        return mb_ereg_match("^-[[:alpha:]]{2,}\$", $arg);
+    }
+
+    protected static final function expandCompressedFlags(string $flags): array
+    {
+        return array_map(
+            static fn(string $arg): string => "-{$arg}",
+            str_split(substr($args[0], 1))
+        );
     }
 
     /**
@@ -215,62 +235,74 @@ abstract class ConsoleApplication extends Application
      *
      * @throws InvalidArgumentException if we don't know what to do with one or more command-line arguments.
      */
-    protected function parseArguments(): void
+    protected final function parseArguments(): void
     {
-        $args = self::expandFlags($this->arguments());
-        $count = count($args);
+        $argumentDefinitions = array_filter(
+            $this->m_parameterDefinitions,
+            static fn (StdClass $definition): bool => self::Argument === $definition->type,
+        );
 
-        for ($idx = 0; $idx < $count; ++$idx) {
-            $arg = $args[$idx];
-            $definition = $this->identifyArgument($arg);
+        $originalArgs = $this->commandLineArguments();
 
-            if (null === $definition) {
-                throw new InvalidArgumentException("Command-line argument {$arg} is not recognised.");
+        for ($idx = 0; $idx < count($originalArgs); ++$idx) {
+            // it might be a compressed set of flags, so we handle as an array so that we don't have different branches
+            // dealing with flags vs. other args
+            $args = [$originalArgs[$idx]];
+
+            // we do this here rather than globally on the whole args array because until we have parsed previous args
+            // we can't tell a compressed set of flags from a potential value for another parameter
+            if (self::isCompressedFlags($args[0])) {
+                $args = self::expandCompressedFlags($args[0]);
             }
 
-            $value = null;
+            foreach ($args as $arg) {
+                $definition = null;
 
-            switch ($definition->type) {
-                case self::Flag:
-                    $value = true;
-                    break;
-
-                case self::Option:
-                    ++$idx;
-                    $value = $args[$idx] ?? null;
-                    break;
-
-                case self::Argument:
-                    $value = $args[$idx];
-                    break;
-            }
-
-            if (null === $value) {
-                throw new InvalidArgumentException("Command-line parameter {$arg} expects a value but none was given.");
-            }
-
-            // flags don't have dataType set
-            if (self::TypeArray === ($definition->dataType ?? null)) {
-                if (!array_key_exists($definition->name, $this->m_parameterValues)) {
-                    $this->m_parameterValues[$definition->name] = [];
+                if (str_starts_with($arg, "-")) {
+                    $name = self::extractName($arg);
+                    $definition = $this->flagDefinition($name) ?? $this->optionDefinition($name);
                 }
 
-                $this->m_parameterValues[$definition->name][] = $value;
+                // if it's not a flag or option, assume it's a value for the next available arg
+                if (null === $definition) {
+                    $definition = array_shift($argumentDefinitions);
 
-                if (null !== ($definition->shortName ?? null)) {
-                    if (!array_key_exists($definition->shortName, $this->m_parameterValues)) {
-                        $this->m_parameterValues[$definition->shortName] = [];
+                    if (null === $definition) {
+                        throw new InvalidArgumentException("Command-line argument {$arg} is not recognised");
+                    }
+                }
+
+                $value = match ($definition->type) {
+                    // name is guaranteed to be set to the extracted name for the current CLI arg
+                    // if it matches the name or short name it's +ve, otherwise it's -ve
+                    self::Flag => ($name === $definition->name || $name === $definition->shortName),
+                    self::Option => $originalArgs[++$idx] ?? throw new InvalidArgumentException("Command-line parameter {$arg} expects a value but none was given"),
+                    self::Argument => $arg,
+                };
+
+                // flags don't have dataType set
+                if (self::TypeArray === ($definition->dataType ?? null)) {
+                    if (!array_key_exists($definition->name, $this->m_parameterValues)) {
+                        $this->m_parameterValues[$definition->name] = [];
                     }
 
-                    $this->m_parameterValues[$definition->shortName][] = $value;
-                }
-            } elseif (array_key_exists($definition->name, $this->m_parameterValues)) {
-                throw new InvalidArgumentException("Command-line parameter {$arg} was given more than once, but it doesn't accept multiple values");
-            } else {
-                $this->m_parameterValues[$definition->name] = $value;
+                    $this->m_parameterValues[$definition->name][] = $value;
 
-                if (null !== ($definition->shortName ?? null)) {
-                    $this->m_parameterValues[$definition->shortName] = $value;
+                    if (null !== ($definition->shortName ?? null)) {
+                        if (!array_key_exists($definition->shortName, $this->m_parameterValues)) {
+                            $this->m_parameterValues[$definition->shortName] = [];
+                        }
+
+                        $this->m_parameterValues[$definition->shortName][] = $value;
+                    }
+                } elseif (array_key_exists($definition->name, $this->m_parameterValues)) {
+                    throw new InvalidArgumentException("Command-line parameter {$arg} was given more than once, but it doesn't accept multiple values");
+                } else {
+                    $this->m_parameterValues[$definition->name] = $value;
+
+                    if (null !== ($definition->shortName ?? null)) {
+                        $this->m_parameterValues[$definition->shortName] = $value;
+                    }
                 }
             }
         }
@@ -283,7 +315,7 @@ abstract class ConsoleApplication extends Application
      *
      * @throws InvalidArgumentException if the set of arguments is not valid.
      */
-    protected function validateArguments(): void
+    protected final function validateArguments(): void
     {
         foreach ($this->m_parameterDefinitions as $definition) {
             if (self::Flag === $definition->type) {
@@ -363,13 +395,13 @@ abstract class ConsoleApplication extends Application
      */
     protected final function setDescription(string $description): void
     {
-        $description = trim($description);
+        $trimmedDescription = trim($description);
 
-        if ("" === $description) {
-            throw new LogicException("Expecting non-empty command descriptions, found \"{$description}\".");
+        if ("" === $trimmedDescription) {
+            throw new LogicException("Expecting non-empty command description, found \"{$description}\"");
         }
 
-        $this->m_description = $description;
+        $this->m_description = $trimmedDescription;
     }
 
     /**
@@ -395,27 +427,33 @@ abstract class ConsoleApplication extends Application
     protected final function addOption(string $name, ?string $shortName = null, string $description = "", int $type = self::TypeAny, bool $optional = false, string|float|int|array|null $default = null): void
     {
         if (!self::isValidDataType($type)) {
-            throw new LogicException("Expected valid data type, found {$type}");
+            throw new LogicException("Expected valid data type, found \"{$type}\"");
         }
 
         if (!self::isValidParameterName($name)) {
-            throw new LogicException("Expected valid parameter name, found {$name}");
+            throw new LogicException("Expected valid option name, found \"{$name}\"");
         }
 
         if (null !== $shortName && !self::isValidShortParameterName($shortName)) {
-            throw new LogicException("Expected valid short parameter name, found {$shortName}");
+            throw new LogicException("Expected valid short option name, found \"{$shortName}\"");
         }
 
         if ("" === trim($description)) {
-            throw new LogicException("Expected non-empty parameter description, found {$description}");
+            throw new LogicException("Expected non-empty option description, found \"{$description}\"");
         }
 
         if ($this->nameIsDefined($name)) {
-            throw new LogicException("Option name {$name} is already defined.");
+            throw new LogicException("Option name \"{$name}\" is already defined");
         }
 
-        if (null !== $shortName && !self::isValidShortParameterName($shortName)) {
-            throw new LogicException("Option short name {$name} is already defined.");
+        if (null !== $shortName) {
+            if (!self::isValidShortParameterName($shortName)) {
+                throw new LogicException("Option short name \"{$shortName}\" is already defined.");
+            }
+
+            if ($this->shortNameIsDefined($shortName)) {
+                throw new LogicException("Option short name \"{$shortName}\" is already defined");
+            }
         }
 
         $definition = (object) [
@@ -455,15 +493,19 @@ abstract class ConsoleApplication extends Application
     protected final function addArgument(string $name, string $description, int $type = self::TypeAny, bool $optional = false, string|float|int|array $default = null): void
     {
         if ("" === trim($description)) {
-            throw new LogicException("Expected non-empty argument description. found {$description}");
+            throw new LogicException("Expected non-empty argument description, found \"{$description}\"");
+        }
+
+        if (!self::isValidParameterName($name)) {
+            throw new LogicException("Expected valid argument name, found \"{$name}\"");
         }
 
         if ($this->nameIsDefined($name)) {
-            throw new LogicException("Argument name {$name} is already defined.");
+            throw new LogicException("Argument name \"{$name}\" is already defined");
         }
 
         if (!self::isValidDataType($type)) {
-            throw new LogicException("Expected valid data type, found {$type}");
+            throw new LogicException("Expected valid data type, found \"{$type}\"");
         }
 
         $optionalArguments = array_filter(
@@ -472,7 +514,7 @@ abstract class ConsoleApplication extends Application
         );
 
         if (!$optional && 0 !== count($optionalArguments)) {
-            throw new LogicException("Mandatory arguments cannot be defined after optional arguments.");
+            throw new LogicException("Mandatory arguments cannot be defined after optional arguments");
         }
 
         $this->m_parameterDefinitions[$name] = (object) [
@@ -508,32 +550,35 @@ abstract class ConsoleApplication extends Application
     protected final function addFlag(string $name, ?string $shortName = null, string $description = "", bool $negatable = true, bool $default = false): void
     {
         if (!self::isValidParameterName($name)) {
-            throw new LogicException("Expected valid flag name. found {$name}");
+            throw new LogicException("Expected valid flag name, found \"{$name}\"");
         }
 
         if (null !== $shortName && !self::isValidShortParameterName($shortName)) {
-            throw new LogicException("Expected valid short flag name. found {$shortName}");
+            throw new LogicException("Expected valid short flag name, found \"{$shortName}\"");
         }
 
         if ("" === trim($description)) {
-            throw new LogicException("Expected non-empty flag description. found {$description}");
+            throw new LogicException("Expected non-empty flag description, found \"{$description}\"");
         }
 
         if ($this->nameIsDefined($name)) {
-            throw new LogicException("Flag name {$name} is already defined.");
+            throw new LogicException("Flag name \"{$name}\" is already defined");
         }
+
+        $notName = null;
+        $notShortName =  null;
 
         if ($negatable) {
             $notName = "not-{$name}";
 
             if ($this->nameIsDefined($notName)) {
-                throw new LogicException("Flag name {$notName} is already defined.");
+                throw new LogicException("Negated flag name \"{$notName}\" is already defined");
             }
         }
 
         if (null !== $shortName) {
             if ($this->shortNameIsDefined($shortName)) {
-                throw new LogicException("Flag short name {$shortName} is already defined.");
+                throw new LogicException("Flag short name \"{$shortName}\" is already defined");
             }
 
             $notShortName = null;
@@ -542,7 +587,7 @@ abstract class ConsoleApplication extends Application
                 $notShortName = strtoupper($shortName);
 
                 if ($this->shortNameIsDefined($notShortName)) {
-                    throw new LogicException("Flag short name {$notShortName} is already defined.");
+                    throw new LogicException("Negated flag short name \"{$notShortName}\" is already defined.");
                 }
             }
         }
@@ -551,6 +596,8 @@ abstract class ConsoleApplication extends Application
             "type" => self::Flag,
             "name" => $name,
             "shortName" => $shortName,
+            "negatedName" => $notName,
+            "negatedShortName" => $notShortName,
             "description" => $description,
             "default" => $default,
         ];
@@ -559,22 +606,6 @@ abstract class ConsoleApplication extends Application
 
         if (null !== $shortName) {
             $this->m_parameterDefinitions[$shortName] = $definition;
-        }
-
-        if ($negatable) {
-            $notDefinition = (object)[
-                "type" => self::Flag,
-                "name" => $notName,
-                "shortName" => $notShortName,
-                "description" => $description,
-                "default" => !$default,
-            ];
-
-            $this->m_parameterDefinitions[$notName] = $notDefinition;
-
-            if (null !== $notShortName) {
-                $this->m_parameterDefinitions[$notShortName] = $notDefinition;
-            }
         }
     }
 
@@ -829,9 +860,9 @@ abstract class ConsoleApplication extends Application
      * This is the script name, exactly as typed by the user. This may be null (for example, if the command was invoked
      * programmatically).
      *
-     * @return string The script name, or null if it could not be determined.
+     * @return string The script name, or an empty string if the command was executed programmatically.
      */
-    public function executedScript(): ?string
+    public function executedScript(): string
     {
         return $this->m_cmd;
     }
@@ -840,33 +871,9 @@ abstract class ConsoleApplication extends Application
      * Fetch all the raw command-line arguments.
      * @return array
      */
-    public function arguments(): array
+    public function commandLineArguments(): array
     {
         return $this->m_args;
-    }
-
-    /**
-     * Normalise an argument name.
-     *
-     * Normalisation ensures that an argument is either a single-character argument preceded by a '-' (e.g. "-f") or a
-     * multi- character argument preceded by "--" (e.g. "--foo"). Provide the argument either with or without the '-' or
-     * "--" prefix and you'll get back the normalised form.
-     *
-     * @param string $name The argument to normalise.
-     *
-     * @return string The normalised form of the argument.
-     */
-    protected static function normalisedArgumentName(string $name): string
-    {
-        if (1 === strlen($name)) {
-            return "-{$name}";
-        } elseif (2 === strlen($name) && "-" === $name[0] && "-" !== $name[1]) {
-            return $name;
-        } elseif (str_starts_with($name, "--")) {
-            return $name;
-        }
-
-        return "--{$name}";
     }
 
     /**
@@ -879,40 +886,87 @@ abstract class ConsoleApplication extends Application
      */
     public function isInDebugMode(): bool
     {
-        return parent::isInDebugMode() || $this->hasArgument("--debug");
+        return parent::isInDebugMode() || $this->flagValue("debug");
     }
 
     /**
-     * Check whether a argument was provided when invoking the command.
-     *
-     * The argument name can be provided either with or without its preceding dashes. If it's a single character, it
-     * will be checked as if it were prefixed with a single '-'; otherwise it will be checked as if it were prefixed
-     * with '--'. You can also provide the prefixed argument name.
+     * Check whether a given argument name has been defined for the console application.
      *
      * @param string $name The name of the argument to check for.
      *
      * @return bool
      */
-    public function hasArgument(string $name): bool
+    public final function hasArgument(string $name): bool
     {
-        return in_array(self::normalisedArgumentName($name), $this->arguments());
+        return self::Argument === ($this->m_parameterDefinitions[$name]?->type ?? null);
+    }
+
+    /**
+     * Check whether a given option name has been defined for the console application.
+     *
+     * @param string $name The name of the option to check for. Can be the short or long name.
+     *
+     * @return bool
+     */
+    public final function hasOption(string $name): bool
+    {
+        return self::Option === ($this->m_parameterDefinitions[$name]?->type ?? null);
+    }
+
+    /**
+     * Check whether a given flag name has been defined for the console application.
+     *
+     * @param string $name The name of the flag to check for. Can be the short or long name.
+     *
+     * @return bool
+     */
+    public final function hasFlag(string $name): bool
+    {
+        return self::Flag === ($this->m_parameterDefinitions[$name]?->type ?? null);
+    }
+
+    /**
+     * Determine whether an argument has been given a value.
+     *
+     * This is useful for checking whether optional arguments with no default have been given values or not.
+     *
+     * @return true if the argument was provided on the command-line or has a default, false otherwise.
+     */
+    public final function argumentIsSet(string $name): bool
+    {
+        if (!array_key_exists($name, $this->m_parameterDefinitions) || self::Argument !== $this->m_parameterDefinitions[$name]->type) {
+            throw new RuntimeException("Argument {$name} is not defined.");
+        }
+
+        return array_key_exists($name, $this->m_parameterValues[$name]) || null !== $this->m_parameterDefinitions[$name]->default;
+    }
+
+    /**
+     * Determine whether an option has been given a value.
+     *
+     * This is useful for checking whether non-mandatory options with no default have been given values or not.
+     *
+     * @return true if the option was provided on the command-line or has a default, false otherwise.
+     */
+    public final function optionIsSet(string $name): bool
+    {
+        if (!array_key_exists($name, $this->m_parameterDefinitions) || self::Option !== $this->m_parameterDefinitions[$name]->type) {
+            throw new RuntimeException("Option {$name} is not defined.");
+        }
+
+        return array_key_exists($name, $this->m_parameterValues[$name]) || null !== $this->m_parameterDefinitions[$name]->default;
     }
 
     /**
      * Fetch the value given for a command-line argument.
      *
-     * This method does no validation against expectations - if the argument you're asking about is really a switch and
-     * it's followed by another switch or argument name, you'll get the following switch or argument name as the value.
-     * For example, if a command was invoked with --foo --bar, and both --foo and --bar are intended to be switches,
-     * calling argumentValue("foo") will return "--bar" and argumentValue("bar") will return null.
-     *
      * @param string $name The argument name.
      *
-     * @return string|float|int|array|bool|null
+     * @return string|float|int|array|bool|null The argument value.
      */
-    public function argumentValue(string $name): string|float|int|array|bool|null
+    public final function argumentValue(string $name): string|float|int|array|bool|null
     {
-        if (!array_key_exists($name, $this->m_parameterDefinitions)) {
+        if (!array_key_exists($name, $this->m_parameterDefinitions) || self::Argument !== $this->m_parameterDefinitions[$name]->type) {
             throw new RuntimeException("Argument {$name} is not defined.");
         }
 
@@ -927,6 +981,48 @@ abstract class ConsoleApplication extends Application
         }
 
         return $value;
+    }
+
+    /**
+     * Fetch the value given for a command-line argument.
+     *
+     * @param string $name The argument name.
+     *
+     * @return string|float|int|array|bool|null The argument value.
+     */
+    public final function optionValue(string $name): string|float|int|array|bool|null
+    {
+        if (!array_key_exists($name, $this->m_parameterDefinitions) || self::Option !== $this->m_parameterDefinitions[$name]->type) {
+            throw new RuntimeException("Option {$name} is not defined.");
+        }
+
+        $value = $this->m_parameterValues[$name] ?? null;
+
+        if (null === $value) {
+            $value = $this->m_parameterDefinitions[$name]->default;
+
+            if (null === $value) {
+                throw new RuntimeException("Option {$name} is not set.");
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * Fetch the value given for a command-line argument.
+     *
+     * @param string $name The argument name.
+     *
+     * @return string|float|int|array|bool|null The argument value.
+     */
+    public final function flagValue(string $name): bool
+    {
+        if (!array_key_exists($name, $this->m_parameterDefinitions) || self::Flag !== $this->m_parameterDefinitions[$name]->type) {
+            throw new RuntimeException("Option {$name} is not defined.");
+        }
+
+        return $this->m_parameterValues[$name] ?? $this->m_parameterDefinitions[$name]->default;
     }
 
     /**
@@ -960,7 +1056,7 @@ abstract class ConsoleApplication extends Application
         $this->parseArguments();
         $this->validateArguments();
 
-        if ((bool) $this->argumentValue("help")) {
+        if ((bool) $this->flagValue("help")) {
             $this->showHelp();
             return 0;
         }
