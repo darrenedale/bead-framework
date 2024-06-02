@@ -26,12 +26,12 @@ abstract class ConsoleApplication extends Application
      * E.g. php command.php "framework" will provide the argument "framework" to the command. Arguments of this type are
      * assigned the values given on the command-line in the order they are configured.
      */
-    private const Argument = 2;
+    private const Argument = 1;
 
     /**
      * @var int A command-line switch/flag.
      */
-    private const Flag = 3;
+    private const Flag = 2;
 
     /** @var int Any data type is accepted by the option/argument. */
     public const TypeAny = 0;
@@ -88,8 +88,13 @@ abstract class ConsoleApplication extends Application
     public function __construct(string $rootDir, array $args = [])
     {
         parent::__construct($rootDir);
+
+        /** @psalm-suppress MissingThrowsDocblock help and h are guaranteed valid and not yet defined */
         $this->addFlag("help", "h", "Show the command's help message.", false);
+
+        /** @psalm-suppress MissingThrowsDocblock debug is guaranteed valid and not yet defined */
         $this->addFlag("debug", null, "Run the command in debug mode.", false);
+
         $this->m_cmd  = array_shift($args) ?? "";
         $this->m_args = $args;
     }
@@ -112,7 +117,20 @@ abstract class ConsoleApplication extends Application
         return (bool) mb_ereg_match("^[[:alpha:]]\$", $name);
     }
 
-    /** Check whether a data type is valid. */
+    /**
+     * @psalm-assert-if-true $type === self::Option || $type === self::Flag || $type === self::Argument
+     * @param int $type
+     * @return bool
+     */
+    private static function isValidParameterType(int $type): bool
+    {
+        return in_array($type, [self::Flag, self::Option, self::Argument,]);
+    }
+
+    /**
+     * Check whether a data type is valid.
+     * @psalm-assert-if-true $type === self::AnyType || $type === self::StringType || $type === self::IntType || $type === self::FloatType || $type === self::ArrayType
+     */
     final protected static function isValidDataType(int $type): bool
     {
         return match ($type) {
@@ -302,6 +320,8 @@ abstract class ConsoleApplication extends Application
                     }
                 }
 
+                assert(self::isValidParameterType($definition->type), new LogicException("Unexpected command-line argument definition type {$definition->type}"));
+
                 $value = match ($definition->type) {
                     // name is guaranteed to be set to the extracted name for the current CLI arg
                     // if it matches the name or short name it's +ve, otherwise it's -ve
@@ -351,6 +371,9 @@ abstract class ConsoleApplication extends Application
             if (self::Flag === $definition->type) {
                 continue;
             }
+
+            assert(self::isValidParameterType($definition->type), new LogicException("Unexpected command-line argument definition type {$definition->type}"));
+            assert(self::isValidDataType($definition->dataType), new LogicException("Unexpected command-line argument data type {$definition->dataType}"));
 
             if (!array_key_exists($definition->name, $this->m_parameterValues)) {
                 if ($definition->optional ?? true) {
@@ -406,6 +429,7 @@ abstract class ConsoleApplication extends Application
      * The description should be a single-line summary of the command.
      *
      * @param string $description The description.
+     * @throws LogicException if the description is empty when trimmed.
      */
     final protected function setDescription(string $description): void
     {
@@ -437,6 +461,8 @@ abstract class ConsoleApplication extends Application
      * @param int $type The option type. Must be one of the class data type constants. Default is `TypeAny`.
      * @param bool $optional Whether the option is optional. Default is `false`.
      * @param string|float|int|array|null $default The default value for the option. If not given, `null` is used.
+     * @throws LogicException if the name is not valid or is already in use, the data type is not valid, the description
+     * is empty when trimmed, or the short name (if given) is not valid or is already in use.
      */
     final protected function addOption(string $name, ?string $shortName = null, string $description = "", int $type = self::TypeAny, bool $optional = false, string|float|int|array|null $default = null): void
     {
@@ -499,6 +525,8 @@ abstract class ConsoleApplication extends Application
      * @param int $type The argument type. Must be one of the class data type constants. Default is `TypeAny`.
      * @param bool $optional Whether the argument is optional. Default is `false`.
      * @param string|float|int|array|null $default The default value for the argument. If not given, `null` is used.
+     * @throws LogicException if the name is not valid or is already in use, the data type is not valid, the description
+     *  is empty when trimmed, or the argument is mandatory and optional arguments have already been defined.
      */
     final protected function addArgument(string $name, string $description, int $type = self::TypeAny, bool $optional = false, string|float|int|array $default = null): void
     {
@@ -556,6 +584,9 @@ abstract class ConsoleApplication extends Application
      * @param string $description The option description.
      * @param bool $negatable Whether the flag is negatable.
      * @param bool $default The default state for the flag. If not given, `false` is used.
+     * @throws LogicException if the name (and negated name if requested) is not valid or is already in use, the
+     * description is empty when trimmed, the short name (if given, and negated short name if requested) is not valid or
+     * is already in use.
      */
     final protected function addFlag(string $name, ?string $shortName = null, string $description = "", bool $negatable = true, bool $default = false): void
     {
@@ -753,6 +784,8 @@ abstract class ConsoleApplication extends Application
                     $optionSummary .= "|-{$option->shortName}";
                 }
 
+                assert(self::isValidDataType($option->dataType), new LogicException("Unexpected command-line argument definition data type {$option->dataType}"));
+
                 $optionSummary .= match ($option->dataType) {
                     self::TypeAny, self::TypeArray => " <any>",
                     self::TypeString => " <string>",
@@ -784,6 +817,8 @@ abstract class ConsoleApplication extends Application
 
             foreach ($arguments as $argument) {
                 $argumentSummary = "  {$argument->name}";
+
+                assert(self::isValidDataType($argument->dataType), new LogicException("Unexpected command-line argument definition data type {$argument->dataType}"));
 
                 $argumentSummary .= match ($argument->dataType) {
                     self::TypeAny, self::TypeArray => " (any",
@@ -1056,6 +1091,7 @@ abstract class ConsoleApplication extends Application
      * This is useful for checking whether optional arguments with no default have been given values or not.
      *
      * @return true if the argument was provided on the command-line or has a default, false otherwise.
+     * @throws LogicException if no argument with the given name is not defined.
      */
     public function argumentIsSet(string $name): bool
     {
@@ -1072,6 +1108,7 @@ abstract class ConsoleApplication extends Application
      * This is useful for checking whether non-mandatory options with no default have been given values or not.
      *
      * @return true if the option was provided on the command-line or has a default, false otherwise.
+     * @throws LogicException if no option with the given name is not defined.
      */
     public function optionIsSet(string $name): bool
     {
@@ -1088,6 +1125,7 @@ abstract class ConsoleApplication extends Application
      * @param string $name The argument name.
      *
      * @return string|float|int|array|bool|null The argument value.
+     * @throws LogicException if no argument with the given name is not defined.
      */
     public function argumentValue(string $name): string|float|int|array|bool|null
     {
@@ -1105,6 +1143,7 @@ abstract class ConsoleApplication extends Application
      * @param string $name The argument name.
      *
      * @return string|float|int|array|bool|null The argument value.
+     * @throws LogicException if no option with the given name is not defined.
      */
     public function optionValue(string $name): string|float|int|array|bool|null
     {
@@ -1122,6 +1161,7 @@ abstract class ConsoleApplication extends Application
      * @param string $name The argument name.
      *
      * @return string|float|int|array|bool|null The argument value.
+     * @throws LogicException if no flag with the given name is not defined.
      */
     public function flagValue(string $name): bool
     {
@@ -1157,6 +1197,8 @@ abstract class ConsoleApplication extends Application
      * ```
      *
      * @return int Always ExitOk.
+     * @throws InvalidArgumentException if the command-line arguments are not syntactically correct or have invalid
+     * values.
      */
     final public function exec(): int
     {
@@ -1164,6 +1206,7 @@ abstract class ConsoleApplication extends Application
         $this->parseCommandLineArguments();
         $this->validateCommandLineArguments();
 
+        /** @psalm-suppress MissingThrowsDocblock help flag is guaranteed to be valid and defined. */
         if ((bool) $this->flagValue("help")) {
             $this->showHelp();
             return 0;

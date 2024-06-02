@@ -10,6 +10,10 @@ use Bead\Testing\StaticXRay;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use Closure;
+use InvalidArgumentException;
+use LogicException;
+use ReflectionClassConstant;
+use RuntimeException;
 use StdClass;
 
 final class ConsoleApplicationTest extends TestCase
@@ -216,7 +220,7 @@ final class ConsoleApplicationTest extends TestCase
     /** Ensure the description of an unconfigured app is empty. */
     public function testDescription1(): void
     {
-        $app = $this->createApplication(configure: fn () => throw new RuntimeException("Configure was called on the app instance."));
+        $app = $this->createApplication(configure: fn () => throw new RuntimeException("Configure was called on the app instance"));
         self::assertEquals("", $app->description());
     }
 
@@ -359,7 +363,7 @@ final class ConsoleApplicationTest extends TestCase
         $app = new XRay($this->createApplication(
             args: ["command.php", "--bead", "framework",],
             configure: function (): void {
-                $this->addOption("bead", "b", "An argument to parse.", self::TypeString, false, "framework");
+                $this->addOption("bead", "b", "An argument to parse.", ConsoleApplication::TypeString, false, "framework");
             },
         ));
 
@@ -418,19 +422,16 @@ EOF,
         $stream = fopen("php://memory", "w+");
         $app = new XRay($this->createApplication(
             args: ["test-command.php", "--bead", "framework", "foo-value",],
-            configure: function (): void {
-                $this->setDescription("Test command.");
-                $this->addFlag("test", description: "A test flag.");
-                $this->addFlag("another-test", "a", "Another test flag.", default: true);
-                $this->addArgument("foo", "The foo argument will be ignored.", type: self::TypeInt, optional: false);
-                $this->addArgument("bar", "The bar argument will be ignored.", optional: true, default: "baz");
-                $this->addOption("bead", description: "The bead option will be ignored.", type: self::TypeString, optional: false);
-                $this->addOption("framework", "f", "The framework option will be ignored.", type: self::TypeArray, optional: true, default: "bead");
-            },
         ));
 
         $app->setOutStream($stream);
-        $app->configure();
+        $app->setDescription("Test command.");
+        $app->addFlag("test", description: "A test flag.");
+        $app->addFlag("another-test", "a", "Another test flag.", default: true);
+        $app->addArgument("foo", "The foo argument will be ignored.", type: ConsoleApplication::TypeInt, optional: false);
+        $app->addArgument("bar", "The bar argument will be ignored.", optional: true, default: "baz");
+        $app->addOption("bead", description: "The bead option will be ignored.", type: ConsoleApplication::TypeString, optional: false);
+        $app->addOption("framework", "f", "The framework option will be ignored.", type: ConsoleApplication::TypeArray, optional: true, default: "bead");
         $app->showHelp();
         fseek($stream, 0, SEEK_SET);
 
