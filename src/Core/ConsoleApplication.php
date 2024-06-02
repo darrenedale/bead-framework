@@ -98,7 +98,7 @@ abstract class ConsoleApplication extends Application
      * Check whether a parameter name is valid.
      * Names must start with an alpha character, and be composed of 2 or more alpha, numeric or _ or - characters.
      */
-    protected static final function isValidParameterName(string $name): bool
+    final protected static function isValidParameterName(string $name): bool
     {
         return (bool) mb_ereg_match("^[[:alpha:]][[:alpha:]0-9_-]+\$", $name);
     }
@@ -107,13 +107,13 @@ abstract class ConsoleApplication extends Application
      * Check whether a parameter short name is valid.
      * Only single-character alpha strings are valid short names. Non-ASCII characters are supported.
      */
-    protected static final function isValidShortParameterName(string $name): bool
+    final protected static function isValidShortParameterName(string $name): bool
     {
         return (bool) mb_ereg_match("^[[:alpha:]]\$", $name);
     }
 
     /** Check whether a data type is valid. */
-    protected static final function isValidDataType(int $type): bool
+    final protected static function isValidDataType(int $type): bool
     {
         return match ($type) {
             self::TypeString, self::TypeFloat, self::TypeInt, self::TypeArray, self::TypeAny => true,
@@ -130,7 +130,7 @@ abstract class ConsoleApplication extends Application
      * If the given argument is not a valid flag or option name, an exception is thrown. The flag or option does not
      * have to actually exist, it just needs to be a valid (short) name.
      */
-    protected static final function extractName(string $optionOrFlag): string
+    final protected static function extractName(string $optionOrFlag): string
     {
         return match (true) {
             str_starts_with($optionOrFlag, "--") => substr($optionOrFlag, 2),
@@ -144,7 +144,7 @@ abstract class ConsoleApplication extends Application
      *
      * Compressed flags are when -a -b -c is compressed to -abc.
      */
-    protected static final function isCompressedFlags(string $arg): bool
+    final protected static function isCompressedFlags(string $arg): bool
     {
         return mb_ereg_match("^-[[:alpha:]]{2,}\$", $arg);
     }
@@ -154,16 +154,16 @@ abstract class ConsoleApplication extends Application
      *
      * For example, given "-abc", return ["-a", "-b", "-c",].
      */
-    protected static final function expandCompressedFlags(string $flags): array
+    final protected static function expandCompressedFlags(string $flags): array
     {
         return array_map(
-            static fn(string $arg): string => "-{$arg}",
+            static fn (string $arg): string => "-{$arg}",
             str_split(substr($flags, 1))
         );
     }
 
     /** Check whether a parameter's name has already been defined. */
-    protected final function nameIsDefined(string $name): bool
+    final protected function nameIsDefined(string $name): bool
     {
         foreach ($this->m_parameterDefinitions as $definition) {
             if ($definition->name === $name) {
@@ -179,9 +179,9 @@ abstract class ConsoleApplication extends Application
     }
 
     /** Check whether a parameter's short name has already been defined. */
-    protected final function shortNameIsDefined(string $name): bool
+    final protected function shortNameIsDefined(string $name): bool
     {
-        assert (1 === strlen($name), new LogicException("Invalid short name \"{$name}\" provided to shortNameIsDefined() helper."));
+        assert(1 === strlen($name), new LogicException("Invalid short name \"{$name}\" provided to shortNameIsDefined() helper."));
 
         foreach ($this->m_parameterDefinitions as $definition) {
             if (($definition->shortName ?? null) === $name) {
@@ -204,7 +204,7 @@ abstract class ConsoleApplication extends Application
      *
      * @return StdClass the flag definition, or null if the name is not a defined flag.
      */
-    protected final function flagDefinition(string $name): ?StdClass
+    final protected function flagDefinition(string $name): ?StdClass
     {
         foreach ($this->m_parameterDefinitions as $definition) {
             if (self::Flag !== $definition->type) {
@@ -228,7 +228,7 @@ abstract class ConsoleApplication extends Application
      * Given a name or short name extracted from a command-line argument, find the option it corresponds to.
      * @return StdClass the option definition, or null if the name is not a defined option.
      */
-    protected final function optionDefinition(string $name): ?StdClass
+    final protected function optionDefinition(string $name): ?StdClass
     {
         foreach ($this->m_parameterDefinitions as $definition) {
             if (self::Option !== $definition->type) {
@@ -247,7 +247,7 @@ abstract class ConsoleApplication extends Application
      * Find the definition of a named argument.
      * @return StdClass the argument definition, or null if the name is not a defined argument.
      */
-    protected final function argumentDefinition(string $name): ?StdClass
+    final protected function argumentDefinition(string $name): ?StdClass
     {
         foreach ($this->m_parameterDefinitions as $definition) {
             if (self::Argument === $definition->type && $name === $definition->name) {
@@ -265,7 +265,7 @@ abstract class ConsoleApplication extends Application
      *
      * @throws InvalidArgumentException if we don't know what to do with one or more command-line arguments.
      */
-    protected final function parseCommandLineArguments(): void
+    final protected function parseCommandLineArguments(): void
     {
         $argumentDefinitions = array_filter(
             $this->m_parameterDefinitions,
@@ -345,7 +345,7 @@ abstract class ConsoleApplication extends Application
      *
      * @throws InvalidArgumentException if the set of arguments is not valid.
      */
-    protected final function validateCommandLineArguments(): void
+    final protected function validateCommandLineArguments(): void
     {
         foreach ($this->m_parameterDefinitions as $definition) {
             if (self::Flag === $definition->type) {
@@ -407,7 +407,7 @@ abstract class ConsoleApplication extends Application
      *
      * @param string $description The description.
      */
-    protected final function setDescription(string $description): void
+    final protected function setDescription(string $description): void
     {
         $trimmedDescription = trim($description);
 
@@ -438,7 +438,7 @@ abstract class ConsoleApplication extends Application
      * @param bool $optional Whether the option is optional. Default is `false`.
      * @param string|float|int|array|null $default The default value for the option. If not given, `null` is used.
      */
-    protected final function addOption(string $name, ?string $shortName = null, string $description = "", int $type = self::TypeAny, bool $optional = false, string|float|int|array|null $default = null): void
+    final protected function addOption(string $name, ?string $shortName = null, string $description = "", int $type = self::TypeAny, bool $optional = false, string|float|int|array|null $default = null): void
     {
         if (!self::isValidDataType($type)) {
             throw new LogicException("Expected valid data type, found \"{$type}\"");
@@ -500,7 +500,7 @@ abstract class ConsoleApplication extends Application
      * @param bool $optional Whether the argument is optional. Default is `false`.
      * @param string|float|int|array|null $default The default value for the argument. If not given, `null` is used.
      */
-    protected final function addArgument(string $name, string $description, int $type = self::TypeAny, bool $optional = false, string|float|int|array $default = null): void
+    final protected function addArgument(string $name, string $description, int $type = self::TypeAny, bool $optional = false, string|float|int|array $default = null): void
     {
         if ("" === trim($description)) {
             throw new LogicException("Expected non-empty argument description, found \"{$description}\"");
@@ -557,7 +557,7 @@ abstract class ConsoleApplication extends Application
      * @param bool $negatable Whether the flag is negatable.
      * @param bool $default The default state for the flag. If not given, `false` is used.
      */
-    protected final function addFlag(string $name, ?string $shortName = null, string $description = "", bool $negatable = true, bool $default = false): void
+    final protected function addFlag(string $name, ?string $shortName = null, string $description = "", bool $negatable = true, bool $default = false): void
     {
         if (!self::isValidParameterName($name)) {
             throw new LogicException("Expected valid flag name, found \"{$name}\"");
@@ -661,21 +661,21 @@ abstract class ConsoleApplication extends Application
                 . implode(
                     "",
                     array_map(
-                        static fn(StdClass $definition): string => $definition->shortName,
+                        static fn (StdClass $definition): string => $definition->shortName,
                         $shortFlags,
                     )
                 )
-                ."] ";
+                . "] ";
             ;
         }
 
         $flagsSummary .= implode(
-                " ",
-                array_map(
-                    static fn(StdClass $definition): string => "[--{$definition->name}]",
-                    $flags,
-                )
-            );
+            " ",
+            array_map(
+                static fn (StdClass $definition): string => "[--{$definition->name}]",
+                $flags,
+            )
+        );
 
         $optionsSummary = implode(
             " ",
@@ -813,7 +813,7 @@ abstract class ConsoleApplication extends Application
      * @param string $text The text to write.
      * @param resource $stream The stream to which to write it.
      */
-    protected final function write(string $text, $stream): void
+    final protected function write(string $text, $stream): void
     {
         fputs($stream, $text);
     }
@@ -1158,7 +1158,7 @@ abstract class ConsoleApplication extends Application
      *
      * @return int Always ExitOk.
      */
-    public final function exec(): int
+    final public function exec(): int
     {
         $this->configure();
         $this->parseCommandLineArguments();
@@ -1179,7 +1179,7 @@ abstract class ConsoleApplication extends Application
      * validated. You don't need to handle the "help" command-line arg, this is already handled and run() won't be
      * called if the help argument is specified on the command-line.
      */
-    protected abstract function run(): int;
+    abstract protected function run(): int;
 
     /**
      * Reimplement this to configure the command.
@@ -1187,5 +1187,6 @@ abstract class ConsoleApplication extends Application
      * Set the command's expected command-line arguments and description here.
      */
     protected function configure(): void
-    {}
+    {
+    }
 }

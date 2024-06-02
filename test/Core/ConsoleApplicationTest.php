@@ -2,11 +2,15 @@
 
 declare(strict_types=1);
 
+namespace BeadTests\Core;
+
 use Bead\Core\Application as CoreApplication;
 use Bead\Core\ConsoleApplication;
 use Bead\Testing\StaticXRay;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Closure;
+use StdClass;
 
 final class ConsoleApplicationTest extends TestCase
 {
@@ -15,7 +19,8 @@ final class ConsoleApplicationTest extends TestCase
     private string $output = "";
 
     public function setUp(): void
-    {}
+    {
+    }
 
     public function tearDown(): void
     {
@@ -30,9 +35,15 @@ final class ConsoleApplicationTest extends TestCase
         parent::tearDown();
     }
 
-    private function createApplication(string $root = __DIR__ . '/console-application-root', array $args = ["test-command.php"], Closure $configure = null, $run = null): ConsoleApplication
+    private function createApplication(string $root = __DIR__ . "/console-application-root", array $args = ["test-command.php"], Closure $configure = null, $run = null): ConsoleApplication
     {
-        $this->m_app = new class($root, $args, $configure ?? function(): void {}, $run ?? fn(): int => CoreApplication::ExitOk) extends ConsoleApplication
+        $this->m_app = new class (
+            $root,
+            $args,
+            $configure ?? function (): void {
+            },
+            $run ?? fn (): int => CoreApplication::ExitOk
+        ) extends ConsoleApplication
         {
             private Closure $m_configure;
 
@@ -205,7 +216,7 @@ final class ConsoleApplicationTest extends TestCase
     /** Ensure the description of an unconfigured app is empty. */
     public function testDescription1(): void
     {
-        $app = $this->createApplication(configure: fn() => throw new RuntimeException("Configure was called on the app instance."));
+        $app = $this->createApplication(configure: fn () => throw new RuntimeException("Configure was called on the app instance."));
         self::assertEquals("", $app->description());
     }
 
@@ -241,7 +252,7 @@ final class ConsoleApplicationTest extends TestCase
      */
     public function testDescription3(string $description): void
     {
-        $app = new XRay($this->createApplication(configure: fn() => $this->setDescription($description)));
+        $app = new XRay($this->createApplication(configure: fn () => $this->setDescription($description)));
         self::assertEquals("", $app->description());
         $app->configure();
         self::assertNotEquals("", $app->description());
@@ -279,10 +290,12 @@ final class ConsoleApplicationTest extends TestCase
     {
         $app = new XRay(new class extends ConsoleApplication {
             public function __construct()
-            {}
+            {
+            }
 
             public function run(): int
-            {}
+            {
+            }
         });
 
         // this method is empty, this test is just for coverage completeness
@@ -295,7 +308,7 @@ final class ConsoleApplicationTest extends TestCase
     {
         $configured = false;
 
-        $app = $this->createApplication(configure: function() use (&$configured): void {
+        $app = $this->createApplication(configure: function () use (&$configured): void {
             $configured = true;
         });
 
@@ -324,12 +337,11 @@ final class ConsoleApplicationTest extends TestCase
 
         $app = $this->createApplication(
             args: $args,
-            configure: function(): void {
+            configure: function (): void {
                 $this->addArgument("foo", "The foo argument will be ignored.", optional: true);
                 $this->addArgument("bar", "The bar argument will be ignored.", optional: true);
             },
-            run: function() use (&$runCalled): int
-            {
+            run: function () use (&$runCalled): int {
                 $runCalled = true;
                 return CoreApplication::ExitOk;
             }
@@ -346,7 +358,7 @@ final class ConsoleApplicationTest extends TestCase
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--bead", "framework",],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addOption("bead", "b", "An argument to parse.", self::TypeString, false, "framework");
             },
         ));
@@ -370,7 +382,7 @@ final class ConsoleApplicationTest extends TestCase
         $stream = fopen("php://memory", "w+");
         $app = $this->createApplication(
             args: $args,
-            configure: function(): void {
+            configure: function (): void {
                 $this->setDescription("Test command");
                 $this->addArgument("foo", "The foo argument will be ignored.", optional: true);
                 $this->addArgument("bar", "The bar argument will be ignored.", optional: true);
@@ -382,7 +394,7 @@ final class ConsoleApplicationTest extends TestCase
         fseek($stream, 0, SEEK_SET);
 
         self::assertEquals(
-<<<EOF
+            <<<EOF
 command.php: Test command
   [-h] [--help] [--debug] [foo] [bar]
 
@@ -406,7 +418,7 @@ EOF,
         $stream = fopen("php://memory", "w+");
         $app = new XRay($this->createApplication(
             args: ["test-command.php", "--bead", "framework", "foo-value",],
-            configure: function(): void {
+            configure: function (): void {
                 $this->setDescription("Test command.");
                 $this->addFlag("test", description: "A test flag.");
                 $this->addFlag("another-test", "a", "Another test flag.", default: true);
@@ -423,7 +435,7 @@ EOF,
         fseek($stream, 0, SEEK_SET);
 
         self::assertEquals(
-<<<EOF
+            <<<EOF
 test-command.php: Test command.
   [-ha] [--help] [--debug] [--test] [--another-test] --bead [--framework|-f...=bead] foo [bar]
 
@@ -507,7 +519,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--framework", "bead", "input-value"],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("bead", "b", "The bead flag");
                 $this->addOption("framework", "f", "The framework option");
                 $this->addArgument("input", "The input argument");
@@ -533,7 +545,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--framework", "bead", "input-value"],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("bead", "b", "The bead flag");
                 $this->addOption("framework", "f", "The framework option");
                 $this->addArgument("input", "The input argument");
@@ -564,7 +576,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--framework", "bead", "input-value"],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("bead", "b", "The bead flag");
                 $this->addOption("framework", "f", "The framework option");
                 $this->addArgument("input", "The input argument");
@@ -589,7 +601,7 @@ EOF,
         // NOTE option and flag don't have short names
         $app = new XRay($this->createApplication(
             args: ["command.php", "--framework", "bead", "input-value"],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("bead", description: "The bead flag");
                 $this->addOption("framework", description: "The framework option");
                 $this->addArgument("input", "The input argument");
@@ -612,8 +624,8 @@ EOF,
         yield "empty" => [""];
         yield "leading-whitespace" => [" h"];
         yield "trailing-whitespace" => ["h "];
-        yield "surrounding-whitespace" =>[" h "];
-        yield "regular-name" =>["help"];
+        yield "surrounding-whitespace" => [" h "];
+        yield "regular-name" => ["help"];
     }
 
     /**
@@ -696,7 +708,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", ...$args,],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("bead", "b", "The bead flag");
                 $this->addOption("framework", "f", "The framework option");
                 $this->addArgument("input", "The input argument");
@@ -726,7 +738,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", ...$args,],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("bead", "b", "The bead flag");
                 $this->addOption("framework", "f", "The framework option");
                 $this->addArgument("input", "The input argument");
@@ -745,7 +757,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--bead", "input-value", "--framework",],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("bead", "b", "The bead flag");
                 $this->addOption("framework", "f", "The framework option");
                 $this->addArgument("input", "The input argument");
@@ -764,7 +776,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--bead", "input-value", "--framework", "bead", "--undefined",],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("bead", "b", "The bead flag");
                 $this->addOption("framework", "f", "The framework option");
                 $this->addArgument("input", "The input argument");
@@ -783,7 +795,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "-abc",],
-            configure: function(): void {
+            configure: function (): void {
                 $this->addFlag("another", "a", "Another flag");
                 $this->addFlag("bead", "b", "The bead flag");
                 $this->addFlag("configuration", "c", "The configuration flag");
@@ -843,7 +855,7 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--test-option", $arg,],
-            configure: function() use ($type): void {
+            configure: function () use ($type): void {
                 $this->addOption("test-option", description: "The framework option", type: $type);
             }
         ));
@@ -859,8 +871,8 @@ EOF,
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--test-option", "value-1", "--bead", "--test-option", "value-2",],
-            configure: function(): void {
-                $this->addFlag("bead", "b",  description: "The bead flag");
+            configure: function (): void {
+                $this->addFlag("bead", "b", description: "The bead flag");
                 $this->addOption("test-option", "t", "The framework option", type: ConsoleApplication::TypeArray);
             }
         ));
@@ -1771,7 +1783,6 @@ EOF,
         self::expectException(RuntimeException::class);
         self::expectExceptionMessage("Failed to read from input stream");
         $app->read();
-
     }
 
     /** Ensure readSecret() turns input echo off and back on. */
@@ -1784,7 +1795,7 @@ EOF,
 
         $count = 0;
 
-        $shellExec = static function(string $command) use (&$count, $app, $inStream): string {
+        $shellExec = static function (string $command) use (&$count, $app, $inStream): string {
             ++$count;
 
             if (1 === $count) {
