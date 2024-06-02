@@ -8,8 +8,8 @@ use Bead\Contracts\Hasher;
 use Bead\Facades\ApplicationServiceFacade;
 
 /**
- * @method string hash(string $value)
- * @method string verify(string $value, string $hash)
+ * @method static string hash(string $value)
+ * @method static string verify(string $value, string $hash)
  */
 class Hash extends ApplicationServiceFacade
 {

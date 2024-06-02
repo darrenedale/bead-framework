@@ -8,7 +8,7 @@ use Bead\Contracts\Email\Transport as TransportContract;
 use Bead\Contracts\Email\Message as MessageContract;
 
 /**
- * @method void send(MessageContract $message)
+ * @method static void send(MessageContract $message)
  */
 class Mail extends ApplicationServiceFacade
 {
