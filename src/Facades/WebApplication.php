@@ -17,20 +17,20 @@ use function method_exists;
  * @mixin BeadWebApplication
  * @psalm-seal-methods
  *
- * @method bool isRunning()
- * @method string routesDirectory()
- * @method string pluginsDirectory()
- * @method string pluginsNamespace()
- * @method string[] loadedPlugins()
- * @method Plugin|null pluginByName(string $name)
- * @method void setRouter(RouterContract $router)
- * @method RouterContract router()
- * @method void sendResponse(ResponseContract $response)
- * @method Request request()
- * @method string csrf()
- * @method string regenerateCsrf()
- * @method ResponseContract handleRequest(Request $request)
- * @method int exec()
+ * @method static bool isRunning()
+ * @method static string routesDirectory()
+ * @method static string pluginsDirectory()
+ * @method static string pluginsNamespace()
+ * @method static string[] loadedPlugins()
+ * @method static Plugin|null pluginByName(string $name)
+ * @method static void setRouter(RouterContract $router)
+ * @method static RouterContract router()
+ * @method static void sendResponse(ResponseContract $response)
+ * @method static Request request()
+ * @method static string csrf()
+ * @method static string regenerateCsrf()
+ * @method static ResponseContract handleRequest(Request $request)
+ * @method static int exec()
  */
 class WebApplication extends Application
 {
