@@ -803,10 +803,16 @@ EOF,
         yield "int-0" => [ConsoleApplication::TypeInt, "0", 0,];
         yield "int-minus-3" => [ConsoleApplication::TypeInt, "-3", -3,];
         yield "int-plus-42" => [ConsoleApplication::TypeInt, "+42", 42,];
+        yield "int-leading-whitespace" => [ConsoleApplication::TypeInt, " +42", 42,];
+        yield "int-trailing-whitespace" => [ConsoleApplication::TypeInt, "-42 ", -42,];
+        yield "int-surrounding-whitespace" => [ConsoleApplication::TypeInt, " -42 ", -42,];
         yield "float-3.14" => [ConsoleApplication::TypeFloat, "3.14", 3.14,];
         yield "float-0.0" => [ConsoleApplication::TypeFloat, "0.0", 0.0,];
         yield "float-minus-7.853" => [ConsoleApplication::TypeFloat, "-7.853", -7.853,];
         yield "float-plus-3.14" => [ConsoleApplication::TypeFloat, "+3.14", 3.14,];
+        yield "float-leading-whitespace" => [ConsoleApplication::TypeFloat, " +3.14", 3.14,];
+        yield "float-trailing-whitespace" => [ConsoleApplication::TypeFloat, "-3.14 ", -3.14,];
+        yield "float-surrounding-whitespace" => [ConsoleApplication::TypeFloat, " -3.14 ", -3.14,];
         yield "string-empty" => [ConsoleApplication::TypeString, "", "",];
         yield "string-whitespace" => [ConsoleApplication::TypeString, "   ", "   ",];
         yield "string-bead framework" => [ConsoleApplication::TypeString, "bead framework", "bead framework",];
@@ -833,7 +839,7 @@ EOF,
      * Ensure we successfully validate all types of command-line arguments, options and flags.
      * @dataProvider dataForTestValildateArguments1
      */
-    public function testValidateArguments1(int $type, string $arg, mixed $expectedValue): void
+    public function testValidateCommandLineArguments1(int $type, string $arg, mixed $expectedValue): void
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--test-option", $arg,],
@@ -849,13 +855,13 @@ EOF,
     }
 
     /** Ensure we can parse and validate array args successfully */
-    public function testValidateArguments2(): void
+    public function testValidateCommandLineArguments2(): void
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--test-option", "value-1", "--bead", "--test-option", "value-2",],
             configure: function(): void {
                 $this->addFlag("bead", "b",  description: "The bead flag");
-                $this->addOption("test-option", description: "The framework option", type: ConsoleApplication::TypeArray);
+                $this->addOption("test-option", "t", "The framework option", type: ConsoleApplication::TypeArray);
             }
         ));
 
@@ -865,7 +871,124 @@ EOF,
         self::assertSame(["value-1", "value-2",], $app->optionValue("test-option"));
     }
 
-    /** TODO Ensure we reject values that are not valid for all types of command-line arguments and options. */
+    protected static function invalidIntValues(): iterable
+    {
+        yield "empty" => [""];
+        yield "whitespace" => [" "];
+        yield "multiple-whitespace" => ["   "];
+        yield "alpha" => ["abc"];
+        yield "extra-sign-negative" => ["--42"];
+        yield "extra-sign-positive" => ["++42"];
+        yield "both-signs-1" => ["+-42"];
+        yield "both-signs-2" => ["-+42"];
+        yield "internal-whitespace" => ["42 7"];
+        yield "float" => ["3.14"];
+    }
+
+    protected static function invalidFloatValues(): iterable
+    {
+        yield "empty" => [""];
+        yield "whitespace" => [" "];
+        yield "multiple-whitespace" => ["   "];
+        yield "alpha" => ["abc"];
+        yield "extra-sign-negative" => ["--3.14"];
+        yield "extra-sign-positive" => ["++3.14"];
+        yield "both-signs-1" => ["+-3.14"];
+        yield "both-signs-2" => ["-+3.14"];
+        yield "internal-whitespace" => ["3.14 14927"];
+    }
+
+    /**
+     * Ensure we reject values that are not valid for int arguments.
+     * @dataProvider invalidIntValues
+     */
+    public function testValidateCommandLineArguments3(string $arg): void
+    {
+        $app = new XRay($this->createApplication(
+            args: ["test-command.php", $arg,],
+        ));
+
+        $app->addArgument("test-arg", "Test argument", type: ConsoleApplication::TypeInt);
+        $app->parseCommandLineArguments();
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("Command-line value for argument \"test-arg\" is not of the correct type");
+        $app->validateCommandLineArguments();
+    }
+
+    /**
+     * Ensure we reject values that are not valid for float arguments.
+     * @dataProvider invalidFloatValues
+     */
+    public function testValidateCommandLineArguments4(string $arg): void
+    {
+        $app = new XRay($this->createApplication(
+            args: ["test-command.php", $arg,],
+        ));
+
+        $app->addArgument("test-arg", "Test argument", type: ConsoleApplication::TypeFloat);
+        $app->parseCommandLineArguments();
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("Command-line value for argument \"test-arg\" is not of the correct type");
+        $app->validateCommandLineArguments();
+    }
+
+    /**
+     * Ensure we reject values that are not valid for int options.
+     * @dataProvider invalidIntValues
+     */
+    public function testValidateCommandLineArguments5(string $arg): void
+    {
+        $app = new XRay($this->createApplication(
+            args: ["test-command.php", "--test-opt", $arg,],
+        ));
+
+        $app->addOption("test-opt", "t", "Test option", type: ConsoleApplication::TypeInt);
+        $app->parseCommandLineArguments();
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("Command-line value for option \"--test-opt|-t\" is not of the correct type");
+        $app->validateCommandLineArguments();
+    }
+
+    /**
+     * Ensure we reject values that are not valid for float options.
+     * @dataProvider invalidFloatValues
+     */
+    public function testValidateCommandLineArguments6(string $arg): void
+    {
+        $app = new XRay($this->createApplication(
+            args: ["test-command.php", "--test-opt", $arg,],
+        ));
+
+        $app->addOption("test-opt", "t", "Test option", type: ConsoleApplication::TypeFloat);
+        $app->parseCommandLineArguments();
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("Command-line value for option \"--test-opt|-t\" is not of the correct type");
+        $app->validateCommandLineArguments();
+    }
+
+    /** Ensure we reject missing required options. */
+    public function testValidateCommandLineArguments7(): void
+    {
+        $app = new XRay($this->createApplication());
+
+        $app->addOption("test-opt", "t", "Test option", optional: false);
+        $app->parseCommandLineArguments();
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("Command-line option \"--test-opt|-t\" is required but was not given");
+        $app->validateCommandLineArguments();
+    }
+
+    /** Ensure we reject missing required arguments. */
+    public function testValidateCommandLineArguments8(): void
+    {
+        $app = new XRay($this->createApplication());
+
+        $app->addArgument("test-arg", "Test argument", optional: false);
+        $app->parseCommandLineArguments();
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("Command-line argument \"test-arg\" is required but was not given");
+        $app->validateCommandLineArguments();
+    }
 
     /** Ensure we can add an option without a short name. */
     public function testAddOption1(): void
@@ -1429,20 +1552,136 @@ EOF,
         $app->addFlag("debug", description: "Redefined debug flag");
     }
 
-    /** TODO Ensure flagDefinition() returns the correct definition. */
-    /** TODO Ensure flagDefinition() returns null for undefined flags. */
-    /** TODO Ensure flagDefinition() returns null for undefined flags when an option with the matching name exists. */
-    /** TODO Ensure flagDefinition() returns null for undefined flags when an argument with the matching name exists. */
+    /** Ensure flagDefinition() returns the correct definition. */
+    public function testFlagDefinition1(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test-flag-1", "t", "Test flag 1", default: true, negatable: true);
+        $app->addFlag("test-flag-2", description: "Test flag 2");
+        $definition = $app->flagDefinition("test-flag-1");
+        self::assertEquals("test-flag-1", $definition->name);
+        self::assertEquals("t", $definition->shortName);
+        self::assertEquals("not-test-flag-1", $definition->negatedName);
+        self::assertEquals("T", $definition->negatedShortName);
+        self::assertEquals((new ReflectionClassConstant(ConsoleApplication::class, "Flag"))->getValue(), $definition->type);
+        self::assertTrue($definition->default);
+        $shortDefinition = $app->flagDefinition("t");
+        self::assertSame($definition, $shortDefinition);
+        $negatedDefinition = $app->flagDefinition("not-test-flag-1");
+        self::assertSame($definition, $negatedDefinition);
+        $negatedDefinition = $app->flagDefinition("T");
+        self::assertSame($definition, $negatedDefinition);
+    }
 
-    /** TODO Ensure optionDefinition() returns the correct definition. */
-    /** TODO Ensure optionDefinition() returns null for undefined options. */
-    /** TODO Ensure optionDefinition() returns null for undefined options when a flag with the matching name exists. */
-    /** TODO Ensure optionDefinition() returns null for undefined options when an argument with the matching name exists. */
+    /** Ensure flagDefinition() returns null for undefined flags. */
+    public function testFlagDefinition2(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test-flag-2", description: "Test flag 2");
+        self::assertNull($app->flagDefinition("test-flag-1"));
+    }
 
-    /** TODO Ensure argumentDefinition() returns the correct definition. */
-    /** TODO Ensure argumentDefinition() returns null for undefined arguments. */
-    /** TODO Ensure argumentDefinition() returns null for undefined arguments when an option with the matching name exists. */
-    /** TODO Ensure argumentDefinition() returns null for undefined arguments when a flag with the matching name exists. */
+    /** Ensure flagDefinition() returns null for undefined flags when an option with the matching name exists. */
+    public function testFlagDefinition3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test-1", description: "Test option 1");
+        $app->addFlag("test-2", description: "Test flag 2");
+        self::assertNull($app->flagDefinition("test-1"));
+    }
+
+    /** Ensure flagDefinition() returns null for undefined flags when an argument with the matching name exists. */
+    public function testFlagDefinition4(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test-1", "Test argument 1");
+        $app->addFlag("test-2", description: "Test flag 2");
+        self::assertNull($app->flagDefinition("test-1"));
+    }
+
+
+    /** Ensure optionDefinition() returns the correct definition. */
+    public function testOptionDefinition1(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test-option-1", "t", "Test option 1", default: "3.14", type: ConsoleApplication::TypeFloat);
+        $app->addOption("test-option-2", description: "Test option 2", type: ConsoleApplication::TypeString);
+        $definition = $app->optionDefinition("test-option-1");
+        self::assertEquals("test-option-1", $definition->name);
+        self::assertEquals("t", $definition->shortName);
+        self::assertEquals((new ReflectionClassConstant(ConsoleApplication::class, "Option"))->getValue(), $definition->type);
+        self::assertEquals("3.14", $definition->default);
+        self::assertEquals(ConsoleApplication::TypeFloat, $definition->dataType);
+        self::assertFalse($definition->optional);
+        $shortDefinition = $app->optionDefinition("t");
+        self::assertSame($definition, $shortDefinition);
+    }
+
+    /** Ensure optionDefinition() returns null for undefined options. */
+    public function testOptionDefinition2(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test-option-2", description: "Test option 2");
+        self::assertNull($app->optionDefinition("test-option-1"));
+    }
+
+    /** Ensure optionDefinition() returns null for undefined options when a flag with the matching name exists. */
+    public function testOptionDefinition3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test-1", description: "Test flag 1");
+        $app->addOption("test-2", description: "Test option 2");
+        self::assertNull($app->optionDefinition("test-1"));
+    }
+
+    /** Ensure optionDefinition() returns null for undefined options when an argument with the matching name exists. */
+    public function testOptionDefinition4(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test-1", "Test argument 1");
+        $app->addOption("test-2", description: "Test option 2");
+        self::assertNull($app->optionDefinition("test-1"));
+    }
+
+    /** Ensure argumentDefinition() returns the correct definition. */
+    public function testArgumentDefinition1(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test-argument-1", "Test argument 1", default: "3.14", type: ConsoleApplication::TypeFloat);
+        $app->addArgument("test-argument-2", "Test argument 2", type: ConsoleApplication::TypeString, optional: true);
+        $definition = $app->argumentDefinition("test-argument-1");
+        self::assertEquals("test-argument-1", $definition->name);
+        self::assertEquals((new ReflectionClassConstant(ConsoleApplication::class, "Argument"))->getValue(), $definition->type);
+        self::assertEquals("3.14", $definition->default);
+        self::assertEquals(ConsoleApplication::TypeFloat, $definition->dataType);
+        self::assertFalse($definition->optional);
+    }
+
+    /** Ensure argumentDefinition() returns null for undefined arguments. */
+    public function testArgumentDefinition2(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addArgument("test-argument-2", description: "Test option 2");
+        self::assertNull($app->argumentDefinition("test-option-1"));
+    }
+
+    /** Ensure argumentDefinition() returns null for undefined arguments when an option with the matching name exists. */
+    public function testArgumentDefinition3(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addOption("test-1", description: "Test argument 1");
+        $app->addArgument("test-2", description: "Test option 2");
+        self::assertNull($app->argumentDefinition("test-1"));
+    }
+
+    /** Ensure argumentDefinition() returns null for undefined arguments when a flag with the matching name exists. */
+    public function testArgumentDefinition4(): void
+    {
+        $app = new XRay($this->createApplication());
+        $app->addFlag("test-1", description: "Test argument 1");
+        $app->addArgument("test-2", description: "Test option 2");
+        self::assertNull($app->argumentDefinition("test-1"));
+    }
 
     /** Ensure write() writes to the expected stream. */
     public function testWrite1(): void
@@ -1578,11 +1817,158 @@ EOF,
         self::assertEquals(3, $count);
     }
 
-    /** TODO Ensure readSecret() fails when input is not STDIN */
+    /** Ensure readSecret() fails when input is not STDIN */
+    public function testReadSecret2(): void
+    {
+        $inStream = fopen("php://memory", "r");
+        $app = new XRay($this->createApplication());
+        $app->setInStream($inStream);
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("Input stream does not support hiding");
+        $app->readSecret("Enter password: ");
+    }
+
     /** TODO Ensure linefeed is written to stdout in readSecret() */
 
-    /** TODO Ensure confirm() accepts all expected positive responses. */
-    /** TODO Ensure confirm() returns negative for all other responses. */
+    /** Ensure confirm() writes the expected prompt to the output stream. */
+    public function testConfirm1(): void
+    {
+        $inStream = fopen("php://memory", "w+");
+        $outStream = fopen("php://memory", "w+");
+        fputs($inStream, "Y\n");
+        fseek($inStream, 0, SEEK_SET);
+
+        $app = new XRay($this->createApplication());
+        $app->setInStream($inStream);
+        $app->setOutStream($outStream);
+        $app->confirm("Yes or no?");
+        fseek($outStream, 0, SEEK_SET);
+        self::assertEquals("Yes or no? [y|N] ", fgets($outStream));
+        fclose($inStream);
+        fclose($outStream);
+    }
+
+    protected static function dataForTestConfirm2(): iterable
+    {
+        yield "y" => ["y"];
+        yield "Y" => ["Y"];
+        yield "Yes" => ["Yes"];
+        yield "yes" => ["yes"];
+        yield "yup" => ["yup"];
+        yield "Yup" => ["Yup"];
+        yield "yellow" => ["yellow"];
+        yield "Yellow" => ["Yellow"];
+    }
+
+    /**
+     * Ensure confirm() accepts all expected positive responses.
+     * @dataProvider dataForTestConfirm2
+     */
+    public function testConfirm2(string $response): void
+    {
+        $inStream = fopen("php://memory", "w+");
+        $outStream = fopen("php://memory", "w+");
+        fputs($inStream, "{$response}\n");
+        fseek($inStream, 0, SEEK_SET);
+
+        $app = new XRay($this->createApplication());
+        $app->setInStream($inStream);
+        $app->setOutStream($outStream);
+        self::assertTrue($app->confirm("Yes or no?"));
+        fclose($inStream);
+        fclose($outStream);
+    }
+
+    protected static function dataForTestConfirm3(): iterable
+    {
+        yield "empty" => [""];
+        yield "whitespace" => ["   "];
+        yield "number-1" => ["1"];
+        yield "number-0" => ["0"];
+        yield "leading-whitespace-y" => [" y"];
+        yield "leading-whitespace-Y" => [" Y"];
+        yield "N" => ["N"];
+        yield "n" => ["n"];
+        yield "no" => ["no"];
+        yield "No" => ["No"];
+        yield "nope" => ["nope"];
+        yield "Nope" => ["Nope"];
+        yield "not" => ["not"];
+        yield "Not" => ["Not"];
+        yield "never" => ["never"];
+        yield "Never" => ["Never"];
+        yield "newt" => ["newt"];
+        yield "Newt" => ["Newt"];
+
+        // first char every letter of the alphabet (except Y and N)
+        yield "amber" => ["amber"];
+        yield "Amber" => ["Amber"];
+        yield "brown" => ["brown"];
+        yield "Brown" => ["Brown"];
+        yield "cyan" => ["cyan"];
+        yield "Cyan" => ["Cyan"];
+        yield "damson" => ["damson"];
+        yield "Damson" => ["Damson"];
+        yield "eggshell" => ["eggshell"];
+        yield "Eggshell" => ["Eggshell"];
+        yield "fawn" => ["fawn"];
+        yield "Fawn" => ["Fawn"];
+        yield "green" => ["green"];
+        yield "Green" => ["Green"];
+        yield "hessian" => ["hessian"];
+        yield "Hessian" => ["Hessian"];
+        yield "indigo" => ["indigo"];
+        yield "Indigo" => ["Indigo"];
+        yield "jute" => ["jute"];
+        yield "Jute" => ["Jute"];
+        yield "kale" => ["kale"];
+        yield "Kale" => ["Kale"];
+        yield "lime" => ["lime"];
+        yield "Lime" => ["Lime"];
+        yield "magenta" => ["magenta"];
+        yield "Magenta" => ["Magenta"];
+        yield "ochre" => ["ochre"];
+        yield "Ochre" => ["Ochre"];
+        yield "pink" => ["pink"];
+        yield "Pink" => ["Pink"];
+        yield "quince" => ["quince"];
+        yield "Quince" => ["Quince"];
+        yield "red" => ["red"];
+        yield "Red" => ["Red"];
+        yield "salmon" => ["salmon"];
+        yield "Salmon" => ["Salmon"];
+        yield "teal" => ["teal"];
+        yield "Teal" => ["Teal"];
+        yield "umber" => ["umber"];
+        yield "Umber" => ["Umber"];
+        yield "violet" => ["violet"];
+        yield "Violet" => ["Violet"];
+        yield "winter" => ["winter"];
+        yield "Winter" => ["Winter"];
+        yield "xylophone" => ["xylophone"];
+        yield "Xylophone" => ["Xylophone"];
+        yield "zenith" => ["zenith"];
+        yield "Zenith" => ["Zenith"];
+    }
+
+    /**
+     * Ensure confirm() returns negative for all other responses.
+     * @dataProvider dataForTestConfirm3
+     */
+    public function testConfirm3(string $response): void
+    {
+        $inStream = fopen("php://memory", "w+");
+        $outStream = fopen("php://memory", "w+");
+        fputs($inStream, "{$response}\n");
+        fseek($inStream, 0, SEEK_SET);
+
+        $app = new XRay($this->createApplication());
+        $app->setInStream($inStream);
+        $app->setOutStream($outStream);
+        self::assertFalse($app->confirm("Yes or no?"));
+        fclose($inStream);
+        fclose($outStream);
+    }
 
     /** Ensure we can set the output stream. */
     public function testSetOutputStream1(): void
@@ -1974,6 +2360,4 @@ EOF,
         self::expectExceptionMessage("Flag \"test\" is not defined");
         self::assertTrue($app->flagValue("test"));
     }
-
-    /** TODO test validateCommandLineArguments() */
 }

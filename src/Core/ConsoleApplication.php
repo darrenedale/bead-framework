@@ -8,6 +8,9 @@ use LogicException;
 use RuntimeException;
 use StdClass;
 
+/**
+ * Abstract base class for framework applications that are intended to run on the command-line.
+ */
 abstract class ConsoleApplication extends Application
 {
     /**
@@ -30,15 +33,19 @@ abstract class ConsoleApplication extends Application
      */
     private const Flag = 3;
 
-    // types for arguments/option values
+    /** @var int Any data type is accepted by the option/argument. */
     public const TypeAny = 0;
 
+    /** @var int Any string is accepted by the option/argument. */
     public const TypeString = 1;
 
+    /** @var int The value for the option/argument must be an integer. */
     public const TypeInt = 2;
 
+    /** @var int The value for the option/argument must be an real number. */
     public const TypeFloat = 3;
 
+    /** @var int The option/argument accepts multiple values of any type. */
     public const TypeArray = 4;
 
     /** @var string The script that was run to cause the command to be executed. */
@@ -50,7 +57,7 @@ abstract class ConsoleApplication extends Application
     /** @var string The console application's description. */
     private string $m_description = "";
 
-    /** @var \StdClass[] */
+    /** @var \StdClass[] The defined flags, options and arguments. */
     private array $m_parameterDefinitions = [];
 
     /**
@@ -243,7 +250,7 @@ abstract class ConsoleApplication extends Application
     protected final function argumentDefinition(string $name): ?StdClass
     {
         foreach ($this->m_parameterDefinitions as $definition) {
-            if (self::Argument === $definition->type && ($name === $definition->name || $name === $definition->shortName)) {
+            if (self::Argument === $definition->type && $name === $definition->name) {
                 return $definition;
             }
         }
@@ -350,54 +357,38 @@ abstract class ConsoleApplication extends Application
                     continue;
                 }
 
-                $name = match ($definition->type) {
-                    self::Option, self::Flag => "--{$definition->name}",
-                    default => $definition->name,
+                // can't be a flag type as flags are skipped at the beginning of the loop
+                [$name, $argType] = match ($definition->type) {
+                    self::Option => ["--{$definition->name}", "option",],
+                    self::Argument => [$definition->name, "argument",],
                 };
 
-                if (null !== ($definition->shortName ?? null)) {
-                    $name .= "|" . match ($definition->type) {
-                            self::Option, self::Flag => "-{$definition->shortName}",
-                            default => $definition->shortName,
-                        };
+                if (self::Option === $definition->type && null !== ($definition->shortName ?? null)) {
+                    $name .= "|-{$definition->shortName}";
                 }
 
-                throw new InvalidArgumentException("Command-line argument {$name} is required but was not given.");
+                throw new InvalidArgumentException("Command-line {$argType} \"{$name}\" is required but was not given");
             }
 
-            $validated = null;
-
-            switch ($definition->dataType) {
-                case self::TypeAny:
-                case self::TypeString:
-                case self::TypeArray:
-                    // parsing takes care of ensuring values are arrays where required
-                    $validated = $this->m_parameterValues[$definition->name];
-                    break;
-
-                case self::TypeInt:
-                    $validated = filter_var($this->m_parameterValues[$definition->name], FILTER_VALIDATE_INT, ["flags" => FILTER_NULL_ON_FAILURE,]);
-                    break;
-
-                case self::TypeFloat:
-                    $validated = filter_var($this->m_parameterValues[$definition->name], FILTER_VALIDATE_FLOAT, ["flags" => FILTER_NULL_ON_FAILURE,]);
-                    break;
-            }
+            $validated = match ($definition->dataType) {
+                // parsing takes care of ensuring values are arrays where required
+                self::TypeAny, self::TypeString, self::TypeArray => $this->m_parameterValues[$definition->name],
+                self::TypeInt => filter_var($this->m_parameterValues[$definition->name], FILTER_VALIDATE_INT, ["flags" => FILTER_NULL_ON_FAILURE,]),
+                self::TypeFloat => filter_var($this->m_parameterValues[$definition->name], FILTER_VALIDATE_FLOAT, ["flags" => FILTER_NULL_ON_FAILURE,]),
+            };
 
             if (null === $validated) {
-                $name = match ($definition->type) {
-                    self::Option, self::Flag => "--{$definition->name}",
-                    default => $definition->name,
+                // can't be a flag type as flags are skipped at the beginning of the loop
+                [$name, $argType] = match ($definition->type) {
+                    self::Option => ["--{$definition->name}", "option",],
+                    self::Argument => [$definition->name, "argument",],
                 };
 
-                if (null !== ($definition->shortName ?? null)) {
-                    $name .= "|" . match ($definition->type) {
-                            self::Option, self::Flag => "-{$definition->shortName}",
-                            default => $definition->shortName,
-                        };
+                if (self::Option === $definition->type && null !== ($definition->shortName ?? null)) {
+                    $name .= "|-{$definition->shortName}";
                 }
 
-                throw new InvalidArgumentException("Command-line value for argument {$name} is not of the correct type.");
+                throw new InvalidArgumentException("Command-line value for {$argType} \"{$name}\" is not of the correct type");
             }
 
             $this->m_parameterValues[$definition->name] = $validated;
@@ -898,7 +889,7 @@ abstract class ConsoleApplication extends Application
     protected function readSecret(string $prompt = ""): string
     {
         if (STDIN !== $this->inStream()) {
-            throw new RuntimeException("Input stream does not support hiding.");
+            throw new RuntimeException("Input stream does not support hiding");
         }
 
         $mode = shell_exec("stty -g");
