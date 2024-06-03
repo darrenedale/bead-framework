@@ -70,13 +70,13 @@ abstract class ConsoleApplication extends Application
     private array $m_parameterValues = [];
 
     /** @var resource The console application's output stream. */
-    private $m_out = STDOUT;
+    private $m_out;
 
     /** @var resource The console application's error stream. */
-    private $m_err = STDERR;
+    private $m_err;
 
     /** @var resource The console application's input stream. */
-    private $m_in = STDIN;
+    private $m_in;
 
     /**
      * @param string $rootDir
@@ -88,6 +88,11 @@ abstract class ConsoleApplication extends Application
     public function __construct(string $rootDir, array $args = [])
     {
         parent::__construct($rootDir);
+
+        // we don't use STDIN, etc. constants for testability
+        $this->m_in = fopen("php://stdin", "r");
+        $this->m_out = fopen("php://stdout", "w");
+        $this->m_err = fopen("php://stderr", "w");
 
         /** @psalm-suppress MissingThrowsDocblock help and h are guaranteed valid and not yet defined */
         $this->addFlag("help", "h", "Show the command's help message.", false);
@@ -923,8 +928,8 @@ abstract class ConsoleApplication extends Application
      */
     protected function readSecret(string $prompt = ""): string
     {
-        if (STDIN !== $this->inStream()) {
-            throw new RuntimeException("Input stream does not support hiding");
+        if (!stream_isatty($this->inStream())) {
+            throw new RuntimeException("Input stream is not a TTY, input hiding is not available");
         }
 
         $mode = shell_exec("stty -g");
@@ -932,8 +937,13 @@ abstract class ConsoleApplication extends Application
         $value = $this->read($prompt);
         shell_exec("stty {$mode}");
 
-        if (STDOUT === $this->outStream()) {
-            $this->write("\n", $this->outStream());
+        if (function_exists("posix_ttyname")) {
+            // we know in is a TTY, and since POSIX is available we know it's a POSIX TTY so this call won't fail
+            $inTty = posix_ttyname($this->inStream());
+
+            if (is_string($inTty) && stream_isatty($this->outStream()) && $inTty === posix_ttyname($this->outStream())) {
+                $this->write("\n", $this->outStream());
+            }
         }
 
         return $value;

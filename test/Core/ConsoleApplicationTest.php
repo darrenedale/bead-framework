@@ -20,29 +20,79 @@ use StdClass;
 
 final class ConsoleApplicationTest extends TestCase
 {
-    private function createApplication(string $root = __DIR__ . "/console-application-root", array $args = ["test-command.php"], Closure $configure = null, $run = null): ConsoleApplication
+    private $stdin;
+
+    private $stdout;
+
+    private $stderr;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->stdin = fopen("php://stdin", "r");
+        $this->stdout = fopen("php://stdout", "w");
+        $this->stderr = fopen("php://stderr", "w");
+    }
+
+    public function tearDown(): void
+    {
+        parent::tearDown();
+        unset($this->stdin, $this->stdout, $this->stderr);
+    }
+
+    /**
+     * Helper to create an input stream that provides the given input.
+     *
+     * @param string $input The content that the input stream should provide.
+     *
+     * @return resource
+     */
+    private static function createInputStream(string $input)
+    {
+        $stream = fopen("php://memory", "w+");
+        self::assertIsResource($stream);
+        fputs($stream, $input);
+        fseek($stream, 0, SEEK_SET);
+        return $stream;
+    }
+
+    /**
+     * Create a test instance of a ConsoleApplication.
+     *
+     * @param string $root The application root directory.
+     * @param array $args The CLI args for the test application.
+     * @param Closure|null $configure A closure to use as the configure() method of the test console application.
+     * @param Closure|null $run A closure to use as the run() method of the test console application.
+     * @return ConsoleApplication The test instance.
+     */
+    private function createApplication(string $root = __DIR__ . "/console-application-root", array $args = ["test-command.php"], Closure $configure = null, Closure $run = null): ConsoleApplication
     {
         return new class (
             $root,
             $args,
             $configure ?? function (): void {
             },
-            $run ?? fn (): int => CoreApplication::ExitOk
+            $run ?? fn (): int => CoreApplication::ExitOk,
+            $this->stdin,
+            $this->stdout,
+            $this->stderr,
         ) extends ConsoleApplication
         {
             private Closure $m_configure;
 
             private Closure $m_run;
 
-            public function __construct(string $root, array $args, Closure $configure, Closure $run)
+            public function __construct(string $root, array $args, Closure $configure, Closure $run, $stdin, $stdout, $sterr)
             {
                 // We fake the constructor to avoid calling the base class constructor and setting the Application
                 // singleton. By doing this we don't have to mark all tests as @runInSeparateProcess (which severely
                 // impacts performance); but it means the constructor tests can't use this method to create an app
-                /** @psalm-suppress MissingThrowsDocblock help and h are guaranteed valid and not yet defined */
-                $this->addFlag("help", "h", "Show the command's help message.", false);
 
-                /** @psalm-suppress MissingThrowsDocblock debug is guaranteed valid and not yet defined */
+                $this->setInStream($stdin);
+                $this->setOutStream($stdout);
+                $this->setErrorStream($sterr);
+
+                $this->addFlag("help", "h", "Show the command's help message.", false);
                 $this->addFlag("debug", null, "Run the command in debug mode.", false);
 
                 $reflector = new ReflectionProperty(ConsoleApplication::class, "m_cmd");
@@ -71,6 +121,11 @@ final class ConsoleApplicationTest extends TestCase
 
     /**
      * Ensure the constructor sets the script and raw arguments.
+     *
+     * NOTE Since this test is run in a separate process, and PHPUnit 9 on PHP 8.1 uses standard input to pipe the code
+     * to the PHP process, as per https://www.php.net/manual/en/features.commandline.io-streams.php the STDIN, STDOUT
+     * and STDERR constants are not available. This is why the base class constrcutor explicitly opens the streams.
+     *
      * @runInSeparateProcess
      */
     public function testConstructor1(): void
@@ -104,7 +159,7 @@ final class ConsoleApplicationTest extends TestCase
         self::assertTrue($app->hasFlag("debug"));
     }
 
-    protected static function validParameterNames(): iterable
+    public static function validParameterNames(): iterable
     {
         yield "typical1" => ["foo"];
         yield "typical2" => ["bar"];
@@ -122,7 +177,7 @@ final class ConsoleApplicationTest extends TestCase
         yield "extreme-long" => [str_repeat("foobarbaz-_42-", 100)];
     }
 
-    protected static function invalidParameterNames(): iterable
+    public static function invalidParameterNames(): iterable
     {
         yield "empty" => [""];
         yield "single-whitespace" => [" "];
@@ -142,7 +197,7 @@ final class ConsoleApplicationTest extends TestCase
         yield "leading-underscore" => ["_life42"];
     }
 
-    protected static function validShortParameterNames(): iterable
+    public static function validShortParameterNames(): iterable
     {
         foreach (range("a", "z") as $ch) {
             yield $ch => [$ch];
@@ -153,7 +208,7 @@ final class ConsoleApplicationTest extends TestCase
         }
     }
 
-    protected static function invalidShortParameterNames(): iterable
+    public static function invalidShortParameterNames(): iterable
     {
         yield "empty" => [""];
         yield "whitespace" => [" "];
@@ -168,7 +223,6 @@ final class ConsoleApplicationTest extends TestCase
     /**
      * Ensure isValidParameterName() passes valid parameter names.
      * @dataProvider validParameterNames
-     *
      */
     public function testIsValidParameterName1(string $name): void
     {
@@ -179,7 +233,6 @@ final class ConsoleApplicationTest extends TestCase
     /**
      * Ensure isValidParameterName() rejects invalid parameter names.
      * @dataProvider invalidParameterNames
-     *
      */
     public function testIsValidParameterName2(string $name): void
     {
@@ -190,7 +243,6 @@ final class ConsoleApplicationTest extends TestCase
     /**
      * Ensure isValidShortParameterName() passes valid parameter names.
      * @dataProvider validShortParameterNames
-     *
      */
     public function testIsValidShortParameterName1(string $name): void
     {
@@ -201,8 +253,6 @@ final class ConsoleApplicationTest extends TestCase
     /**
      * Ensure isValidShortParameterName() rejects invalid parameter names.
      * @dataProvider invalidShortParameterNames
-    
-     *
      */
     public function testIsValidShortParameterName2(string $name): void
     {
@@ -210,17 +260,14 @@ final class ConsoleApplicationTest extends TestCase
         self::assertFalse($actual);
     }
 
-    /**
-     * Ensure the description of an unconfigured app is empty.
-     *
-     */
+    /** Ensure the description of an unconfigured app is empty. */
     public function testDescription1(): void
     {
         $app = $this->createApplication(configure: fn () => throw new RuntimeException("Configure was called on the app instance"));
         self::assertEquals("", $app->description());
     }
 
-    protected static function dataForTestDescription2(): iterable
+    public static function dataForTestDescription2(): iterable
     {
         yield "typical" => ["A console app", "A console app",];
         yield "really-lone" => [
@@ -237,8 +284,6 @@ final class ConsoleApplicationTest extends TestCase
      * Ensure the description can be set and is trimmed.
      * @param string $description
      * @dataProvider dataForTestDescription2
-    
-     *
      */
     public function testDescription2(string $description, string $expected): void
     {
@@ -251,8 +296,6 @@ final class ConsoleApplicationTest extends TestCase
      * Ensure the description of the app is available, once configured.
      * @param string $description
      * @dataProvider dataForTestDescription2
-    
-     *
      */
     public function testDescription3(string $description): void
     {
@@ -262,7 +305,7 @@ final class ConsoleApplicationTest extends TestCase
         self::assertNotEquals("", $app->description());
     }
 
-    protected static function dataForTestDescription4(): iterable
+    public static function dataForTestDescription4(): iterable
     {
         yield "empty" => ["",];
         yield "single-whitespace" => [" ",];
@@ -272,8 +315,6 @@ final class ConsoleApplicationTest extends TestCase
     /**
      * Ensure the description can't be set to nothing.
      * @dataProvider dataForTestDescription4
-    
-     *
      */
     public function testDescription4(string $description): void
     {
@@ -283,10 +324,7 @@ final class ConsoleApplicationTest extends TestCase
         $app->setDescription($description);
     }
 
-    /**
-     * Ensure descriptions are trimmed.
-     *
-     */
+    /** Ensure descriptions are trimmed. */
     public function testDescription5(): void
     {
         $app = new XRay($this->createApplication());
@@ -294,10 +332,7 @@ final class ConsoleApplicationTest extends TestCase
         self::assertEquals("A command description", $app->description());
     }
 
-    /**
-     * Ensure configure() is covered.
-     *
-     */
+    /** Ensure configure() is covered. */
     public function testConfigure1(): void
     {
         $app = new XRay(new class extends ConsoleApplication {
@@ -315,10 +350,7 @@ final class ConsoleApplicationTest extends TestCase
         self::markTestAsExternallyVerified();
     }
 
-    /**
-     * Ensure configure() is called by exec().
-     *
-     */
+    /** Ensure configure() is called by exec(). */
     public function testExec1(): void
     {
         $configured = false;
@@ -331,12 +363,8 @@ final class ConsoleApplicationTest extends TestCase
         self::assertTrue($configured);
     }
 
-    /**
-     * Provides command-line arguments for testing the command help.
-    
-     *
-     */
-    protected static function dataForHelpTests(): iterable
+    /** Provides command-line arguments for testing the command help. */
+    public static function dataForHelpTests(): iterable
     {
         yield "help-only" => [["command.php", "--help",],];
         yield "help-first" => [["command.php", "--help", "foo", "bar",],];
@@ -347,8 +375,6 @@ final class ConsoleApplicationTest extends TestCase
     /**
      * Ensure run() is not is called when the help arg is present.
      * @dataProvider dataForHelpTests
-    
-     *
      */
     public function testExec2(array $args): void
     {
@@ -372,10 +398,7 @@ final class ConsoleApplicationTest extends TestCase
         self::assertFalse($runCalled);
     }
 
-    /**
-     * Ensure exec() parses command-line args
-     *
-     */
+    /** Ensure exec() parses command-line args */
     public function testExec3(): void
     {
         $app = new XRay($this->createApplication(
@@ -398,8 +421,6 @@ final class ConsoleApplicationTest extends TestCase
     /**
      * Ensure run() is not is called when the help arg is present.
      * @dataProvider dataForHelpTests
-    
-     *
      */
     public function testShowHelp1(array $args): void
     {
@@ -436,10 +457,7 @@ EOF,
     }
 
 
-    /**
-     * Ensure args, options and flags are present in the help.
-     *
-     */
+    /** Ensure args, options and flags are present in the help. */
     public function testShowHelp2(): void
     {
         $stream = fopen("php://memory", "w+");
@@ -482,10 +500,7 @@ EOF,
         );
     }
 
-    /**
-     * Ensure --debug command-line flag puts app into debug mode.
-     *
-     */
+    /** Ensure --debug command-line flag puts app into debug mode. */
     public function testIsInDebugMode1(): void
     {
         $app = new XRay($this->createApplication(args: ["command.php", "--debug",]));
@@ -496,7 +511,7 @@ EOF,
         self::assertTrue($app->isInDebugMode());
     }
 
-    protected static function validFlagAndOptionArguments(): iterable
+    public static function validFlagAndOptionArguments(): iterable
     {
         yield "typical" => ["--flag", "flag"];
         yield "typical-short" => ["-f", "f"];
@@ -507,8 +522,6 @@ EOF,
     /**
      * Ensure extractName() successfully extracts from long and short name options and flags
      * @dataProvider validFlagAndOptionArguments
-    
-     *
      */
     public function testExtractName1(string $arg, string $expected): void
     {
@@ -516,7 +529,7 @@ EOF,
         self::assertEquals($expected, $app->extractName($arg));
     }
 
-    protected static function invalidFlagAndOptionArguments(): iterable
+    public static function invalidFlagAndOptionArguments(): iterable
     {
         yield "empty" => [""];
         yield "whitespace" => ["   "];
@@ -527,8 +540,6 @@ EOF,
     /**
      * Ensure extractName() throws when not given an option or flag name
      * @dataProvider invalidFlagAndOptionArguments
-    
-     *
      */
     public function testExtractName2(string $arg): void
     {
@@ -538,17 +549,14 @@ EOF,
         $app->extractName($arg);
     }
 
-    protected static function validCondensedFlagArguments(): iterable
+    public static function validCondensedFlagArguments(): iterable
     {
         yield "single-flag" => [["-f",], ["-f",],];
         yield "multiple-flags" => [["-bf",], ["-b", "-f",],];
         yield "multiple-flags-and-other-args" => [["--option", "-bf", "argument"], ["--option", "-b", "-f", "argument",],];
     }
 
-    /**
-     * Ensure we can successfully determine a name is defined.
-     *
-     */
+    /** Ensure we can successfully determine a name is defined. */
     public function testNameIsDefined1(): void
     {
         $app = new XRay($this->createApplication(
@@ -574,10 +582,7 @@ EOF,
         self::assertTrue($app->nameIsDefined("input"));
     }
 
-    /**
-     * Ensure we can successfully determine a name is not defined.
-     *
-     */
+    /** Ensure we can successfully determine a name is not defined. */
     public function testNameIsDefined2(): void
     {
         $app = new XRay($this->createApplication(
@@ -608,10 +613,7 @@ EOF,
         self::assertFalse($app->nameIsDefined("bead-framework"));
     }
 
-    /**
-     * Ensure we can successfully determine a short name is defined.
-     *
-     */
+    /** Ensure we can successfully determine a short name is defined. */
     public function testShortNameIsDefined1(): void
     {
         $app = new XRay($this->createApplication(
@@ -635,10 +637,7 @@ EOF,
         self::assertTrue($app->shortNameIsDefined("f"));
     }
 
-    /**
-     * Ensure we can successfully determine a name is not defined.
-     *
-     */
+    /** Ensure we can successfully determine a name is not defined. */
     public function testShortNameIsDefined2(): void
     {
         // NOTE option and flag don't have short names
@@ -662,7 +661,7 @@ EOF,
         self::assertFalse($app->shortNameIsDefined("x"));
     }
 
-    protected static function dataForTestShortNameIsDefined3(): iterable
+    public static function dataForTestShortNameIsDefined3(): iterable
     {
         yield "empty" => [""];
         yield "leading-whitespace" => [" h"];
@@ -674,8 +673,6 @@ EOF,
     /**
      * Ensure we get a logic exception if the programmer has provided an invalid short name.
      * @dataProvider dataForTestShortNameIsDefined3
-    
-     *
      */
     public function testShortNameIsDefined3(string $shortName): void
     {
@@ -685,7 +682,7 @@ EOF,
         $app->shortNameIsDefined($shortName);
     }
 
-    protected static function dataForTestIsCompressedFlags1(): iterable
+    public static function dataForTestIsCompressedFlags1(): iterable
     {
         yield "single-flag" => ["-a", false,];
         yield "two-flags" => ["-ac", true,];
@@ -708,8 +705,6 @@ EOF,
      * @dataProvider dataForTestIsCompressedFlags1
      * @param string $compressed The string of compressed flags, with the leading "-".
      * @param bool $expected Whether the string represents a valid set of compressed flags.
-    
-     *
      */
     public function testIsCompressedFlags1(string $arg, bool $expected): void
     {
@@ -717,7 +712,7 @@ EOF,
         self::assertEquals($expected, $consoleApplication->isCompressedFlags($arg));
     }
 
-    protected static function dataForTestExpandCompressedFlags1(): iterable
+    public static function dataForTestExpandCompressedFlags1(): iterable
     {
         yield "single-flag" => ["-a", ["-a",],];
         yield "two-flags" => ["-ac", ["-a", "-c",],];
@@ -730,8 +725,6 @@ EOF,
      * @dataProvider dataForTestExpandCompressedFlags1
      * @param string $compressed The string of compressed flags, with the leading "-".
      * @param array $expected The expected array of uncompressed flags.
-    
-     *
      */
     public function testExpandCompressedFlags1(string $compressed, array $expected): void
     {
@@ -739,7 +732,7 @@ EOF,
         self::assertEquals($expected, $consoleApplication->expandCompressedFlags($compressed));
     }
 
-    protected static function dataForTestParseCommandLineArguments1(): iterable
+    public static function dataForTestParseCommandLineArguments1(): iterable
     {
         yield "all-long-flag-option-arg" => [["--bead", "--framework", "bead", "input-value",], true,];
         yield "all-long-flag-arg-option" => [["--bead", "input-value", "--framework", "bead",], true,];
@@ -752,8 +745,6 @@ EOF,
     /**
      * Ensure we can successfully parse valid command-line arguments.
      * @dataProvider dataForTestParseCommandLineArguments1
-    
-     *
      */
     public function testParseCommandLineArguments1(array $args, bool $expectedFlagValue): void
     {
@@ -773,7 +764,7 @@ EOF,
         self::assertEquals("input-value", $app->argumentValue("input"));
     }
 
-    protected static function dataForTestParseCommandLineArguments2(): iterable
+    public static function dataForTestParseCommandLineArguments2(): iterable
     {
         yield "duplicate-flag" => [["--bead", "--bead",], "--bead",];
         yield "duplicate-option" => [["--framework", "bead", "--framework", "another-bead",], "--framework",];
@@ -784,8 +775,6 @@ EOF,
     /**
      * Ensure we reject duplicate command-line arguments during parsing.
      * @dataProvider dataForTestParseCommandLineArguments2
-    
-     *
      */
     public function testParseCommandLineArguments2(array $args, string $duplicateParameterName): void
     {
@@ -805,10 +794,7 @@ EOF,
         $app->parseCommandLineArguments();
     }
 
-    /**
-     * Ensure we reject options in command-line arguments that aren't given with values.
-     *
-     */
+    /** Ensure we reject options in command-line arguments that aren't given with values. */
     public function testParseCommandLineArguments3(): void
     {
         $app = new XRay($this->createApplication(
@@ -827,10 +813,7 @@ EOF,
         $app->parseCommandLineArguments();
     }
 
-    /**
-     * Ensure we reject command-line arguments that aren't defined.
-     *
-     */
+    /** Ensure we reject command-line arguments that aren't defined. */
     public function testParseCommandLineArguments4(): void
     {
         $app = new XRay($this->createApplication(
@@ -849,10 +832,7 @@ EOF,
         $app->parseCommandLineArguments();
     }
 
-    /**
-     * Ensure compressed flags are expanded.
-     *
-     */
+    /** Ensure compressed flags are expanded. */
     public function testParseCommandLineArguments5(): void
     {
         $app = new XRay($this->createApplication(
@@ -871,7 +851,7 @@ EOF,
         self::assertTrue($app->flagValue("configuration"));
     }
 
-    protected static function dataForTestValildateArguments1(): iterable
+    public static function dataForTestValildateArguments1(): iterable
     {
         yield "int-42" => [ConsoleApplication::TypeInt, "42", 42,];
         yield "int-0" => [ConsoleApplication::TypeInt, "0", 0,];
@@ -912,8 +892,6 @@ EOF,
     /**
      * Ensure we successfully validate all types of command-line arguments, options and flags.
      * @dataProvider dataForTestValildateArguments1
-    
-     *
      */
     public function testValidateCommandLineArguments1(int $type, string $arg, mixed $expectedValue): void
     {
@@ -930,10 +908,7 @@ EOF,
         self::assertSame($expectedValue, $app->optionValue("test-option"));
     }
 
-    /**
-     * Ensure we can parse and validate array args successfully
-     *
-     */
+    /** Ensure we can parse and validate array args successfully */
     public function testValidateCommandLineArguments2(): void
     {
         $app = new XRay($this->createApplication(
@@ -950,7 +925,7 @@ EOF,
         self::assertSame(["value-1", "value-2",], $app->optionValue("test-option"));
     }
 
-    protected static function invalidIntValues(): iterable
+    public static function invalidIntValues(): iterable
     {
         yield "empty" => [""];
         yield "whitespace" => [" "];
@@ -964,7 +939,7 @@ EOF,
         yield "float" => ["3.14"];
     }
 
-    protected static function invalidFloatValues(): iterable
+    public static function invalidFloatValues(): iterable
     {
         yield "empty" => [""];
         yield "whitespace" => [" "];
@@ -980,8 +955,6 @@ EOF,
     /**
      * Ensure we reject values that are not valid for int arguments.
      * @dataProvider invalidIntValues
-    
-     *
      */
     public function testValidateCommandLineArguments3(string $arg): void
     {
@@ -999,8 +972,6 @@ EOF,
     /**
      * Ensure we reject values that are not valid for float arguments.
      * @dataProvider invalidFloatValues
-    
-     *
      */
     public function testValidateCommandLineArguments4(string $arg): void
     {
@@ -1018,8 +989,6 @@ EOF,
     /**
      * Ensure we reject values that are not valid for int options.
      * @dataProvider invalidIntValues
-    
-     *
      */
     public function testValidateCommandLineArguments5(string $arg): void
     {
@@ -1037,8 +1006,6 @@ EOF,
     /**
      * Ensure we reject values that are not valid for float options.
      * @dataProvider invalidFloatValues
-    
-     *
      */
     public function testValidateCommandLineArguments6(string $arg): void
     {
@@ -1053,10 +1020,7 @@ EOF,
         $app->validateCommandLineArguments();
     }
 
-    /**
-     * Ensure we reject missing required options.
-     *
-     */
+    /** Ensure we reject missing required options. */
     public function testValidateCommandLineArguments7(): void
     {
         $app = new XRay($this->createApplication());
@@ -1068,10 +1032,7 @@ EOF,
         $app->validateCommandLineArguments();
     }
 
-    /**
-     * Ensure we reject missing required arguments.
-     *
-     */
+    /** Ensure we reject missing required arguments. */
     public function testValidateCommandLineArguments8(): void
     {
         $app = new XRay($this->createApplication());
@@ -1083,10 +1044,7 @@ EOF,
         $app->validateCommandLineArguments();
     }
 
-    /**
-     * Ensure we can add an option without a short name.
-     *
-     */
+    /** Ensure we can add an option without a short name. */
     public function testAddOption1(): void
     {
         $app = new XRay($this->createApplication());
@@ -1097,10 +1055,7 @@ EOF,
         self::assertFalse($app->shortNameIsDefined("o"));
     }
 
-    /**
-     * Ensure we can add an option with a short name.
-     *
-     */
+    /** Ensure we can add an option with a short name. */
     public function testAddOption2(): void
     {
         $app = new XRay($this->createApplication());
@@ -1111,14 +1066,14 @@ EOF,
         self::assertTrue($app->shortNameIsDefined("o"));
     }
 
-    protected static function emptyParameterDescriptions(): iterable
+    public static function emptyParameterDescriptions(): iterable
     {
         yield "empty" => [""];
         yield "single-whitespace" => [" "];
         yield "multiple-whitespace" => ["   "];
     }
 
-    protected static function validParameterTypes(): iterable
+    public static function validParameterTypes(): iterable
     {
         yield "any" => [ConsoleApplication::TypeAny];
         yield "string" => [ConsoleApplication::TypeString];
@@ -1130,8 +1085,6 @@ EOF,
     /**
      * Ensure empty descriptions are rejected.
      * @dataProvider emptyParameterDescriptions
-    
-     *
      */
     public function testAddOption3(string $description): void
     {
@@ -1144,8 +1097,6 @@ EOF,
     /**
      * Ensure we can add options of all types.
      * @dataProvider validParameterTypes
-    
-     *
      */
     public function testAddOption4(int $type): void
     {
@@ -1158,7 +1109,6 @@ EOF,
 
     /**
      * Ensure the default type is Any when adding an option.
-     *
      */
     public function testAddOption5(): void
     {
@@ -1171,7 +1121,6 @@ EOF,
 
     /**
      * Ensure we can add a mandatory option.
-     *
      */
     public function testAddOption6(): void
     {
@@ -1184,7 +1133,6 @@ EOF,
 
     /**
      * Ensure we can add an optional option.
-     *
      */
     public function testAddOption7(): void
     {
@@ -1197,7 +1145,6 @@ EOF,
 
     /**
      * Ensure options are mandatory by default.
-     *
      */
     public function testAddOption8(): void
     {
@@ -1210,7 +1157,6 @@ EOF,
 
     /**
      * Ensure we can add an option with a default.
-     *
      */
     public function testAddOption9(): void
     {
@@ -1223,7 +1169,6 @@ EOF,
 
     /**
      * Ensure we can add an option without a default.
-     *
      */
     public function testAddOption10(): void
     {
@@ -1234,7 +1179,7 @@ EOF,
         self::assertNull($option->default);
     }
 
-    protected static function invalidPrameterDataTypes(): iterable
+    public static function invalidPrameterDataTypes(): iterable
     {
         yield "first-lower" => [-1,];
         yield "first-higher" => [5,];
@@ -1245,8 +1190,6 @@ EOF,
     /**
      * Ensure addOption() rejects invalid data types.
      * @dataProvider invalidPrameterDataTypes
-    
-     *
      */
     public function testAddOption11(int $type): void
     {
@@ -1259,8 +1202,6 @@ EOF,
     /**
      * Ensure addOption() rejects invalid names.
      * @dataProvider invalidParameterNames
-    
-     *
      */
     public function testAddOption12(string $name): void
     {
@@ -1273,8 +1214,6 @@ EOF,
     /**
      * Ensure addOption() rejects invalid parameter short names.
      * @dataProvider invalidShortParameterNames
-    
-     *
      */
     public function testAddOption13(string $name): void
     {
@@ -1286,7 +1225,6 @@ EOF,
 
     /**
      * Ensure we can't re-define help as name of option.
-     *
      */
     public function testAddOption14(): void
     {
@@ -1298,7 +1236,6 @@ EOF,
 
     /**
      * Ensure we can't re-define h as short name of option.
-     *
      */
     public function testAddOption15(): void
     {
@@ -1310,7 +1247,6 @@ EOF,
 
     /**
      * Ensure we can't re-define debug as name of option.
-     *
      */
     public function testAddOption16(): void
     {
@@ -1322,7 +1258,6 @@ EOF,
 
     /**
      * Ensure addOption() rejects names that are already in use.
-     *
      */
     public function testAddOption17(): void
     {
@@ -1335,7 +1270,6 @@ EOF,
 
     /**
      * Ensure addOption() rejects short names that are already in use.
-     *
      */
     public function testAddOption18(): void
     {
@@ -1349,8 +1283,6 @@ EOF,
     /**
      * Ensure we can add a valid argument.
      * @dataProvider validParameterNames
-    
-     *
      */
     public function testAddArgument1(string $name): void
     {
@@ -1363,8 +1295,6 @@ EOF,
     /**
      * Ensure we can add arguments of all types.
      * @dataProvider validParameterTypes
-    
-     *
      */
     public function testAddArgument2(int $type): void
     {
@@ -1377,8 +1307,6 @@ EOF,
     /**
      * Ensure the default type is Any when adding an argument.
      * @dataProvider validParameterTypes
-    
-     *
      */
     public function testAddArgument3(): void
     {
@@ -1391,7 +1319,6 @@ EOF,
 
     /**
      * Ensure we can add a mandatory argument.
-     *
      */
     public function testAddArgument4(): void
     {
@@ -1404,7 +1331,6 @@ EOF,
 
     /**
      * Ensure we can add an optional argument.
-     *
      */
     public function testAddArgument5(): void
     {
@@ -1417,7 +1343,6 @@ EOF,
 
     /**
      * Ensure arguments are mandatory by default.
-     *
      */
     public function testAddArgument6(): void
     {
@@ -1430,7 +1355,6 @@ EOF,
 
     /**
      * Ensure we can add an argument with a default.
-     *
      */
     public function testAddArgument7(): void
     {
@@ -1443,7 +1367,6 @@ EOF,
 
     /**
      * Ensure we can add an argument without a default.
-     *
      */
     public function testAddArgument8(): void
     {
@@ -1456,7 +1379,6 @@ EOF,
 
     /**
      * Ensure by default arguments don't have a default.
-     *
      */
     public function testAddArgument9(): void
     {
@@ -1470,8 +1392,6 @@ EOF,
     /**
      * Ensure empty descriptions are rejected.
      * @dataProvider emptyParameterDescriptions
-    
-     *
      */
     public function testAddArgument10(string $description): void
     {
@@ -1484,8 +1404,6 @@ EOF,
     /**
      * Ensure addArgument() rejects invalid data types.
      * @dataProvider invalidPrameterDataTypes
-    
-     *
      */
     public function testAddArgument11(int $type): void
     {
@@ -1498,8 +1416,6 @@ EOF,
     /**
      * Ensure addArgument() rejects invalid parameter names.
      * @dataProvider invalidParameterNames
-    
-     *
      */
     public function testAddArgument12(string $name): void
     {
@@ -1511,7 +1427,6 @@ EOF,
 
     /**
      * Ensure addArgument() rejects names that are already in use.
-     *
      */
     public function testAddArgument13(): void
     {
@@ -1524,7 +1439,6 @@ EOF,
 
     /**
      * Ensure we can't re-define help as name of arg.
-     *
      */
     public function testAddArgument14(): void
     {
@@ -1536,7 +1450,6 @@ EOF,
 
     /**
      * Ensure we can't re-define debug as name of arg.
-     *
      */
     public function testAddArgument15(): void
     {
@@ -1548,7 +1461,6 @@ EOF,
 
     /**
      * Ensure addArgument() rejects mandatory arguments after the first optional one.
-     *
      */
     public function testAddArgument16(): void
     {
@@ -1562,8 +1474,6 @@ EOF,
     /**
      * Ensure we can add a valid flag.
      * @dataProvider validParameterNames
-    
-     *
      */
     public function testAddFlag1(string $name): void
     {
@@ -1575,7 +1485,6 @@ EOF,
 
     /**
      * Ensure we can add a negatable flag.
-     *
      */
     public function testAddFlag2(): void
     {
@@ -1588,7 +1497,6 @@ EOF,
 
     /**
      * Ensure we can add a non-negatable flag.
-     *
      */
     public function testAddFlag3(): void
     {
@@ -1601,7 +1509,6 @@ EOF,
 
     /**
      * Ensure flags are negatable by default.
-     *
      */
     public function testAddFlag4(): void
     {
@@ -1614,7 +1521,6 @@ EOF,
 
     /**
      * Ensure we reject negatable flags whose negated name is alredy defined.
-     *
      */
     public function testAddFlag5(): void
     {
@@ -1627,7 +1533,6 @@ EOF,
 
     /**
      * Ensure we reject negatable flags whose negated short name is alredy defined.
-     *
      */
     public function testAddFlag6(): void
     {
@@ -1640,7 +1545,6 @@ EOF,
 
     /**
      * Ensure we negatable flags whose short name is already upper-case don't get a negated short name.
-     *
      */
     public function testAddFlag7(): void
     {
@@ -1653,7 +1557,6 @@ EOF,
 
     /**
      * Ensure we can add a flag with a default.
-     *
      */
     public function testAddFlag8(): void
     {
@@ -1667,8 +1570,6 @@ EOF,
      * Ensure we can add a flag without a default.
      *
      * In this scenario the flag is off, i.e. default is false.
-    
-     *
      */
     public function testAddFlag9(): void
     {
@@ -1681,8 +1582,6 @@ EOF,
     /**
      * Ensure empty descriptions are rejected.
      * @dataProvider emptyParameterDescriptions
-    
-     *
      */
     public function testAddFlag10(string $description): void
     {
@@ -1695,8 +1594,6 @@ EOF,
     /**
      * Ensure addFlag() rejects invalid parameter names.
      * @dataProvider invalidParameterNames
-    
-     *
      */
     public function testAddFlag11(string $name): void
     {
@@ -1709,8 +1606,6 @@ EOF,
     /**
      * Ensure addFlag() rejects invalid parameter short names.
      * @dataProvider invalidShortParameterNames
-    
-     *
      */
     public function testAddFlag12(string $name): void
     {
@@ -1722,7 +1617,6 @@ EOF,
 
     /**
      * Ensure addFlag() rejects names that are already in use.
-     *
      */
     public function testAddFlag13(): void
     {
@@ -1735,7 +1629,6 @@ EOF,
 
     /**
      * Ensure addFlag() rejects short names that are already in use.
-     *
      */
     public function testAddFlag14(): void
     {
@@ -1748,7 +1641,6 @@ EOF,
 
     /**
      * Ensure we can't re-define help as name of flag.
-     *
      */
     public function testAddFlag15(): void
     {
@@ -1760,7 +1652,6 @@ EOF,
 
     /**
      * Ensure we can't re-define h as short name of flag.
-     *
      */
     public function testAddFlag16(): void
     {
@@ -1772,7 +1663,6 @@ EOF,
 
     /**
      * Ensure we can't re-define debug as name of flag.
-     *
      */
     public function testAddFlag17(): void
     {
@@ -1784,7 +1674,6 @@ EOF,
 
     /**
      * Ensure flagDefinition() returns the correct definition.
-     *
      */
     public function testFlagDefinition1(): void
     {
@@ -1808,7 +1697,6 @@ EOF,
 
     /**
      * Ensure flagDefinition() returns null for undefined flags.
-     *
      */
     public function testFlagDefinition2(): void
     {
@@ -1819,7 +1707,6 @@ EOF,
 
     /**
      * Ensure flagDefinition() returns null for undefined flags when an option with the matching name exists.
-     *
      */
     public function testFlagDefinition3(): void
     {
@@ -1831,7 +1718,6 @@ EOF,
 
     /**
      * Ensure flagDefinition() returns null for undefined flags when an argument with the matching name exists.
-     *
      */
     public function testFlagDefinition4(): void
     {
@@ -1844,7 +1730,6 @@ EOF,
 
     /**
      * Ensure optionDefinition() returns the correct definition.
-     *
      */
     public function testOptionDefinition1(): void
     {
@@ -1864,7 +1749,6 @@ EOF,
 
     /**
      * Ensure optionDefinition() returns null for undefined options.
-     *
      */
     public function testOptionDefinition2(): void
     {
@@ -1875,7 +1759,6 @@ EOF,
 
     /**
      * Ensure optionDefinition() returns null for undefined options when a flag with the matching name exists.
-     *
      */
     public function testOptionDefinition3(): void
     {
@@ -1887,7 +1770,6 @@ EOF,
 
     /**
      * Ensure optionDefinition() returns null for undefined options when an argument with the matching name exists.
-     *
      */
     public function testOptionDefinition4(): void
     {
@@ -1899,7 +1781,6 @@ EOF,
 
     /**
      * Ensure argumentDefinition() returns the correct definition.
-     *
      */
     public function testArgumentDefinition1(): void
     {
@@ -1916,7 +1797,6 @@ EOF,
 
     /**
      * Ensure argumentDefinition() returns null for undefined arguments.
-     *
      */
     public function testArgumentDefinition2(): void
     {
@@ -1927,7 +1807,6 @@ EOF,
 
     /**
      * Ensure argumentDefinition() returns null for undefined arguments when an option with the matching name exists.
-     *
      */
     public function testArgumentDefinition3(): void
     {
@@ -1939,7 +1818,6 @@ EOF,
 
     /**
      * Ensure argumentDefinition() returns null for undefined arguments when a flag with the matching name exists.
-     *
      */
     public function testArgumentDefinition4(): void
     {
@@ -1951,7 +1829,6 @@ EOF,
 
     /**
      * Ensure write() writes to the expected stream.
-     *
      */
     public function testWrite1(): void
     {
@@ -1965,7 +1842,6 @@ EOF,
 
     /**
      * Ensure line() writes to the output stream and appends a newline.
-     *
      */
     public function testLine1(): void
     {
@@ -1980,7 +1856,6 @@ EOF,
 
     /**
      * Ensure errorLine() writes colour text to the error stream and appends a newline.
-     *
      */
     public function testErrorLine1(): void
     {
@@ -1995,7 +1870,6 @@ EOF,
 
     /**
      * Ensure read() reads a line from the input stream and discards the trailing newline.
-     *
      */
     public function testRead1(): void
     {
@@ -2011,46 +1885,33 @@ EOF,
 
     /**
      * Ensure read() writes the prompt to the output stream.
-     *
      */
     public function testRead2(): void
     {
-        $inStream = fopen("php://memory", "w+");
+        $inStream = self::createInputStream("input-text\n");
         $outStream = fopen("php://memory", "w+");
-        fputs($inStream, "input-text\n");
-        fseek($inStream, 0, SEEK_SET);
         $app = new XRay($this->createApplication());
         $app->setInStream($inStream);
         $app->setOutStream($outStream);
         $actualInput = $app->read("input something: ");
-        fseek($outStream, 0, SEEK_SET);
-        $actualPrompt = fread($outStream, 1024);
+        self::assertEquals("input-text", $actualInput);
+        self::assertStreamContentEquals("input something: ", $outStream);
         fclose($inStream);
         fclose($outStream);
-        self::assertEquals("input-text", $actualInput);
-        self::assertEquals("input something: ", $actualPrompt);
     }
 
-    /**
-     * Ensure read() discards characters beyond max length.
-     *
-     */
+    /** Ensure read() discards characters beyond max length. */
     public function testRead3(): void
     {
-        $stream = fopen("php://memory", "w+");
-        fputs($stream, "input-text\n");
-        fseek($stream, 0, SEEK_SET);
+        $inStream = self::createInputStream("input-text\n");
         $app = new XRay($this->createApplication());
-        $app->setInStream($stream);
+        $app->setInStream($inStream);
         $actual = $app->read("", 6);
-        fclose($stream);
         self::assertEquals("input-", $actual);
+        fclose($inStream);
     }
 
-    /**
-     * Ensure we get the expected exception when reading the input stream fails.
-     *
-     */
+    /** Ensure we get the expected exception when reading the input stream fails. */
     public function testRead4(): void
     {
         $app = new XRay($this->createApplication());
@@ -2060,17 +1921,11 @@ EOF,
         $app->read();
     }
 
-    /**
-     * Ensure readSecret() turns input echo off and back on.
-     *
-     */
+    /** Ensure readSecret() turns input echo off and back on. */
     public function testReadSecret1(): void
     {
-        $inStream = fopen("php://memory", "w+");
-        fputs($inStream, "secret-input");
-        fseek($inStream, 0, SEEK_SET);
+        $inStream = self::createInputStream("secret-input");
         $app = new XRay($this->createApplication());
-
         $count = 0;
 
         $shellExec = static function (string $command) use (&$count, $app, $inStream): string {
@@ -2083,7 +1938,7 @@ EOF,
                 TestCase::assertEquals("stty -echo", $command);
 
                 // once we receive this call, we want the app to read input from our test stream, otherwise it will lock
-                // waitin for actual user input
+                // waiting for actual user input
                 $app->setInStream($inStream);
 
                 return "-echo";
@@ -2096,52 +1951,151 @@ EOF,
         };
 
         $this->mockFunction("shell_exec", $shellExec);
+        $this->mockFunction("stream_isatty", true);
+        $this->mockFunction("posix_ttyname", "/dev/pts/1");
 
         // stop readSecret() from writing a newline to stdout
         $outStream = fopen("php://memory", "w+");
         $app->setOutStream($outStream);
 
         $app->readSecret();
+        fclose($inStream);
         fclose($outStream);
         self::assertEquals(3, $count);
     }
 
-    /**
-     * Ensure readSecret() fails when input is not STDIN
-     *
-     */
+    /** Ensure readSecret() fails when input is not a TTY */
     public function testReadSecret2(): void
     {
-        $inStream = fopen("php://memory", "r");
+        $this->mockFunction("stream_isatty", false);
         $app = new XRay($this->createApplication());
-        $app->setInStream($inStream);
         self::expectException(RuntimeException::class);
-        self::expectExceptionMessage("Input stream does not support hiding");
+        self::expectExceptionMessage("Input stream is not a TTY, input hiding is not available");
         $app->readSecret("Enter password: ");
     }
 
-    /**
-     * Ensure confirm() writes the expected prompt to the output stream.
-     *
-     */
+    /** Ensure readSecret() writes a newline to the output stream when it's the same TTY as the in stream */
+    public function testReadSecret3(): void
+    {
+        $outStream = fopen("php://memory", "w+");
+        $this->mockFunction("stream_isatty", true);
+        $this->mockFunction("posix_ttyname", "/dev/pts/1");
+        $this->mockFunction("shell_exec", "");
+        $app = new XRay($this->createApplication());
+        $app->setOutStream($outStream);
+        $app->setInStream(self::createInputStream("\n"));
+        $app->readSecret("Enter password: ");
+        self::assertStreamContentEquals("Enter password: \n", $outStream);
+    }
+
+    /** Ensure readSecret() doesn't write a newline to the output stream when not a POSIX system */
+    public function testReadSecret4(): void
+    {
+        $this->mockFunction("stream_isatty", true);
+        $this->mockFunction("posix_ttyname", "/dev/pts/1");
+        $this->mockFunction("shell_exec", "");
+
+        $functionExists = static function (string $name): bool {
+            TestCase::assertEquals("posix_ttyname", $name);
+            return false;
+        };
+
+        $this->mockFunction("function_exists", $functionExists);
+
+        $app = new XRay($this->createApplication());
+        $outStream = fopen("php://memory", "w+");
+        $app->setOutStream($outStream);
+        $app->setInStream(self::createInputStream("\n"));
+        $app->readSecret("Enter password: ");
+        self::assertStreamContentEquals("Enter password: ", $outStream);
+    }
+
+    /** Ensure readSecret() doesn't write a newline to the output stream when input TTY name is not available */
+    public function testReadSecret5(): void
+    {
+        $this->mockFunction("stream_isatty", true);
+        $this->mockFunction("posix_ttyname", false);
+        $this->mockFunction("shell_exec", "");
+
+        $functionExists = static function (string $name): bool {
+            TestCase::assertEquals("posix_ttyname", $name);
+            return true;
+        };
+
+        $this->mockFunction("function_exists", $functionExists);
+
+        $app = new XRay($this->createApplication());
+        $outStream = fopen("php://memory", "w+");
+        $app->setOutStream($outStream);
+        $app->setInStream(self::createInputStream("\n"));
+        $app->readSecret("Enter password: ");
+        self::assertStreamContentEquals("Enter password: ", $outStream);
+    }
+
+    /** Ensure readSecret() doesn't write a newline to the output stream when it's not a TTY */
+    public function testReadSecret6(): void
+    {
+        $outStream = fopen("php://memory", "w+");
+
+        $functionExists = static function (string $name): bool {
+            TestCase::assertEquals("posix_ttyname", $name);
+            return true;
+        };
+
+        $streamIsATty = static fn ($stream): bool => $stream !== $outStream;
+
+        $this->mockFunction("stream_isatty", $streamIsATty);
+        $this->mockFunction("posix_ttyname", "/dev/pts/1");
+        $this->mockFunction("shell_exec", "");
+        $this->mockFunction("function_exists", $functionExists);
+
+        $app = new XRay($this->createApplication());
+        $app->setOutStream($outStream);
+        $app->setInStream(self::createInputStream("\n"));
+        $app->readSecret("Enter password: ");
+        self::assertStreamContentEquals("Enter password: ", $outStream);
+    }
+
+    /** Ensure readSecret() doesn't write a newline to the output stream when it's not the same TTY as input */
+    public function testReadSecret7(): void
+    {
+        $outStream = fopen("php://memory", "w+");
+
+        $functionExists = static function (string $name): bool {
+            TestCase::assertEquals("posix_ttyname", $name);
+            return true;
+        };
+
+        $posixTtyName = static fn ($stream): string => $stream === $outStream ? "/dev/pts/2" : "/dev/pts/1";
+
+        $this->mockFunction("stream_isatty", true);
+        $this->mockFunction("posix_ttyname", $posixTtyName);
+        $this->mockFunction("shell_exec", "");
+        $this->mockFunction("function_exists", $functionExists);
+
+        $app = new XRay($this->createApplication());
+        $app->setOutStream($outStream);
+        $app->setInStream(self::createInputStream("\n"));
+        $app->readSecret("Enter password: ");
+        self::assertStreamContentEquals("Enter password: ", $outStream);
+    }
+
+    /** Ensure confirm() writes the expected prompt to the output stream. */
     public function testConfirm1(): void
     {
-        $inStream = fopen("php://memory", "w+");
+        $inStream = self::createInputStream("Y\n");
         $outStream = fopen("php://memory", "w+");
-        fputs($inStream, "Y\n");
-        fseek($inStream, 0, SEEK_SET);
 
         $app = new XRay($this->createApplication());
         $app->setInStream($inStream);
         $app->setOutStream($outStream);
         $app->confirm("Yes or no?");
-        fseek($outStream, 0, SEEK_SET);
-        self::assertEquals("Yes or no? [y|N] ", fgets($outStream));
+        self::assertStreamContentEquals("Yes or no? [y|N] ", $outStream);
         fclose($inStream);
         fclose($outStream);
     }
 
-    protected static function dataForTestConfirm2(): iterable
+    public static function dataForTestConfirm2(): iterable
     {
         yield "y" => ["y"];
         yield "Y" => ["Y"];
@@ -2156,15 +2110,11 @@ EOF,
     /**
      * Ensure confirm() accepts all expected positive responses.
      * @dataProvider dataForTestConfirm2
-    
-     *
      */
     public function testConfirm2(string $response): void
     {
-        $inStream = fopen("php://memory", "w+");
+        $inStream = self::createInputStream("{$response}\n");
         $outStream = fopen("php://memory", "w+");
-        fputs($inStream, "{$response}\n");
-        fseek($inStream, 0, SEEK_SET);
 
         $app = new XRay($this->createApplication());
         $app->setInStream($inStream);
@@ -2174,7 +2124,7 @@ EOF,
         fclose($outStream);
     }
 
-    protected static function dataForTestConfirm3(): iterable
+    public static function dataForTestConfirm3(): iterable
     {
         yield "empty" => [""];
         yield "whitespace" => ["   "];
@@ -2249,15 +2199,11 @@ EOF,
     /**
      * Ensure confirm() returns negative for all other responses.
      * @dataProvider dataForTestConfirm3
-    
-     *
      */
     public function testConfirm3(string $response): void
     {
-        $inStream = fopen("php://memory", "w+");
+        $inStream = self::createInputStream("{$response}\n");
         $outStream = fopen("php://memory", "w+");
-        fputs($inStream, "{$response}\n");
-        fseek($inStream, 0, SEEK_SET);
 
         $app = new XRay($this->createApplication());
         $app->setInStream($inStream);
@@ -2269,7 +2215,6 @@ EOF,
 
     /**
      * Ensure we can set the output stream.
-     *
      */
     public function testSetOutputStream1(): void
     {
@@ -2281,7 +2226,6 @@ EOF,
 
     /**
      * Ensure we can set the error stream.
-     *
      */
     public function testSetErrorStream1(): void
     {
@@ -2293,7 +2237,6 @@ EOF,
 
     /**
      * Ensure we can set the input stream.
-     *
      */
     public function testSetInStream1(): void
     {
@@ -2305,35 +2248,30 @@ EOF,
 
     /**
      * Ensure the output stream is STDOUT by default.
-     *
      */
     public function testOutStream1(): void
     {
         $app = $this->createApplication();
-        self::assertSame(STDOUT, $app->outStream());
+        self::assertSame($this->stdout, $app->outStream());
     }
 
     /**
      * Ensure the error stream is STDERR by default.
-     *
      */
     public function testErrorStream1(): void
     {
         $app = $this->createApplication();
-        self::assertSame(STDERR, $app->errorStream());
+        self::assertSame($this->stderr, $app->errorStream());
     }
 
-    /**
-     * Ensure the output stream is STDIN by default.
-     *
-     */
+    /** Ensure the output stream is STDIN by default. */
     public function testInStream1(): void
     {
         $app = $this->createApplication();
-        self::assertSame(STDIN, $app->inStream());
+        self::assertSame($this->stdin, $app->inStream());
     }
 
-    protected static function dataForTestArguments1(): iterable
+    public static function dataForTestArguments1(): iterable
     {
         yield "no-args" => [["command.php",], []];
         yield "one-arg" => [["command.php", "foo",], ["foo",]];
@@ -2347,8 +2285,6 @@ EOF,
     /**
      * Ensure we can get the raw command-line arguments.
      * @dataProvider dataForTestArguments1
-    
-     *
      */
     public function testArguments1(array $cliArgs, array $expectedArgs): void
     {
@@ -2358,7 +2294,6 @@ EOF,
 
     /**
      * Ensure we can check for defined arguments.
-     *
      */
     public function testHasArgument1(): void
     {
@@ -2369,7 +2304,6 @@ EOF,
 
     /**
      * Ensure we get false for arguments that aren't defined.
-     *
      */
     public function testHasArgument2(): void
     {
@@ -2380,7 +2314,6 @@ EOF,
 
     /**
      * Ensure we get false for arguments that aren't defined but an option with the same name is.
-     *
      */
     public function testHasArgument3(): void
     {
@@ -2391,7 +2324,6 @@ EOF,
 
     /**
      * Ensure we get false for arguments that aren't defined but a flag with the same name is.
-     *
      */
     public function testHasArgument4(): void
     {
@@ -2402,7 +2334,6 @@ EOF,
 
     /**
      * Ensure we can check for defined options.
-     *
      */
     public function testHasOption1(): void
     {
@@ -2413,7 +2344,6 @@ EOF,
 
     /**
      * Ensure we can check for defined options by short name.
-     *
      */
     public function testHasOption2(): void
     {
@@ -2424,7 +2354,6 @@ EOF,
 
     /**
      * Ensure we get false for options that aren't defined.
-     *
      */
     public function testHasOption3(): void
     {
@@ -2435,7 +2364,6 @@ EOF,
 
     /**
      * Ensure we get false for options that aren't defined but an argument with the same name is.
-     *
      */
     public function testHasOption4(): void
     {
@@ -2446,7 +2374,6 @@ EOF,
 
     /**
      * Ensure we get false for options that aren't defined but a flag with the same name is.
-     *
      */
     public function testHasOption5(): void
     {
@@ -2457,7 +2384,6 @@ EOF,
 
     /**
      * Ensure we get false for options that aren't defined but a flag with the same short name is.
-     *
      */
     public function testHasOption6(): void
     {
@@ -2468,7 +2394,6 @@ EOF,
 
     /**
      * Ensure we can check for defined flags.
-     *
      */
     public function testHasFlag1(): void
     {
@@ -2479,7 +2404,6 @@ EOF,
 
     /**
      * Ensure we can check for defined flags by short name.
-     *
      */
     public function testHasFlag2(): void
     {
@@ -2490,7 +2414,6 @@ EOF,
 
     /**
      * Ensure we get false for flags that aren't defined.
-     *
      */
     public function testHasFlag3(): void
     {
@@ -2501,7 +2424,6 @@ EOF,
 
     /**
      * Ensure we get false for flags that aren't defined but an argument with the same name is.
-     *
      */
     public function testHasFlag4(): void
     {
@@ -2512,7 +2434,6 @@ EOF,
 
     /**
      * Ensure we get false for flags that aren't defined but an option with the same name is.
-     *
      */
     public function testHasFlag5(): void
     {
@@ -2523,7 +2444,6 @@ EOF,
 
     /**
      * Ensure we get false for flags that aren't defined but an option with the same short name is.
-     *
      */
     public function testHasFlag6(): void
     {
@@ -2534,7 +2454,6 @@ EOF,
 
     /**
      * Ensure we can check for argments that are set.
-     *
      */
     public function testArgumentIsSet1(): void
     {
@@ -2546,7 +2465,6 @@ EOF,
 
     /**
      * Ensure we get false for argments that aren't set.
-     *
      */
     public function testArgumentIsSet2(): void
     {
@@ -2558,7 +2476,6 @@ EOF,
 
     /**
      * Ensure we get the expected exception for argments that aren't defined.
-     *
      */
     public function testArgumentIsSet3(): void
     {
@@ -2571,7 +2488,6 @@ EOF,
 
     /**
      * Ensure we can check for options that are set.
-     *
      */
     public function testOptionIsSet1(): void
     {
@@ -2583,7 +2499,6 @@ EOF,
 
     /**
      * Ensure we can check for options that are set by short name.
-     *
      */
     public function testOptionIsSet2(): void
     {
@@ -2595,7 +2510,6 @@ EOF,
 
     /**
      * Ensure we get false for options that aren't set.
-     *
      */
     public function testOptionIsSet3(): void
     {
@@ -2607,7 +2521,6 @@ EOF,
 
     /**
      * Ensure we get false for options that aren't set using their short names.
-     *
      */
     public function testOptionIsSet4(): void
     {
@@ -2619,7 +2532,6 @@ EOF,
 
     /**
      * Ensure we get the expected exception for argments that aren't defined.
-     *
      */
     public function testOptionIsSet5(): void
     {
@@ -2632,7 +2544,6 @@ EOF,
 
     /**
      * Ensure we can get argument values.
-     *
      */
     public function testArgumentValue1(): void
     {
@@ -2644,7 +2555,6 @@ EOF,
 
     /**
      * Ensure we can get default value for optional arguments that aren't set but which have defaults.
-     *
      */
     public function testArgumentValue2(): void
     {
@@ -2656,7 +2566,6 @@ EOF,
 
     /**
      * Ensure get the expected exception when attempting to get the value for an argument that is not defined.
-     *
      */
     public function testArgumentValue3(): void
     {
@@ -2669,7 +2578,6 @@ EOF,
 
     /**
      * Ensure we can get option values.
-     *
      */
     public function testOptionValue1(): void
     {
@@ -2681,7 +2589,6 @@ EOF,
 
     /**
      * Ensure we can get option values using their short names.
-     *
      */
     public function testOptionValue2(): void
     {
@@ -2693,7 +2600,6 @@ EOF,
 
     /**
      * Ensure get the expected exception when attempting to get the value for an option that is not defined.
-     *
      */
     public function testOptionValue3(): void
     {
@@ -2706,7 +2612,6 @@ EOF,
 
     /**
      * Ensure we can get flag values.
-     *
      */
     public function testFlagValue1(): void
     {
@@ -2718,7 +2623,6 @@ EOF,
 
     /**
      * Ensure we can get flag values by their short names.
-     *
      */
     public function testFlagValue2(): void
     {
@@ -2730,7 +2634,6 @@ EOF,
 
     /**
      * Ensure we can get flag values by short name when they're specified by long name.
-     *
      */
     public function testFlagValue3(): void
     {
@@ -2742,7 +2645,6 @@ EOF,
 
     /**
      * Ensure we can get flag values by name when they're specified by short name.
-     *
      */
     public function testFlagValue4(): void
     {
@@ -2754,7 +2656,6 @@ EOF,
 
     /**
      * Ensure we can get flag values for unset flags.
-     *
      */
     public function testFlagValue5(): void
     {
@@ -2766,7 +2667,6 @@ EOF,
 
     /**
      * Ensure we can get flag values for unset flags by their short names.
-     *
      */
     public function testFlagValue6(): void
     {
@@ -2778,7 +2678,6 @@ EOF,
 
     /**
      * Ensure get the expected exception when attempting to get the value for an flag that is not defined.
-     *
      */
     public function testFlagValue7(): void
     {
