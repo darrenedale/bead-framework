@@ -197,7 +197,7 @@ final class ConsoleApplicationTest extends TestCase
         yield "leading-underscore" => ["_life42"];
     }
 
-    public static function validShortParameterNames(): iterable
+    public static function validParameterShortNames(): iterable
     {
         foreach (range("a", "z") as $ch) {
             yield $ch => [$ch];
@@ -208,7 +208,7 @@ final class ConsoleApplicationTest extends TestCase
         }
     }
 
-    public static function invalidShortParameterNames(): iterable
+    public static function invalidParameterShortNames(): iterable
     {
         yield "empty" => [""];
         yield "whitespace" => [" "];
@@ -242,21 +242,21 @@ final class ConsoleApplicationTest extends TestCase
 
     /**
      * Ensure isValidShortParameterName() passes valid parameter names.
-     * @dataProvider validShortParameterNames
+     * @dataProvider validParameterShortNames
      */
-    public function testIsValidShortParameterName1(string $name): void
+    public function testIsValidParameterShortName1(string $name): void
     {
-        $actual = (new StaticXRay(ConsoleApplication::class))->isValidShortParameterName($name);
+        $actual = (new StaticXRay(ConsoleApplication::class))->isValidParameterShortName($name);
         self::assertTrue($actual);
     }
 
     /**
      * Ensure isValidShortParameterName() rejects invalid parameter names.
-     * @dataProvider invalidShortParameterNames
+     * @dataProvider invalidParameterShortNames
      */
-    public function testIsValidShortParameterName2(string $name): void
+    public function testIsValidParameterShortName2(string $name): void
     {
-        $actual = (new StaticXRay(ConsoleApplication::class))->isValidShortParameterName($name);
+        $actual = (new StaticXRay(ConsoleApplication::class))->isValidParameterShortName($name);
         self::assertFalse($actual);
     }
 
@@ -408,8 +408,8 @@ final class ConsoleApplicationTest extends TestCase
             },
         ));
 
-        self::assertFalse($app->nameIsDefined("bead"));
-        self::assertFalse($app->shortNameIsDefined("b"));
+        self::assertFalse($app->parameterNameIsDefined("bead"));
+        self::assertFalse($app->parameterShortNameIsDefined("b"));
         $app->exec();
         $option = $app->optionDefinition("bead");
         self::assertInstanceOf(StdClass::class, $option);
@@ -523,10 +523,10 @@ EOF,
      * Ensure extractName() successfully extracts from long and short name options and flags
      * @dataProvider validFlagAndOptionArguments
      */
-    public function testExtractName1(string $arg, string $expected): void
+    public function testExtractParameterName1(string $arg, string $expected): void
     {
         $app = new StaticXRay(ConsoleApplication::class);
-        self::assertEquals($expected, $app->extractName($arg));
+        self::assertEquals($expected, $app->extractParameterName($arg));
     }
 
     public static function invalidFlagAndOptionArguments(): iterable
@@ -541,12 +541,12 @@ EOF,
      * Ensure extractName() throws when not given an option or flag name
      * @dataProvider invalidFlagAndOptionArguments
      */
-    public function testExtractName2(string $arg): void
+    public function testExtractParameterName2(string $arg): void
     {
         $app = new StaticXRay(ConsoleApplication::class);
         self::expectException(LogicException::class);
         self::expectExceptionMessage("Expected option or flag, found \"{$arg}\"");
-        $app->extractName($arg);
+        $app->extractParameterName($arg);
     }
 
     public static function validCondensedFlagArguments(): iterable
@@ -569,17 +569,17 @@ EOF,
         ));
 
         // always defined
-        self::assertTrue($app->nameIsDefined("help"));
-        self::assertTrue($app->nameIsDefined("debug"));
+        self::assertTrue($app->parameterNameIsDefined("help"));
+        self::assertTrue($app->parameterNameIsDefined("debug"));
 
         $app->configure();
         $app->parseCommandLineArguments();
 
         // what we've configured
-        self::assertTrue($app->nameIsDefined("bead"));
-        self::assertTrue($app->nameIsDefined("not-bead"));
-        self::assertTrue($app->nameIsDefined("framework"));
-        self::assertTrue($app->nameIsDefined("input"));
+        self::assertTrue($app->parameterNameIsDefined("bead"));
+        self::assertTrue($app->parameterNameIsDefined("not-bead"));
+        self::assertTrue($app->parameterNameIsDefined("framework"));
+        self::assertTrue($app->parameterNameIsDefined("input"));
     }
 
     /** Ensure we can successfully determine a name is not defined. */
@@ -598,23 +598,23 @@ EOF,
         $app->parseCommandLineArguments();
 
         // names with whitespace don't match
-        self::assertFalse($app->nameIsDefined(" help"));
-        self::assertFalse($app->nameIsDefined("help "));
-        self::assertFalse($app->nameIsDefined(" bead"));
-        self::assertFalse($app->nameIsDefined("bead "));
+        self::assertFalse($app->parameterNameIsDefined(" help"));
+        self::assertFalse($app->parameterNameIsDefined("help "));
+        self::assertFalse($app->parameterNameIsDefined(" bead"));
+        self::assertFalse($app->parameterNameIsDefined("bead "));
 
         // matches are case-sensitive
-        self::assertFalse($app->nameIsDefined(" Help"));
-        self::assertFalse($app->nameIsDefined("Help "));
-        self::assertFalse($app->nameIsDefined(" Bead"));
-        self::assertFalse($app->nameIsDefined("Bead "));
+        self::assertFalse($app->parameterNameIsDefined(" Help"));
+        self::assertFalse($app->parameterNameIsDefined("Help "));
+        self::assertFalse($app->parameterNameIsDefined(" Bead"));
+        self::assertFalse($app->parameterNameIsDefined("Bead "));
 
         // things we haven't configured don't match
-        self::assertFalse($app->nameIsDefined("bead-framework"));
+        self::assertFalse($app->parameterNameIsDefined("bead-framework"));
     }
 
     /** Ensure we can successfully determine a short name is defined. */
-    public function testShortNameIsDefined1(): void
+    public function testParameterShortNameIsDefined1(): void
     {
         $app = new XRay($this->createApplication(
             args: ["command.php", "--framework", "bead", "input-value"],
@@ -626,19 +626,19 @@ EOF,
         ));
 
         // always defined
-        self::assertTrue($app->shortNameIsDefined("h"));
+        self::assertTrue($app->parameterShortNameIsDefined("h"));
 
         $app->configure();
         $app->parseCommandLineArguments();
 
         // what we've configured
-        self::assertTrue($app->shortNameIsDefined("b"));
-        self::assertTrue($app->shortNameIsDefined("B"));
-        self::assertTrue($app->shortNameIsDefined("f"));
+        self::assertTrue($app->parameterShortNameIsDefined("b"));
+        self::assertTrue($app->parameterShortNameIsDefined("B"));
+        self::assertTrue($app->parameterShortNameIsDefined("f"));
     }
 
     /** Ensure we can successfully determine a name is not defined. */
-    public function testShortNameIsDefined2(): void
+    public function testParameterShortNameIsDefined2(): void
     {
         // NOTE option and flag don't have short names
         $app = new XRay($this->createApplication(
@@ -653,15 +653,15 @@ EOF,
         $app->configure();
         $app->parseCommandLineArguments();
 
-        self::assertFalse($app->shortNameIsDefined("b"));
-        self::assertFalse($app->shortNameIsDefined("f"));
-        self::assertFalse($app->shortNameIsDefined("i"));
+        self::assertFalse($app->parameterShortNameIsDefined("b"));
+        self::assertFalse($app->parameterShortNameIsDefined("f"));
+        self::assertFalse($app->parameterShortNameIsDefined("i"));
 
         // things we haven't configured don't match
-        self::assertFalse($app->shortNameIsDefined("x"));
+        self::assertFalse($app->parameterShortNameIsDefined("x"));
     }
 
-    public static function dataForTestShortNameIsDefined3(): iterable
+    public static function dataForTestParameterShortNameIsDefined3(): iterable
     {
         yield "empty" => [""];
         yield "leading-whitespace" => [" h"];
@@ -672,14 +672,14 @@ EOF,
 
     /**
      * Ensure we get a logic exception if the programmer has provided an invalid short name.
-     * @dataProvider dataForTestShortNameIsDefined3
+     * @dataProvider dataForTestParameterShortNameIsDefined3
      */
-    public function testShortNameIsDefined3(string $shortName): void
+    public function testParameterShortNameIsDefined3(string $shortName): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
         self::expectExceptionMessage("Invalid short name \"{$shortName}\" provided to shortNameIsDefined() helper.");
-        $app->shortNameIsDefined($shortName);
+        $app->parameterShortNameIsDefined($shortName);
     }
 
     public static function dataForTestIsCompressedFlags1(): iterable
@@ -1048,22 +1048,22 @@ EOF,
     public function testAddOption1(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("option-name"));
-        self::assertFalse($app->shortNameIsDefined("o"));
+        self::assertFalse($app->parameterNameIsDefined("option-name"));
+        self::assertFalse($app->parameterShortNameIsDefined("o"));
         $app->addOption("option-name", null, "Test option");
         self::assertTrue($app->hasOption("option-name"));
-        self::assertFalse($app->shortNameIsDefined("o"));
+        self::assertFalse($app->parameterShortNameIsDefined("o"));
     }
 
     /** Ensure we can add an option with a short name. */
     public function testAddOption2(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("option-name"));
-        self::assertFalse($app->shortNameIsDefined("o"));
+        self::assertFalse($app->parameterNameIsDefined("option-name"));
+        self::assertFalse($app->parameterShortNameIsDefined("o"));
         $app->addOption("option-name", "o", "Test option");
         self::assertTrue($app->hasOption("option-name"));
-        self::assertTrue($app->shortNameIsDefined("o"));
+        self::assertTrue($app->parameterShortNameIsDefined("o"));
     }
 
     public static function emptyParameterDescriptions(): iterable
@@ -1073,7 +1073,7 @@ EOF,
         yield "multiple-whitespace" => ["   "];
     }
 
-    public static function validParameterTypes(): iterable
+    public static function validParameterDataTypes(): iterable
     {
         yield "any" => [ConsoleApplication::TypeAny];
         yield "string" => [ConsoleApplication::TypeString];
@@ -1096,7 +1096,7 @@ EOF,
 
     /**
      * Ensure we can add options of all types.
-     * @dataProvider validParameterTypes
+     * @dataProvider validParameterDataTypes
      */
     public function testAddOption4(int $type): void
     {
@@ -1107,9 +1107,7 @@ EOF,
         self::assertEquals($type, $option->dataType);
     }
 
-    /**
-     * Ensure the default type is Any when adding an option.
-     */
+    /** Ensure the default type is Any when adding an option. */
     public function testAddOption5(): void
     {
         $app = new XRay($this->createApplication());
@@ -1119,9 +1117,7 @@ EOF,
         self::assertEquals(ConsoleApplication::TypeAny, $option->dataType);
     }
 
-    /**
-     * Ensure we can add a mandatory option.
-     */
+    /** Ensure we can add a mandatory option. */
     public function testAddOption6(): void
     {
         $app = new XRay($this->createApplication());
@@ -1131,9 +1127,7 @@ EOF,
         self::assertFalse($option->optional);
     }
 
-    /**
-     * Ensure we can add an optional option.
-     */
+    /** Ensure we can add an optional option. */
     public function testAddOption7(): void
     {
         $app = new XRay($this->createApplication());
@@ -1143,9 +1137,7 @@ EOF,
         self::assertTrue($option->optional);
     }
 
-    /**
-     * Ensure options are mandatory by default.
-     */
+    /** Ensure options are mandatory by default. */
     public function testAddOption8(): void
     {
         $app = new XRay($this->createApplication());
@@ -1155,9 +1147,7 @@ EOF,
         self::assertFalse($option->optional);
     }
 
-    /**
-     * Ensure we can add an option with a default.
-     */
+    /** Ensure we can add an option with a default. */
     public function testAddOption9(): void
     {
         $app = new XRay($this->createApplication());
@@ -1167,9 +1157,7 @@ EOF,
         self::assertEquals("test-option-value-1", $option->default);
     }
 
-    /**
-     * Ensure we can add an option without a default.
-     */
+    /** Ensure we can add an option without a default. */
     public function testAddOption10(): void
     {
         $app = new XRay($this->createApplication());
@@ -1213,7 +1201,7 @@ EOF,
 
     /**
      * Ensure addOption() rejects invalid parameter short names.
-     * @dataProvider invalidShortParameterNames
+     * @dataProvider invalidParameterShortNames
      */
     public function testAddOption13(string $name): void
     {
@@ -1223,9 +1211,7 @@ EOF,
         $app->addOption("test-option", shortName: $name, description: "Test option");
     }
 
-    /**
-     * Ensure we can't re-define help as name of option.
-     */
+    /** Ensure we can't re-define help as name of option. */
     public function testAddOption14(): void
     {
         $app = new XRay($this->createApplication());
@@ -1234,9 +1220,7 @@ EOF,
         $app->addOption("help", description: "Test option");
     }
 
-    /**
-     * Ensure we can't re-define h as short name of option.
-     */
+    /** Ensure we can't re-define h as short name of option. */
     public function testAddOption15(): void
     {
         $app = new XRay($this->createApplication());
@@ -1245,9 +1229,7 @@ EOF,
         $app->addOption("test-option", shortName: "h", description: "Test option");
     }
 
-    /**
-     * Ensure we can't re-define debug as name of option.
-     */
+    /** Ensure we can't re-define debug as name of option. */
     public function testAddOption16(): void
     {
         $app = new XRay($this->createApplication());
@@ -1256,9 +1238,7 @@ EOF,
         $app->addOption("debug", description: "Test option");
     }
 
-    /**
-     * Ensure addOption() rejects names that are already in use.
-     */
+    /** Ensure addOption() rejects names that are already in use. */
     public function testAddOption17(): void
     {
         $app = new XRay($this->createApplication());
@@ -1268,9 +1248,7 @@ EOF,
         $app->addOption("test-option", description: "Test option");
     }
 
-    /**
-     * Ensure addOption() rejects short names that are already in use.
-     */
+    /** Ensure addOption() rejects short names that are already in use. */
     public function testAddOption18(): void
     {
         $app = new XRay($this->createApplication());
@@ -1287,103 +1265,91 @@ EOF,
     public function testAddArgument1(string $name): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined($name));
+        self::assertFalse($app->parameterNameIsDefined($name));
         $app->addArgument($name, "Test argument");
         self::assertTrue($app->hasArgument($name));
     }
 
     /**
      * Ensure we can add arguments of all types.
-     * @dataProvider validParameterTypes
+     * @dataProvider validParameterDataTypes
      */
     public function testAddArgument2(int $type): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("test-argument"));
+        self::assertFalse($app->parameterNameIsDefined("test-argument"));
         $app->addArgument("test-argument", "Test argument", $type);
         self::assertTrue($app->hasArgument("test-argument"));
     }
 
     /**
      * Ensure the default type is Any when adding an argument.
-     * @dataProvider validParameterTypes
+     * @dataProvider validParameterDataTypes
      */
     public function testAddArgument3(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("test-argument"));
+        self::assertFalse($app->parameterNameIsDefined("test-argument"));
         $app->addArgument("test-argument", "Test argument");
         $arg = $app->argumentDefinition("test-argument");
         self::assertEquals(ConsoleApplication::TypeAny, $arg->dataType);
     }
 
-    /**
-     * Ensure we can add a mandatory argument.
-     */
+    /** Ensure we can add a mandatory argument. */
     public function testAddArgument4(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("test-argument"));
+        self::assertFalse($app->parameterNameIsDefined("test-argument"));
         $app->addArgument("test-argument", "Test argument", optional: false);
         $arg = $app->argumentDefinition("test-argument");
         self::assertFalse($arg->optional);
     }
 
-    /**
-     * Ensure we can add an optional argument.
-     */
+    /** Ensure we can add an optional argument. */
     public function testAddArgument5(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("test-argument"));
+        self::assertFalse($app->parameterNameIsDefined("test-argument"));
         $app->addArgument("test-argument", "Test argument", optional: true);
         $arg = $app->argumentDefinition("test-argument");
         self::assertTrue($arg->optional);
     }
 
-    /**
-     * Ensure arguments are mandatory by default.
-     */
+    /** Ensure arguments are mandatory by default. */
     public function testAddArgument6(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("test-argument"));
+        self::assertFalse($app->parameterNameIsDefined("test-argument"));
         $app->addArgument("test-argument", "Test argument");
         $arg = $app->argumentDefinition("test-argument");
         self::assertFalse($arg->optional);
     }
 
-    /**
-     * Ensure we can add an argument with a default.
-     */
+    /** Ensure we can add an argument with a default. */
     public function testAddArgument7(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("test-argument"));
+        self::assertFalse($app->parameterNameIsDefined("test-argument"));
         $app->addArgument("test-argument", "Test argument", default: "the value");
         $arg = $app->argumentDefinition("test-argument");
         self::assertEquals("the value", $arg->default);
     }
 
-    /**
-     * Ensure we can add an argument without a default.
-     */
+    /** Ensure we can add an argument without a default. */
     public function testAddArgument8(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("test-argument"));
+        self::assertFalse($app->parameterNameIsDefined("test-argument"));
         $app->addArgument("test-argument", "Test argument", default: null);
         $arg = $app->argumentDefinition("test-argument");
         self::assertNull($arg->default);
     }
 
-    /**
-     * Ensure by default arguments don't have a default.
-     */
+    /** Ensure by default arguments don't have a default. */
     public function testAddArgument9(): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined("test-argument"));
+        self::assertFalse($app->parameterNameIsDefined("test-argument"));
         $app->addArgument("test-argument", "Test argument");
         $arg = $app->argumentDefinition("test-argument");
         self::assertNull($arg->default);
@@ -1425,9 +1391,7 @@ EOF,
         $app->addArgument($name, "Test argument");
     }
 
-    /**
-     * Ensure addArgument() rejects names that are already in use.
-     */
+    /** Ensure addArgument() rejects names that are already in use. */
     public function testAddArgument13(): void
     {
         $app = new XRay($this->createApplication());
@@ -1437,9 +1401,7 @@ EOF,
         $app->addArgument("test-argument", "Test argument");
     }
 
-    /**
-     * Ensure we can't re-define help as name of arg.
-     */
+    /** Ensure we can't re-define help as name of arg. */
     public function testAddArgument14(): void
     {
         $app = new XRay($this->createApplication());
@@ -1448,9 +1410,7 @@ EOF,
         $app->addArgument("help", "Defining help again");
     }
 
-    /**
-     * Ensure we can't re-define debug as name of arg.
-     */
+    /** Ensure we can't re-define debug as name of arg. */
     public function testAddArgument15(): void
     {
         $app = new XRay($this->createApplication());
@@ -1459,9 +1419,7 @@ EOF,
         $app->addArgument("debug", "Defining debug again");
     }
 
-    /**
-     * Ensure addArgument() rejects mandatory arguments after the first optional one.
-     */
+    /** Ensure addArgument() rejects mandatory arguments after the first optional one. */
     public function testAddArgument16(): void
     {
         $app = new XRay($this->createApplication());
@@ -1478,14 +1436,12 @@ EOF,
     public function testAddFlag1(string $name): void
     {
         $app = new XRay($this->createApplication());
-        self::assertFalse($app->nameIsDefined($name));
+        self::assertFalse($app->parameterNameIsDefined($name));
         $app->addFlag($name, description: "Test flag");
         self::assertTrue($app->hasFlag($name));
     }
 
-    /**
-     * Ensure we can add a negatable flag.
-     */
+    /** Ensure we can add a negatable flag. */
     public function testAddFlag2(): void
     {
         $app = new XRay($this->createApplication());
@@ -1495,9 +1451,7 @@ EOF,
         self::assertEquals("T", $flag->negatedShortName);
     }
 
-    /**
-     * Ensure we can add a non-negatable flag.
-     */
+    /** Ensure we can add a non-negatable flag. */
     public function testAddFlag3(): void
     {
         $app = new XRay($this->createApplication());
@@ -1507,9 +1461,7 @@ EOF,
         self::assertNull($flag->negatedShortName);
     }
 
-    /**
-     * Ensure flags are negatable by default.
-     */
+    /** Ensure flags are negatable by default. */
     public function testAddFlag4(): void
     {
         $app = new XRay($this->createApplication());
@@ -1519,9 +1471,7 @@ EOF,
         self::assertEquals("T", $flag->negatedShortName);
     }
 
-    /**
-     * Ensure we reject negatable flags whose negated name is alredy defined.
-     */
+    /** Ensure we reject negatable flags whose negated name is alredy defined. */
     public function testAddFlag5(): void
     {
         $app = new XRay($this->createApplication());
@@ -1531,9 +1481,7 @@ EOF,
         $app->addFlag("test-flag", description: "Test flag", negatable: true);
     }
 
-    /**
-     * Ensure we reject negatable flags whose negated short name is alredy defined.
-     */
+    /** Ensure we reject negatable flags whose negated short name is alredy defined. */
     public function testAddFlag6(): void
     {
         $app = new XRay($this->createApplication());
@@ -1543,9 +1491,7 @@ EOF,
         $app->addFlag("test-flag", "t", description: "Test flag", negatable: true);
     }
 
-    /**
-     * Ensure we negatable flags whose short name is already upper-case don't get a negated short name.
-     */
+    /** Ensure we negatable flags whose short name is already upper-case don't get a negated short name. */
     public function testAddFlag7(): void
     {
         $app = new XRay($this->createApplication());
@@ -1555,9 +1501,7 @@ EOF,
         self::assertNull($flag->negatedShortName);
     }
 
-    /**
-     * Ensure we can add a flag with a default.
-     */
+    /** Ensure we can add a flag with a default. */
     public function testAddFlag8(): void
     {
         $app = new XRay($this->createApplication());
@@ -1605,7 +1549,7 @@ EOF,
 
     /**
      * Ensure addFlag() rejects invalid parameter short names.
-     * @dataProvider invalidShortParameterNames
+     * @dataProvider invalidParameterShortNames
      */
     public function testAddFlag12(string $name): void
     {
@@ -1615,9 +1559,7 @@ EOF,
         $app->addFlag("test-flag", $name, "Test flag");
     }
 
-    /**
-     * Ensure addFlag() rejects names that are already in use.
-     */
+    /** Ensure addFlag() rejects names that are already in use. */
     public function testAddFlag13(): void
     {
         $app = new XRay($this->createApplication());
@@ -1627,9 +1569,7 @@ EOF,
         $app->addFlag("test-flag", description: "Test flag");
     }
 
-    /**
-     * Ensure addFlag() rejects short names that are already in use.
-     */
+    /** Ensure addFlag() rejects short names that are already in use. */
     public function testAddFlag14(): void
     {
         $app = new XRay($this->createApplication());
@@ -1639,9 +1579,7 @@ EOF,
         $app->addFlag("test-flag", "t", "Test flag");
     }
 
-    /**
-     * Ensure we can't re-define help as name of flag.
-     */
+    /** Ensure we can't re-define help as name of flag. */
     public function testAddFlag15(): void
     {
         $app = new XRay($this->createApplication());
@@ -1650,9 +1588,7 @@ EOF,
         $app->addFlag("help", description: "Redefined help flag");
     }
 
-    /**
-     * Ensure we can't re-define h as short name of flag.
-     */
+    /** Ensure we can't re-define h as short name of flag. */
     public function testAddFlag16(): void
     {
         $app = new XRay($this->createApplication());
@@ -1661,9 +1597,7 @@ EOF,
         $app->addFlag("more-help", "h", "Redefined help flag");
     }
 
-    /**
-     * Ensure we can't re-define debug as name of flag.
-     */
+    /** Ensure we can't re-define debug as name of flag. */
     public function testAddFlag17(): void
     {
         $app = new XRay($this->createApplication());
@@ -1672,9 +1606,7 @@ EOF,
         $app->addFlag("debug", description: "Redefined debug flag");
     }
 
-    /**
-     * Ensure flagDefinition() returns the correct definition.
-     */
+    /** Ensure flagDefinition() returns the correct definition. */
     public function testFlagDefinition1(): void
     {
         $app = new XRay($this->createApplication());
@@ -1695,9 +1627,7 @@ EOF,
         self::assertSame($definition, $negatedDefinition);
     }
 
-    /**
-     * Ensure flagDefinition() returns null for undefined flags.
-     */
+    /** Ensure flagDefinition() returns null for undefined flags. */
     public function testFlagDefinition2(): void
     {
         $app = new XRay($this->createApplication());
@@ -1705,9 +1635,7 @@ EOF,
         self::assertNull($app->flagDefinition("test-flag-1"));
     }
 
-    /**
-     * Ensure flagDefinition() returns null for undefined flags when an option with the matching name exists.
-     */
+    /** Ensure flagDefinition() returns null for undefined flags when an option with the matching name exists. */
     public function testFlagDefinition3(): void
     {
         $app = new XRay($this->createApplication());
@@ -1716,9 +1644,7 @@ EOF,
         self::assertNull($app->flagDefinition("test-1"));
     }
 
-    /**
-     * Ensure flagDefinition() returns null for undefined flags when an argument with the matching name exists.
-     */
+    /** Ensure flagDefinition() returns null for undefined flags when an argument with the matching name exists. */
     public function testFlagDefinition4(): void
     {
         $app = new XRay($this->createApplication());
@@ -1728,9 +1654,7 @@ EOF,
     }
 
 
-    /**
-     * Ensure optionDefinition() returns the correct definition.
-     */
+    /** Ensure optionDefinition() returns the correct definition. */
     public function testOptionDefinition1(): void
     {
         $app = new XRay($this->createApplication());
@@ -1747,9 +1671,7 @@ EOF,
         self::assertSame($definition, $shortDefinition);
     }
 
-    /**
-     * Ensure optionDefinition() returns null for undefined options.
-     */
+    /** Ensure optionDefinition() returns null for undefined options. */
     public function testOptionDefinition2(): void
     {
         $app = new XRay($this->createApplication());
@@ -1757,9 +1679,7 @@ EOF,
         self::assertNull($app->optionDefinition("test-option-1"));
     }
 
-    /**
-     * Ensure optionDefinition() returns null for undefined options when a flag with the matching name exists.
-     */
+    /** Ensure optionDefinition() returns null for undefined options when a flag with the matching name exists. */
     public function testOptionDefinition3(): void
     {
         $app = new XRay($this->createApplication());
@@ -1768,9 +1688,7 @@ EOF,
         self::assertNull($app->optionDefinition("test-1"));
     }
 
-    /**
-     * Ensure optionDefinition() returns null for undefined options when an argument with the matching name exists.
-     */
+    /** Ensure optionDefinition() returns null for undefined options when an argument with the matching name exists. */
     public function testOptionDefinition4(): void
     {
         $app = new XRay($this->createApplication());
@@ -1779,9 +1697,7 @@ EOF,
         self::assertNull($app->optionDefinition("test-1"));
     }
 
-    /**
-     * Ensure argumentDefinition() returns the correct definition.
-     */
+    /** Ensure argumentDefinition() returns the correct definition. */
     public function testArgumentDefinition1(): void
     {
         $app = new XRay($this->createApplication());
@@ -1795,9 +1711,7 @@ EOF,
         self::assertFalse($definition->optional);
     }
 
-    /**
-     * Ensure argumentDefinition() returns null for undefined arguments.
-     */
+    /** Ensure argumentDefinition() returns null for undefined arguments. */
     public function testArgumentDefinition2(): void
     {
         $app = new XRay($this->createApplication());
@@ -1805,9 +1719,7 @@ EOF,
         self::assertNull($app->argumentDefinition("test-option-1"));
     }
 
-    /**
-     * Ensure argumentDefinition() returns null for undefined arguments when an option with the matching name exists.
-     */
+    /** Ensure argumentDefinition() returns null for undefined arguments when an option with the matching name exists. */
     public function testArgumentDefinition3(): void
     {
         $app = new XRay($this->createApplication());
@@ -1816,9 +1728,7 @@ EOF,
         self::assertNull($app->argumentDefinition("test-1"));
     }
 
-    /**
-     * Ensure argumentDefinition() returns null for undefined arguments when a flag with the matching name exists.
-     */
+    /** Ensure argumentDefinition() returns null for undefined arguments when a flag with the matching name exists. */
     public function testArgumentDefinition4(): void
     {
         $app = new XRay($this->createApplication());
@@ -1827,9 +1737,7 @@ EOF,
         self::assertNull($app->argumentDefinition("test-1"));
     }
 
-    /**
-     * Ensure write() writes to the expected stream.
-     */
+    /** Ensure write() writes to the expected stream. */
     public function testWrite1(): void
     {
         $stream = fopen("php://memory", "w+");
@@ -1840,9 +1748,7 @@ EOF,
         fclose($stream);
     }
 
-    /**
-     * Ensure line() writes to the output stream and appends a newline.
-     */
+    /** Ensure line() writes to the output stream and appends a newline. */
     public function testLine1(): void
     {
         $stream = fopen("php://memory", "w+");
@@ -1854,9 +1760,7 @@ EOF,
         fclose($stream);
     }
 
-    /**
-     * Ensure errorLine() writes colour text to the error stream and appends a newline.
-     */
+    /** Ensure errorLine() writes colour text to the error stream and appends a newline. */
     public function testErrorLine1(): void
     {
         $stream = fopen("php://memory", "w+");
@@ -1868,9 +1772,7 @@ EOF,
         fclose($stream);
     }
 
-    /**
-     * Ensure read() reads a line from the input stream and discards the trailing newline.
-     */
+    /** Ensure read() reads a line from the input stream and discards the trailing newline. */
     public function testRead1(): void
     {
         $stream = fopen("php://memory", "w+");
@@ -1883,9 +1785,7 @@ EOF,
         self::assertEquals("input-text", $actual);
     }
 
-    /**
-     * Ensure read() writes the prompt to the output stream.
-     */
+    /** Ensure read() writes the prompt to the output stream. */
     public function testRead2(): void
     {
         $inStream = self::createInputStream("input-text\n");
@@ -2213,9 +2113,7 @@ EOF,
         fclose($outStream);
     }
 
-    /**
-     * Ensure we can set the output stream.
-     */
+    /** Ensure we can set the output stream. */
     public function testSetOutputStream1(): void
     {
         $app = $this->createApplication();
@@ -2224,9 +2122,7 @@ EOF,
         self::assertSame($stream, $app->outStream());
     }
 
-    /**
-     * Ensure we can set the error stream.
-     */
+    /** Ensure we can set the error stream. */
     public function testSetErrorStream1(): void
     {
         $app = $this->createApplication();
@@ -2235,9 +2131,7 @@ EOF,
         self::assertSame($stream, $app->errorStream());
     }
 
-    /**
-     * Ensure we can set the input stream.
-     */
+    /** Ensure we can set the input stream. */
     public function testSetInStream1(): void
     {
         $app = $this->createApplication();
@@ -2246,18 +2140,14 @@ EOF,
         self::assertSame($stream, $app->inStream());
     }
 
-    /**
-     * Ensure the output stream is STDOUT by default.
-     */
+    /** Ensure the output stream is STDOUT by default. */
     public function testOutStream1(): void
     {
         $app = $this->createApplication();
         self::assertSame($this->stdout, $app->outStream());
     }
 
-    /**
-     * Ensure the error stream is STDERR by default.
-     */
+    /** Ensure the error stream is STDERR by default. */
     public function testErrorStream1(): void
     {
         $app = $this->createApplication();
@@ -2292,9 +2182,7 @@ EOF,
         self::assertEquals($expectedArgs, $app->commandLineArguments());
     }
 
-    /**
-     * Ensure we can check for defined arguments.
-     */
+    /** Ensure we can check for defined arguments. */
     public function testHasArgument1(): void
     {
         $app = new XRay($this->createApplication());
@@ -2302,9 +2190,7 @@ EOF,
         self::assertTrue($app->hasArgument("test-argument"));
     }
 
-    /**
-     * Ensure we get false for arguments that aren't defined.
-     */
+    /** Ensure we get false for arguments that aren't defined. */
     public function testHasArgument2(): void
     {
         $app = new XRay($this->createApplication());
@@ -2312,9 +2198,7 @@ EOF,
         self::assertFalse($app->hasArgument("test-argument"));
     }
 
-    /**
-     * Ensure we get false for arguments that aren't defined but an option with the same name is.
-     */
+    /** Ensure we get false for arguments that aren't defined but an option with the same name is. */
     public function testHasArgument3(): void
     {
         $app = new XRay($this->createApplication());
@@ -2322,9 +2206,7 @@ EOF,
         self::assertFalse($app->hasArgument("test"));
     }
 
-    /**
-     * Ensure we get false for arguments that aren't defined but a flag with the same name is.
-     */
+    /** Ensure we get false for arguments that aren't defined but a flag with the same name is. */
     public function testHasArgument4(): void
     {
         $app = new XRay($this->createApplication());
@@ -2332,9 +2214,7 @@ EOF,
         self::assertFalse($app->hasArgument("test"));
     }
 
-    /**
-     * Ensure we can check for defined options.
-     */
+    /** Ensure we can check for defined options. */
     public function testHasOption1(): void
     {
         $app = new XRay($this->createApplication());
@@ -2342,9 +2222,7 @@ EOF,
         self::assertTrue($app->hasOption("test"));
     }
 
-    /**
-     * Ensure we can check for defined options by short name.
-     */
+    /** Ensure we can check for defined options by short name. */
     public function testHasOption2(): void
     {
         $app = new XRay($this->createApplication());
@@ -2352,9 +2230,7 @@ EOF,
         self::assertTrue($app->hasOption("t"));
     }
 
-    /**
-     * Ensure we get false for options that aren't defined.
-     */
+    /** Ensure we get false for options that aren't defined. */
     public function testHasOption3(): void
     {
         $app = new XRay($this->createApplication());
@@ -2362,9 +2238,7 @@ EOF,
         self::assertFalse($app->hasOption("test"));
     }
 
-    /**
-     * Ensure we get false for options that aren't defined but an argument with the same name is.
-     */
+    /** Ensure we get false for options that aren't defined but an argument with the same name is. */
     public function testHasOption4(): void
     {
         $app = new XRay($this->createApplication());
@@ -2372,9 +2246,7 @@ EOF,
         self::assertFalse($app->hasOption("test"));
     }
 
-    /**
-     * Ensure we get false for options that aren't defined but a flag with the same name is.
-     */
+    /** Ensure we get false for options that aren't defined but a flag with the same name is. */
     public function testHasOption5(): void
     {
         $app = new XRay($this->createApplication());
@@ -2382,9 +2254,7 @@ EOF,
         self::assertFalse($app->hasOption("test"));
     }
 
-    /**
-     * Ensure we get false for options that aren't defined but a flag with the same short name is.
-     */
+    /** Ensure we get false for options that aren't defined but a flag with the same short name is. */
     public function testHasOption6(): void
     {
         $app = new XRay($this->createApplication());
@@ -2392,9 +2262,7 @@ EOF,
         self::assertFalse($app->hasOption("t"));
     }
 
-    /**
-     * Ensure we can check for defined flags.
-     */
+    /** Ensure we can check for defined flags. */
     public function testHasFlag1(): void
     {
         $app = new XRay($this->createApplication());
@@ -2402,9 +2270,7 @@ EOF,
         self::assertTrue($app->hasFlag("test"));
     }
 
-    /**
-     * Ensure we can check for defined flags by short name.
-     */
+    /** Ensure we can check for defined flags by short name. */
     public function testHasFlag2(): void
     {
         $app = new XRay($this->createApplication());
@@ -2412,9 +2278,7 @@ EOF,
         self::assertTrue($app->hasFlag("t"));
     }
 
-    /**
-     * Ensure we get false for flags that aren't defined.
-     */
+    /** Ensure we get false for flags that aren't defined. */
     public function testHasFlag3(): void
     {
         $app = new XRay($this->createApplication());
@@ -2422,9 +2286,7 @@ EOF,
         self::assertFalse($app->hasFlag("test"));
     }
 
-    /**
-     * Ensure we get false for flags that aren't defined but an argument with the same name is.
-     */
+    /** Ensure we get false for flags that aren't defined but an argument with the same name is. */
     public function testHasFlag4(): void
     {
         $app = new XRay($this->createApplication());
@@ -2432,9 +2294,7 @@ EOF,
         self::assertFalse($app->hasFlag("test"));
     }
 
-    /**
-     * Ensure we get false for flags that aren't defined but an option with the same name is.
-     */
+    /** Ensure we get false for flags that aren't defined but an option with the same name is. */
     public function testHasFlag5(): void
     {
         $app = new XRay($this->createApplication());
@@ -2442,9 +2302,7 @@ EOF,
         self::assertFalse($app->hasFlag("test"));
     }
 
-    /**
-     * Ensure we get false for flags that aren't defined but an option with the same short name is.
-     */
+    /** Ensure we get false for flags that aren't defined but an option with the same short name is. */
     public function testHasFlag6(): void
     {
         $app = new XRay($this->createApplication());
@@ -2452,9 +2310,7 @@ EOF,
         self::assertFalse($app->hasFlag("t"));
     }
 
-    /**
-     * Ensure we can check for argments that are set.
-     */
+    /** Ensure we can check for argments that are set. */
     public function testArgumentIsSet1(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "test-value",]));
@@ -2463,9 +2319,7 @@ EOF,
         self::assertTrue($app->argumentIsSet("test"));
     }
 
-    /**
-     * Ensure we get false for argments that aren't set.
-     */
+    /** Ensure we get false for argments that aren't set. */
     public function testArgumentIsSet2(): void
     {
         $app = new XRay($this->createApplication());
@@ -2474,9 +2328,7 @@ EOF,
         self::assertFalse($app->argumentIsSet("test"));
     }
 
-    /**
-     * Ensure we get the expected exception for argments that aren't defined.
-     */
+    /** Ensure we get the expected exception for argments that aren't defined. */
     public function testArgumentIsSet3(): void
     {
         $app = new XRay($this->createApplication());
@@ -2486,9 +2338,7 @@ EOF,
         $app->argumentIsSet("test");
     }
 
-    /**
-     * Ensure we can check for options that are set.
-     */
+    /** Ensure we can check for options that are set. */
     public function testOptionIsSet1(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "--test", "test-value",]));
@@ -2497,9 +2347,7 @@ EOF,
         self::assertTrue($app->optionIsSet("test"));
     }
 
-    /**
-     * Ensure we can check for options that are set by short name.
-     */
+    /** Ensure we can check for options that are set by short name. */
     public function testOptionIsSet2(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "--test", "test-value",]));
@@ -2508,9 +2356,7 @@ EOF,
         self::assertTrue($app->optionIsSet("t"));
     }
 
-    /**
-     * Ensure we get false for options that aren't set.
-     */
+    /** Ensure we get false for options that aren't set. */
     public function testOptionIsSet3(): void
     {
         $app = new XRay($this->createApplication());
@@ -2519,9 +2365,7 @@ EOF,
         self::assertFalse($app->optionIsSet("test"));
     }
 
-    /**
-     * Ensure we get false for options that aren't set using their short names.
-     */
+    /** Ensure we get false for options that aren't set using their short names. */
     public function testOptionIsSet4(): void
     {
         $app = new XRay($this->createApplication());
@@ -2530,9 +2374,7 @@ EOF,
         self::assertFalse($app->optionIsSet("t"));
     }
 
-    /**
-     * Ensure we get the expected exception for argments that aren't defined.
-     */
+    /** Ensure we get the expected exception for argments that aren't defined. */
     public function testOptionIsSet5(): void
     {
         $app = new XRay($this->createApplication());
@@ -2542,9 +2384,7 @@ EOF,
         $app->optionIsSet("test");
     }
 
-    /**
-     * Ensure we can get argument values.
-     */
+    /** Ensure we can get argument values. */
     public function testArgumentValue1(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "test-value",]));
@@ -2553,9 +2393,7 @@ EOF,
         self::assertEquals("test-value", $app->argumentValue("test"));
     }
 
-    /**
-     * Ensure we can get default value for optional arguments that aren't set but which have defaults.
-     */
+    /** Ensure we can get default value for optional arguments that aren't set but which have defaults. */
     public function testArgumentValue2(): void
     {
         $app = new XRay($this->createApplication());
@@ -2564,9 +2402,7 @@ EOF,
         self::assertEquals("default-test-value", $app->argumentValue("test"));
     }
 
-    /**
-     * Ensure get the expected exception when attempting to get the value for an argument that is not defined.
-     */
+    /** Ensure get the expected exception when attempting to get the value for an argument that is not defined. */
     public function testArgumentValue3(): void
     {
         $app = new XRay($this->createApplication());
@@ -2576,9 +2412,7 @@ EOF,
         $app->argumentValue("not-test");
     }
 
-    /**
-     * Ensure we can get option values.
-     */
+    /** Ensure we can get option values. */
     public function testOptionValue1(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "--test", "test-value",]));
@@ -2587,9 +2421,7 @@ EOF,
         self::assertEquals("test-value", $app->optionValue("test"));
     }
 
-    /**
-     * Ensure we can get option values using their short names.
-     */
+    /** Ensure we can get option values using their short names. */
     public function testOptionValue2(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "--test", "test-value",]));
@@ -2598,9 +2430,7 @@ EOF,
         self::assertEquals("test-value", $app->optionValue("t"));
     }
 
-    /**
-     * Ensure get the expected exception when attempting to get the value for an option that is not defined.
-     */
+    /** Ensure get the expected exception when attempting to get the value for an option that is not defined. */
     public function testOptionValue3(): void
     {
         $app = new XRay($this->createApplication());
@@ -2610,9 +2440,7 @@ EOF,
         $app->optionValue("not-test");
     }
 
-    /**
-     * Ensure we can get flag values.
-     */
+    /** Ensure we can get flag values. */
     public function testFlagValue1(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "--test",]));
@@ -2621,9 +2449,7 @@ EOF,
         self::assertTrue($app->flagValue("test"));
     }
 
-    /**
-     * Ensure we can get flag values by their short names.
-     */
+    /** Ensure we can get flag values by their short names. */
     public function testFlagValue2(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "--test",]));
@@ -2632,9 +2458,7 @@ EOF,
         self::assertTrue($app->flagValue("t"));
     }
 
-    /**
-     * Ensure we can get flag values by short name when they're specified by long name.
-     */
+    /** Ensure we can get flag values by short name when they're specified by long name. */
     public function testFlagValue3(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "--test",]));
@@ -2643,9 +2467,7 @@ EOF,
         self::assertTrue($app->flagValue("t"));
     }
 
-    /**
-     * Ensure we can get flag values by name when they're specified by short name.
-     */
+    /** Ensure we can get flag values by name when they're specified by short name. */
     public function testFlagValue4(): void
     {
         $app = new XRay($this->createApplication(args: ["test-command.php", "-t",]));
@@ -2654,9 +2476,7 @@ EOF,
         self::assertTrue($app->flagValue("test"));
     }
 
-    /**
-     * Ensure we can get flag values for unset flags.
-     */
+    /** Ensure we can get flag values for unset flags. */
     public function testFlagValue5(): void
     {
         $app = new XRay($this->createApplication());
@@ -2665,9 +2485,7 @@ EOF,
         self::assertFalse($app->flagValue("test"));
     }
 
-    /**
-     * Ensure we can get flag values for unset flags by their short names.
-     */
+    /** Ensure we can get flag values for unset flags by their short names. */
     public function testFlagValue6(): void
     {
         $app = new XRay($this->createApplication());
@@ -2676,9 +2494,7 @@ EOF,
         self::assertFalse($app->flagValue("t"));
     }
 
-    /**
-     * Ensure get the expected exception when attempting to get the value for an flag that is not defined.
-     */
+    /** Ensure get the expected exception when attempting to get the value for an flag that is not defined. */
     public function testFlagValue7(): void
     {
         $app = new XRay($this->createApplication());
