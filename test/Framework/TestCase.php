@@ -13,6 +13,7 @@ use BeadTests\Framework\Constraints\Email\HasEquivalentHeader;
 use BeadTests\Framework\Constraints\Email\HasEquivalentPart;
 use BeadTests\Framework\Constraints\Email\HasHeader;
 use BeadTests\Framework\Constraints\Email\HasPart;
+use BeadTests\Framework\Constraints\StreamContentEquals;
 use Closure;
 use DirectoryIterator;
 use LogicException;
@@ -348,6 +349,18 @@ abstract class TestCase extends PhpUnitTestCase
     public static function assertNotHasEquivalentPart(PartContract $part, mixed $value, string $msg = ""): void
     {
         self::assertThat($value, new LogicalNot(new HasEquivalentPart($part)), $msg);
+    }
+
+    /**
+     * Assert that the content of a readable stream is the same as the content of a string.
+     *
+     * @param string $content The content the stream must contain.
+     * @param mixed $value The stream that must contain the content.
+     * @param string $msg The message for when the assertion fails.
+     */
+    public static function assertStreamContentEquals(string $content, mixed $value, string $msg = ""): void
+    {
+        self::assertThat($value, new StreamContentEquals($content), $msg);
     }
 
     /**
