@@ -19,13 +19,10 @@ use ReflectionNamedType;
 
 final class ValidatorTest extends TestCase
 {
-    public function setUp(): void
-    {
-    }
-
-    public function tearDonw(): void
+    public function tearDown(): void
     {
         Mockery::close();
+        parent::tearDown();
     }
 
     private static function mockNamedType(string $typeName): ReflectionNamedType
