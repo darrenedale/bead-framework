@@ -2,6 +2,7 @@
 
 namespace BeadTests\Database;
 
+use Bead\Testing\XRay;
 use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
 use DateTime;
@@ -401,11 +402,10 @@ class ModelTest extends TestCase
             $this->expectException($exceptionClass);
         }
 
-        $modelData = new ReflectionProperty(Model::class, "data");
-        $modelData->setAccessible(true);
+        $modelXray = new XRay($model);
 
         $model->foo_bar = $value;
-        $actual = $modelData->getValue($model)["foo_bar"];
+        $actual = $modelXray->data["foo_bar"];
         self::assertIsString($actual, "Value of foo_bar property expected to be string.");
         self::assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
         self::assertEquals(1, $callTracker->callCount(), "Custom mutator was not called the correct number of times.");

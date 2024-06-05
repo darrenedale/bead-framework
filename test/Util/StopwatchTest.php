@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace BeadTests\Util;
 
+use Bead\Testing\XRay;
 use Bead\Util\Stopwatch;
 use BeadTests\Framework\TestCase;
 use Generator;
 use LogicException;
-use ReflectionProperty;
 use TypeError;
 
 /**
@@ -338,9 +338,8 @@ class StopwatchTest extends TestCase
     public function testAddListener($event, $listener): void
     {
         $this->testStopwatch->addListener($event, $listener);
-        $listenersProperty = new ReflectionProperty(Stopwatch::class, "m_listeners");
-        $listenersProperty->setAccessible(true);
-        self::assertEquals($listenersProperty->getValue($this->testStopwatch)[$event][0], $listener, "The array of listeners for event {$event} did not consist of the test listener.");
+        $xRay = new XRay($this->testStopwatch);
+        self::assertEquals($listener, $xRay->m_listeners[$event][0], "The array of listeners for event {$event} did not consist of the test listener.");
     }
 
     /** Ensure addListener() rejects invalid events. */

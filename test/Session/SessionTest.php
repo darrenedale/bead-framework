@@ -19,7 +19,6 @@ use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
 use Mockery;
 use Mockery\MockInterface;
-use ReflectionProperty;
 use RuntimeException;
 
 final class SessionTest extends TestCase
