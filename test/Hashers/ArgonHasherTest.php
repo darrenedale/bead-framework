@@ -17,7 +17,7 @@ final class ArgonHasherTest extends TestCase
         $this->hasher = new ArgonHasher();
     }
 
-    public function tearDonw(): void
+    public function tearDown(): void
     {
         unset($this->hasher);
         parent::tearDown();

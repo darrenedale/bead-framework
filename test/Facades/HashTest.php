@@ -31,7 +31,7 @@ final class HashTest extends TestCase
             ->byDefault();
     }
 
-    public function tearDonw(): void
+    public function tearDown(): void
     {
         unset($this->app, $this->hasher);
         Mockery::close();
