@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Validation\useBead\Validator;
+namespace BeadTests\Validation;
 
 use Bead\Testing\StaticXRay;
 use Bead\Validation\Rule;
