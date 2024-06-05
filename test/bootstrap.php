@@ -4,4 +4,6 @@ require_once __DIR__ . "/../vendor/autoload.php";
 
 use BeadTests\Framework\TestCase;
 
-mkdir(TestCase::tempDir(), 0777, true);
+if (!file_exists(TestCase::tempDir())) {
+    mkdir(TestCase::tempDir(), 0777, true);
+}

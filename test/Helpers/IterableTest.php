@@ -154,9 +154,9 @@ final class IterableTest extends TestCase
      *
      * @param array $data The data the generator will yield.
      *
-     * @return Generator The test instance.
+     * @return iterable The test instance.
      */
-    private function createGenerator(array $data): Generator
+    private function createGenerator(array $data): iterable
     {
         yield from $data;
     }

@@ -2,7 +2,7 @@
 
 namespace Bead\Responses;
 
-use Bead\Exceptions\HttpException;
+use Bead\Exceptions\Http\HttpException;
 
 /**
  * Trait for responses that simply send the status, headers and content without any further transformation.
@@ -10,6 +10,7 @@ use Bead\Exceptions\HttpException;
 trait NaivelySendsContent
 {
     use SendsHeaders;
+    use SanitisesReasonPhrase;
 
     /**
      * Constrain the trait to classes that implement this method.
@@ -42,7 +43,7 @@ trait NaivelySendsContent
      */
     public function send(): void
     {
-        http_response_code($this->statusCode());
+        header("HTTP/1.1 {$this->statusCode()} {$this->sanitisedReasonPhrase()}");
         header("content-type: {$this->contentType()}", true);
 
         foreach ($this->headers() as $header => $value) {

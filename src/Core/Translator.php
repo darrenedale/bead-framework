@@ -3,6 +3,7 @@
 namespace Bead\Core;
 
 use Bead\Contracts\Translator as TranslatorContract;
+use InvalidArgumentException;
 
 /**
  * Class to handle translation of UI strings into alternate languages.
@@ -13,9 +14,10 @@ use Bead\Contracts\Translator as TranslatorContract;
  * Translators work in conjunction with tools to extract the translatable strings from the application into a format
  * that can be easily used to create a translation for each of the strings. These translation files are then installed
  * in a location where the translator object can read them and provide the appropriate translated string when asked.
- * Translation files are named with the IETF language subtag for the language/locale (e.g. "en", "fr", "pt-BR"), with
- * the .csv suffix. IANA maintains a list of current language subtags here:
- * <http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry>
+ * Translation files are named with the IETF language subtag for the language/locale, converted to all lower-case to
+ * make file naming easier (e.g. "en", "fr", "pt-br"), with the .csv suffix. IANA maintains a list of current language
+ * subtags here: <http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry>. Only two-component
+ * subtags are currently supported.
  *
  * Translatable strings are identified by their content, their source file and their line within that file. The file
  * and line help to disambiguate the contexts for identical strings in case they need different translations on
@@ -149,8 +151,14 @@ class Translator implements TranslatorContract
     /** @var int The column in the translation file that contains the translated text. */
     protected const TranslationColumnIndex = 3;
 
-    /** The translator's language. */
-    private string $m_lang;
+    /**
+     * The translator's languages.
+     *
+     * This is always a tuple of one or two. The first value is always the language set in the translator using
+     * setLanguage(). The second is the language code from the first, if it's a tag with a region (i.e. it will be "en"
+     * if the language tag set is "en-GB").
+     */
+    private array $m_languages;
 
     /** The cache of translated text. */
     private array $m_cache = [];
@@ -162,6 +170,7 @@ class Translator implements TranslatorContract
      * Create a translator for a given language.
      *
      * @param $lang string _optional_ The language into which to translate.
+     * @throws InvalidArgumentException
      */
     public function __construct(string $lang = self::DefaultLanguage)
     {
@@ -175,7 +184,24 @@ class Translator implements TranslatorContract
      */
     public function language(): string
     {
-        return $this->m_lang;
+        return $this->m_languages[0];
+    }
+
+    /**
+     * Fetch the generic language of the translator.
+     *
+     * The generic language is just the language part of the language tag, if it has one; if it doesn't, it's assumed
+     * to be just a language already and that is returned (i.e. it will be the same as language()).
+     *
+     * For example, setting the translator's language to "en-GB" will return "en-GB" from language() and "en" from
+     * genericLanguage(). Setting the translator's language to just "en" will return "en" from both language() nd
+     * genericLanguage().
+     *
+     * @return string The target language.
+     */
+    public function genericLanguage(): string
+    {
+        return $this->m_languages[1] ?? $this->m_languages[0];
     }
 
     /**
@@ -186,11 +212,21 @@ class Translator implements TranslatorContract
      * language you provide here will be used to search for the translation file from which to retrieve translated
      * strings.
      *
-     * @param $language string|null The target language.
+     * @param $language string The target language tag.
+     * @throws InvalidArgumentException
      */
     public function setLanguage(string $language): void
     {
-        $this->m_lang = $language;
+        if (!preg_match("/^\\s*([a-zA-Z]{2,3})(-[a-zA-Z]{2})?\\s*\$/", $language, $matches)) {
+            throw new InvalidArgumentException("Expected valid IETF language tag, found \"{$language}\"");
+        }
+
+        $this->m_languages = [$language,];
+
+        // if it's a language tag with a region, fall back to just the language (presuming a file is available)
+        if (3 === count($matches)) {
+            $this->m_languages[] = $matches[1];
+        }
     }
 
     /**
@@ -213,9 +249,11 @@ class Translator implements TranslatorContract
     {
         $path = realpath($path);
 
-        if ($path && !in_array($path, $this->m_searchPaths)) {
-            $this->m_searchPaths[] = $path;
+        if (!$path || in_array($path, $this->m_searchPaths)) {
+            return;
         }
+
+        $this->m_searchPaths[] = $path;
     }
 
     /**
@@ -233,17 +271,11 @@ class Translator implements TranslatorContract
     {
         $path = realpath($path);
 
-        if ($path) {
-            $newPaths = [];
-
-            foreach ($this->m_searchPaths as $myPath) {
-                if ($myPath != $path) {
-                    $newPaths[] = $myPath;
-                }
-            }
-
-            $this->m_searchPaths = $newPaths;
+        if (false === $path) {
+            return;
         }
+
+        $this->m_searchPaths = array_filter($this->m_searchPaths, fn (string $searchPath): bool => $searchPath !== $path);
     }
 
     /**
@@ -272,13 +304,15 @@ class Translator implements TranslatorContract
     }
 
     /**
-     * Check whether a translation file for the current language has been loaded.
+     * Check whether a translation file for a language has been loaded.
      *
-     * @return bool _true_ if the translation file has been loaded, _false_ if not.
+     * @param string $language
+     *
+     * @return bool `true` if the translation file has been loaded, `false` if not.
      */
-    private function isLoaded(): bool
+    private function isLanguageLoaded(string $language): bool
     {
-        return is_string($this->m_lang) && array_key_exists($this->m_lang, $this->m_cache);
+        return array_key_exists($language, $this->m_cache);
     }
 
     /**
@@ -292,53 +326,38 @@ class Translator implements TranslatorContract
      */
     private static function cacheKey(string $string, ?string $file, ?int $line): string
     {
-        if (empty($file)) {
-            $file = "~~NOFILE~~";
-        }
-
-        if (empty($line)) {
-            $line = "~~NOLINE~~";
-        }
-
-        return "__" . md5($string) . "__{$file}__{$line}__";
+        return "\0" . md5($string) . "\0{$file}\0{$line}\0";
     }
 
     /**
-     * Attempt to find and load a translation file for the current language.
+     * Attempt to find and load a translation file for a language.
      *
-     * This method will discard any existing loaded translation file for the current language and will attempt to find
-     * and load another. The paths will be scanned in the order in which they were added, and the first translation file
-     * for the current language that is encountered will be loaded. The scan will stop either when a file is loaded or
-     * all the paths have been scanned, whichever occurs sooner.
-     *
-     * @return bool _true_ if a translation file for the current language was loaded, _false_ otherwise.
+     * This method will discard any existing loaded translation file for the language and will attempt to find and load
+     * another. The paths will be scanned in the order in which they were added, and the first translation file for the
+     * language that is encountered will be loaded. The scan will stop either when a file is loaded or all the paths
+     * have been scanned, whichever occurs sooner.
      */
-    private function load(): bool
+    private function loadLanguage(string $language): void
     {
-        if (!empty($this->m_lang)) {
-            foreach ($this->m_searchPaths as $path) {
-                $filePath = "{$path}/{$this->m_lang}.csv";
+        foreach ($this->m_searchPaths as $path) {
+            $filePath = "{$path}/" . strtolower($language) . ".csv";
 
-                if (file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
-                    $f = fopen($filePath, "r");
-                    $this->m_cache[$this->m_lang] = [];
+            if (file_exists($filePath) && is_file($filePath) && is_readable($filePath)) {
+                $f = fopen($filePath, "r");
+                $this->m_cache[$language] = [];
 
-                    while (false !== ($line = fgetcsv($f))) {
-                        $myFile  = empty($line[self::FileColumnIndex]) ? null : $line[self::FileColumnIndex];
-                        $myLine  = empty($line[self::LineColumnIndex]) ? null : (intval($line[self::LineColumnIndex]) ?: null);
-                        $myOrig  = $line[self::TokenColumnIndex];
-                        $myTrans = $line[self::TranslationColumnIndex];
+                while (false !== ($line = fgetcsv($f))) {
+                    $myFile = empty($line[self::FileColumnIndex]) ? null : $line[self::FileColumnIndex];
+                    $myLine = empty($line[self::LineColumnIndex]) ? null : (intval($line[self::LineColumnIndex]) ?: null);
+                    $myOrig = $line[self::TokenColumnIndex];
+                    $myTrans = $line[self::TranslationColumnIndex];
 
-                        $this->m_cache[$this->m_lang][self::cacheKey($myOrig, $myFile, $myLine)] = $myTrans;
-                    }
-
-                    fclose($f);
-                    return true;
+                    $this->m_cache[$language][self::cacheKey($myOrig, $myFile, $myLine)] = $myTrans;
                 }
+
+                fclose($f);
             }
         }
-
-        return false;
     }
 
     /**
@@ -356,12 +375,19 @@ class Translator implements TranslatorContract
      */
     public function hasTranslation(string $string, ?string $file = null, ?int $line = null): bool
     {
-        if (!$this->isLoaded()) {
-            $this->load();
+        $cacheKey = self::cacheKey($string, $file, $line);
+
+        foreach ($this->m_languages as $language) {
+            if (!$this->isLanguageLoaded($language)) {
+                $this->loadLanguage($language);
+            }
+
+            if (!empty($this->m_cache[$language][$cacheKey])) {
+                return true;
+            }
         }
 
-        $cacheKey = self::cacheKey($string, $file, $line);
-        return $this->isLoaded() && isset($this->m_cache[$this->m_lang][$cacheKey]) && !empty($this->m_cache[$this->m_lang][$cacheKey]);
+        return false;
     }
 
     /**
@@ -375,30 +401,34 @@ class Translator implements TranslatorContract
      * without having to provide the same translation multiple times and the app will still pick up the correct
      * translation.
      *
+     * If the translator's language contains a region, the translations for the language in that region will be searched
+     * first. If no translation is found, the translations for the language in general will be search (if a translation
+     * file for that exists).
+     *
      * @param $string string The string to translate.
      * @param $file string|null _optional_ The source file of the string.
      * @param $line int|null _optional_ The line number of the string in the source file.
      *
      * @return string The translated string, or the original string if no suitable translation can be found.
      */
-    public function translate(string $string, string $file = null, $line = null): string
+    public function translate(string $string, string $file = null, int $line = null): string
     {
-        if (!$this->isLoaded()) {
-            $this->load();
-        }
+        $keys = [
+            [$string, $file, $line],
+            [$string, $file, null],
+            [$string, null, null],
+        ];
 
-        if ($this->isLoaded()) {
-            $keys = [
-                [$string, $file, $line],
-                [$string, $file, null],
-                [$string, null, null],
-            ];
+        foreach ($this->m_languages as $language) {
+            if (!$this->isLanguageLoaded($language)) {
+                $this->loadLanguage($language);
+            }
 
             foreach ($keys as [$string, $file, $line]) {
-                $myKey = self::cacheKey($string, $file, $line);
+                $cacheKey = self::cacheKey($string, $file, $line);
 
-                if (!empty($this->m_cache[$this->m_lang][$myKey])) {
-                    return $this->m_cache[$this->m_lang][$myKey];
+                if (!empty($this->m_cache[$language][$cacheKey])) {
+                    return $this->m_cache[$language][$cacheKey];
                 }
             }
         }

@@ -33,8 +33,7 @@ final class FileLoggerTest extends TestCase
     public function tearDown(): void
     {
         unset($this->logger);
-        @unlink(self::logFilePathName());
-        @unlink(self::logFilePathName(self::TestAltLogFileName));
+        self::clearTempDir();
         parent::tearDown();
     }
 

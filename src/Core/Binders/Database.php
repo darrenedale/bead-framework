@@ -10,6 +10,7 @@ use Bead\Core\Application;
 use Bead\Database\Connection;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
+use PDOException;
 
 use function array_key_exists;
 use function gettype;
@@ -19,12 +20,12 @@ use function is_array;
 class Database implements Binder
 {
     /**
-     * @param string $driver The driver whos config is sought.
+     * @param string $driver The driver whose config is sought.
      * @param array $config The database config.
      * @return array The database config for the driver.
      * @throws InvalidConfigurationException if the driver config is not found or is not valid
      */
-    private static function driverConfig(string $driver, array $config): array
+    final protected static function driverConfig(string $driver, array $config): array
     {
         if (!array_key_exists($driver, $config)) {
             throw new InvalidConfigurationException("db.{$driver}", "Expected database driver configuration for {$driver}, no configuration found");
@@ -40,7 +41,7 @@ class Database implements Binder
     }
 
     /** Generate a MySQL PDO DSN from the configuration. */
-    private static function mySqlDsn(array $config): string
+    final protected static function mySqlDsn(array $config): string
     {
         if (array_key_exists("socket", $config)) {
             ["socket" => $socket, "name" => $name,] = $config;
@@ -57,7 +58,7 @@ class Database implements Binder
     }
 
     /** Generate a Postgres PDO DSN from the configuration. */
-    private static function pgSqlDsn(array $config): string
+    final protected static function pgSqlDsn(array $config): string
     {
         ["host" => $host, "name" => $name,] = $config;
 
@@ -82,7 +83,7 @@ class Database implements Binder
     }
 
     /** Generate a MS-SQL PDO DSN from the configuration. */
-    private static function msSqlDsn(array $config): string
+    final protected static function msSqlDsn(array $config): string
     {
         ["host" => $host, "name" => $name,] = $config;
 
@@ -128,7 +129,7 @@ class Database implements Binder
      *
      * @throws InvalidConfigurationException if the driver is not recognised.
      */
-    private static function dsn(string $driver, array $config): string
+    protected static function dsn(string $driver, array $config): string
     {
         return match ($driver) {
             "mysql" => self::mySqlDsn($config),
@@ -141,7 +142,9 @@ class Database implements Binder
     /**
      * Helper to create a connection.
      *
-     * Abstracted primarily to make bindServices() testable.
+     * Abstracted primarily to make createDatabaseConnection() testable.
+     *
+     * @throws PDOException
      */
     private static function connection(string $dsn, string $user, string $password): DatabaseConnectionContract
     {
@@ -149,15 +152,15 @@ class Database implements Binder
     }
 
     /**
-     * @param Application $app The application service container into which to bind services.
+     * Create the Connection instance to bind into the service container.
+     *
+     * @param array $config The database configuration.
+     * @return Connection
      * @throws InvalidConfigurationException if the database configuration is not valid.
-     * @throws ServiceAlreadyBoundException if a database connection has already been bound into the application service
-     * container.
+     * @throws PDOException if the database connection cannot be created.
      */
-    public function bindServices(Application $app): void
+    protected static function createDatabaseConnection(array $config): Connection
     {
-        $config = $app->config("db");
-
         /** @var string|null $driver */
         $driver = $config["driver"] ?? null;
 
@@ -166,9 +169,20 @@ class Database implements Binder
         }
 
         $driverConfig = self::driverConfig($driver, $config);
-
         $dsn = self::dsn($driver, $driverConfig);
         ["user" => $user, "password" => $password,] = $config[$driver];
-        $app->bindService(DatabaseConnectionContract::class, self::connection($dsn, $user, $password));
+        return self::connection($dsn, $user, $password);
+    }
+
+    /**
+     * @param Application $app The application service container into which to bind services.
+     * @throws InvalidConfigurationException if the database configuration is not valid.
+     * @throws ServiceAlreadyBoundException if a database connection has already been bound into the application service
+     * container.
+     * @throws PDOException if the database connection cannot be created.
+     */
+    public function bindServices(Application $app): void
+    {
+        $app->bindService(Connection::class, static::createDatabaseConnection($app->config("db")));
     }
 }

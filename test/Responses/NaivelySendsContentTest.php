@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Responses;
 
+use Bead\Responses\HasDefaultReasonPhrase;
 use Bead\Responses\NaivelySendsContent;
 use BeadTests\Framework\TestCase;
 
@@ -24,10 +25,11 @@ final class NaivelySendsContentTest extends TestCase
     public const TestStatusCode = 200;
 
     /** Create an anonymous object that imports the trait under test. */
-    private function createInstance(): mixed
+    private static function createInstance(): object
     {
         return new class
         {
+            use HasDefaultReasonPhrase;
             use NaivelySendsContent;
 
             public function statusCode(): int
@@ -53,7 +55,7 @@ final class NaivelySendsContentTest extends TestCase
     }
 
     /** Ensure send() provides the expected status code, headers and content. */
-    public function testSend(): void
+    public function testSend1(): void
     {
         $expectedHeaders = array_map(
             fn (string $key, string $value): string => "{$key}: {$value}",
@@ -61,12 +63,13 @@ final class NaivelySendsContentTest extends TestCase
             array_values(self::TestHeaders)
         );
 
+        $expectedHeaders[] = "HTTP/1.1 200 OK";
         $expectedHeaders[] = "content-type: " . self::TestContentType;
         $test = $this;
 
         $this->mockFunction(
             "header",
-            function (string $header, bool $replace) use (&$expectedHeaders, $test) {
+            function (string $header, bool $replace = true) use (&$expectedHeaders, $test) {
                 $test->assertTrue($replace);
                 $idx = array_search($header, $expectedHeaders);
                 $test->assertIsInt($idx, "Unexpected header '{$header}' generated.");
@@ -74,19 +77,8 @@ final class NaivelySendsContentTest extends TestCase
             }
         );
 
-        $httpResponseCodeCalled = 0;
-
-        $this->mockFunction(
-            "http_response_code",
-            function (int $code) use (&$httpResponseCodeCalled, $test) {
-                ++$httpResponseCodeCalled;
-                $test->assertEquals(NaivelySendsContentTest::TestStatusCode, $code);
-            }
-        );
-
         ob_start();
-        $this->createInstance()->send();
-        self::assertEquals(1, $httpResponseCodeCalled);
+        self::createInstance()->send();
         self::assertEquals(self::TestContent, ob_get_contents());
         ob_end_clean();
         self::assertEmpty($expectedHeaders, "Not all expected headers were generated.");

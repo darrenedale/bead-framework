@@ -63,7 +63,7 @@ trait ImplementsArrayAccess
      * @param mixed $offset The offset to set.
      * @param mixed $value The value to set.
      */
-    public function offsetSet(mixed $offset, mixed $data): void
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         if (!is_string($offset)) {
             return;
@@ -73,7 +73,7 @@ trait ImplementsArrayAccess
          * @psalm-suppress MissingThrowsDocblock $offset is definitely a valid key so set() won't throw
          * InvalidArgumentException
          */
-        $this->set($offset, $data);
+        $this->set($offset, $value);
     }
 
     /**

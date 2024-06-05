@@ -25,6 +25,7 @@ class FileTest extends TestCase
     public function tearDown(): void
     {
         unset($this->m_stream);
+        self::clearTempDir();
         parent::tearDown();
     }
 

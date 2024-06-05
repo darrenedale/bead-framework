@@ -5,16 +5,20 @@ namespace Bead\Facades;
 use BadMethodCallException;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
+use Bead\Exceptions\Session\SessionDestroyedException;
+use Bead\Exceptions\Session\SessionException;
 use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\PrefixedAccessor;
 use Bead\Session\Session as BeadSession;
-use Bead\Session\SessionHandler;
-use Exception;
+use Bead\Contracts\SessionHandler;
 use LogicException;
 
 /**
  * Facade for easy access to the current session.
+ *
+ * @mixin BeadSession
+ * @psalm-seal-methods
  *
  * @method static int sessionIdleTimeoutPeriod()
  * @method static int sessionIdRegenerationPeriod()
@@ -51,6 +55,7 @@ final class Session
      * @return BeadSession The session.
      *
      * @throws LogicException if the session has already been started
+     * @throws SessionException If the expected internal data is not found in the session.
      * @throws ExpiredSessionIdUsedException if the session identified by the session cookie has expired
      * @throws SessionExpiredException if the current session has expired
      * @throws SessionNotFoundException If the ID provided does not identify an existing session.
@@ -68,6 +73,8 @@ final class Session
         } catch (SessionNotFoundException $err) {
             self::$session = new BeadSession();
         } catch (SessionExpiredException $err) {
+            self::$session = new BeadSession();
+        } catch (SessionDestroyedException $err) {
             self::$session = new BeadSession();
         }
 
@@ -90,19 +97,11 @@ final class Session
      * @param array $args The method arguments.
      *
      * @return mixed
-     * @throws Exception if the session has not been started.
      * @throws BadMethodCallException if the method does not exist in the Session class.
      */
     public static function __callStatic(string $method, array $args)
     {
-        if (!isset(self::$session)) {
-            throw new Exception("Session not started.");
-        }
-
-        if (!method_exists(self::$session, $method)) {
-            throw new BadMethodCallException("The method '{$method}' does not exist in the Session class.");
-        }
-
+        assert(null !== self::$session, new LogicException("Session not started."));
         return [self::$session, $method](...$args);
     }
 }

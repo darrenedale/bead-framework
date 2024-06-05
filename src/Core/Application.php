@@ -3,12 +3,17 @@
 namespace Bead\Core;
 
 use Bead\Contracts\Binder;
+use Bead\Contracts\Environment as EnvironmentContract;
 use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\Database\Connection as DatabaseConnectionContract;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\ErrorHandler as BeadErrorHandler;
 use Bead\Database\Connection;
+use Bead\Environment\Environment;
+use Bead\Environment\Sources\Environment as EnvironmentSource;
+use Bead\Environment\Sources\File;
+use Bead\Exceptions\EnvironmentException;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
@@ -84,6 +89,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
         }
 
         $this->m_appRoot = $realAppRoot;
+        $this->initialiseEnvironment();
         $this->loadConfig("{$this->m_appRoot}/config");
         $this->bindServices();
     }
@@ -105,6 +111,30 @@ abstract class Application implements ServiceContainer, ContainerInterface
         return (self::$s_instance instanceof static) ? self::$s_instance : null;
     }
 
+    /**
+     * Initialise the core app environment so that Env is available as early as possible.
+     *
+     * The default implementation sets up an environment that has the platform environment variables plus the variables
+     * defined in .env in the application root. Reimplement this method if you want to do something different. The
+     * Environment binder, if/when run, wil **add** to this environment the sources defined in the env.php config file.
+     *
+     * @return void
+     * @throws ServiceAlreadyBoundException
+     * @throws EnvironmentException if the .env file in the app root is not valid
+     */
+    protected function initialiseEnvironment(): void
+    {
+        $env = new Environment();
+        $env->addSource(new EnvironmentSource());
+
+        if (file_exists("{$this->rootDir()}/.env")) {
+            $env->addSource(new File("{$this->rootDir()}/.env"));
+        }
+
+        $this->bindService(EnvironmentContract::class, $env);
+    }
+
+    /** @throws ServiceAlreadyBoundException */
     private function bindServices(): void
     {
         $binders = $this->config("app.binders");
@@ -113,7 +143,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
             return;
         }
 
-        // instantiate all binders before bnding their services
+        // instantiate all binders before binding their services
         $instances = [];
 
         foreach ($binders as $binder) {
@@ -141,7 +171,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @throws RuntimeException If an unreadable or invalid configuration file is found.
      */
-    protected function loadConfig(string $path): void
+    private function loadConfig(string $path): void
     {
         $this->m_config = [];
 
@@ -154,7 +184,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
                 throw new RuntimeException("config file '{$configFile->getFilename()}' is not valid or is not readable.");
             }
 
-            $this->m_config[$configFile->getBasename(".php")] = include($configFile->getRealPath());
+            $this->m_config[$configFile->getBasename(".php")] = include $configFile->getRealPath();
         }
     }
 
@@ -190,12 +220,22 @@ abstract class Application implements ServiceContainer, ContainerInterface
             return $this->m_config;
         }
 
-        if (str_contains($key, ".")) {
-            [$file, $key] = explode(".", $key, 2);
-            return $this->m_config[$file][$key] ?? $default;
+        $config = $this->m_config;
+
+        while (str_contains($key, ".")) {
+            [$configKey, $key] = explode(".", $key, 2);
+            $config = $config[$configKey] ?? null;
+
+            if (!is_array($config)) {
+                return $default;
+            }
+
+            if (array_key_exists($key, $config)) {
+                return $config[$key];
+            }
         }
 
-        return $this->m_config[$key] ?? $default;
+        return $config[$key] ?? $default;
     }
 
     /** Fetch the application's title.
@@ -257,7 +297,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @throws ServiceAlreadyBoundException if there is already a service bound to the identifier.
      */
-    public function bindService(string $service, $instance): void
+    public function bindService(string $service, mixed $instance): void
     {
         if ($this->serviceIsBound($service)) {
             throw new ServiceAlreadyBoundException($service, "The service '{$service}' is already bound to the Application instance.");

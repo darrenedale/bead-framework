@@ -6,7 +6,6 @@ namespace BeadTests\Validation\Rules;
 
 use Bead\Validation\Rule;
 use Bead\Validation\Rules\IsBoolean;
-use Generator;
 use BeadTests\Framework\RuleTestCase;
 use TypeError;
 
@@ -26,9 +25,9 @@ class IsBooleanTest extends RuleTestCase
     /**
      * Data provider for testPasses().
      *
-     * @return \Generator The test data.
+     * @return iterable The test data.
      */
-    public function dataForTestPasses(): Generator
+    public function dataForTestPasses(): iterable
     {
         yield from [
             "typicalTrue" => ["field", true, true,],
