@@ -5,6 +5,7 @@ namespace Bead\Facades;
 use BadMethodCallException;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
+use Bead\Exceptions\Session\SessionDestroyedException;
 use Bead\Exceptions\Session\SessionException;
 use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
@@ -72,6 +73,8 @@ final class Session
         } catch (SessionNotFoundException $err) {
             self::$session = new BeadSession();
         } catch (SessionExpiredException $err) {
+            self::$session = new BeadSession();
+        } catch (SessionDestroyedException $err) {
             self::$session = new BeadSession();
         }
 
