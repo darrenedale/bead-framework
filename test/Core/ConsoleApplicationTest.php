@@ -14,7 +14,6 @@ use Closure;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionClassConstant;
-use ReflectionProperty;
 use RuntimeException;
 use StdClass;
 

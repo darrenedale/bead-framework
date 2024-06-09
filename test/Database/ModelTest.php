@@ -10,7 +10,6 @@ use Bead\Database\Model;
 use Bead\Exceptions\Database\ModelPropertyCastException;
 use LogicException;
 use PDO;
-use ReflectionProperty;
 use TypeError;
 
 use function Bead\Helpers\Iterable\all;
