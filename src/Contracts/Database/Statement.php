@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bead\Contracts\Database;
 
 use Bead\Exceptions\Database\StatementException;
+use \Traversable;
 
 /** Interface for prepared statements created by database connections. */
 interface Statement extends Traversable

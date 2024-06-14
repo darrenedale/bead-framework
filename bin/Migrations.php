@@ -56,7 +56,7 @@ class Migrations extends \Bead\Core\ConsoleApplication
             );
 
         try {
-            $db->createTable($table);
+            $this->database()->createTable($table);
         } catch (Throwable $err) {
             throw new RuntimeException("Unable to create migrations table \"{$this->migrationsTable()}\": {$err->getMessage()}", previous: $err);
         }
@@ -75,12 +75,11 @@ class Migrations extends \Bead\Core\ConsoleApplication
         try {
             $sql = $db->createQuery()
                 ->select(self::Columns)
-                ->from($table)
+                ->from($tableName)
                 ->limit(1)
                 ->sql();
 
-            $statement = $db->prepare($sql);
-            $statement->execute();
+            $db->prepare($sql)->execute();
         } catch (Throwable $err) {
             throw new RuntimeException("Migrations table \"{$table}\" is not usable", previous: $err);
         }

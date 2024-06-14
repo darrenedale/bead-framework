@@ -21,6 +21,7 @@ use InvalidArgumentException;
 use LogicException;
 use PDO;
 use PDOException;
+use phpDocumentor\Reflection\Types\Never_;
 use RuntimeException;
 
 use function Bead\Helpers\Iterable\all;
@@ -28,14 +29,16 @@ use function Bead\Helpers\Iterable\all;
 /**
  * Lightweight extension of PDO to implement the Connecton interface using PDO.
  */
-class Connection extends PDO implements DatabaseConnectionContract
+class Connection implements DatabaseConnectionContract
 {
     private ConnectionAdapter $adapter;
 
+    private PDO $pdo;
+
     public function __construct(string $dsn, ?string $username = null, ?string $password = null, ?array $options = null)
     {
-        parent::__construct($dsn, $username, $password, $options);
-
+        $this->pdo = new PDO($dsn, $username, $password, $options);
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $driver = substr($dsn, 0, strpos($dsn, ":") ?: 0);
 
         $this->adapter = match ($driver) {
@@ -119,9 +122,73 @@ class Connection extends PDO implements DatabaseConnectionContract
         return str_replace($s_from, $s_to, $text);
 	}
 
+    private function throwException(string $class, string $msg, PDOException $previous = null): void
+    {
+        if ($previous) {
+            $msg = "{$msg}: [{$previous->errorInfo[0]}] {$previous->errorInfo[2]}";
+        }
+
+        throw new $class($msg, previous: $previous);
+    }
+
+    public function beginTransaction(): void
+    {
+        try {
+            $success = $this->pdo->beginTransaction();
+            $previous = null;
+        } catch (PDOException $previous) {
+            $success = false;
+        }
+
+        if (!$success) {
+            // TODO decide what exception class this should be
+            $this->throwException(RuntimeException::class, "Unable to begin transaction", $previous);
+        }
+    }
+
+    public function inTransaction(): bool
+    {
+        return $this->pdo->inTransaction();
+    }
+
+    public function commitTransaction(): void
+    {
+        try {
+            $success = $this->pdo->commit();
+            $previous = null;
+        } catch (PDOException $previous) {
+            $success = false;
+        }
+
+        if (!$success) {
+            // TODO decide what exception class this should be
+            $this->throwException(RuntimeException::class, "Unable to commit transaction", $previous);
+        }
+    }
+
+    public function rollBackTransaction(): void
+    {
+        try {
+            $success = $this->pdo->rollBack();
+            $previous = null;
+        } catch (PDOException $previous) {
+            $success = false;
+        }
+
+        if (!$success) {
+            // TODO decide what exception class this should be
+            $this->throwException(RuntimeException::class, "Unable to commit transaction", $previous);
+        }
+    }
+
     public function prepare(string $sql): DatabaseStatementContract
     {
-        return new Statement(parent::prepare($sql));
+        try {
+            return new Statement($this->pdo->prepare($sql));
+        } catch (PDOException $err) {
+            // TODO decide what exception class this should be
+            $this->throwException(RuntimeException::class, "Unable to prepare statement", $err);
+        }
     }
 
     public function createQuery(): QueryBuilderContract
@@ -129,10 +196,10 @@ class Connection extends PDO implements DatabaseConnectionContract
         return new QueryBuilder($this);
     }
 
-    public function insertId(): int|string|null
+    public function lastInsertId(): int|string|null
     {
         try {
-            $id = parent::lastInsertId();
+            $id = $this->pdo->lastInsertId();
         } catch (PDOException $err) {
             $id = false;
         }
@@ -214,7 +281,7 @@ class Connection extends PDO implements DatabaseConnectionContract
 
     public function hasTable(string $table): bool
     {
-        $result = $this->query($this->adapter->hasTableSql($table));
+        $result = $this->pdo->query($this->adapter->hasTableSql($table));
 
         if (!is_array($result) || 0 === count($result)) {
             return false;
@@ -237,63 +304,63 @@ class Connection extends PDO implements DatabaseConnectionContract
 
     public function createTable(DatabaseTableContract $table): void
     {
-        $this->query($this->adapter->createTableDdl($table));
+        $this->pdo->query($this->adapter->createTableDdl($table));
     }
 
     public function renameTable(string $table, string $newName): void
     {
-        $this->query($this->adapter->renameTableDdl($table, $newName));
+        $this->pdo->query($this->adapter->renameTableDdl($table, $newName));
     }
 
     public function dropTable(string $table): void
     {
-        $this->query($this->adapter->dropTableDdl($table));
+        $this->pdo->query($this->adapter->dropTableDdl($table));
     }
 
     public function addColumn(string $table, DatabaseColumnContract $column): void
     {
-        $this->query($this->adapter->addColumnDdl($table, $column));
+        $this->pdo->query($this->adapter->addColumnDdl($table, $column));
     }
 
     public function modifyColumn(string $table, string $column, DatabaseColumnContract $newColumn): void
     {
-        $this->query($this->adapter->modifyColumnDdl($able, $column, $newColumn));
+        $this->pdo->query($this->adapter->modifyColumnDdl($able, $column, $newColumn));
     }
 
     public function renameColumn(string $table, string $column, string $newColumn): void
     {
-        $this->query($this->adapter->renameColumnDdl($able, $column, $newColumn));
+        $this->pdo->query($this->adapter->renameColumnDdl($able, $column, $newColumn));
     }
 
     public function dropColumn(string $table, string $column): void
     {
-        $this->query($this->adapter->dropColumnDdl($table, $column));
+        $this->pdo->query($this->adapter->dropColumnDdl($table, $column));
     }
 
     public function addPrimaryKey(string $table, DatabaseIndexContract $index): void
     {
         assert ($key->isPrimaryKey(), new LogicException("Expected primary key index"));
-        $this->query($this->adapter->addPrimayKeyDdl($table, $index));
+        $this->pdo->query($this->adapter->addPrimayKeyDdl($table, $index));
     }
 
     public function dropPrimaryKey(string $table): void
     {
-        $this->query($this->adapter->dropPrimaryKeyDdl($table));
+        $this->pdo->query($this->adapter->dropPrimaryKeyDdl($table));
     }
 
     public function addIndex(string $table, DatabaseIndexContract $index): void
     {
         assert (!$key->isPrimaryKey(), new LogicException("Expected index, found primary key"));
-        $this->query($this->adapter->addIndexDdl($table, $index));
+        $this->pdo->query($this->adapter->addIndexDdl($table, $index));
     }
 
     public function renameIndex(string $table, string $index, string $newIndex): void
     {
-        $this->query($this->adapter->renameIndexDdl($table, $index, $newIndex));
+        $this->pdo->query($this->adapter->renameIndexDdl($table, $index, $newIndex));
     }
 
     public function dropIndex(string $table, string $index): void
     {
-        $this->query($this->adapter->dropIndexDdl($table, $index));
+        $this->pdo->query($this->adapter->dropIndexDdl($table, $index));
     }
 }

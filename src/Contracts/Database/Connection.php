@@ -14,16 +14,16 @@ interface Connection
     public function prepare(string $sql): Statement;
 
     /** Start a transaction. */
-    public function beginTransaction(): bool;
+    public function beginTransaction(): void;
 
     /** Check whether a transaction is in progress. */
     public function inTransaction(): bool;
 
     /** Commit the current transaction. */
-    public function commit(): bool;
+    public function commitTransaction(): void;
 
     /** Roll back the current transaction. */
-    public function rollBack(): bool;
+    public function rollBackTransaction(): void;
 
     /**
      * Create a new query builder.
@@ -39,7 +39,7 @@ interface Connection
      *
      * @return int|string|null The ID, or `null` if there has not been an insert operation with a suitable primary key.
      */
-    public function insertId(): int|string|null;
+    public function lastInsertId(): int|string|null;
 
     /**
      * Create a table in the database.
