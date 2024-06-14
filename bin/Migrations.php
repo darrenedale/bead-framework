@@ -140,7 +140,7 @@ class Migrations extends \Bead\Core\ConsoleApplication
         try {
             $migration = new $fqClassName();
         } catch (Throwable $err) {
-            throw new RuntimeException("{$err::class} thrown instantiating migration class {$fqClassName} from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
+            throw new RuntimeException($err::class . " thrown instantiating migration class {$fqClassName} from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
         }
 
         $db = $this->database();
@@ -150,7 +150,7 @@ class Migrations extends \Bead\Core\ConsoleApplication
             $migration->up($db);
         } catch (Throwable $err) {
             $db->rollBack();
-            throw new RuntimeException("{$err::class} thrown in {$fqClassName}::up() from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
+            throw new RuntimeException($err::class . " thrown in {$fqClassName}::up() from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
         }
 
         $db->commit();
@@ -162,7 +162,7 @@ class Migrations extends \Bead\Core\ConsoleApplication
         try {
             $migration = new $fqClassName();
         } catch (Throwable $err) {
-            throw new RuntimeException("{$err::class} thrown instantiating migration class {$fqClassName} from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
+            throw new RuntimeException($err::class . " thrown instantiating migration class {$fqClassName} from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
         }
 
         $db = $this->database();
@@ -172,7 +172,7 @@ class Migrations extends \Bead\Core\ConsoleApplication
             $migration->down($db);
         } catch (Throwable $err) {
             $db->rollBack();
-            throw new RuntimeException("{$err::class} thrown in {$fqClassName}::down() from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
+            throw new RuntimeException($err::class . " thrown in {$fqClassName}::down() from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
         }
 
         $db->commit();
