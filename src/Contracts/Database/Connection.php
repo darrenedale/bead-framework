@@ -49,6 +49,15 @@ interface Connection
     public function createTable(Table $table): void;
 
     /**
+     * Determine whether a table exists in the database schema.
+     *
+     * @param string $table The table to check for.
+     *
+     * @return bool true if the table exists, false if it does not.
+     */
+    public function hasTable(string $table): bool;
+
+    /**
      * Drop a table from the database.
      *
      * @param string $table The existing table to drop.

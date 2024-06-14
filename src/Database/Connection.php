@@ -212,6 +212,29 @@ class Connection extends PDO implements DatabaseConnectionContract
         return $this->insertId();
     }
 
+    public function hasTable(string $table): bool
+    {
+        $result = $this->query($this->adapter->hasTableSql($table));
+
+        if (!is_array($result) || 0 === count($result)) {
+            return false;
+        }
+
+        $result = $result[0];
+
+        if (!is_array($result) || 0 === count($result)) {
+            return false;
+        }
+
+        $exists = filter_var(
+            $result[0],
+            FILTER_VALIDATE_INT,
+            ["flags" => FILTER_NULL_ON_FAILURE,]
+        ) ?? 0;
+
+        return 0 !== $exists;
+    }
+
     public function createTable(DatabaseTableContract $table): void
     {
         $this->query($this->adapter->createTableDdl($table));

@@ -55,7 +55,7 @@
     }
   },
   "bin": [
-    "bin/bead-migrations.php"
+    "bin/bead-migrations"
   ],
   "config": {
     "allow-plugins": {

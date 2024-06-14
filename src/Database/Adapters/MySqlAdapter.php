@@ -56,6 +56,20 @@ class MySqlAdapter implements ConnectionAdapter
         return "INSERT INTO `{$table}` {$columns} VALUES {$placeholders}";
     }
 
+    public function hasTableSql(string $table): string
+    {
+        return <<<SQL
+SELECT
+    COUNT(TABLE_NAME)
+FROM
+    information_schema.TABLES
+WHERE
+    TABLE_SCHEMA = DATABASE() AND
+    TABLE_TYPE LIKE 'BASE TABLE' AND
+    TABLE_NAME = '{$table}'
+SQL;
+    }
+
     public function createTableDdl(DatabaseTableContract $table): string
     {
         $ddl = "CREATE TABLE `{$table->name()}` (\n";

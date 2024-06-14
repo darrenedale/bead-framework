@@ -1,10 +1,22 @@
 <?php
+
 declare(strict_types=1);
 
 use Bead\Contracts\Database\Migration as MigrationContract;
+use Bead\Database\Column;
+use Bead\Database\ColumnSize;
+use Bead\Database\NullabilityConstraint;
+use Bead\Database\Table;
 
 class Migrations extends \Bead\Core\ConsoleApplication
 {
+    private const Columns = [
+        "class",
+        "description",
+        "executed_at",
+        "execution_duration",
+    ];
+
     public function __construct(array $args)
     {
         parent::__construct(__DIR__ . "/../../../../", $args);
@@ -15,6 +27,65 @@ class Migrations extends \Bead\Core\ConsoleApplication
         $this->setDescription("Run bead-framework migrations.");
         $this->addOption("migrations-dir", "d", "Load migrations for a specified directory (relative to the application's root directory.", type: self::TypeString, optional: true, default: "Migrations");
         $this->addOption("namespace", "n", "Override the namespace expected for migration classes defined in the db config file.", type: self::TypeString, optional: true);
+    }
+
+    private function migrationsTable(): string
+    {
+        return $this->config("db.migrations.table", "bead_framework_migrations");
+    }
+
+    private function createMigrationsTable(): void
+    {
+        $table = (new Table($this->migrationsTable()))
+            ->withColumn(
+                (new Column("class", Column::Varchar))
+                    ->withSize(new ColumnSize(200))
+                    ->withConstraint(new NullabilityConstraint(false))
+            )
+            ->withColumn(
+                (new Column("description", Column::Text))
+                    ->withConstraint(new NullabilityConstraint(false))
+            )
+            ->withColumn(
+                (new Column("executed_at", Column::UnsignedBigInteger))
+                    ->withConstraint(new NullabilityConstraint(false))
+            )
+            ->withColumn(
+                (new Column("execution_duration", Column::Integer))
+                    ->withConstraint(new NullabilityConstraint(false))
+            );
+
+        try {
+            $db->createTable($table);
+        } catch (Throwable $err) {
+            throw new RuntimeException("Unable to create migrations table \"{$this->migrationsTable()}\": {$err->getMessage()}", previous: $err);
+        }
+    }
+
+    private function checkMigrationsTable(): void
+    {
+        $tableName = $this->migrationsTable();
+        $db = $this->database();
+
+        if (!$db->hasTable($tableName)) {
+            $this->createMigrationsTable();
+            return;
+        }
+
+        try {
+            $sql = $db->createQuery()
+                ->select(self::Columns)
+                ->from($table)
+                ->limit(1)
+                ->sql();
+
+            $statement = $db->prepare($sql);
+            $statement->execute();
+        } catch (Throwable $err) {
+            throw new RuntimeException("Migrations table \"{$table}\" is not usable", previous: $err);
+        }
+
+        // TODO check column types
     }
 
     private function migrationsDirectory(): string
@@ -117,6 +188,11 @@ class Migrations extends \Bead\Core\ConsoleApplication
 
         foreach ($this->listMigrations() as $migrationClass => $migrationFileName) {
             $fqClassName = "{$namespace}\\{$migrationClass}";
+
+            if (in_array($migrationClass, $executedMigrations)) {
+                continue;
+            }
+
             @include $migrationFileName;
 
             if (!class_exists($fqClassName)) {
@@ -125,10 +201,6 @@ class Migrations extends \Bead\Core\ConsoleApplication
 
             if (!is_a($fqClassName, MigrationContract::class, true)) {
                 throw new RuntimeException("Class {$migrationClass} in migration file \"{$migrationFileName}\" does not implement " . MigrationContract::class);
-            }
-
-            if (in_array($fqClassName, $executedMigrations)) {
-                continue;
             }
 
             $this->migrateUp($fqClassName);
