@@ -21,7 +21,7 @@ class MySqlAdapter implements ConnectionAdapter
             DatabaseColumnContract::TinyInteger => "TINYINT",
             DatabaseColumnContract::SmallInteger => "SMALLINT",
             DatabaseColumnContract::Integer => "INT",
-            DatabaseColumnContract::BigIntegerInteger => "BIGINT",
+            DatabaseColumnContract::BigInteger => "BIGINT",
             DatabaseColumnContract::UnsignedTinyInteger => "TINYINT UNSIGNED",
             DatabaseColumnContract::UnsignedSmallInteger => "SMALLINT UNSIGNED",
             DatabaseColumnContract::UnsignedInteger => "INT UNSIGNED",

@@ -22,23 +22,23 @@ interface ConnectionAdapter
      */
     public function hasTableSql(string $table): string;
 
-    public function createTableDdl(DatabaseTableContract $table): string;
+    public function createTableDdl(Table $table): string;
 
     public function renameTableDdl(string $table, string $newTable): string;
 
-    public function addColumnDdl(string $table, DatabaseColumnContract $column): string;
+    public function addColumnDdl(string $table, Column $column): string;
 
-    public function modifyColumnDdl(string $table, string $column, DatabaseColumnContract $newColumn): string;
+    public function modifyColumnDdl(string $table, string $column, Column $newColumn): string;
 
     public function renameColumnDdl(string $table, string $column, string $newColumn): string;
 
     public function dropColumnDdl(string $table, string $column): string;
 
-    public function addPrimayKeyDdl(string $able, DatabaseIndexContract $key): string;
+    public function addPrimayKeyDdl(string $able, Index $key): string;
 
     public function dropPrimaryKeyDdl(string $able): string;
 
-    public function addIndexDdl(string $able, DatabaseIndexContract $key): string;
+    public function addIndexDdl(string $able, Index $key): string;
 
     public function renameIndexDdl(string $able, string $index, string $newIndex): string;
 
@@ -47,13 +47,13 @@ interface ConnectionAdapter
     public function dropTableDdl(string $table): self;
 
 
-    public function columnConstraintDdl(DatabaseConstraintContract $constraint): string;
+    public function columnConstraintDdl(Constraint $constraint): string;
 
-    public function columnDdl(DatabaseColumnContract $column): string;
+    public function columnDdl(Column $column): string;
 
-    public function indexDdl(DatabaseIndexContract $index): string;
+    public function indexDdl(Index $index): string;
 
-    public function foreignKeyDdl(DatabaseForeignKeyContract $key): string;
+    public function foreignKeyDdl(ForeignKey $key): string;
 
     public function characterSetDdl(string $charset): string;
 
