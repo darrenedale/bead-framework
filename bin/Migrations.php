@@ -3,12 +3,13 @@
 declare(strict_types=1);
 
 use Bead\Contracts\Database\Migration as MigrationContract;
+use Bead\Core\ConsoleApplication;
 use Bead\Database\Column;
 use Bead\Database\ColumnSize;
 use Bead\Database\NullabilityConstraint;
 use Bead\Database\Table;
 
-class Migrations extends \Bead\Core\ConsoleApplication
+class Migrations extends ConsoleApplication
 {
     private const Columns = [
         "class",

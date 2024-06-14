@@ -164,7 +164,7 @@ SQL;
             DatabaseConstraintContract::Nullability
             => $constraint instanceof DatabaseNullabilityConstraintContract
                 ? $constraint->isNullable() ? "NULL" : "NOT NULL"
-                : throw new RuntimeException("Expected NullabilityConstraint, found {$constraint::class}"),
+                : throw new RuntimeException("Expected NullabilityConstraint, found " . $constraint::class),
             DatabaseConstraintContract::Default
             => $constraint instanceof DatabaseDefaultConstraintContract
                 ? "DEFAULT " . match (true) {
@@ -173,7 +173,7 @@ SQL;
                     null === $constraint->defaultValue() => "NULL",
                     default => $constraint->defaultValue(),
                 }
-                : throw new RuntimeException("Expected DefaultConstraint, found {$constraint::class}"),
+                : throw new RuntimeException("Expected DefaultConstraint, found " . $constraint::class),
             DatabaseConstraintContract::Unique => "UNIQUE",
             DatabaseConstraintContract::PrimaryKey => "PRIMARY KEY",
             DatabaseConstraintContract::AutoIncrement => "AUTO_INCREMENT",
