@@ -23,7 +23,7 @@ interface Statement extends Traversable
      * @param int $position The parameter position to bind to.
      * @param mixed $value The value to bind.
      */
-    public function bindPositionalParameter(string $paramenter, mixed $value): void;
+    public function bindPositionalParameter(int $paramenter, mixed $value): void;
 
     /**
      * Bind several named parameters at once.
@@ -37,9 +37,15 @@ interface Statement extends Traversable
      *
      * Parameters will be bound starting at the first parameter for the first value in the array.
      *
-     * @param array<int,mixed> $values The values to bind to the parameters.
+     * @param mixed[] $values The values to bind to the parameters.
+     * @param int $from The positional parameter index for the first value.
+     *
+     * @return int The index of the first positional parameter that was not bound by a provided value. This enables you
+     * to bind values in batches. Note that the index returned is not guaranteed to be a valid position if the last
+     * available positional parameter had a value bound from the array provided (i.e. if you bind all the positional
+     * parameters, you'll get back the index of the next parameter, which doesn't actually exist in the statement).
      */
-    public function bindPositionalParameters(array $values): void;
+    public function bindPositionalParameters(array $values, int $from = 0): int;
 
     /**
      * Execute the statement.

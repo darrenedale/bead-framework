@@ -54,6 +54,9 @@
       "BeadStandards\\": "standards"
     }
   },
+  "bin": [
+    "bin/bead-migrations.php"
+  ],
   "config": {
     "allow-plugins": {
       "php-http/discovery": false

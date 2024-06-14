@@ -93,13 +93,11 @@ class Statement implements StatementContract, IteratorAggregate
      *
      * @param array<int,mixed> $values The values to bind to the parameters.
      */
-    public function bindPositionalParameters(array $values): void
+    public function bindPositionalParameters(array $values, int $from = 0): void
     {
-        $idx = 0;
-
         foreach ($values as $value) {
-            $this->bindPositionalParameter($idx, $value);
-            ++$idx;
+            $this->bindPositionalParameter($from, $value);
+            ++$from;
         }
     }
 
