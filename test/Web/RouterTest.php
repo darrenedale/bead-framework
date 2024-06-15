@@ -25,7 +25,6 @@ use BeadTests\Framework\TestCase;
 use Closure;
 use InvalidArgumentException;
 use Mockery;
-use ReflectionProperty;
 
 use function array_unique;
 use function Bead\Helpers\Iterable\accumulate;
@@ -3740,19 +3739,19 @@ class RouterTest extends TestCase
         }
 
         $router = new Router();
-        /** @noinspection PhpUnhandledExceptionInspection Guaranteed not to throw with these arguments. */
-        $routeCollection = new ReflectionProperty($router, "m_routes");
-        $routeCollection->setAccessible(true);
+        $routerXRay = new XRay($router);
+
         /** @noinspection PhpUnhandledExceptionInspection Should never throw with test data. */
         $router->register($route1, $route1Methods, function () {
         });
 
         // fetch the route count so that we can assert that the registration of the second route adds to it if it
         // doesn't throw
-        $routeCount = accumulate($routeCollection->getValue($router), $accumulateRoutes);
+        $routeCount = accumulate($routerXRay->m_routes, $accumulateRoutes);
         /** @noinspection PhpUnhandledExceptionInspection Should only throw an expected test exception. */
         $router->register($route2, $route2Methods, function () {
         });
-        self::assertGreaterThan($routeCount, accumulate($routeCollection->getValue($router), $accumulateRoutes), "The registration of the second route succeeded but didn't add to the routes colleciton in the router.");
+
+        self::assertGreaterThan($routeCount, accumulate($routerXRay->m_routes, $accumulateRoutes), "The registration of the second route succeeded but didn't add to the routes colleciton in the router.");
     }
 }

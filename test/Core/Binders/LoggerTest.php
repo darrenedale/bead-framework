@@ -16,7 +16,6 @@ use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
 use Mockery;
 use Mockery\MockInterface;
-use ReflectionClassConstant;
 
 /** Test the bundled logger binder. */
 final class LoggerTest extends TestCase

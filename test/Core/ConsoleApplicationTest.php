@@ -14,7 +14,6 @@ use Closure;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionClassConstant;
-use ReflectionProperty;
 use RuntimeException;
 use StdClass;
 
@@ -95,13 +94,9 @@ final class ConsoleApplicationTest extends TestCase
                 $this->addFlag("help", "h", "Show the command's help message.", false);
                 $this->addFlag("debug", null, "Run the command in debug mode.", false);
 
-                $reflector = new ReflectionProperty(ConsoleApplication::class, "m_cmd");
-                $reflector->setAccessible(true);
-                $reflector->setValue($this, array_shift($args) ?? "");
-
-                $reflector = new ReflectionProperty(ConsoleApplication::class, "m_args");
-                $reflector->setAccessible(true);
-                $reflector->setValue($this, $args);
+                $xRay = new XRay($this);
+                $xRay->m_cmd = array_shift($args) ?? "";
+                $xRay->m_args = $args;
 
                 $this->m_configure = $configure->bindTo($this, $this);
                 $this->m_run = $run->bindTo($this, $this);

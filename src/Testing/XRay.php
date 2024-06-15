@@ -32,11 +32,13 @@ class XRay
     /** @var string[] Cache of resolved public methods. */
     private array $m_publicMethods = [];
 
-    /** @var ReflectionMethod[] Cache of the resolved ReflectionMethod instances for inaccessible methods. */
+    /**
+     * @var ReflectionMethod[] Cache of the resolved ReflectionMethod instances for inaccessible methods.
+     */
     private array $m_xRayedMethods = [];
 
     /** @var string[] Cache of methods that cannot be resolved. */
-    private array $m_unresolvedMethods = [];
+    private array $m_unresolvabledMethods = [];
 
     /** @var string[] Cache of resolved public properties. */
     private array $m_publicProperties = [];
@@ -45,7 +47,7 @@ class XRay
     private array $m_xRayedProperties = [];
 
     /** @var string[] Cache of properties that cannot be resolved. */
-    private array $m_unresolvedProperties = [];
+    private array $m_unresolvableProperties = [];
 
     /**
      * Initialise a new x-ray for an object.
@@ -65,10 +67,12 @@ class XRay
      */
     protected function resolveMethod(string $method): void
     {
-        if (in_array($method, $this->m_publicMethods) || in_array($method, $this->m_unresolvedMethods) || isset($this->m_xRayedMethods[$method])) {
+        if (in_array($method, $this->m_publicMethods) || in_array($method, $this->m_unresolvabledMethods) || isset($this->m_xRayedMethods[$method])) {
             return;
         }
 
+        // unlike properties, base methods show up on inheriting objects when reflected, so we don't need to travers the
+        // class hierarchy
         try {
             $reflector = $this->m_subjectReflector->getMethod($method);
         } catch (ReflectionException $err) {
@@ -76,7 +80,7 @@ class XRay
         }
 
         if (!isset($reflector) || $reflector->isStatic()) {
-            $this->m_unresolvedMethods[] = $method;
+            $this->m_unresolvabledMethods[] = $method;
             return;
         }
 
@@ -96,28 +100,33 @@ class XRay
      */
     protected function resolveProperty(string $property): void
     {
-        if (in_array($property, $this->m_publicProperties) || in_array($property, $this->m_unresolvedProperties) || isset($this->m_xRayedProperties[$property])) {
+        if (in_array($property, $this->m_publicProperties) || in_array($property, $this->m_unresolvableProperties) || isset($this->m_xRayedProperties[$property])) {
             return;
         }
 
-        try {
-            $reflector = $this->m_subjectReflector->getProperty($property);
-        } catch (ReflectionException $err) {
-            $reflector = null;
+        $classReflector = $this->m_subjectReflector;
+        $propertyReflector = null;
+
+        while ($classReflector && !$propertyReflector) {
+            if ($classReflector->hasProperty($property)) {
+                $propertyReflector = $classReflector->getProperty($property);
+            } else {
+                $classReflector = $classReflector->getParentClass();
+            }
         }
 
-        if (!isset($reflector) || $reflector->isStatic()) {
-            $this->m_unresolvedProperties[] = $property;
+        if (!isset($propertyReflector) || $propertyReflector->isStatic()) {
+            $this->m_unresolvableProperties[] = $property;
             return;
         }
 
-        if ($reflector->isPublic()) {
+        if ($propertyReflector->isPublic()) {
             $this->m_publicProperties[] = $property;
             return;
         }
 
-        $reflector->setAccessible(true);
-        $this->m_xRayedProperties[$property] = $reflector;
+        $propertyReflector->setAccessible(true);
+        $this->m_xRayedProperties[$property] = $propertyReflector;
     }
 
     /**
@@ -205,13 +214,13 @@ class XRay
             try {
                 return $this->m_xRayedMethods[$method]->invoke($this->subject(), ...$args);
             } catch (ReflectionException $err) {
-                throw new BadMethodCallException("Method '{$method}' could not be invoked on instance of class '{$this->className()}'.", 0, $err);
+                throw new BadMethodCallException("Method \"{$method}\" could not be invoked on instance of class \"{$this->m_subjectReflector->getName()}\"", 0, $err);
             }
         } elseif (method_exists($this->m_subject, "__call")) {
             return $this->m_subject->__call($method, $args);
         }
 
-        throw new BadMethodCallException("Method '{$method}' does not exist on object of class '{$this->m_subjectReflector->getName()}'.");
+        throw new BadMethodCallException("Method \"{$method}\" does not exist on object of class \"{$this->m_subjectReflector->getName()}\"");
     }
 
     /**
@@ -232,7 +241,7 @@ class XRay
             return $this->m_subject->__get($property);
         }
 
-        throw new LogicException("Property '{$property}' does not exist on object of class '{$this->m_subjectReflector->getName()}'.");
+        throw new LogicException("Property \"{$property}\" does not exist on object of class \"{$this->m_subjectReflector->getName()}\"");
     }
 
     /**
@@ -256,6 +265,6 @@ class XRay
             return;
         }
 
-        throw new LogicException("Property '{$property}' does not exist on object of class '{$this->m_subjectReflector->getName()}'.");
+        throw new LogicException("Property \"{$property}\" does not exist on object of class \"{$this->m_subjectReflector->getName()}\"");
     }
 }
