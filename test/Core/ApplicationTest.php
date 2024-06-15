@@ -241,7 +241,7 @@ class ApplicationTest extends TestCase
         $app->readFeatureFlags();
     }
 
-    protected static function dataForTestReadFeatureFlags6(): iterable
+    public static function dataForTestReadFeatureFlags6(): iterable
     {
         yield "int" => [42, "int",];
         yield "double" => [3.1415927, "double",];
@@ -298,7 +298,7 @@ class ApplicationTest extends TestCase
         self::assertEqualsCanonicalizing(self::TestConfig["app"]["feature-flags"], $actualFlagsArray);
     }
 
-    protected static function definedFeatureFlags(): iterable
+    public static function definedFeatureFlags(): iterable
     {
         foreach (array_keys(self::TestConfig["app"]["feature-flags"]) as $feature) {
             yield $feature => [$feature];
@@ -320,7 +320,7 @@ class ApplicationTest extends TestCase
         self::assertTrue($this->m_app->hasFeatureFlag($feature));
     }
 
-    protected static function undefinedFeatureFlags(): iterable
+    public static function undefinedFeatureFlags(): iterable
     {
         yield "empty" => [""];
         yield "whitespace" => [" "];
