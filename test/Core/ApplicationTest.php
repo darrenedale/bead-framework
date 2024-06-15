@@ -4,8 +4,8 @@ namespace BeadTests\Core;
 
 use Bead\Core\Application;
 use Bead\Exceptions\ServiceAlreadyBoundException;
+use Bead\Testing\XRay;
 use PHPUnit\Framework\TestCase;
-use ReflectionProperty;
 
 use function is_array;
 
@@ -147,9 +147,8 @@ class ApplicationTest extends TestCase
      */
     public function testConfig1(string $key, mixed $default, mixed $expected): void
     {
-        $config = new ReflectionProperty(Application::class, "m_config");
-        $config->setAccessible(true);
-        $config->setValue($this->m_app, self::TestConfig);
+        $xRay = new XRay($this->m_app);
+        $xRay->m_config = self::TestConfig;
 
         if (null === $default) {
             $actual = $this->m_app->config($key);

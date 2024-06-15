@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Util;
 
+use Bead\Testing\XRay;
 use InvalidArgumentException;
 use TypeError;
 use Bead\Process;
@@ -331,17 +332,14 @@ class ProcessTest extends TestCase
         }
 
         $process = new Process($command, $arguments, $workingDirectory, $outputNotifier, $errorNotifier);
+        $processXray = new XRay($process);
+
         self::assertEquals($command, $process->command(), "Process was not constructed with correct command.");
         self::assertEquals($arguments, $process->arguments(), "Process was not constructed with correct arguments.");
         self::assertEquals($workingDirectory ?? getcwd(), $process->workingDirectory(), "Process was not constructed with correct working directory.");
 
-        $property = new \ReflectionProperty($process, "m_outputNotifier");
-        $property->setAccessible(true);
-        self::assertEquals($outputNotifier, $property->getValue($process), "Output notifier was not set correctly by constructor.");
-
-        $property = new \ReflectionProperty($process, "m_errorNotifier");
-        $property->setAccessible(true);
-        self::assertEquals($errorNotifier, $property->getValue($process), "Error notifier was not set correctly by constructor.");
+        self::assertEquals($outputNotifier, $processXray->m_outputNotifier, "Output notifier was not set correctly by constructor.");
+        self::assertEquals($errorNotifier, $processXray->m_errorNotifier, "Error notifier was not set correctly by constructor.");
     }
 
     /**

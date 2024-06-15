@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Util;
 
+use Bead\Testing\XRay;
 use Bead\Util\ScopeGuard;
 use TypeError;
 
@@ -224,9 +225,10 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
         );
 
         $guard->addClosure($closure);
-        $closuresMethod = new \ReflectionMethod($guard, "closures");
-        $closuresMethod->setAccessible(true);
-        self::assertEquals(2, count($closuresMethod->invoke($guard)), "Scope guard did not have two closures after call to addClosure().");
+        $guardXRay = new XRay($guard);
+//        $closuresMethod = new \ReflectionMethod($guard, "closures");
+//        $closuresMethod->setAccessible(true);
+        self::assertCount(2, $guardXRay->closures(), "Scope guard did not have two closures after call to addClosure().");
     }
 
     /**

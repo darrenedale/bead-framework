@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Web;
 
+use Bead\Testing\StaticXRay;
 use Bead\Web\Request;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
@@ -29,9 +30,8 @@ class RequestTest extends TestCase
     public function tearDown(): void
     {
         // ensure the request doesn't persist between tests.
-        $property = new ReflectionProperty(Request::class, "s_originalRequest");
-        $property->setAccessible(true);
-        $property->setValue(null);
+        $xRay = new StaticXRay(Request::class);
+        $xRay->s_originalRequest = null;
         unset($this->request);
     }
 
