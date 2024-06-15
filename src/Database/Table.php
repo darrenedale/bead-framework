@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Bead\Database;
 
-use Bead\Contracts\Database\Columnndex as DatabaseColumnContract;
+use Bead\Contracts\Database\Column as DatabaseColumnContract;
 use Bead\Contracts\Database\ForeignKey as DatabaseForeignKeyContract;
 use Bead\Contracts\Database\ForeignKey as DatabaseForiegnKeyContract;
 use Bead\Contracts\Database\Index as DatabseIndexContract;

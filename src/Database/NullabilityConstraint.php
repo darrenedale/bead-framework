@@ -5,7 +5,6 @@ namespace Bead\Database;
 
 use Bead\Contracts\Database\Constraint as ConstraintContract;
 use Bead\Contracts\Database\NullabilityConstraint as NullabilityConstraintContract;
-use Bead\Database\Constraint;
 
 class NullabilityConstraint extends Constraint implements NullabilityConstraintContract
 {

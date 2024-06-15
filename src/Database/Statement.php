@@ -25,7 +25,6 @@ class Statement implements StatementContract, IteratorAggregate
     public function __construct(PDOStatement $statement)
     {
         $this->statement = $statement;
-        $this->statement->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->statement->setFetchMode(PDO::FETCH_ASSOC);
     }
 

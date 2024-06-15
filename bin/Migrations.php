@@ -197,5 +197,7 @@ class Migrations extends ConsoleApplication
 
             $this->migrateUp($migrationClass);
         }
+
+        return 0;
     }
 }

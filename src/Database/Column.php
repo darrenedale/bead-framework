@@ -5,7 +5,7 @@ namespace Bead\Database;
 
 use Bead\Contracts\Database\Column as ColumnContract;
 use Bead\Contracts\Database\ColumnSize as ColumnSizeContract;
-use Bead\Contracts\Database\Constraintas as ConstraintContract;
+use Bead\Contracts\Database\Constraint as ConstraintContract;
 use RuntimeException;
 
 class Column implements ColumnContract
@@ -34,6 +34,7 @@ class Column implements ColumnContract
         $this->comment = null;
         $this->constraints = [];
         $this->name = $name;
+        $this->type = $type;
     }
 
     public static function isValidType(int $type): bool
@@ -50,7 +51,7 @@ class Column implements ColumnContract
             ColumnContract::Decimal,
             ColumnContract::Float,
             ColumnContract::Double,
-            ColumnContract::CharinyInteger,
+            ColumnContract::Char,
             ColumnContract::Varchar,
             ColumnContract::Binary,
             ColumnContract::VarBinary,

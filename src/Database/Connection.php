@@ -125,7 +125,9 @@ class Connection implements DatabaseConnectionContract
     private function throwException(string $class, string $msg, PDOException $previous = null): void
     {
         if ($previous) {
-            $msg = "{$msg}: [{$previous->errorInfo[0]}] {$previous->errorInfo[2]}";
+            // PDOException::errorInfo sometimes only has two elements
+            $sqlMsg = $previous->errorInfo[2] ?? "";
+            $msg = "{$msg}: [{$previous->errorInfo[0]}] {$sqlMsg}";
         }
 
         throw new $class($msg, previous: $previous);
