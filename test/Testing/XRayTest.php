@@ -284,7 +284,9 @@ class XRayTest extends TestCase
     public function testNonExistentProperty(): void
     {
         // have to test on class with no magic __get(), otherwise __get() will be called with the property name
-        $object = new class{};
+        $object = new class {
+        };
+
         $xRay = new XRay($object);
         $className = $object::class;
         self::expectException(LogicException::class);
@@ -298,7 +300,9 @@ class XRayTest extends TestCase
     public function testSetNonExistentProperty(): void
     {
         // have to test on class with no magic __get(), otherwise __get() will be called with the property name
-        $object = new class{};
+        $object = new class {
+        };
+
         $xRay = new XRay($object);
         $className = $object::class;
         self::expectException(LogicException::class);
@@ -553,7 +557,9 @@ class XRayTest extends TestCase
     public function testNonExistentMethod(): void
     {
         // have to test on class with no magic __call(), otherwise __call() will be called with the method name
-        $object = new class {};
+        $object = new class {
+        };
+
         $className = $object::class;
         $xRay = new XRay($object);
         self::expectException(BadMethodCallException::class);
