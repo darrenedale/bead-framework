@@ -1,8 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Bead\Database\Adapters;
 
+use Bead\Contracts\Database\Column;
 use Bead\Contracts\Database\ConnectionAdapter;
 use Bead\Contracts\Database\Column as DatabaseColumnContract;
 use Bead\Contracts\Database\Constraint as DatabaseConstraintContract;
@@ -12,6 +14,10 @@ use Bead\Contracts\Database\ForeignKey as DatabaseForeignKeyContract;
 use Bead\Contracts\Database\Index as DatabaseIndexContract;
 use Bead\Contracts\Database\NullabilityConstraint as DatabaseNullabilityConstraintContract;
 use Bead\Contracts\Database\Table as DatabaseTableContract;
+use RuntimeException;
+
+use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\Str\toCodePoints;
 
 class MySqlAdapter implements ConnectionAdapter
 {
@@ -45,11 +51,52 @@ class MySqlAdapter implements ConnectionAdapter
         };
     }
 
-    /**
-     * @inheritDoc
-     */
+    final protected static function checkName(string $name): void
+    {
+        // Permitted characters in quoted identifiers include the full Unicode Basic Multilingual Plane (BMP), except
+        // U+0000:
+        // - ASCII: U+0001 .. U+007F
+        // - Extended: U+0080 .. U+FFFF
+        if (!all(
+            toCodePoints($name, "UTF-8"),
+            static fn (int $cp): bool => 0 < $cp && 0xffff >= $cp,
+        )) {
+            throw new RuntimeException("Invalid character in name \"{$name}\"");
+        }
+    }
+
+    final protected static function checkTableNames(DatabaseTableContract $table): void
+    {
+        self::checkName($table);
+        array_walk($table->columns(), [self::class, "checkColumnNames"]);
+        array_walk($table->indices(), [self::class, "checkIndexNames"]);
+        array_walk($table->foreignKeys(), [self::class, "checkForeignKeyNames"]);
+    }
+
+    /** @param DatabaseColumnContract[] $columns */
+    final protected static function checkColumnNames(DatabaseColumnContract $column): void
+    {
+        self::checkName($column->name());
+    }
+
+    final protected static function checkIndexNames(DatabaseIndexContract $index): void
+    {
+        self::checkName($index->name());
+        array_walk($index->columns(), [self::class, "checkName"]);
+    }
+
+    final protected static function checkForeignKeyNames(DatabaseForeignKeyContract $key): void
+    {
+        self::checkName($key->name());
+        self::checkName($key->foreignTable());
+        array_walk($key->columns(), [self::class, "checkName"]);
+        array_walk($key->foreignColumns(), [self::class, "checkName"]);
+    }
+
     public function insertDdl(string $table, array $columns, int $rowCount): string
     {
+        self::checkName($table);
+        array_walk($columns, [self::class, "checkName"]);
         $placeholders = substr(str_repeat("(" . implode(",", array_fill(0, count($columns), "?")) . "),", $rowCount), 0, -1);
         $columns = "(`" . implode("`, `", $columns) . "`)";
 
@@ -58,6 +105,7 @@ class MySqlAdapter implements ConnectionAdapter
 
     public function hasTableSql(string $table): string
     {
+        self::checkName($table);
         return <<<SQL
 SELECT
     COUNT(TABLE_NAME)
@@ -72,6 +120,8 @@ SQL;
 
     public function createTableDdl(DatabaseTableContract $table): string
     {
+        self::checkTableNames($table);
+
         $ddl = "CREATE TABLE `{$table->name()}` (\n";
         $ddl .= implode(",\n", array_map([$this, "columnDdl"], $table->columns()));
         $ddl .= ")\n";
@@ -95,66 +145,79 @@ SQL;
 
     public function renameTableDdl(string $table, string $newTable): string
     {
-        // TODO sanitise names
+        self::checkName($table);
+        self::checkName($newTable);
         return "RENAME TABLE `{$table}` TO `{$newTable}`";
     }
 
     public function addColumnDdl(string $table, DatabaseColumnContract $column): string
     {
-        // TODO sanitise names
+        self::checkName($table);
+        self::checkColumnNames($column);
         return "ALTER TABLE `{$table}` ADD COLUMN " . self::columnDdl($column);
     }
 
     public function modifyColumnDdl(string $table, string $column, DatabaseColumnContract $newColumn): string
     {
-        // TODO sanitise names
+        self::checkName($table);
+        self::checkName($column);
+        self::checkColumnNames($column);
         return "ALTER TABLE `{$table}` MODIFY COLUMN `{$column}` " . self::columnDdl($newColumn);
     }
 
     public function renameColumnDdl(string $table, string $column, string $newColumn): string
     {
-        // TODO sanitise names
+        self::checkName($table);
+        self::checkName($column);
+        self::checkName($newColumn);
         return "ALTER TABLE `{$table}` RENAME COLUMN `{$column}` TO `{$newColumn}`";
     }
 
     public function dropColumnDdl(string $table, string $column): string
     {
-        // TODO sanitise names
+        self::checkName($table);
+        self::checkName($column);
         return "ALTER TABLE `{$table}` DROP COLUMN `{$column}`";
     }
 
     public function addPrimayKeyDdl(string $table, DatabaseIndexContract $key): string
     {
-        // TODO sanitise names
+        self::checkName($table);
+        self::checkIndexNames($key);
         return "ALTER TABLE `{$table}` ADD " . self::indexDdl($key);
     }
 
     public function dropPrimaryKeyDdl(string $table): string
     {
-        // TODO sanitise names
+        self::checkName($table);
         return "ALTER TABLE `{$table}` DROP PRIMARY KEY";
     }
 
     public function addIndexDdl(string $table, DatabaseIndexContract $key): string
     {
-        // TODO sanitise names
+        self::checkName($table);
+        self::checkIndexNames($key);
         return "ALTER TABLE `{$table}` ADD " . self::indexDdl($key);
     }
 
     public function renameIndexDdl(string $table, string $index, string $newIndex): string
     {
-        // TODO sanitise names
+        self::checkName($table);
+        self::checkIndexNames($index);
+        self::checkIndexNames($newIndex);
         return "ALTER TABLE `{$table}` RENAME INDEX `{$index}` TO `{$newIndex}`";
     }
 
     public function dropIndexDdl(string $table, string $index): string
     {
+        self::checkName($table);
+        self::checkIndexNames($index);
         return "ALTER TABLE `{$table}` DROP INDEX `{$index}`";
     }
 
     public function dropTableDdl(string $table): ConnectionAdapter
     {
-        // TODO sanitise name
+        self::checkName($table);
         return "DROP TABLE `{$table}`";
     }
 
@@ -163,7 +226,7 @@ SQL;
         return match ($constraint->type()) {
             DatabaseConstraintContract::Nullability
             => $constraint instanceof DatabaseNullabilityConstraintContract
-                ? $constraint->isNullable() ? "NULL" : "NOT NULL"
+                ? $constraint->allowsNull() ? "NULL" : "NOT NULL"
                 : throw new RuntimeException("Expected NullabilityConstraint, found " . $constraint::class),
             DatabaseConstraintContract::Default
             => $constraint instanceof DatabaseDefaultConstraintContract
@@ -183,13 +246,15 @@ SQL;
 
     public function columnDdl(DatabaseColumnContract $column): string
     {
-        // TODO sanitise name
+        self::checkColumnNames($column);
         $ddl = "`{$column->name()}` " . self::columnTypeKeyword($column->type());
         $size = $column->size();
 
         $ddl .= match ($column->type()) {
-            DatabaseColumnContract::Char, DatabaseColumnContract::Varchar, DatabaseColumnContract::Binary, DatabaseColumnContract::VarBinary, DatabaseColumnContract::Text, DatabaseColumnContract::Blob
-            => (null === $size ? throw new RuntimeException("Expected column size, found null") :"({$size->size()})"),
+            DatabaseColumnContract::Char, DatabaseColumnContract::Varchar, DatabaseColumnContract::Binary, DatabaseColumnContract::VarBinary
+            => (null === $size ? throw new RuntimeException("Expected column size, found null") : "({$size->size()})"),
+            DatabaseColumnContract::Text, DatabaseColumnContract::Blob
+            => (null === $size ? "" : "({$size->size()})"),
             DatabaseColumnContract::Decimal, DatabaseColumnContract::Double, DatabaseColumnContract::Float
             => match (true) {
                 $size instanceof DatabaseDecimalColumnSizeContract => "({$size->size()},{$size->decimalPlaces()})",
@@ -220,7 +285,7 @@ SQL;
 
     public function indexDdl(DatabaseIndexContract $index): string
     {
-        // TODO sanitise name
+        self::checkIndexNames($index);
         $ddl = "";
 
         if ($index->isPrimaryKey()) {
@@ -239,6 +304,7 @@ SQL;
 
     public function foreignKeyDdl(DatabaseForeignKeyContract $key): string
     {
+        self::checkForeignKeyNames($key);
         $ddl = "FOREIGN KEY `{$key->name()}` (`" . implode("`, `", $key->columns()) . "`) REFERENCES {$key->foreignTable()} (`" . implode("`, `", $key->foreignColumns()) . "`)";
 
         $ddl .= match ($key->onUpdate()) {
@@ -265,19 +331,30 @@ SQL;
 
     public function characterSetDdl(string $charset): string
     {
-        // TODO sanitise charset
+        if (false !== strpos($charset, "`")) {
+            throw new RuntimeException("Invalid character in character set name \"{$charset}\"");
+        }
+
         return "CHARACTER SET `{$charset}`";
     }
 
     public function collationDdl(string $collation): string
     {
-        // TODO sanitise collation
+        if (false !== strpos($collation, "`")) {
+            throw new RuntimeException("Invalid character in collation \"{$collation}\"");
+        }
+
         return "COLLATE `{$collation}`";
     }
 
     public function commentDdl(string $comment): string
     {
-        // TODO sanitise comment
+        $comment = str_replace(
+            ["'", "\n", "\0", "\r", "\t", "\\",],
+            ["\\'", "\\n", "\\0", "\\r", "\\t", "\\\\"],
+            $comment
+        );
+
         return "COMMENT '{$comment}'";
     }
 }

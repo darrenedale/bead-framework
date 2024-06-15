@@ -125,8 +125,15 @@ class Connection implements DatabaseConnectionContract
     private function throwException(string $class, string $msg, PDOException $previous = null): void
     {
         if ($previous) {
-            // PDOException::errorInfo sometimes only has two elements
-            $sqlMsg = $previous->errorInfo[2] ?? "";
+            // PDOException::errorInfo is sometimes either not set or only partially set
+            if (is_array($previous->errorInfo)) {
+                $sqlCode = $previous->errorInfo[0] ?? "";
+                $sqlMsg = $previous->errorInfo[2] ?? "";
+            } else {
+                $sqlCode = "";
+                $sqlMsg = "";
+            }
+
             $msg = "{$msg}: [{$previous->errorInfo[0]}] {$sqlMsg}";
         }
 
@@ -231,7 +238,7 @@ class Connection implements DatabaseConnectionContract
 
         foreach ($data as $row) {
             if (!is_array($row)) {
-                throw new InvalidArgumentException("Expected row of data to insert, found " . get_type($row));
+                throw new InvalidArgumentException("Expected row of data to insert, found " . gettype($row));
             }
 
             if (0 === count($row)) {
@@ -283,7 +290,9 @@ class Connection implements DatabaseConnectionContract
 
     public function hasTable(string $table): bool
     {
-        $result = $this->pdo->query($this->adapter->hasTableSql($table));
+        $stmt = $this->pdo->prepare($this->adapter->hasTableSql($table));
+        $stmt->execute();
+        $result = $stmt->fetchAll();
 
         if (!is_array($result) || 0 === count($result)) {
             return false;

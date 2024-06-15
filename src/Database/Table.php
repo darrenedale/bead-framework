@@ -32,6 +32,8 @@ class Table implements DatabaseTableContract
     {
         $this->columns = [];
         $this->indices = [];
+        $this->foreignKeys = [];
+        $this->comment = null;
         $this->characterSet = $characterSet;
         $this->collation = $collation;
         $this->name = $name;

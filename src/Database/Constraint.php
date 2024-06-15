@@ -19,7 +19,7 @@ class Constraint implements ConstraintContract
         return new NullabilityConstraint($nullable);
     }
 
-    public static function default(string|int|float|null $default): NullabilityConstraint
+    public static function default(string|int|float|null $default): DefaultConstraint
     {
         return new DefaultConstraint($default);
     }

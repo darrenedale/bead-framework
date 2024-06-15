@@ -113,7 +113,11 @@ class Statement implements StatementContract, IteratorAggregate
      */
     public function execute(?array $arguments = null): bool
     {
-        return $this->statement->execute($arguments);
+        try {
+            return $this->statement->execute($arguments);
+        } catch (PDOException $err) {
+            throw new StatementException("Failed to execute the statement.", previous: $err);
+        }
     }
 
     /**
