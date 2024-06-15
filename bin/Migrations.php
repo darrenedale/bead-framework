@@ -26,8 +26,7 @@ class Migrations extends ConsoleApplication
     protected function configure(): void
     {
         $this->setDescription("Run bead-framework migrations.");
-        $this->addOption("migrations-dir", "d", "Load migrations for a specified directory (relative to the application's root directory.", type: self::TypeString, optional: true, default: "Migrations");
-        $this->addOption("namespace", "n", "Override the namespace expected for migration classes defined in the db config file.", type: self::TypeString, optional: true);
+        $this->addOption("migrations-dir", "d", "Load migrations for a specified directory (relative to the application's root directory.", type: self::TypeString, optional: true, default: "db/migrations");
     }
 
     private function migrationsTable(): string
@@ -99,11 +98,6 @@ class Migrations extends ConsoleApplication
         return "{$this->rootDir()}/{$this->optionValue("migrations-dir")}";
     }
 
-    private function migrationsNamespace(): string
-    {
-        return ($this->optionIsSet("namespace") ? $this->optionValue("namespace"): $this->config("db.migrations.namespace"));
-    }
-
     private function listMigrations(): array
     {
         $migrations = [];
@@ -138,9 +132,9 @@ class Migrations extends ConsoleApplication
     private function migrateUp(string $class): void
     {
         try {
-            $migration = new $fqClassName();
+            $migration = new $class();
         } catch (Throwable $err) {
-            throw new RuntimeException($err::class . " thrown instantiating migration class {$fqClassName} from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
+            throw new RuntimeException($err::class . " thrown instantiating migration class {$fqClassName}: {$err->getMessage()}", previous: $err);
         }
 
         $db = $this->database();
@@ -150,7 +144,7 @@ class Migrations extends ConsoleApplication
             $migration->up($db);
         } catch (Throwable $err) {
             $db->rollBack();
-            throw new RuntimeException($err::class . " thrown in {$fqClassName}::up() from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
+            throw new RuntimeException($err::class . " thrown in {$class}::up(): {$err->getMessage()}", previous: $err);
         }
 
         $db->commit();
@@ -160,9 +154,9 @@ class Migrations extends ConsoleApplication
     private function migrateDown(string $class): void
     {
         try {
-            $migration = new $fqClassName();
+            $migration = new $class();
         } catch (Throwable $err) {
-            throw new RuntimeException($err::class . " thrown instantiating migration class {$fqClassName} from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
+            throw new RuntimeException($err::class . " thrown instantiating migration class {$class}: {$err->getMessage()}", previous: $err);
         }
 
         $db = $this->database();
@@ -172,7 +166,7 @@ class Migrations extends ConsoleApplication
             $migration->down($db);
         } catch (Throwable $err) {
             $db->rollBack();
-            throw new RuntimeException($err::class . " thrown in {$fqClassName}::down() from file \"{$migrationFileName}\": {$err->getMessage()}", previous: $err);
+            throw new RuntimeException($err::class . " thrown in {$fqClassName}::down(): {$err->getMessage()}", previous: $err);
         }
 
         $db->commit();
@@ -187,23 +181,21 @@ class Migrations extends ConsoleApplication
         $executedMigrations = $this->readExecutedMigrations();
 
         foreach ($this->listMigrations() as $migrationClass => $migrationFileName) {
-            $fqClassName = "{$namespace}\\{$migrationClass}";
-
             if (in_array($migrationClass, $executedMigrations)) {
                 continue;
             }
 
             @include $migrationFileName;
 
-            if (!class_exists($fqClassName)) {
+            if (!class_exists($migrationClass)) {
                 throw new RuntimeException("Migration file \"{$migrationFileName}\" does not define the expected class \"{$migrationClass}\" in namespace \"{$namespace}\"");
             }
 
-            if (!is_a($fqClassName, MigrationContract::class, true)) {
+            if (!is_a($migrationClass, MigrationContract::class, true)) {
                 throw new RuntimeException("Class {$migrationClass} in migration file \"{$migrationFileName}\" does not implement " . MigrationContract::class);
             }
 
-            $this->migrateUp($fqClassName);
+            $this->migrateUp($migrationClass);
         }
     }
 }
