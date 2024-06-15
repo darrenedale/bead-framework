@@ -8,6 +8,7 @@ use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\ErrorHandler as BeadErrorHandler;
+use Bead\Core\FeatureFlag;
 use Bead\Database\Connection;
 use Bead\Environment\Environment;
 use Bead\Environment\Sources\Environment as EnvironmentSource;
@@ -65,6 +66,9 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /** @var array The sesrvices bound to the container. */
     private array $m_services = [];
+
+    /** @var array|null Cache of the feature flags read from the config. */
+    private ?array $m_featureFlags = null;
 
     /**
      * @param string $appRoot
@@ -375,6 +379,83 @@ abstract class Application implements ServiceContainer, ContainerInterface
     public function get(string $id)
     {
         return $this->service($id);
+    }
+
+    /** Internal helper to read the feature flags from the app config. */
+    protected function readFeatureFlags(): void
+    {
+        $featureFlags = $this->config("app.feature-flags");
+
+        if (null === $featureFlags) {
+            $this->m_featureFlags = [];
+            return;
+        }
+
+        if (!is_array($featureFlags)) {
+            throw new InvalidConfigurationException("app.feature-flags", "Expecting array of feature flags, found " . gettype($featureFlags));
+        }
+
+        foreach ($featureFlags as $feature => $variant) {
+            if (!is_string($feature)) {
+                throw new InvalidConfigurationException("app.feature-flags", "Expecting string feature flag, found " . gettype($feature));
+            }
+
+            if (!is_string($variant) && null !== $variant) {
+                throw new InvalidConfigurationException("app.feature-flags", "Expecting string or null feature variant, found " . gettype($variant));
+            }
+
+            $this->m_featureFlags[] = new FeatureFlag($feature, $variant);
+        }
+    }
+
+    /**
+     * Feature flags are loaded on-demand from the config the first time they are requested using this method.
+     *
+     * @return FeatureFlag[]
+     */
+    public function featureFlags(): array
+    {
+        // we read on-demand so that binders have access to the feature flags - config is guaranteed by the base class
+        // to be loaded before binders, so if a binder calls this we know the config has been loaded and we can read the
+        // feature flags from it
+        if (null === $this->m_featureFlags) {
+            $this->readFeatureFlags();
+        }
+
+        return $this->m_featureFlags;
+    }
+
+    /**
+     * Check whether the application has a given feature flag.
+     *
+     * Matching feature flag names is not case-sensitive.
+     *
+     * @param string $feature The feature to check for.
+     */
+    public function hasFeatureFlag(string $feature): bool
+    {
+        return null !== $this->featureFlag($feature);
+    }
+
+    /**
+     * Fetch a named feature flag.
+     *
+     * Matching feature flag names is not case-sensitive.
+     *
+     * @param string $feature The feature sought.
+     * @return FeatureFlag|null The matching FeatureFlag, or null if the named feature is not flagged.
+     */
+    public function featureFlag(string $feature): ?FeatureFlag
+    {
+        $feature = mb_strtolower($feature);
+
+        foreach ($this->featureFlags() as $featureFlag) {
+            if (mb_strtolower($featureFlag->feature()) === $feature) {
+                return $featureFlag;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -2,8 +2,11 @@
 
 namespace BeadTests\Core;
 
+use Bead\Contracts\FeatureFlag as FeatureFlagContract;
 use Bead\Core\Application;
+use Bead\Core\FeatureFlag;
 use Bead\Exceptions\ServiceAlreadyBoundException;
+use Bead\Testing\XRay;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 
@@ -12,6 +15,12 @@ use function is_array;
 class ApplicationTest extends TestCase
 {
     private const TestConfig = [
+        "app" => [
+            "feature-flags" => [
+                "feature-flag-1" => "variant-1",
+                "feature-flag-2" => null,
+            ],
+        ],
         "mail" => [
             "transport" => "mailgun",
             "transports" => [
@@ -162,5 +171,34 @@ class ApplicationTest extends TestCase
         } else {
             self::assertEquals($expected, $actual);
         }
+    }
+
+    /** Ensure feature flags are not read from config until required */
+    public function testReadFeatureFlags1()
+    {
+        self::assertNull((new XRay($this->m_app))->m_featureFlags);
+    }
+
+    /** Ensure feature flags are successfully read from the app config */
+    public function testReadFeatureFlags2()
+    {
+        $app = new XRay($this->m_app);
+        $app->readFeatureFlags();
+        self::assertIsArray($app->m_featureFlags);
+
+        $flags = [];
+
+        foreach ($app->m_featureFlags as $flag) {
+            self::assertInstanceOf(FeatureFlagContract::class, $flag);
+            $flags[$flag->feature()] = $flag->variant();
+        }
+
+        self::assertEqualsCanonicalizing(
+            [
+                "feature-flag-1" => "variant-1",
+                "feature-flag-2" => null,
+            ],
+            $flags
+        );
     }
 }
