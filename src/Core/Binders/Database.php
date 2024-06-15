@@ -183,6 +183,6 @@ class Database implements Binder
      */
     public function bindServices(Application $app): void
     {
-        $app->bindService(Connection::class, static::createDatabaseConnection($app->config("db")));
+        $app->bindService(DatabaseConnectionContract::class, static::createDatabaseConnection($app->config("db")));
     }
 }
