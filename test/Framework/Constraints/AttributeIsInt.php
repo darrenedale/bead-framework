@@ -2,10 +2,9 @@
 
 namespace BeadTests\Framework\Constraints;
 
+use Bead\Testing\XRay;
 use InvalidArgumentException;
 use PHPUnit\Framework\Constraint\Constraint;
-use ReflectionException;
-use ReflectionProperty;
 
 class AttributeIsInt extends Constraint
 {
@@ -33,14 +32,8 @@ class AttributeIsInt extends Constraint
             throw new InvalidArgumentException("cannot test for an empty attribute name");
         }
 
-        try {
-            $refAttr = new ReflectionProperty($object, $attr);
-        } catch (ReflectionException $err) {
-            throw new InvalidArgumentException("the property {$attr} does not exist in class " . get_class($object), 0, $err);
-        }
-
-        $refAttr->setAccessible(true);
-        return is_int($refAttr->getValue($object));
+        $xray = new XRay($object);
+        return is_int($xray->$attr);
     }
 
     /**

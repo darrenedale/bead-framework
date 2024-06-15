@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace BeadTests\Web;
 
 use Bead\Facades\Session;
+use Bead\Testing\StaticXRay;
 use Bead\Testing\XRay;
+use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
 use BeadTests\Framework\TestCase;
-use ReflectionProperty;
 
 class ApplicationTest extends TestCase
 {
@@ -20,13 +21,11 @@ class ApplicationTest extends TestCase
 
     public function tearDown(): void
     {
-        $instance = new ReflectionProperty(WebApplication::class, "s_instance");
-        $instance->setAccessible(true);
-        $instance->setValue(null);
+        $xRay = new StaticXRay(CoreApplication::class);
+        $xRay->s_instance = null;
 
-        $session = new ReflectionProperty(Session::class, "session");
-        $session->setAccessible(true);
-        $session->setValue(null);
+        $xRay = new StaticXRay(Session::class);
+        $xRay->session = null;
 
         parent::tearDown();
     }
