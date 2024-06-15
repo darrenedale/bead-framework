@@ -101,7 +101,7 @@ class Migrations extends ConsoleApplication
 
     private function migrationsNamespace(): string
     {
-        return ($this->hasOption("namespace") ? $this->optionValue("namespace"): $this->config("db.migrations.namespace"));
+        return ($this->optionIsSet("namespace") ? $this->optionValue("namespace"): $this->config("db.migrations.namespace"));
     }
 
     private function listMigrations(): array
