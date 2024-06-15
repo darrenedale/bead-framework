@@ -9,8 +9,8 @@ use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Testing\XRay;
 use PHPUnit\Framework\TestCase;
-
 use Stringable as Stringable;
+
 use function is_array;
 
 class ApplicationTest extends TestCase
@@ -210,19 +210,19 @@ class ApplicationTest extends TestCase
     {
         $app = new XRay($this->m_app);
         $config = self::TestConfig;
-        unset($config['app']['feature-flags']);
+        unset($config["app"]["feature-flags"]);
         $app->m_config = $config;
         $app->readFeatureFlags();
         self::assertIsArray($app->m_featureFlags);
         self::assertCount(0, $app->m_featureFlags);
     }
 
-    /** Ensure reading feature flags throws when the config isn't an array */
+    /** Ensure reading feature flags throws when the config isn"t an array */
     public function testReadFeatureFlags4()
     {
         $app = new XRay($this->m_app);
         $config = self::TestConfig;
-        $config['app']['feature-flags'] = "invalid-flags";
+        $config["app"]["feature-flags"] = "invalid-flags";
         $app->m_config = $config;
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expecting array of feature flags, found string");
@@ -234,7 +234,7 @@ class ApplicationTest extends TestCase
     {
         $app = new XRay($this->m_app);
         $config = self::TestConfig;
-        $config['app']['feature-flags'][1] = "invalid-feature-name";
+        $config["app"]["feature-flags"][1] = "invalid-feature-name";
         $app->m_config = $config;
         self::expectException(InvalidConfigurationException::class);
         self::expectExceptionMessage("Expecting string feature flag, found int");

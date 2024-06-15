@@ -381,7 +381,11 @@ abstract class Application implements ServiceContainer, ContainerInterface
         return $this->service($id);
     }
 
-    /** Internal helper to read the feature flags from the app config. */
+    /**
+     * Internal helper to read the feature flags from the app config.
+     *
+     * @throws InvalidConfigurationException
+     */
     protected function readFeatureFlags(): void
     {
         $featureFlags = $this->config("app.feature-flags");
@@ -412,6 +416,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Feature flags are loaded on-demand from the config the first time they are requested using this method.
      *
      * @return FeatureFlag[]
+     * @throws InvalidConfigurationException
      */
     public function featureFlags(): array
     {
@@ -431,6 +436,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Matching feature flag names is not case-sensitive.
      *
      * @param string $feature The feature to check for.
+     * @throws InvalidConfigurationException
      */
     public function hasFeatureFlag(string $feature): bool
     {
@@ -444,6 +450,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @param string $feature The feature sought.
      * @return FeatureFlag|null The matching FeatureFlag, or null if the named feature is not flagged.
+     * @throws InvalidConfigurationException
      */
     public function featureFlag(string $feature): ?FeatureFlag
     {
