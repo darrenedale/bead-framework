@@ -92,13 +92,17 @@ class Statement implements StatementContract, IteratorAggregate
      * Parameters will be bound starting at the first parameter for the first value in the array.
      *
      * @param array<int,mixed> $values The values to bind to the parameters.
+     * @return int The index of the first positional parameter that was not bound by a provided value (i.e. the next
+     * positional parameter index that's not bound - even if that positional parameter does not exist yet).
      */
-    public function bindPositionalParameters(array $values, int $from = 0): void
+    public function bindPositionalParameters(array $values, int $from = 0): int
     {
         foreach ($values as $value) {
             $this->bindPositionalParameter($from, $value);
             ++$from;
         }
+
+        return $from;
     }
 
     /**
