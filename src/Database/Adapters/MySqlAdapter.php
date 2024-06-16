@@ -17,6 +17,8 @@ use Bead\Contracts\Database\Table as DatabaseTableContract;
 use RuntimeException;
 
 use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\Iterable\forAll;
+use function Bead\Helpers\Iterable\map;
 use function Bead\Helpers\Str\toCodePoints;
 
 class MySqlAdapter implements ConnectionAdapter
@@ -51,6 +53,15 @@ class MySqlAdapter implements ConnectionAdapter
         };
     }
 
+    final protected static function escapeString(string $str): string
+    {
+        return str_replace(
+            ["'", "\n", "\0", "\r", "\t", "\\",],
+            ["\\'", "\\n", "\\0", "\\r", "\\t", "\\\\"],
+            $comment
+        );
+    }
+
     final protected static function checkName(string $name): void
     {
         // Permitted characters in quoted identifiers include the full Unicode Basic Multilingual Plane (BMP), except
@@ -67,10 +78,10 @@ class MySqlAdapter implements ConnectionAdapter
 
     final protected static function checkTableNames(DatabaseTableContract $table): void
     {
-        self::checkName($table);
-        array_walk($table->columns(), [self::class, "checkColumnNames"]);
-        array_walk($table->indices(), [self::class, "checkIndexNames"]);
-        array_walk($table->foreignKeys(), [self::class, "checkForeignKeyNames"]);
+        self::checkName($table->name());
+        forAll($table->columns(), static fn (DatabaseColumnContract $column) => self::checkColumnNames($column));
+        forAll($table->indices(), static fn (DatabaseIndexContract $index) => self::checkIndexNames($index));
+        forAll($table->foreignKeys(), static fn (DatabaseForeignKeyContract $key) => self::checkForeignKeyNames($key));
     }
 
     /** @param DatabaseColumnContract[] $columns */
@@ -82,25 +93,40 @@ class MySqlAdapter implements ConnectionAdapter
     final protected static function checkIndexNames(DatabaseIndexContract $index): void
     {
         self::checkName($index->name());
-        array_walk($index->columns(), [self::class, "checkName"]);
+        forAll($index->columns(), static fn (string $column) => self::checkName($column));
     }
 
     final protected static function checkForeignKeyNames(DatabaseForeignKeyContract $key): void
     {
         self::checkName($key->name());
         self::checkName($key->foreignTable());
-        array_walk($key->columns(), [self::class, "checkName"]);
-        array_walk($key->foreignColumns(), [self::class, "checkName"]);
+        forAll($key->columns(), static fn (string $column) => self::checkName($column));
+        forAll($key->foreignColumns(), static fn (string $column) => self::checkName($column));
     }
 
     public function insertDdl(string $table, array $columns, int $rowCount): string
     {
         self::checkName($table);
-        array_walk($columns, [self::class, "checkName"]);
+        forAll($columns, static fn (string $column) => self::checkName($column));
         $placeholders = substr(str_repeat("(" . implode(",", array_fill(0, count($columns), "?")) . "),", $rowCount), 0, -1);
         $columns = "(`" . implode("`, `", $columns) . "`)";
 
         return "INSERT INTO `{$table}` {$columns} VALUES {$placeholders}";
+        return "INSERT INTO `{$table}` {$columns} VALUES {$placeholders}";
+    }
+
+    public function deleteDdl(string $table, array $where): string
+    {
+        self::checkName($table);
+        forAll(array_keys($where), static fn (string $column) => self::checkName($column));
+
+        $whereDdl = array_map(
+            static fn (string $column): string => "`{$column}` = ?",
+            array_keys($where),
+        );
+
+        $whereDdl = implode(" AND " . $whereDdl);
+        return "DELETE FROM `{$table}` WHERE {$whereDdl}";
     }
 
     public function hasTableSql(string $table): string
@@ -265,19 +291,19 @@ SQL;
         };
 
         foreach ($column->constraints() as $constraint) {
-            $ddl .= $this->columnConstraintDdl($constraint);
+            $ddl .= " {$this->columnConstraintDdl($constraint)}";
         }
 
         if (null !== $column->characterSet()) {
-            $ddl .= $this->characterSetDdl($column->characterSet());
+            $ddl .= " {$this->characterSetDdl($column->characterSet())}";
         }
 
         if (null !== $column->collation()) {
-            $ddl .= $this->collationDdl($column->collation());
+            $ddl .= " {$this->collationDdl($column->collation())}";
         }
 
         if (null !== $column->comment()) {
-            $ddl .= $this->commentDdl($column->comment());
+            $ddl .= " {$this->commentDdl($column->comment())}";
         }
 
         return $ddl;
@@ -349,11 +375,7 @@ SQL;
 
     public function commentDdl(string $comment): string
     {
-        $comment = str_replace(
-            ["'", "\n", "\0", "\r", "\t", "\\",],
-            ["\\'", "\\n", "\\0", "\\r", "\\t", "\\\\"],
-            $comment
-        );
+        $comment = self::escapeString($comment);
 
         return "COMMENT '{$comment}'";
     }

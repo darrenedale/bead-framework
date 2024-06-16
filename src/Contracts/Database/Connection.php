@@ -107,4 +107,11 @@ interface Connection
      * @param array $data An array of associative arrays with the data to insert.
      */
     public function insert(string $table, array $data, int $batchSize = null): int|string|null;
+
+    /**
+     * TODO update this to support a WhereCondition class.
+     * @param string $table The name of the table to delete from.
+     * @param array $where An array of column => value pairs that indicate what to delete.
+     */
+    public function delete(string $table, array $where): void;
 }

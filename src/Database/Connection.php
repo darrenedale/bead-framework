@@ -275,17 +275,29 @@ class Connection implements DatabaseConnectionContract
 
         while (count($data) >= $batchSize) {
             // merge all the values from the next batch of rows into a signle array to bind to the statement
-            $stmt->execute(array_merge(...array_splice($data, 0, $batchSize)));
+            $stmt->execute(flatten(array_splice($data, 0, $batchSize)));
         }
 
         // if the dataset size isn't a multiple of the batch size, insert the remainder
         if (0 < count($data)) {
             $ddl = $this->adapter->insertDdl($table, $columns, count($data));
             $stmt = $this->prepare($ddl);
-            $stmt->execute(array_merge(...$data));
+            $stmt->execute(flatten($data));
         }
 
-        return $this->insertId();
+        return $this->lastInsertId();
+    }
+
+    public function delete(string $table, array $where = []): void
+    {
+        $ddl = $this->adapter->deleteDdl($table, $where);
+
+        try {
+            $stmt = $this->prepare($ddl);
+            $stmt->execute(array_values($where));
+        } catch (PDOException $err) {
+            $this->throwException(RuntimeException::class, "Unable to delete records from {$table}");
+        }
     }
 
     public function hasTable(string $table): bool

@@ -124,6 +124,21 @@ function grammaticalImplode(iterable $collection, string $glue = ", ", string $l
 }
 
 /**
+ * Apply a callable to each member of an iterable.
+ *
+ * @param iterable $collection The collection to which to apply the callable.
+ * @param callable $fn The callable to apply.
+ */
+function forAll(iterable $collection, callable|array $fn): void
+{
+    if (is_array($collection)) {
+        array_walk($collection, $fn);
+    } else {
+        iterator_apply($collection, $fn);
+    }
+}
+
+/**
  * Transform the entries in an iterable using a function.
  *
  * The function is applied to each entry in the iterable. The item is modified in-place - the iterable will contain the

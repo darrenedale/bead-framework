@@ -11,21 +11,21 @@ use Bead\Database\Table;
 
 class Migrations extends ConsoleApplication
 {
-    private const CommandMigrate = "migrate";
+    private const ActionMigrate = "migrate";
 
-    private const CommandReset = "reset";
+    private const ActionReset = "reset";
 
-    private const CommandNext = "next";
+    private const ActionNext = "next";
 
-    private const CommandPrevious = "previous";
+    private const ActionPrevious = "previous";
 
-    private const CommandCurrent = "current";
+    private const ActionCurrent = "current";
 
-    private const CommandList = "list";
+    private const ActionList = "list";
 
-    private const CommandListExecuted = "list-executed";
+    private const ActionListExecuted = "list-executed";
 
-    private const CommandListPending = "list-pending";
+    private const ActionListPending = "list-pending";
 
     private const Columns = [
         "class",
@@ -67,10 +67,12 @@ class Migrations extends ConsoleApplication
             ->withColumn(
                 (new Column("executed_at", Column::UnsignedBigInteger))
                     ->withConstraint(new NullabilityConstraint(false))
+                    ->withComment("Unix timestamp of the time at which the migration was executed.")
             )
             ->withColumn(
                 (new Column("execution_duration", Column::Integer))
                     ->withConstraint(new NullabilityConstraint(false))
+                    ->withComment("The number of ms the migration took to execute.")
             );
 
         try {
@@ -116,7 +118,7 @@ class Migrations extends ConsoleApplication
         return "{$this->rootDir()}/{$this->optionValue("migrations-dir")}";
     }
 
-    private function listMigrations(): array
+    private function availableMigrations(): array
     {
         $migrations = [];
 
@@ -159,7 +161,8 @@ class Migrations extends ConsoleApplication
             throw new RuntimeException($err::class . " thrown instantiating migration class {$fqClassName}: {$err->getMessage()}", previous: $err);
         }
 
-        $start = microtime(true);
+        $startTime = time();
+        $start = hrtime(true);
         $db = $this->database();
         $db->beginTransaction();
 
@@ -174,7 +177,7 @@ class Migrations extends ConsoleApplication
             $db->commitTransaction();
         }
 
-        $duration = microtime(true) - $start;
+        $nanoSeconds = hrtime(true) - $start;
 
         $db->insert(
             $this->migrationsTable(),
@@ -182,8 +185,8 @@ class Migrations extends ConsoleApplication
                 [
                     "class" => $class,
                     "description" => $migration->description(),
-                    "executed_at" => (int) $start,
-                    "execution_duration" => (int) ($duration * 100000),
+                    "executed_at" => $startTime,
+                    "execution_duration" => (int) ($duration / 1000000),
                 ],
             ]
         );
@@ -208,43 +211,143 @@ class Migrations extends ConsoleApplication
             throw new RuntimeException($err::class . " thrown in {$fqClassName}::down(): {$err->getMessage()}", previous: $err);
         }
 
-        $db->commit();
+        if ($db->inTransaction()) {
+            $db->commitTransaction();
+        }
+
+        $db->delete($this->migrationsTable(), ["class" => $class,]);
     }
 
     protected function run(): int
     {
         $this->checkMigrationsTable();
 
-        match ($this->argumentValue("command")) {
-            self::CommandMigrate => $this->commandMigrate(),
-            self::CommandReset => $this->commandReset(),
-            self::CommandNext => $this->commandNext(),
-            self::CommandPrevious => $this->commandPrevious(),
-            self::Commandcurrent => $this->commandCurrent(),
-            self::CommandList => $this->commandList(),
-            self::CommandListExecuted => $this->commandListExecuted(),
-            self::CommandListPending => $this->commandListPending(),
-            default => throw new InvalidArgumentException("Command {$this->argumentValue("command")} not recognised."),
+        match ($this->argumentValue("action")) {
+            self::ActionMigrate => $this->migrateAction(),
+            self::ActionReset => $this->resetAction(),
+            self::ActionNext => $this->nextAction(),
+            self::ActionPrevious => $this->previousAction(),
+            self::ActionCurrent => $this->currentAction(),
+            self::ActionList => $this->listAction(),
+            self::ActionListExecuted => $this->listExecutedAction(),
+            self::ActionListPending => $this->listPendingAction(),
+            default => throw new InvalidArgumentException("Action {$this->argumentValue("command")} not recognised."),
         };
 
         return 0;
     }
 
-    private function commandMigrate(): void
+    private function migrateAction(): void
+    {
+        $availableMigrations = $this->availableMigrations();
+
+        if (0 === $availableMigrations) {
+            $this->line("There are no available migrations.");
+            return;
+        }
+
+        $executedMigrations = $this->executedMigrations();
+        $verbose = $this->flagValue("verbose");
+        $count = 0;
+
+        if ($verbose) {
+            if (0 === count($executedMigrations)) {
+                $this->line("No previously executed migrations.");
+            } else {
+                $this->line(count($executedMigrations) . " previously executed migrations.");
+                $currentMigration = array_key_first($executedMigrations);
+                $this->line("Currently migrated to {$currentMigration}.");
+            }
+        }
+
+        foreach ($availableMigrations as $migrationClass => $migrationFileName) {
+            if (array_key_exists($migrationClass, $executedMigrations)) {
+                if ($verbose) {
+                    $this->line("Migration {$migrationClass} executed at {$executedMigrations[$migrationClass]["executed_at"]}.");
+                }
+
+                continue;
+            }
+
+            @include $migrationFileName;
+
+            if (!class_exists($migrationClass)) {
+                throw new RuntimeException("Migration file \"{$migrationFileName}\" does not define the expected class \"{$migrationClass}\"");
+            }
+
+            if (!is_a($migrationClass, MigrationContract::class, true)) {
+                throw new RuntimeException("Class {$migrationClass} in migration file \"{$migrationFileName}\" does not implement " . MigrationContract::class);
+            }
+
+            if ($verbose) {
+                $this->line("Executing migration {$migrationClass}.");
+            }
+
+            $this->migrateUp($migrationClass);
+            ++$count;
+        }
+
+        if (0 === $count) {
+            $this->line("No migrations performed - already migrated to " . array_key_last($availableMigrations) . ".");
+        } else {
+            $this->line("Now migrated to {{$migrationClass}}.");
+        }
+    }
+
+    private function resetAction(): void
     {
         $executedMigrations = $this->executedMigrations();
 
         if (0 === count($executedMigrations)) {
-            $this->line("No previously executed migrations.");
-        } else {
-            $this->line(count($executedMigrations) . " previously executed migrations.");
-            $currentMigration = array_key_first($executedMigrations);
-            $this->line("Currently migrated to {$currentMigration}.");
+            $this->line("No migrations have been executed yet.");
+            return;
         }
 
-        foreach ($this->listMigrations() as $migrationClass => $migrationFileName) {
+        $verbose = $this->flagValue("verbose");
+        $migrationsDirectory = $this->migrationsDirectory();
+
+        foreach (array_keys($executedMigrations) as $migrationClass) {
+            $migrationFileName = "{$migrationsDirectory}/{$migrationClass}.php";
+
+            @include $migrationFileName;
+
+            if (!class_exists($migrationClass)) {
+                throw new RuntimeException("Migration file \"{$migrationFileName}\" does not define the expected class \"{$migrationClass}\"");
+            }
+
+            if (!is_a($migrationClass, MigrationContract::class, true)) {
+                throw new RuntimeException("Class {$migrationClass} in migration file \"{$migrationFileName}\" does not implement " . MigrationContract::class);
+            }
+
+            if ($verbose) {
+                $this->line("Rolling back migration {$migrationClass}.");
+            }
+
+            $this->migrateDown($migrationClass);
+        }
+
+        $this->line("Rolled back " . count($executedMigrations) . " migrations.");
+    }
+
+    private function nextAction(): void
+    {
+        $verbose = $this->flagValue("verbose");
+        $availableMigrations = $this->availableMigrations();
+
+        if (0 === count($availableMigrations)) {
+            $this->line("There are no available migrations.");
+            return;
+        }
+
+        $executedMigrations = $this->executedMigrations();
+        $count = 0;
+
+        foreach ($availableMigrations as $migrationClass => $migrationFileName) {
             if (array_key_exists($migrationClass, $executedMigrations)) {
-                $this->line("Migration {$migrationClass} executed at {$executedMigrations[$migrationClass]["executed_at"]}.");
+                if ($verbose) {
+                    $this->line("Migration {$migrationClass} already executed, skipping.");
+                }
+
                 continue;
             }
 
@@ -258,63 +361,73 @@ class Migrations extends ConsoleApplication
                 throw new RuntimeException("Class {$migrationClass} in migration file \"{$migrationFileName}\" does not implement " . MigrationContract::class);
             }
 
-            $this->line("Executing migration {$migrationClass}.");
+            if ($verbose) {
+                $this->line("Executing migration {$migrationClass}.");
+            }
+
             $this->migrateUp($migrationClass);
+            ++$count;
+            break;
+        }
+
+        if (0 === $count) {
+            $this->line("No migrations performed - already migrated to " . array_key_last($availableMigrations) . ".");
+        } else {
+            $this->line("Now migrated to {{$migrationClass}}.");
         }
     }
 
-    private function commandReset(): void
-    {
-        $this->errorLine("Not yet implemented.");
-    }
-
-    private function commandNext(): void
+    private function previousAction(): void
     {
         $executedMigrations = $this->executedMigrations();
 
-        foreach ($this->listMigrations() as $migrationClass => $migrationFileName) {
-            if (array_key_exists($migrationClass, $executedMigrations)) {
-                continue;
-            }
-
-            @include $migrationFileName;
-
-            if (!class_exists($migrationClass)) {
-                throw new RuntimeException("Migration file \"{$migrationFileName}\" does not define the expected class \"{$migrationClass}\"");
-            }
-
-            if (!is_a($migrationClass, MigrationContract::class, true)) {
-                throw new RuntimeException("Class {$migrationClass} in migration file \"{$migrationFileName}\" does not implement " . MigrationContract::class);
-            }
-
-            $this->line("Executing migration {$migrationClass}.");
-            $this->migrateUp($migrationClass);
-            break;
+        if (0 === count($executedMigrations)) {
+            $this->line("No migrations have been executed yet.");
+            return;
         }
+
+        $verbose = $this->flagValue("verbose");
+        $migrationsDirectory = $this->migrationsDirectory();
+        $migrationClass = array_key_last($executedMigrations);
+        $migrationFileName = "{$migrationsDirectory}/{$migrationClass}.php";
+
+        @include $migrationFileName;
+
+        if (!class_exists($migrationClass)) {
+            throw new RuntimeException("Migration file \"{$migrationFileName}\" does not define the expected class \"{$migrationClass}\"");
+        }
+
+        if (!is_a($migrationClass, MigrationContract::class, true)) {
+            throw new RuntimeException("Class {$migrationClass} in migration file \"{$migrationFileName}\" does not implement " . MigrationContract::class);
+        }
+
+        if ($verbose) {
+            $this->line("Rolling back migration {$migrationClass}.");
+        }
+
+        $this->migrateDown($migrationClass);
+        array_pop($executedMigrations);
+        $currentMigration = array_key_last($executedMigrations);
+        $this->line("Now migrated to {$currentMigration}.");
     }
 
-    private function commandPrevious(): void
-    {
-        $this->errorLine("Not yet implemented.");
-    }
-
-    private function commandcurrent(): void
+    private function currentAction(): void
     {
         $migrations = $this->executedMigrations();
 
         if (0 === count($migrations)) {
             $this->line("No migrations have been executed.");
         } else {
-            $currentMigration = array_key_first($executedMigrations);
+            $currentMigration = array_key_first($migrations);
             $this->line("Currently migrated to {$currentMigration}.");
         }
     }
 
-    private function commandList(): void
+    private function listAction(): void
     {
         $executedMigrations = $this->executedMigrations();
 
-        foreach ($this->listMigrations() as $class => $path) {
+        foreach ($this->availableMigrations() as $class => $path) {
             $message = "{$class} in {$path}";
 
             if (array_key_exists($class, $executedMigrations)) {
@@ -326,19 +439,19 @@ class Migrations extends ConsoleApplication
         }
     }
 
-    private function commandListExecuted(): void
+    private function listExecutedAction(): void
     {
         foreach ($this->executedMigrations() as $class => $details) {
-            $executedDate = DateTimeImmutable::createFromFormat("U", "{$executedMigrations[$class]["executed_at"]}", new DateTimeZone("UTC"));
-            $this->line("{$class} in {$path} [{$executedDate->format("Y-m-d H:i:s")} UTC, {$executedMigrations[$class]["execution_duration"]}ms]");
+            $executedDate = DateTimeImmutable::createFromFormat("U", "{$details["executed_at"]}", new DateTimeZone("UTC"));
+            $this->line("{$class} [{$executedDate->format("Y-m-d H:i:s")} UTC, {$details["execution_duration"]}ms]");
         }
     }
 
-    private function commandListPending(): void
+    private function listPendingAction(): void
     {
         $executedMigrations = $this->executedMigrations();
 
-        foreach ($this->listMigrations() as $class => $path) {
+        foreach ($this->availableMigrations() as $class => $path) {
             if (array_key_exists($class, $executedMigrations)) {
                 continue;
             }
