@@ -10,24 +10,6 @@ use DateTimeInterface;
 interface UriSigner
 {
     /**
-     * Fluently set the secret to use when signing URIs.
-     *
-     * UriSigners are immutable, a clone of the current signer is altered and returned.
-     *
-     * @param string $secret The secret.
-     *
-     * @return $this A UriSigner for further method chaining.
-     */
-    public function usingSecret(string $secret): self;
-
-    /**
-     * Fetch the secret to use to sign URIs.
-     *
-     * @return string The secret.
-     */
-    public function secret(): string;
-
-    /**
      * Sign the given URI with the configured secret.
      *
      * The provided parameters, if not empty, will be appended to the URI. How the signing and expiry are handled is
