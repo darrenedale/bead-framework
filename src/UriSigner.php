@@ -2,19 +2,21 @@
 
 namespace Bead;
 
+use Bead\Encryption\ScrubsStrings;
 use DateTimeInterface;
 use Bead\Contracts\UriSigner as UriSignerContract;
 use Bead\Exceptions\UriSignerException;
 use InvalidArgumentException;
-use TypeError;
 
 /**
  * Implementation of the UriSigner contract that uses HMACs for signatures.
  *
  * URIs with fragments are not supported.
  */
-class UriSigner implements UriSignerContract
+final class UriSigner implements UriSignerContract
 {
+    use ScrubsStrings;
+
     /**
      * The minimum required length for a secret.
      *
@@ -31,7 +33,7 @@ class UriSigner implements UriSignerContract
     /** @var string The secret to use when signing URIs. */
     private string $m_secret;
 
-  /**
+    /**
      * Initialise a new signer.
      *
      * @param string $algorithm The optional algorithm
@@ -43,24 +45,10 @@ class UriSigner implements UriSignerContract
         $this->m_secret = "";
     }
 
-    /**
-     * Securely scrub the stored secret when the signer is destroyed.
-     */
+    /** Securely scrub the stored secret when the signer is destroyed. */
     public function __destruct()
     {
-        self::scrubSecret($this->m_secret);
-    }
-
-    /**
-     * Helper to securely erase a string before it's deallocated.
-     *
-     * @param string $secret A reference to the string to scrub.
-     */
-    final protected static function scrubSecret(string & $secret): void
-    {
-        for ($idx = 0; $idx < strlen($secret); ++$idx) {
-            $secret[$idx] = chr(mt_rand(0, 255));
-        }
+        self::scrubString($this->m_secret);
     }
 
     /**
@@ -98,12 +86,12 @@ class UriSigner implements UriSignerContract
      * @param string $secret The secret.
      *
      * @return $this A UriSigner for further methdo chaining.
-     * @throws InvalidArgumentException if the secret has fewer than 6 characters..
+     * @throws InvalidArgumentException if the secret has fewer than 6 characters.
      */
     public function usingSecret(string $secret): self
     {
         if (self::MinimumSecretLength > strlen($secret)) {
-            throw new InvalidArgumentException("Secrets for signing URIs must be at least " . self::MinimumSecretLength . " characters.");
+            throw new InvalidArgumentException("Expecting a secret of at least " . self::MinimumSecretLength . " characters, found " . strlen($secret) . " characters");
         }
 
         $clone = clone $this;
@@ -134,12 +122,12 @@ class UriSigner implements UriSignerContract
         $secret = $this->secret();
 
         if (self::MinimumSecretLength > strlen($secret)) {
-            self::scrubSecret($secret);
-            throw new UriSignerException("The secret for signing the URI is too short or has not been set.");
+            self::scrubString($secret);
+            throw new UriSignerException("The secret for signing the URI is too short or has not been set");
         }
 
         $signature = hash_hmac($this->algorithm(), $uriWithParams, $secret);
-        self::scrubSecret($secret);
+        self::scrubString($secret);
         return $signature;
     }
 
@@ -150,14 +138,14 @@ class UriSigner implements UriSignerContract
      *
      * @return string The query string.
      */
-    final protected static function queryString(array $parameters): string
+    protected static function queryString(array $parameters): string
     {
         return implode(
             "&",
             array_map(
-                fn ($key, $value) => urlencode($key) . "=" . urlencode($value),
+                static fn ($key, $value) => urlencode($key) . "=" . urlencode($value),
                 array_keys($parameters),
-                array_values($parameters)
+                array_values($parameters),
             )
         );
     }
@@ -169,7 +157,7 @@ class UriSigner implements UriSignerContract
      *
      * @return array<string,string> The parameters.
      */
-    final protected static function uriParameters(string $uri): array
+    protected static function uriParameters(string $uri): array
     {
         $queryString = parse_url($uri, PHP_URL_QUERY);
         $params = [];
@@ -233,7 +221,7 @@ class UriSigner implements UriSignerContract
         // NOTE signature MUST always be last URI parameter, this is mandated in sign() above
         $signaturePos = strpos($signedUri, "signature=");
 
-        if (false === $signaturePos) {
+        if (false === $signaturePos || 0 === $signaturePos || ("&" !== $signedUri[$signaturePos - 1] && "?" !== $signedUri[$signaturePos - 1])) {
             return false;
         }
 
