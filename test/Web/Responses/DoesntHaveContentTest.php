@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Responses;
+namespace BeadTests\Web\Responses;
 
-use Bead\Responses\DoesntHaveContent;
+use Bead\Web\Responses\DoesntHaveContent;
 use BeadTests\Framework\TestCase;
 
 class DoesntHaveContentTest extends TestCase

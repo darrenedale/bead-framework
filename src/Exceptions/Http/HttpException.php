@@ -2,19 +2,18 @@
 
 namespace Bead\Exceptions\Http;
 
-use Bead\Contracts\Response;
+use Bead\Contracts\Web\Response;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
 use Bead\Facades\Application as App;
-use Bead\Responses\DoesntHaveHeaders;
-use Bead\Responses\HasDefaultReasonPhrase;
-use Bead\Responses\NaivelySendsContent;
 use Bead\View;
 use Bead\Web\Application;
 use Bead\Web\Request;
+use Bead\Web\Responses\DoesntHaveHeaders;
+use Bead\Web\Responses\HasDefaultReasonPhrase;
+use Bead\Web\Responses\NaivelySendsContent;
 use Exception;
 use Throwable;
-
 use function Bead\Helpers\Str\html;
 
 /**

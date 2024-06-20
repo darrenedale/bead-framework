@@ -1,8 +1,8 @@
 <?php
 
-namespace Bead\Responses;
+namespace Bead\Web\Responses;
 
-use Bead\Contracts\Response;
+use Bead\Contracts\Web\Response;
 
 /**
  * Base class for responses with default boilerplate implementations.

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Responses;
+namespace BeadTests\Web\Responses;
 
-use Bead\Responses\CanSetContentType;
+use Bead\Web\Responses\CanSetContentType;
 use BeadTests\Framework\TestCase;
 
 final class CanSetContentTypeTest extends TestCase

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Responses;
+namespace BeadTests\Web\Responses;
 
-use Bead\Responses\DoesntHaveHeaders;
+use Bead\Web\Responses\DoesntHaveHeaders;
 use BeadTests\Framework\TestCase;
 
 class DoesntHaveHeadersTest extends TestCase

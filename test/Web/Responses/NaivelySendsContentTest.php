@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Responses;
+namespace BeadTests\Web\Responses;
 
-use Bead\Responses\HasDefaultReasonPhrase;
-use Bead\Responses\NaivelySendsContent;
+use Bead\Web\Responses\HasDefaultReasonPhrase;
+use Bead\Web\Responses\NaivelySendsContent;
 use BeadTests\Framework\TestCase;
 
 final class NaivelySendsContentTest extends TestCase

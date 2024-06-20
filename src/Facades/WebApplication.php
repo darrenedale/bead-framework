@@ -2,16 +2,13 @@
 
 namespace Bead\Facades;
 
-use BadMethodCallException;
-use Bead\Contracts\Response as ResponseContract;
-use Bead\Contracts\Router as RouterContract;
+use Bead\Contracts\Web\Response as ResponseContract;
+use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Core\Plugin;
 use Bead\Web\Application as BeadWebApplication;
 use Bead\Web\Request;
 use LogicException;
-
 use function assert;
-use function method_exists;
 
 /**
  * @mixin BeadWebApplication

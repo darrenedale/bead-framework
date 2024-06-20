@@ -2,7 +2,7 @@
 
 namespace Bead\Session\Handlers;
 
-use Bead\Contracts\SessionHandler;
+use Bead\Contracts\Web\SessionHandler;
 use Bead\Core\Application;
 use Bead\Exceptions\Session\InvalidSessionDirectoryException;
 use Bead\Exceptions\Session\InvalidSessionFileException;
@@ -15,7 +15,6 @@ use DirectoryIterator;
 use RuntimeException;
 use SplFileInfo;
 use Throwable;
-
 use function Bead\Helpers\Str\random;
 
 /**
