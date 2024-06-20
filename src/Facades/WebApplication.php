@@ -8,6 +8,7 @@ use Bead\Core\Plugin;
 use Bead\Web\Application as BeadWebApplication;
 use Bead\Web\Request;
 use LogicException;
+
 use function assert;
 
 /**

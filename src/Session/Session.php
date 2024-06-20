@@ -14,6 +14,7 @@ use Bead\Session\Handlers\Php as PhpSessionHandler;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
+
 use function Bead\Helpers\Iterable\all;
 
 /**

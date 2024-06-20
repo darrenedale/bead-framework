@@ -14,6 +14,7 @@ use Bead\Web\Responses\HasDefaultReasonPhrase;
 use Bead\Web\Responses\NaivelySendsContent;
 use Exception;
 use Throwable;
+
 use function Bead\Helpers\Str\html;
 
 /**

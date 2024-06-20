@@ -7,6 +7,7 @@ use Bead\Contracts\Web\Response;
 use Bead\Exceptions\Http\CsrfTokenVerificationException;
 use Bead\Facades\WebApplication as WebApp;
 use Bead\Web\Request;
+
 use function hash_equals;
 
 /** Pre-processor to ensure the CSRF token is verified. */

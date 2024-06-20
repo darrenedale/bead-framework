@@ -14,6 +14,7 @@ use Bead\Web\Responses\NaivelySendsContent;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
+
 use function Bead\Helpers\Iterable\some;
 use function Bead\Helpers\Str\html;
 
