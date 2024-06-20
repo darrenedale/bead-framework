@@ -25,6 +25,7 @@ use BeadTests\Framework\TestCase;
 use Closure;
 use InvalidArgumentException;
 use Mockery;
+
 use function array_unique;
 use function Bead\Helpers\Iterable\accumulate;
 use function count;
