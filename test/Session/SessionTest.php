@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Session;
 
-use Bead\Contracts\SessionHandler;
+use Bead\Contracts\Web\SessionHandler;
 use Bead\Core\Application;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
@@ -14,7 +14,6 @@ use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\Session;
 use Bead\Testing\StaticXRay;
 use Bead\Testing\XRay;
-use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
 use Mockery;

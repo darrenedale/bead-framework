@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Contracts;
+namespace Bead\Contracts\Web;
 
 interface Response
 {

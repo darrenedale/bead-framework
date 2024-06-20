@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Responses;
+namespace BeadTests\Web\Responses;
 
-use Bead\Responses\SanitisesReasonPhrase;
+use Bead\Web\Responses\SanitisesReasonPhrase;
 use BeadTests\Framework\TestCase;
 
 class SanitisesReasonPhraseTest extends TestCase

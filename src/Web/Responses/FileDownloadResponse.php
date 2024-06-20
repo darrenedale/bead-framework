@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Responses;
+namespace Bead\Web\Responses;
 
 /**
  * Response to stream a file to the client.

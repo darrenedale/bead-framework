@@ -2,10 +2,10 @@
 
 namespace Bead\Web;
 
-use Bead\Contracts\RequestPostprocessor;
-use Bead\Contracts\RequestPreprocessor;
-use Bead\Contracts\Response;
-use Bead\Contracts\Router as RouterContract;
+use Bead\Contracts\Web\RequestPostprocessor;
+use Bead\Contracts\Web\RequestPreprocessor;
+use Bead\Contracts\Web\Response;
+use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Core\Application as CoreApplication;
 use Bead\Core\Plugin;
 use Bead\Exceptions\Http\NotFoundException;

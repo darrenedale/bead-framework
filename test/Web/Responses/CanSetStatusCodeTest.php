@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Responses;
+namespace BeadTests\Web\Responses;
 
-use Bead\Responses\CanSetStatusCode;
+use Bead\Web\Responses\CanSetStatusCode;
 use BeadTests\Framework\TestCase;
 
 final class CanSetStatusCodeTest extends TestCase

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Bead\Contracts;
+namespace Bead\Contracts\Web;
 
 use Bead\Web\Request;
 

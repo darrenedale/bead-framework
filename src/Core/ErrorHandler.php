@@ -3,12 +3,12 @@
 namespace Bead\Core;
 
 use Bead\Contracts\ErrorHandler as ErrorHandlerContract;
-use Bead\Contracts\Response;
+use Bead\Contracts\Web\Response;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Facades\Log;
-use Bead\Responses\AbstractResponse;
 use Bead\View;
 use Bead\Web\Application as WebApplication;
+use Bead\Web\Responses\AbstractResponse;
 use Error;
 use Throwable;
 

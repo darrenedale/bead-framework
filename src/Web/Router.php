@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace Bead\Web;
 
-use Bead\Contracts\Response;
-use Bead\Contracts\Router as RouterContract;
+use Bead\Contracts\Web\Response;
+use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Core\Application;
 use Bead\Exceptions\ConflictingRouteException;
 use Bead\Exceptions\DuplicateRouteParameterNameException;

@@ -5,7 +5,7 @@
  * @version 0.9.2
  */
 
-namespace Bead\Contracts;
+namespace Bead\Contracts\Web;
 
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Web\Request;

@@ -3,6 +3,7 @@
 namespace Bead\Facades;
 
 use BadMethodCallException;
+use Bead\Contracts\Web\SessionHandler;
 use Bead\Exceptions\Session\ExpiredSessionIdUsedException;
 use Bead\Exceptions\Session\InvalidSessionHandlerException;
 use Bead\Exceptions\Session\SessionDestroyedException;
@@ -11,7 +12,6 @@ use Bead\Exceptions\Session\SessionExpiredException;
 use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Session\PrefixedAccessor;
 use Bead\Session\Session as BeadSession;
-use Bead\Contracts\SessionHandler;
 use LogicException;
 
 /**

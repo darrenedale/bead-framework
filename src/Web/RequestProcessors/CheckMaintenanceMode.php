@@ -2,8 +2,8 @@
 
 namespace Bead\Web\RequestProcessors;
 
-use Bead\Contracts\RequestPreprocessor;
-use Bead\Contracts\Response;
+use Bead\Contracts\Web\RequestPreprocessor;
+use Bead\Contracts\Web\Response;
 use Bead\Exceptions\Http\ServiceUnavailableException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Facades\Application as App;

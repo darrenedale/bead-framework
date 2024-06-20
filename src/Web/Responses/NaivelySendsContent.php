@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Responses;
+namespace Bead\Web\Responses;
 
 use Bead\Exceptions\Http\HttpException;
 

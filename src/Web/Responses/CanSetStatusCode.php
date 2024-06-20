@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Responses;
+namespace Bead\Web\Responses;
 
 /**
  * Trait for responses that allow the status code to be set.
