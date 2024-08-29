@@ -733,7 +733,7 @@ abstract class Model
     /**
      * Cast a PHP value to a database timestamp column value.
      *
-     * @param DateTime|int $value The PHP value.
+     * @param DateTimeInterface|int $value The PHP value.
      * @param string $property The property name.
      *
      * @return int The database timestamp value.
@@ -755,7 +755,7 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for date columns.
      *
-     * @param string|DateTime $value The PHP value.
+     * @param string|DateTimeInterface $value The PHP value.
      * @param string $property The column name.
      *
      * @return string The database representation of the date.
@@ -777,7 +777,7 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for datetime columns.
      *
-     * @param DateTime|string $value The PHP value.
+     * @param DateTimeInterface|string $value The PHP value.
      * @param string $property The column name.
      *
      * @return string The database representation of the date-time value.
@@ -799,7 +799,7 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for time columns.
      *
-     * @param DateTime|string $value The PHP value.
+     * @param DateTimeInterface|string $value The PHP value.
      * @param string $property The column name.
      *
      * @return string The database representation for the time column.
