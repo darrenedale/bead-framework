@@ -137,7 +137,7 @@ abstract class Model
      *
      * @return Model|null The instance or `null` if the row with the provided primary key does not exist.
      */
-    public static function fetch(string $primaryKey): ?Model
+    public static function fetch(string $primaryKey): ?static
     {
         $model = new static();
         $model->connection = static::defaultConnection();
