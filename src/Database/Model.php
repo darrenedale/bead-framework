@@ -7,7 +7,8 @@ use Bead\Core\Application;
 use Bead\Exceptions\Database\ModelPropertyCastException;
 use Bead\Exceptions\Database\UnknownRelationException;
 use Bead\Exceptions\Database\UnrecognisedQueryOperatorException;
-use DateTime;
+use DateTimeInterface;
+use DateTimeImmutable;
 use Exception;
 use JsonException;
 use LogicException;
@@ -28,10 +29,10 @@ use function Bead\Helpers\Str\snakeToCamel;
  * you create should define the properties of the model (i.e. the database columns) in the static `$properties` member.
  * This is an associative array with column names as keys and column types as values. The following types are supported
  * and will automatically be cast by the magic method that provides model property access:
- * - timestamp (PHP DateTime)
- * - date (DateTime)
- * - datetime (DateTime)
- * - time (DateTime)
+ * - timestamp (PHP DateTimeInterface)
+ * - date (DateTimeInterface)
+ * - datetime (DateTimeInterface)
+ * - time (DateTimeInterface)
  * - int (int)
  * - float (float)
  * - string (string)
@@ -41,8 +42,8 @@ use function Bead\Helpers\Str\snakeToCamel;
  * Properties defined in this way can be accessed as properties of the Model instance. For example, if you define
  * $properties as `["date_of_birth" => "date",]`, you can access the property on an instance using
  * `$model->date_of_birth`. The Model base class will take care of casting the value from the database representation to
- * a PHP `DateTime` object. All properties are nullable, albeit you are likely to encounter database exceptions if you
- * set a property to null and its column in the database is not nullable.
+ * a PHP `DateTimeInterface` object. All properties are nullable, albeit you are likely to encounter database exceptions
+ * if you set a property to null and its column in the database is not nullable.
  *
  * You can exert more control over the reading and writing of properties by providing custom property accessors and
  * mutators in your model classes. By convention database columns are named using `snake_case` while class methods are
@@ -527,13 +528,13 @@ abstract class Model
      * @param string $value The database value.
      * @param string $property The name of the property.
      *
-     * @return DateTime The DateTime.
+     * @return DateTimeInterface The DateTime.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromDateColumn(string $value, string $property): DateTime
+    protected static function castFromDateColumn(string $value, string $property): DateTimeInterface
     {
         try {
-            return new DateTime($value);
+            return new DateTimeImmutable($value);
         } catch (Exception $err) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Could not create a DateTime instance from the value {$value} retrieved from the database.", 0, $err);
         }
@@ -545,13 +546,13 @@ abstract class Model
      * @param string $value The database value.
      * @param string $property The name of the property.
      *
-     * @return DateTime The DateTime.
+     * @return DateTimeInterface The DateTime.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromDateTimeColumn(string $value, string $property): DateTime
+    protected static function castFromDateTimeColumn(string $value, string $property): DateTimeInterface
     {
         try {
-            return new DateTime($value);
+            return new DateTimeImmutable($value);
         } catch (Exception $err) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Could not create a DateTime instance from the value {$value} retrieved from the database.", 0, $err);
         }
@@ -563,13 +564,13 @@ abstract class Model
      * @param string $value The database value.
      * @param string $property The name of the property.
      *
-     * @return DateTime The DateTime.
+     * @return DateTimeInterface The DateTime.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromTimeColumn(string $value, string $property): DateTime
+    protected static function castFromTimeColumn(string $value, string $property): DateTimeInterface
     {
         try {
-            return new DateTime($value);
+            return new DateTimeImmutable($value);
         } catch (Exception $err) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Could not create a DateTime instance from the value {$value}.", 0, $err);
         }
@@ -732,7 +733,7 @@ abstract class Model
     /**
      * Cast a PHP value to a database timestamp column value.
      *
-     * @param DateTime|int $value The PHP value.
+     * @param DateTimeInterface|int $value The PHP value.
      * @param string $property The property name.
      *
      * @return int The database timestamp value.
@@ -744,7 +745,7 @@ abstract class Model
             return $value;
         }
 
-        if ($value instanceof DateTime) {
+        if ($value instanceof DateTimeInterface) {
             return $value->getTimestamp();
         }
 
@@ -754,7 +755,7 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for date columns.
      *
-     * @param string|DateTime $value The PHP value.
+     * @param string|DateTimeInterface $value The PHP value.
      * @param string $property The column name.
      *
      * @return string The database representation of the date.
@@ -766,7 +767,7 @@ abstract class Model
             return $value;
         }
 
-        if (!($value instanceof DateTime)) {
+        if (!($value instanceof DateTimeInterface)) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Value is not valid for a date column.");
         }
 
@@ -776,7 +777,7 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for datetime columns.
      *
-     * @param DateTime|string $value The PHP value.
+     * @param DateTimeInterface|string $value The PHP value.
      * @param string $property The column name.
      *
      * @return string The database representation of the date-time value.
@@ -788,7 +789,7 @@ abstract class Model
             return $value;
         }
 
-        if (!($value instanceof DateTime)) {
+        if (!($value instanceof DateTimeInterface)) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Value is not valid for a datetime column.");
         }
 
@@ -798,7 +799,7 @@ abstract class Model
     /**
      * Helper to cast a set property value to the database representation for time columns.
      *
-     * @param DateTime|string $value The PHP value.
+     * @param DateTimeInterface|string $value The PHP value.
      * @param string $property The column name.
      *
      * @return string The database representation for the time column.
@@ -810,7 +811,7 @@ abstract class Model
             return $value;
         }
 
-        if (!($value instanceof DateTime)) {
+        if (!($value instanceof DateTimeInterface)) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Value is not valid for a time column.");
         }
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace Bead\Responses;
+namespace Bead\Web\Responses;
 
-use Bead\Contracts\Response;
+use Bead\Contracts\Web\Response;
 
 /**
  * A response to redirect the user agent to a different URL.

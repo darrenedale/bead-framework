@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Session;
 
-use Bead\Contracts\SessionHandler;
+use Bead\Contracts\Web\SessionHandler;
 
 /** A handler to use as a test double in the SessionTest. */
 abstract class AbstractTestSessionHandler implements SessionHandler

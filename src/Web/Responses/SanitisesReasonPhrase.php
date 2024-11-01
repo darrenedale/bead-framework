@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Bead\Responses;
+namespace Bead\Web\Responses;
 
 trait SanitisesReasonPhrase
 {

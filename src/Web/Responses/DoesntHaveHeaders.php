@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Responses;
+namespace Bead\Web\Responses;
 
 /**
  * Trait for responses that don't have any headers (other than content-type.

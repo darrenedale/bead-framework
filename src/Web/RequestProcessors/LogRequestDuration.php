@@ -3,9 +3,9 @@
 namespace Bead\Web\RequestProcessors;
 
 use Bead\Contracts\Logger as LoggerContract;
-use Bead\Contracts\RequestPostprocessor;
-use Bead\Contracts\RequestPreprocessor;
-use Bead\Contracts\Response;
+use Bead\Contracts\Web\RequestPostprocessor;
+use Bead\Contracts\Web\RequestPreprocessor;
+use Bead\Contracts\Web\Response;
 use Bead\Facades\Log;
 use Bead\Web\Request;
 

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Responses;
+namespace BeadTests\Web\Responses;
 
-use Bead\Responses\SendsHeaders;
 use Bead\Testing\XRay;
+use Bead\Web\Responses\SendsHeaders;
 use BeadTests\Framework\TestCase;
 
 final class SendsHeadersTest extends TestCase

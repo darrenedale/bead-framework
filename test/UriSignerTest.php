@@ -7,6 +7,7 @@ use DateTimeImmutable;
 use Bead\Exceptions\UriSignerException;
 use Bead\UriSigner;
 use BeadTests\Framework\TestCase;
+use InvalidArgumentException;
 
 class UriSignerTest extends TestCase
 {
@@ -99,6 +100,14 @@ class UriSignerTest extends TestCase
         self::assertEquals("some-other-secret", $actual->secret());
     }
 
+    /** Ensure setting an invalid secret throws. */
+    public function testUsingSecret2(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage("Expecting a secret of at least 6 characters, found 5 characters");
+        $this->m_signer->usingSecret("abcde");
+    }
+
     /** Ensure secret() returns the expected secret. */
     public function testSecret1(): void
     {
@@ -107,16 +116,44 @@ class UriSignerTest extends TestCase
         self::assertEquals("some-other-secret", $signer->secret());
     }
 
-    /** Ensure sign() produces the expected URIs when given timestamps and DateTime objects as expiry times. */
+    /** Ensure sign() produces the expected URI when given a timestamp as the expiry time. */
     public function testSign1(): void
     {
         $expected = "https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf";
         $actual = $this->m_signer->sign("https://bead.framework/protected/uri", self::Parameters, self::ExpiresTimestamp);
         self::assertEquals($expected, $actual);
+    }
+
+    /** Ensure sign() produces the expected URIs when given a DateTime object as the expiry time. */
+    public function testSign2(): void
+    {
+        $expected = "https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf";
         $actual = $this->m_signer->sign("https://bead.framework/protected/uri", self::Parameters, new DateTime(self::ExpiresDateTime));
         self::assertEquals($expected, $actual);
+    }
+
+    /** Ensure sign() produces the expected URIs when given a DateTimeImmutable object as the expiry time. */
+    public function testSign3(): void
+    {
+        $expected = "https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf";
         $actual = $this->m_signer->sign("https://bead.framework/protected/uri", self::Parameters, new DateTimeImmutable(self::ExpiresDateTime));
         self::assertEquals($expected, $actual);
+    }
+
+    /** Ensure sign() produces the expected URI when the original contains a query string already. */
+    public function testSign4(): void
+    {
+        $expected = "https://bead.framework/protected/uri?param1=value1&another-param=another-value&id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature=839b875f30a53126e2205619680c6064c89b78fb";
+        $actual = $this->m_signer->sign("https://bead.framework/protected/uri?param1=value1&another-param=another-value", self::Parameters, new DateTimeImmutable(self::ExpiresDateTime));
+        self::assertEquals($expected, $actual);
+    }
+
+    /** Ensure sign() throws when no secret has been set. */
+    public function testSign5(): void
+    {
+        self::expectException(UriSignerException::class);
+        self::expectExceptionMessage("The secret for signing the URI is too short or has not been set");
+        (new UriSigner())->sign("http://www.example.com", [], 1718742878);
     }
 
     /** Ensure verify() can correctly verify a signature. */
@@ -211,5 +248,37 @@ class UriSignerTest extends TestCase
 
         // prove that the different order causes verification to fail
         self::assertFalse($this->m_signer->verify($actual));
+    }
+
+    public static function dataForTestVerify10(): iterable
+    {
+        yield "missing" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&",];
+        yield "present-no-query-param-name" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "ignature" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&ignature=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "sgnature" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&sgnature=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "sinature" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&sinature=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "sigature" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&sigature=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "signture" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signture=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "signaure" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signaure=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "signatre" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signatre=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "signatue" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signatue=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "signatur" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signatur=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "sig" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&sig=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "leading-whitespace-in-name" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000& signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "trailing-whitespace-in-name" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature =850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "leading-whitespace-in-sig" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature= 850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "trailing-whitespace-in-sig" => ["https://bead.framework/protected/uri?id=1&token=XF12jka8hbyHIofu6dSauioCHUIsfui754g&expires=1667232000&signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf ",];
+        yield "no-uri" => ["signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+        yield "no-uri-2" => [" signature=850a5ede2b7af8a7354a443171aa67a90bddcbaf",];
+    }
+
+    /**
+     * Ensure URI is not verified if signature can't be located.
+     *
+     * @dataProvider dataForTestVerify10
+     */
+    public function testVerify10(string $uri): void
+    {
+        self::assertFalse($this->m_signer->verify($uri, self::ExpiresTimestamp - 1));
     }
 }

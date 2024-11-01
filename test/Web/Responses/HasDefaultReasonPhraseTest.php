@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace BeadTests\Responses;
+namespace BeadTests\Web\Responses;
 
-use Bead\Responses\HasDefaultReasonPhrase;
+use Bead\Web\Responses\HasDefaultReasonPhrase;
 use BeadTests\Framework\TestCase;
 
 class HasDefaultReasonPhraseTest extends TestCase

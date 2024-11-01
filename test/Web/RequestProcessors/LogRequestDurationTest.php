@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BeadTests\Web\RequestProcessors;
 
 use Bead\Contracts\Logger as LoggerContract;
-use Bead\Contracts\Response;
+use Bead\Contracts\Web\Response;
 use Bead\Core\Application;
 use Bead\Testing\XRay;
 use Bead\Web\Request;

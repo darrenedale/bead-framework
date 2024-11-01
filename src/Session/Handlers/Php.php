@@ -2,7 +2,7 @@
 
 namespace Bead\Session\Handlers;
 
-use Bead\Contracts\SessionHandler;
+use Bead\Contracts\Web\SessionHandler;
 use Bead\Exceptions\Session\SessionException;
 
 /**

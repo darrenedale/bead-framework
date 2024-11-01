@@ -1,6 +1,6 @@
 <?php
 
-namespace Bead\Responses;
+namespace Bead\Web\Responses;
 
 /**
  * Trait to endow a response with a method to send the HTTP headers.
