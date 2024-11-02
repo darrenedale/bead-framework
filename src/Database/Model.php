@@ -134,11 +134,11 @@ abstract class Model
     /**
      * Locate a single model instance in the database.
      *
-     * @param string $primaryKey The primary key for the instance to fetch.
+     * @param mixed $primaryKey The primary key for the instance to fetch.
      *
      * @return Model|null The instance or `null` if the row with the provided primary key does not exist.
      */
-    public static function fetch(string $primaryKey): ?Model
+    public static function fetch($primaryKey): ?static
     {
         $model = new static();
         $model->connection = static::defaultConnection();
