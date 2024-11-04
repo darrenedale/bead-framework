@@ -2,25 +2,37 @@ name: bead-framework-test
 
 services:
   php80:
-      image: darrenedale/equit:php-8.0-fpm
-      volumes:
-        - ../:/bead
-      working_dir: /bead
+    container_name: bead-test-80
+    image: darrenedale/equit:php-8.0-cli
+    volumes:
+      - ../:/bead
+    working_dir: /bead
+    stdin_open: true
+    tty: true
 
   php81:
-      image: darrenedale/equit:php-8.1-fpm
-      volumes:
-        - ../:/bead
-      working_dir: /bead
+    container_name: bead-test-81
+    image: darrenedale/equit:php-8.1-cli
+    volumes:
+      - ../:/bead
+    working_dir: /bead
+    stdin_open: true
+    tty: true
 
   php82:
-      image: darrenedale/equit:php-8.2-fpm
-      volumes:
-        - ../:/bead
-      working_dir: /bead
+    container_name: bead-test-82
+    image: darrenedale/equit:php-8.2-cli
+    volumes:
+      - ../:/bead
+    working_dir: /bead
+    stdin_open: true
+    tty: true
 
   php83:
-      image: darrenedale/equit:php-8.3-fpm
-      volumes:
-        - ../:/bead
-      working_dir: /bead
+    container_name: bead-test-83
+    image: darrenedale/equit:php-8.3-cli
+    volumes:
+      - ../:/bead
+    working_dir: /bead
+    stdin_open: true
+    tty: true
