@@ -3,17 +3,19 @@
 namespace Bead;
 
 use Bead\Contracts\Web\Response;
+use Bead\Core\Application;
 use Bead\Exceptions\Http\InternalServerErrorException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
 use Bead\Facades\WebApplication as WebApp;
-use Bead\Web\Application as WebApplication;
+use Bead\Facades\Application as App;
 use Bead\Web\Responses\DoesntHaveHeaders;
 use Bead\Web\Responses\HasDefaultReasonPhrase;
 use Bead\Web\Responses\NaivelySendsContent;
 use InvalidArgumentException;
 use LogicException;
 use RuntimeException;
+use Throwable;
 
 use function Bead\Helpers\Iterable\some;
 use function Bead\Helpers\Str\html;
@@ -21,25 +23,25 @@ use function Bead\Helpers\Str\html;
 /**
  * Encapsulates a Bead view in your app.
  *
- * Views are PHP files that render page content for your application. Views are provided with data to make them reusable
- * by passing the data through the constructor or using the `with()` method. You can inject data into all views that are
- * rendered using the `inject()` method. Do this in your application constructor or `exec()` method to ensure that any
- * view rendered receives the data. Data is available using the $data array in the view file, or by using the data key
- * name as a variable (e.g. if you provide ["foo" => "bar"] as the data for a view, both `$foo` and `$data["foo"]`
- * contain the value `"bar"`). Data that is not keyed with a valid PHP variable name is not available as a separate
- * variable in the view, and can only be accessed using the `$data` array.
+ * Views are PHP files that render content (usually HTML) for your application. Views are provided with data to make
+ * them reusable by passing the data through the constructor or using the `with()` method. You can inject data into all
+ * views that are rendered using the `inject()` method. Do this in your application constructor or `exec()` method to
+ * ensure that any view rendered receives the data. Data is available using the $data array in the view file, or by
+ * using the data key name as a variable (e.g. if you provide ["foo" => "bar"] as the data for a view, both `$foo` and
+ * `$data["foo"]` contain the value `"bar"`). Data that is not keyed with a valid PHP variable name is not available as
+ * a separate variable in the view, and can only be accessed using the `$data` array.
  *
- * All views have access to the current `WebApplication` instance in the `$app` variable, unless it's overwritten by the
+ * All views have access to the current `Application` instance in the `$app` variable, unless it's overwritten by the
  * view's data. It is recommended that you don't overwrite this variable in your views with data, but if you do you can
- * still access the `WebApplication` instance using `WebApplication::instance()`.
+ * still access the `Application` instance using `Application::instance()`.
  *
  * ## Layouts and Sections
  *
  * ## Includes
  * Views can be included in other views by using the `include()` method in your view file. Views included in other views
  * have access to all the data from the view that includes them, plus their own data. The view's own data takes
- * precedence over data inherited from the parent view that includes it. The data in the parent is unaffected if the
- * included view has its own data that overrides it (i.e. the parent view always retains its own array of data).
+ * precedence over data inherited from the parent view. The data in the parent is unaffected if the included view has
+ * its own data that overrides it (i.e. the parent view always retains its own data).
  *
  * ## Components
  * You can also use views as components in other views. This is like including views except that components don't
@@ -186,7 +188,7 @@ class View implements Response
      */
     public static function viewDirectory(): string
     {
-        return WebApp::rootDir() . "/" . WebApp::config("view.directory", "views");
+        return App::rootDir() . "/" . App::config("view.directory", "views");
     }
 
     /**
@@ -520,7 +522,7 @@ class View implements Response
     public static function hasSection(string $name): bool
     {
         $layout = self::currentLayout();
-        return isset($layout) && isset($layout->m_sections[$name]);
+        return isset($layout->m_sections[$name]);
     }
 
     /**
@@ -752,7 +754,7 @@ class View implements Response
             // encapsulate the rendering of the view in a lambda so that only the intended data is shared with the view
             if (
                 !(function () use ($data) {
-                    $app = WebApplication::instance();
+                    $app = Application::instance();
                     extract($data, EXTR_SKIP);
 
                     // make the functions html() and tr() available in the global namespace for views
@@ -763,7 +765,7 @@ class View implements Response
                 ob_end_clean();
                 throw new ViewRenderingException($this, "The view could not be rendered.");
             }
-        } catch (\Throwable $err) {
+        } catch (Throwable $err) {
             throw new ViewRenderingException($this, "Exception rendering the view {$this->m_name}.", 0, $err);
         }
 
