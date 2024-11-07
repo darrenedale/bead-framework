@@ -16,11 +16,25 @@ class RedirectResponse implements Response
     /** @var int HTTP status code for permanent redirects. */
     public const PermanentRedirect = 308;
 
-    /** @var int HTTP status code for temporary redirects. */
+    /**
+     * @var int HTTP status code for temporary redirects using the same HTTP method as the original request.
+     *
+     * This is typically used when a request hasn't been processed because it needs to be processed by some other
+     * resource. The user agent should repeat the original request, only with a different URI.
+     */
     public const TemporaryRedirect = 307;
 
+    /**
+     * @var int HTTP status code for temporary redirects using the GET HTTP method regardless of the method of the
+     * orignal request.
+     *
+     * This is typically used when a request has succeeded and you want to redirect the user agent to a different
+     * resource.
+     */
+    public const TemporaryGetRedirect = 303;
+
     /** @var int The default HTTP status code to use. */
-    public const DefaultRedirectCode = self::TemporaryRedirect;
+    public const DefaultRedirectCode = self::TemporaryGetRedirect;
 
     /** @var int The HTTP status code. */
     private int $m_code;
