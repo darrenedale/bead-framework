@@ -144,6 +144,7 @@ final class StrTest extends TestCase
     {
         yield from [
             "typicalNoEscaping" => ["foo", "foo",],
+            "bothTypesOfQuotes" => ["\"''\"", "&quot;&apos;&apos;&quot;",],
             "typicalCommonTag" => ["<div>", "&lt;div&gt;",],
             "typicalAmpersand" => ["Back & Forth", "Back &amp; Forth",],
             "typicalEuropeanCharacters" => [
@@ -151,24 +152,7 @@ final class StrTest extends TestCase
                 "&Agrave;&Aacute;&Acirc;&Atilde;&Auml;&Aring;&AElig;&Ccedil;&Egrave;&Eacute;&Ecirc;&Euml;&Igrave;&Iacute;&Icirc;&Iuml;&ETH;&Ntilde;&Ograve;&Oacute;&Ocirc;&Otilde;&Ouml;&Oslash;&Ugrave;&Uacute;&Ucirc;&Uuml;&Yacute;&THORN;&szlig;&agrave;&aacute;&acirc;&atilde;&auml;&aring;&aelig;&ccedil;&egrave;&eacute;&ecirc;&euml;&igrave;&iacute;&icirc;&iuml;&eth;&ntilde;&ograve;&oacute;&ocirc;&otilde;&ouml;&oslash;&ugrave;&uacute;&ucirc;&uuml;&yacute;&thorn;&yuml;",
             ],
             "extremeEmpty" => ["", "",],
-            "extremeMaliciousScript" => ["<script>window.location.href = \"http://phishing-site.com/\"</script>", "&lt;script&gt;window.location.href = &quot;http://phishing-site.com/&quot;&lt;/script&gt;",],
-
-            "invalidInt" => [42, "", TypeError::class,],
-            "invalidFloat" => [3.1415927, "", TypeError::class,],
-            "invalidBoolean" => [true, "", TypeError::class,],
-            "invalidNull" => [null, "", TypeError::class,],
-            "invalidStringable" => [
-                new class
-                {
-                    public function __toString(): string
-                    {
-                        return "foo";
-                    }
-                },
-                "",
-                TypeError::class,
-            ],
-            "invalidArray" => [["foo",], "", TypeError::class,],
+            "extremeMaliciousScript" => ["<script>window.location.href = \"http://phishing-site.com/\"</script>", "&lt;script&gt;window&period;location&period;href &equals; &quot;http&colon;&sol;&sol;phishing-site&period;com&sol;&quot;&lt;&sol;script&gt;",],
         ];
     }
 

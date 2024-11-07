@@ -142,9 +142,8 @@ function snakeToCamel(string $str, ?string $encoding = null): string
 /**
  * Escape some content for inclusion in the page.
  *
- * Any characters in the string that have syntactic meaning in HTML are escaped such that they will be interpreted by
- * the user agent as a normal text character rather than something meaningful in HTML. The content provided must be
- * UTF-8 encoded, and the returned, escaped, content will be UTF-8 encoded too.
+ * Content is escaped with all available HTML5 entities. The content provided must be UTF-8 encoded, and the returned,
+ * escaped, content will be UTF-8 encoded too.
  *
  * @param $str string The content to escape.
  *
@@ -152,7 +151,7 @@ function snakeToCamel(string $str, ?string $encoding = null): string
  */
 function html(string $str)
 {
-    return htmlentities($str, ENT_COMPAT, "UTF-8");
+    return htmlentities($str, ENT_HTML5 | ENT_QUOTES, "UTF-8");
 }
 
 /**
