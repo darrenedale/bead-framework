@@ -62,11 +62,11 @@ class RedirectResponseTest extends TestCase
             "content-type: ",
         ];
 
-        $httpResponseCode = function(int $statusCode) use ($response): void {
+        $httpResponseCode = function (int $statusCode) use ($response): void {
             TestCase::assertEquals($response->statusCode(), $statusCode);
         };
 
-        $header = function(string $header, bool $replace) use (&$expectedHeaders): void {
+        $header = function (string $header, bool $replace) use (&$expectedHeaders): void {
             $expected = array_shift($expectedHeaders);
             TestCase::assertEquals($expected, $header);
             TestCase::assertTrue($replace);
