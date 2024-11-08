@@ -8,7 +8,7 @@ use BeadTests\Framework\TestCase;
 class RedirectResponseTest extends TestCase
 {
     /** @var string The test redirect URL. */
-    private const string TestUrl = "/redirect";
+    private const TestUrl = "/redirect";
 
     /** @var RedirectResponse The test fixture. */
     private RedirectResponse $response;
@@ -24,7 +24,7 @@ class RedirectResponseTest extends TestCase
         parent::tearDown();
     }
 
-    /** Ensure the constructor uses the defalt HTTP response code. */
+    /** Ensure the constructor uses the default HTTP response code. */
     public function testConstructor1(): void
     {
         self::assertEquals(RedirectResponse::DefaultRedirectCode, $this->response->statusCode());

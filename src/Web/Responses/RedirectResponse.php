@@ -22,14 +22,14 @@ class RedirectResponse implements Response
      * This is typically used when a request hasn't been processed because it needs to be processed by some other
      * resource. The user agent should repeat the original request, only with a different URI.
      */
-    public const TemporaryRedirect = 307;
+    public const TemporaryRepeatRedirect = 307;
 
     /**
      * @var int HTTP status code for temporary redirects using the GET HTTP method regardless of the method of the
-     * orignal request.
+     * original request.
      *
      * This is typically used when a request has succeeded and you want to redirect the user agent to a different
-     * resource.
+     * resource as a result.
      */
     public const TemporaryGetRedirect = 303;
 
