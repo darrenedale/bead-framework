@@ -502,7 +502,8 @@ class Application extends CoreApplication
             }
 
             foreach ($directory as $pluginFile) {
-                if ($pluginFile->isDot()) {
+                // ignore ., .. and "hidden" files (e.g. .gitignore)
+                if (str_starts_with($pluginFile->getBasename(), ".")) {
                     continue;
                 }
 
