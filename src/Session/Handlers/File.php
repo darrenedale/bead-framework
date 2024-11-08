@@ -421,7 +421,8 @@ class File implements SessionHandler
     public static function prune(): void
     {
         foreach (new DirectoryIterator(self::sessionDirectory()) as $file) {
-            if ($file->isDot()) {
+            // ignore ., .. and "hidden" files (e.g. .gitignore)
+            if (str_starts_with($file->getBasename(), ".")) {
                 continue;
             }
 
