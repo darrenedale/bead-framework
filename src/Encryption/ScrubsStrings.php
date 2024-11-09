@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Bead\Encryption;
 
+use Bead\Helpers\Str;
+
 /**
  * Shared implementation of method to securely erase string content.
  */
@@ -12,8 +14,6 @@ trait ScrubsStrings
     /** Overwrite a string's content with random bytes. */
     final protected static function scrubString(string & $str): void
     {
-        for ($idx = strlen($str) - 1; $idx >= 0; --$idx) {
-            $str[$idx] = chr(rand(0, 255));
-        }
+        Str\scrub($str);
     }
 }
