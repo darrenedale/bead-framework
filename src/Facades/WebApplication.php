@@ -12,9 +12,10 @@ use LogicException;
 use function assert;
 
 /**
+ * Facade for easy access to the Web\Application instance (if it exists).
+ *
  * @mixin BeadWebApplication
  * @psalm-seal-methods
- *
  * @method static bool isRunning()
  * @method static string routesDirectory()
  * @method static string pluginsDirectory()
@@ -41,7 +42,7 @@ class WebApplication extends Application
     public static function __callStatic(string $method, array $args)
     {
         $app = BeadWebApplication::instance();
-        assert($app instanceof BeadWebApplication, new LogicException("There is no Application instance."));
+        assert($app instanceof BeadWebApplication, new LogicException("There is no Web\Application instance"));
         return [$app, $method,](...$args);
     }
 }

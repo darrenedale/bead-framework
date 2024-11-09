@@ -10,6 +10,8 @@ use Bead\Encryption\SerializationMode;
 /**
  * Facade for easy access to the Application container's Encrypter and Decrypter.
  *
+ * @mixin CrypterContract
+ * @psalm-seal-methods
  * @method static string encrypt(mixed $data, int $serializationMode = SerializationMode::Auto)
  * @method static mixed decrypt(string $data)
  */

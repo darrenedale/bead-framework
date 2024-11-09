@@ -19,7 +19,6 @@ use LogicException;
  *
  * @mixin BeadSession
  * @psalm-seal-methods
- *
  * @method static int sessionIdleTimeoutPeriod()
  * @method static int sessionIdRegenerationPeriod()
  * @method static int expiredSessionGracePeriod()
@@ -101,7 +100,7 @@ final class Session
      */
     public static function __callStatic(string $method, array $args)
     {
-        assert(null !== self::$session, new LogicException("Session not started."));
+        assert(null !== self::$session, new LogicException("Session not started"));
         return [self::$session, $method](...$args);
     }
 }

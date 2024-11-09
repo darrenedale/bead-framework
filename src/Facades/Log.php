@@ -8,6 +8,8 @@ use Stringable;
 /**
  * Facade for easy access to the Application container's logger.
  *
+ * @mixin LoggerContract
+ * @psalm-seal-methods
  * @method static int level()
  * @method static void setLevel(int $level)
  * @method static void emergency(string|Stringable $message, array $context = [])

@@ -8,7 +8,6 @@ use Bead\Contracts\ErrorHandler;
 use Bead\Contracts\ServiceContainer;
 use Bead\Contracts\Translator as TranslatorContract;
 use Bead\Core\ErrorHandler as BeadErrorHandler;
-use Bead\Core\FeatureFlag;
 use Bead\Database\Connection;
 use Bead\Environment\Environment;
 use Bead\Environment\Sources\Environment as EnvironmentSource;
@@ -217,7 +216,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * @return array|mixed|null
      */
-    public function config(string $key = null, mixed $default = null)
+    public function config(?string $key = null, mixed $default = null)
     {
         if (!isset($key)) {
             return $this->m_config;
@@ -310,12 +309,13 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
+     * @template T
      * Replace a service already bound to the Application instance.
      *
-     * @param string $service The service identifier to bind to.
-     * @param mixed $instance The service instance.
+     * @param class-string<T>|string $service The service identifier to bind to.
+     * @param T|mixed $instance The service instance.
      *
-     * @return mixed The previously-bound service.
+     * @return T|mixed The previously-bound service.
      * @throws ServiceNotFoundException If no instance is currently bound to the identified service.
      */
     public function replaceService(string $service, mixed $instance): mixed
@@ -330,9 +330,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
+     * @template T
      * Check whether a service is bound to an identifier.
      *
-     * @param string $service
+     * @param class-string<T>|string $service
      *
      * @return bool `true` if the service is bound, `false` if not.
      */
@@ -342,11 +343,12 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
+     * @template T
      * Fetch the service bound to a given identifier.
      *
-     * @param string $service The identifier of the service sought.
+     * @param class-string<T>|string $service The identifier of the service sought.
      *
-     * @return mixed The service.
+     * @return T|mixed The service.
      * @throws ServiceNotFoundException If no service is bound to the identifier.
      */
     public function service(string $service): mixed
@@ -359,9 +361,10 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
+     * @template T
      * Implemented for PSR11 compatibility.
      *
-     * @param string $id The service identifier.
+     * @param class-string<T>|string $id The service identifier.
      * @return bool `true` if a service is bound to the given identifier, `false` otherwise.
      */
     public function has(string $id): bool
@@ -370,13 +373,14 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
-     * Implemented for PSR11 comaptibility.
+     * @template T
+     * Implemented for PSR11 compatibility.
      *
-     * @param string $id The service identifier.
-     * @return mixed The service instance.
+     * @param class-string<T>|string $id The service identifier.
+     * @return T|mixed The service instance.
      * @throws ServiceNotFoundException if no service is bound for the provided identifier.
      */
-    public function get(string $id)
+    public function get(string $id): mixed
     {
         return $this->service($id);
     }
@@ -522,7 +526,7 @@ abstract class Application implements ServiceContainer, ContainerInterface
     /**
      * Set the error handler for the application.
      *
-     * @param \Bead\Contracts\ErrorHandler $handler
+     * @param ErrorHandler $handler
      *
      * @return void
      */
@@ -606,13 +610,13 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      * The version string should be of the form _x.y.z_ where _x_, _y_ and _z_ are integers >= 0.
      *
-     * @param $v string The minimum required PHP version.
+     * @param string $version The minimum required PHP version.
      *
      * @return void
      */
-    public function setMinimumPhpVersion(string $v): void
+    public function setMinimumPhpVersion(string $version): void
     {
-        $this->m_minimumPhpVersion = $v;
+        $this->m_minimumPhpVersion = $version;
     }
 
     /**
@@ -641,8 +645,8 @@ abstract class Application implements ServiceContainer, ContainerInterface
      * Callbacks stack up, so if you add the same callback more than once, it will be called more than once every
      * time the event occurs.
      *
-     * @param $event string is the event to connect to.
-     * @param $callback callable is the function or method to call when the event occurs.
+     * @param string $event is the event to connect to.
+     * @param callable $callback is the function or method to call when the event occurs.
      *
      * @return bool _true_ if the callback was connected to the event, _false_ otherwise.
      */
@@ -692,8 +696,8 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *
      *     Application::instance()->connect('some.event', function() { ... do something ... });
      *
-     * @param $event string is the event to disconnect from.
-     * @param $callback callable is the callback to disconnect.
+     * @param string $event is the event to disconnect from.
+     * @param callable $callback is the callback to disconnect.
      *
      * @return bool _true_ if the callback was disconnected (or was not connected in the first place), _false_ if
      * an error occurred.
