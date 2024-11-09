@@ -371,7 +371,7 @@ final class StrTest extends TestCase
 
         // random byte stream is same size as string, this proves rand() is called for every byte in the string
         self::assertCount(0, $randomBytes);
-        
+
         // test data ensures no byte in the string should remain the same, this proves scrub() overwrites every byte
         for ($idx = 0; $idx < $length; ++$idx) {
             self::assertNotEquals($original[$idx], $str[$idx]);
