@@ -6,9 +6,10 @@ use Bead\Core\Application;
 use Bead\Exceptions\ServiceNotFoundException;
 use LogicException;
 
+/** Base class for facades that provide access to services bound to interfaces in the application service container. */
 abstract class ApplicationServiceFacade
 {
-    /** @var string The interface to which the service that provides the Facade is bound. */
+    /** @var class-string The interface to which the service that provides the Facade is bound. */
     protected static string $serviceInterface;
 
     /**
@@ -26,9 +27,9 @@ abstract class ApplicationServiceFacade
     public static function __callStatic(string $method, array $args): mixed
     {
         $app = Application::instance();
-        assert($app instanceof Application, new LogicException(static::class . " facade used without Application container instance."));
+        assert($app instanceof Application, new LogicException(static::class . " facade used without Application container instance"));
         $instance = $app->get(static::$serviceInterface);
-        assert($instance instanceof static::$serviceInterface, new LogicException("Invalid service bound to " . static::$serviceInterface . " interface."));
-        return $instance->{$method}(...$args);
+        assert($instance instanceof static::$serviceInterface, new LogicException("Invalid service bound to " . static::$serviceInterface . " interface"));
+        return $instance->$method(...$args);
     }
 }

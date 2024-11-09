@@ -6,6 +6,8 @@ use Bead\Core\Application;
 use Bead\Database\Connection;
 use Bead\Database\Model;
 use Bead\Database\OneToMany;
+use BeadTests\Database\Models\ModelA;
+use BeadTests\Database\Models\ModelB;
 use BeadTests\Framework\TestCase;
 use Mockery;
 
@@ -15,7 +17,7 @@ class OneToManyTest extends TestCase
 
     private Connection $db;
 
-    private Model $local;
+    private ModelA $local;
 
     private OneToMany $relation;
 
@@ -25,13 +27,9 @@ class OneToManyTest extends TestCase
         $this->app = Mockery::mock(Application::class);
         $this->mockMethod(Application::class, "instance", $this->app);
         $this->app->shouldReceive("database")->andReturn($this->db);
-        $this->local = new class extends Model
-        {
-            protected static string $table = "Foo";
-        };
 
-        /** @psalm-suppress UndefinedClass Bar is just a test class name */
-        $this->relation = new OneToMany($this->local, "Bar", "foo_id", "id");
+        $this->local = new ModelA();
+        $this->relation = new OneToMany($this->local, ModelB::class, "a_id", "id");
     }
 
     public function tearDown(): void
@@ -40,33 +38,37 @@ class OneToManyTest extends TestCase
         parent::tearDown();
     }
 
-    public function testConstructor(): void
+    /** Ensure we can set the related model and tbe associated columns in the construactor. */
+    public function testConstructor1(): void
     {
-        /** @psalm-suppress UndefinedClass Bar is just a test class name */
-        $relation = new OneToMany($this->local, "Bar", "foo_id", "id");
+        $relation = new OneToMany($this->local, ModelB::class, "a_id", "id");
         self::assertSame($this->local, $relation->localModel());
-        self::assertEquals("Bar", $this->relation->relatedModel());
+        self::assertEquals(ModelB::class, $this->relation->relatedModel());
         self::assertEquals("id", $relation->localKey());
-        self::assertEquals("foo_id", $relation->relatedKey());
+        self::assertEquals("a_id", $relation->relatedKey());
     }
 
-    public function testLocalKey(): void
+    /** Ensure we can retrieve the name of the local column associated with the related model. */
+    public function testLocalKey1(): void
     {
         self::assertSame("id", $this->relation->localKey());
     }
 
-    public function testLocalModel(): void
+    /** Ensure we can retrieve the local model that owns the association. */
+    public function testLocalModel1(): void
     {
         self::assertSame($this->local, $this->relation->localModel());
     }
 
-    public function testRelatedKey(): void
+    /** Ensure we can retrieve the name of the associated column on the related model. */
+    public function testRelatedKey1(): void
     {
-        self::assertEquals("foo_id", $this->relation->relatedKey());
+        self::assertEquals("a_id", $this->relation->relatedKey());
     }
 
-    public function testRelatedModel(): void
+    /** Ensure we can retrieve the name of the related model class. */
+    public function testRelatedModel1(): void
     {
-        self::assertEquals("Bar", $this->relation->relatedModel());
+        self::assertEquals(ModelB::class, $this->relation->relatedModel());
     }
 }

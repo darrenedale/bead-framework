@@ -136,7 +136,7 @@ abstract class Model
      *
      * @param mixed $primaryKey The primary key for the instance to fetch.
      *
-     * @return Model|null The instance or `null` if the row with the provided primary key does not exist.
+     * @return static|null The instance or `null` if the row with the provided primary key does not exist.
      */
     public static function fetch($primaryKey): ?static
     {
@@ -221,16 +221,18 @@ abstract class Model
     }
 
     /**
+     * @template T of Model
+     *
      * Helper to create a OneToMany relation between this model and several others of a given type.
      *
      * This is most commonly a "has-many" relation between a model and several others of a different type that consider
      * this model to be their "parent".
      *
-     * @param class-string $related The related model class.
+     * @param class-string<T> $related The related model class.
      * @param string $relatedKey The property on the related model that links to this.
      * @param string|null $localKey The property on this model that links to the others. Defaults to the primary key.
      *
-     * @return OneToMany The relation.
+     * @return OneToMany<self,T> The relation.
      */
     protected function oneToMany(string $related, string $relatedKey, ?string $localKey = null): OneToMany
     {
@@ -238,17 +240,19 @@ abstract class Model
     }
 
     /**
+     * @template T of Model
+     *
      * Helper to create a ManyToOne relation between this model and another of a given type.
      *
      * This is most commonly a "belongs-to" relation between a model and another of a different type that is considered
      * its "parent".
      *
-     * @param class-string $related The related model class.
+     * @param class-string<T> $related The related model class.
      * @param string $localKey The property on this model that links to the other.
      * @param string|null $relatedKey The property on the related model that links to this. Defaults to the primary key
      * of the related model.
      *
-     * @return ManyToOne The relation.
+     * @return ManyToOne<self,T> The relation.
      */
     protected function manyToOne(string $related, string $localKey, ?string $relatedKey = null): ManyToOne
     {
@@ -256,19 +260,22 @@ abstract class Model
     }
 
     /**
+     * @template T
+     * @template TPivot
+     *
      * Helper to create a ManyToMany relation between this model and several others of a given type.
      *
      * This type of relation is mediated by a pivot table which enables multiple instances of the models on either side
      * of the relation to be arbitrarily liked together.
      *
-     * @param class-string $related
-     * @param class-string $pivot
+     * @param class-string<T> $related
+     * @param class-string<TPivot> $pivot
      * @param string $pivotLocalKey
      * @param string $pivotRelatedKey
      * @param string|null $localKey
      * @param string|null $relatedKey
      *
-     * @return ManyToMany The relation.
+     * @return ManyToMany<self,T,TPivot> The relation.
      */
     protected function manyToMany(string $related, string $pivot, string $pivotLocalKey, string $pivotRelatedKey, ?string $localKey = null, ?string $relatedKey = null): ManyToMany
     {
@@ -412,13 +419,13 @@ abstract class Model
      *
      * @param array $data The data for the instance(s) to create.
      *
-     * @return Model|array<Model> The created model(s).
+     * @return static|static[] The created model(s).
      *
      * @throws LogicException if any of the properties in the array does not exist on the model type.
      * @throws TypeError if any of the property values provided is not of the correct type for the property.
      * @throws ModelPropertyCastException if the primary key for the inserted row is not of the correct type.
      */
-    public static function create(array $data)
+    public static function create(array $data): static|array
     {
         if (!all(array_keys($data), fn ($key): bool => is_int($key))) {
             $model = new static();
@@ -452,12 +459,12 @@ abstract class Model
      *
      * @param array $data The data for the instance(s) to create.
      *
-     * @return Model|array<Model> The created model(s).
+     * @return static|static[] The created model(s).
      *
      * @throws LogicException if any of the properties in the array does not exist on the model type.
      * @throws TypeError if any of the property values provided is not of the correct type for the property.
      */
-    public static function make(array $data)
+    public static function make(array $data): static|array
     {
         if (!all(array_keys($data), fn ($key): bool => is_int($key))) {
             $model = new static();
@@ -511,7 +518,7 @@ abstract class Model
      * @return int The timestamp.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromTimestampColumn($value, string $property): int
+    protected static function castFromTimestampColumn(mixed $value, string $property): int
     {
         $intValue = filter_var($value, FILTER_VALIDATE_INT);
 
@@ -585,7 +592,7 @@ abstract class Model
      * @return int The int value.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromIntColumn($value, string $property): int
+    protected static function castFromIntColumn(mixed $value, string $property): int
     {
         $intValue = filter_var($value, FILTER_VALIDATE_INT);
 
@@ -605,7 +612,7 @@ abstract class Model
      * @return float The float value.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromFloatColumn($value, string $property): float
+    protected static function castFromFloatColumn(mixed $value, string $property): float
     {
         $floatValue = filter_var($value, FILTER_VALIDATE_FLOAT);
 
@@ -625,7 +632,7 @@ abstract class Model
      * @return string The string value.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromStringColumn($value, string $property): string
+    protected static function castFromStringColumn(mixed $value, string $property): string
     {
         if (is_string($value)) {
             return $value;
@@ -661,7 +668,7 @@ abstract class Model
      * @return bool The PHP boolean value.
      * @throws ModelPropertyCastException
      */
-    protected static function castFromBoolColumn($value, string $property): bool
+    protected static function castFromBoolColumn(mixed $value, string $property): bool
     {
         if (is_bool($value)) {
             return $value;
@@ -696,7 +703,7 @@ abstract class Model
         try {
             return json_decode($value, false, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $err) {
-            throw new ModelPropertyCastException(static::class, $property, $value, "Could not parse JSON from the value {$value}.", 0, $err);
+            throw new ModelPropertyCastException(static::class, $property, $value, "Could not parse JSON from the value {$value}", 0, $err);
         }
     }
 
@@ -709,7 +716,7 @@ abstract class Model
      * @return string The database value.
      * @throws ModelPropertyCastException
      */
-    protected static function castToStringColumn($value, string $property): string
+    protected static function castToStringColumn(mixed $value, string $property): string
     {
         if (is_string($value)) {
             return $value;
@@ -739,7 +746,7 @@ abstract class Model
      * @return int The database timestamp value.
      * @throws ModelPropertyCastException
      */
-    protected static function castToTimestampColumn($value, string $property): int
+    protected static function castToTimestampColumn(mixed $value, string $property): int
     {
         if (is_int($value)) {
             return $value;
@@ -761,7 +768,7 @@ abstract class Model
      * @return string The database representation of the date.
      * @throws ModelPropertyCastException
      */
-    protected static function castToDateColumn($value, string $property): string
+    protected static function castToDateColumn(mixed $value, string $property): string
     {
         if (is_string($value)) {
             return $value;
@@ -783,7 +790,7 @@ abstract class Model
      * @return string The database representation of the date-time value.
      * @throws ModelPropertyCastException
      */
-    protected static function castToDateTimeColumn($value, string $property): string
+    protected static function castToDateTimeColumn(mixed $value, string $property): string
     {
         if (is_string($value)) {
             return $value;
@@ -805,7 +812,7 @@ abstract class Model
      * @return string The database representation for the time column.
      * @throws ModelPropertyCastException
      */
-    protected static function castToTimeColumn($value, string $property): string
+    protected static function castToTimeColumn(mixed $value, string $property): string
     {
         if (is_string($value)) {
             return $value;
@@ -827,7 +834,7 @@ abstract class Model
      * @return int The database value.
      * @throws ModelPropertyCastException
      */
-    protected static function castToIntColumn($value, string $property): int
+    protected static function castToIntColumn(mixed $value, string $property): int
     {
         if (!is_int($value)) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Values for int columns must be int values.");
@@ -845,7 +852,7 @@ abstract class Model
      * @return float The database value.
      * @throws ModelPropertyCastException
      */
-    protected static function castToFloatColumn($value, string $property): float
+    protected static function castToFloatColumn(mixed $value, string $property): float
     {
         if (!is_int($value) && !is_float($value)) {
             throw new ModelPropertyCastException(static::class, $property, $value, "Values for float columns must be int or float values.");
@@ -863,7 +870,7 @@ abstract class Model
      * @return string The database representation of the JSON.
      * @throws ModelPropertyCastException
      */
-    protected static function castToJsonColumn($value, string $property): string
+    protected static function castToJsonColumn(mixed $value, string $property): string
     {
         if (is_string($value)) {
             try {
@@ -901,7 +908,7 @@ abstract class Model
      *
      * @throws ModelPropertyCastException
      */
-    protected static function castToBoolColumn($value, string $property): int
+    protected static function castToBoolColumn(mixed $value, string $property): int
     {
         if (is_bool($value)) {
             return $value ? 1 : 0;
@@ -1016,7 +1023,7 @@ abstract class Model
      * @throws TypeError if the provided value is not a valid type for the property.
      * @throws LogicException if the property does not exist on the class.
      */
-    public function __set(string $property, $value): void
+    public function __set(string $property, mixed $value): void
     {
         static $mutators = [];
 
@@ -1277,7 +1284,7 @@ abstract class Model
      *
      * @return array<string> The expressions.
      */
-    protected static function fixedWhereExpressions(string $tableAlias = null): array
+    protected static function fixedWhereExpressions(?string $tableAlias = null): array
     {
         return [];
     }
@@ -1292,7 +1299,7 @@ abstract class Model
      *
      * @return string The concatenated expressions, or an empty string if there are none.
      */
-    final protected static function fixedWhereExpressionsSql(string $tableAlias = null): string
+    final protected static function fixedWhereExpressionsSql(?string $tableAlias = null): string
     {
         $fixedExpressions = static::fixedWhereExpressions($tableAlias);
 
@@ -1311,7 +1318,7 @@ abstract class Model
      *
      * @param array $terms The search terms.
      *
-     * @return array An array of matching models.
+     * @return static[] An array of matching models.
      */
     protected static function queryAll(array $terms): array
     {
@@ -1334,7 +1341,7 @@ abstract class Model
      *
      * @param array $terms The search terms.
      *
-     * @return array An array of matching models.
+     * @return static[] An array of matching models.
      */
     protected static function queryAny(array $terms): array
     {
@@ -1356,7 +1363,7 @@ abstract class Model
      * @param string $operator The operator. Must be a valid SQL operator.
      * @param mixed $value The value to query for.
      *
-     * @return array The models that match the query.
+     * @return static[] The models that match the query.
      */
     final protected static function querySimpleComparison(string $property, string $operator, $value): array
     {
@@ -1371,13 +1378,14 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $value The value to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
-    public static function queryEquals(string $property, $value): array
+    public static function queryEquals(string $property, mixed $value): array
     {
         if (is_null($value)) {
             $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `{$property}` IS NULL");
-            return $stmt->execute();
+            $stmt->execute();
+            return static::makeModelsFromQuery($stmt);
         }
 
         return self::querySimpleComparison($property, "=", $value);
@@ -1389,7 +1397,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $value The value to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryNotEquals(string $property, $value): array
     {
@@ -1402,7 +1410,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $value The value to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryGreaterThan(string $property, $value): array
     {
@@ -1415,7 +1423,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $value The value to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryGreaterThanEquals(string $property, $value): array
     {
@@ -1428,7 +1436,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $value The value to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryLessThan(string $property, $value): array
     {
@@ -1441,7 +1449,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $value The value to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryLessThanEquals(string $property, $value): array
     {
@@ -1456,7 +1464,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $value The value to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryLike(string $property, $value): array
     {
@@ -1471,7 +1479,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $value The value to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryNotLike(string $property, $value): array
     {
@@ -1484,7 +1492,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $values The set of values to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryIn(string $property, array $values): array
     {
@@ -1502,7 +1510,7 @@ abstract class Model
      * @param string $property The property to query on.
      * @param mixed $values The set of values to query for.
      *
-     * @return array The matching models.
+     * @return static[] The matching models.
      */
     public static function queryNotIn(string $property, array $values): array
     {
@@ -1525,7 +1533,7 @@ abstract class Model
      * @param string|mixed|null $operator The operator to use to compare the value to the property.
      * @param mixed|null $value The value to match.
      *
-     * @return array
+     * @return static[] The matching models.
      * @throws UnrecognisedQueryOperatorException
      */
     public static function query($properties, $operator = null, $value = null): array
@@ -1607,7 +1615,7 @@ abstract class Model
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
-    final protected static function removeSimpleComparison(string $property, string $operator, $value): bool
+    final protected static function removeSimpleComparison(string $property, string $operator, mixed $value): bool
     {
         $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)");
         return $stmt->execute([$value]);
@@ -1623,7 +1631,7 @@ abstract class Model
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
-    public static function removeEquals(string $property, $value): bool
+    public static function removeEquals(string $property, mixed $value): bool
     {
         if (is_null($value)) {
             $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NULL");
@@ -1643,7 +1651,7 @@ abstract class Model
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
-    public static function removeNotEquals(string $property, $value): bool
+    public static function removeNotEquals(string $property, mixed $value): bool
     {
         if (is_null($value)) {
             $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NOT NULL");
@@ -1663,7 +1671,7 @@ abstract class Model
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
-    public static function removeGreaterThan(string $property, $value): bool
+    public static function removeGreaterThan(string $property, mixed $value): bool
     {
         return self::removeSimpleComparison($property, ">", $value);
     }
@@ -1678,7 +1686,7 @@ abstract class Model
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
-    public static function removeGreaterThanEquals(string $property, $value): bool
+    public static function removeGreaterThanEquals(string $property, mixed $value): bool
     {
         return self::removeSimpleComparison($property, ">=", $value);
     }
@@ -1693,7 +1701,7 @@ abstract class Model
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
-    public static function removeLessThan(string $property, $value): bool
+    public static function removeLessThan(string $property, mixed $value): bool
     {
         return self::removeSimpleComparison($property, "<", $value);
     }
@@ -1708,7 +1716,7 @@ abstract class Model
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
-    public static function removeLessThanEquals(string $property, $value): bool
+    public static function removeLessThanEquals(string $property, mixed $value): bool
     {
         return self::removeSimpleComparison($property, "<=", $value);
     }
@@ -1725,7 +1733,7 @@ abstract class Model
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
-    public static function removeLike(string $property, $value): bool
+    public static function removeLike(string $property, mixed $value): bool
     {
         return self::removeSimpleComparison($property, "LIKE", $value);
     }
@@ -1742,7 +1750,7 @@ abstract class Model
      *
      * @return bool Whether the removal succeeded.
      */
-    public static function removeNotLike(string $property, $value): bool
+    public static function removeNotLike(string $property, mixed $value): bool
     {
         return self::removeSimpleComparison($property, "NOT LIKE", $value);
     }
@@ -1753,7 +1761,7 @@ abstract class Model
      * WARNING This is a destructive operation - the matched rows will be deleted from the database.
      *
      * @param string $property The property to query on.
-     * @param mixed $values The set of values to query for.
+     * @param array $values The set of values to query for.
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
@@ -1772,7 +1780,7 @@ abstract class Model
      * WARNING This is a destructive operation - the matched rows will be deleted from the database.
      *
      * @param string $property The property to query on.
-     * @param mixed $values The set of values to query for.
+     * @param array $values The set of values to query for.
      *
      * @return bool `true` if the removal was successful, `false` otherwise.
      */
@@ -1801,7 +1809,7 @@ abstract class Model
      * @return bool `true` if the removal was successful, `false` otherwise.
      * @throws UnrecognisedQueryOperatorException
      */
-    public static function remove($properties, $operator = null, $value = null): bool
+    public static function remove(string|array $properties, mixed $operator = null, mixed $value = null): bool
     {
         if (is_array($properties)) {
             return static::removeWhereAll($properties);

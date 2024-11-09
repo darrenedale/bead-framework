@@ -9,9 +9,10 @@ use Bead\Database\Connection;
 use LogicException;
 
 /**
+ * Facade for easy access to the Core\Application instance (if it exists).
+ *
  * @mixin CoreApplication
  * @psalm-seal-methods
- *
  * @method static string rootDir()
  * @method static mixed config(string $key, mixed $default = null)
  * @method static string title()
@@ -46,7 +47,7 @@ class Application
     public static function __callStatic(string $method, array $args)
     {
         $app = CoreApplication::instance();
-        assert($app instanceof CoreApplication, new LogicException("There is no Application instance."));
+        assert($app instanceof CoreApplication, new LogicException("There is no Core\\Application instance"));
         return [$app, $method,](...$args);
     }
 }

@@ -5,28 +5,31 @@ namespace Bead\Contracts;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
 
+/** Contract for objects providing a container for services. */
 interface ServiceContainer
 {
     /**
+     * @template T
      * Bind an instance to an identified service.
      *
-     * @param string $service The service identifier to bind to.
-     * @param mixed $instance The service instance.
+     * @param class-string<T>|string $service The service identifier to bind to.
+     * @param T|mixed $instance The service instance.
      *
      * @throws ServiceAlreadyBoundException if there is already a service bound to the identifier.
      */
-    public function bindService(string $service, $instance): void;
+    public function bindService(string $service, mixed $instance): void;
 
     /**
+     * @template T
      * Replace a service already bound to the Application instance.
      *
-     * @param string $service The service identifier to bind to.
-     * @param mixed $instance The service instance.
+     * @param class-string<T>|string $service The service identifier to bind to.
+     * @param T|mixed $instance The service instance.
      *
-     * @return mixed The previously-bound service.
+     * @return T|mixed The previously-bound service.
      * @throws ServiceNotFoundException If no instance is currently bound to the identified service.
      */
-    public function replaceService(string $service, $instance);
+    public function replaceService(string $service, mixed $instance): mixed;
 
     /**
      * Check whether a service is bound to an identifier.
@@ -38,12 +41,13 @@ interface ServiceContainer
     public function serviceIsBound(string $service): bool;
 
     /**
-     * Fetch the service bound to a given identifier.
+     * @template T
+     * Fetch the service bound to a given interface/identifier.
      *
-     * @param string $service The identifier of the service sought.
+     * @param class-string<T>|string $service The identifier of the service sought.
      *
-     * @return mixed The service.
+     * @return T|mixed The service.
      * @throws ServiceNotFoundException If no service is bound to the identifier.
      */
-    public function service(string $service);
+    public function service(string $service): mixed;
 }
