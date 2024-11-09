@@ -11,6 +11,7 @@ use RuntimeException;
 use TypeError;
 
 use function Bead\Helpers\Str\camelToSnake;
+use function Bead\Helpers\Str\scrub;
 use function Bead\Helpers\Str\snakeToCamel;
 use function Bead\Helpers\Str\html;
 use function Bead\Helpers\Str\build;
@@ -330,5 +331,50 @@ final class StrTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage("Cryptographically-secure random strings are not available.");
         random(40);
+    }
+
+    public static function dataForTestScrub1(): iterable
+    {
+        yield "empty" => ["", []];
+        yield "char" => ["a", [66]];
+        yield "text" => ["lorum ipsum dolor sit amet", [228, 211, 102, 148, 110, 100, 185, 11, 60, 122, 148, 116, 121, 5, 161, 86, 64, 57, 138, 120, 240, 181, 129, 141, 231, 19, ]];
+        yield "whitespace" => ["  ", [13, 28]];
+        yield "nulls" => ["\0\0\0\0\0", [75, 9, 14, 81, 209]];
+        yield "binary" => ["\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x8d", [67, 32, 55, 80, 52, 200, 245, 11, 43, 178, 239, 12]];
+    }
+
+    /**
+     * Ensure scrub replaces all of a string's content with random bytes.
+     *
+     * @dataProvider dataForTestScrub1
+     */
+    public function testScrub1(string $str, array $randomBytes): void
+    {
+        $expected = array_reduce(
+            $randomBytes,
+            static fn (string $carry, int $byte): string => chr($byte) . $carry,
+            "",
+        );
+
+        $this->mockFunction("rand", function (int $lower, int $upper) use (&$randomBytes): int {
+            StrTest::assertGreaterThan(0, count($randomBytes));
+            StrTest::assertEquals(0, $lower);
+            StrTest::assertEquals(255, $upper);
+            return array_shift($randomBytes);
+        });
+
+        $length = strlen($str);
+        $original = $str;
+        scrub($str);
+        self::assertEquals($length, strlen($str));
+        self::assertEquals($expected, $str);
+
+        // random byte stream is same size as string, this proves rand() is called for every byte in the string
+        self::assertCount(0, $randomBytes);
+
+        // test data ensures no byte in the string should remain the same, this proves scrub() overwrites every byte
+        for ($idx = 0; $idx < $length; ++$idx) {
+            self::assertNotEquals($original[$idx], $str[$idx]);
+        }
     }
 }

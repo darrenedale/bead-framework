@@ -251,3 +251,18 @@ function random(int $length): string
 
     return $str;
 }
+
+/**
+ * Overwrite the content of a string with random bytes.
+ *
+ * Use this before a string containing a password or other sensitive information goes out of scope so that the data does
+ * not remain visible in unallocated memory.
+ *
+ * @param string $str A reference to the string to scrub.
+ */
+function scrub(string & $str): void
+{
+    for ($idx = strlen($str) - 1; 0 <= $idx; --$idx) {
+        $str[$idx] = chr(rand(0, 255));
+    }
+}
