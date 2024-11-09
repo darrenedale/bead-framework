@@ -55,7 +55,7 @@ final class ApplicationServiceFacadeTest extends TestCase
             ->andReturn($this);
 
         self::expectException(LogicException::class);
-        self::expectExceptionMessage("Invalid service bound to " . TestApplicationService::class . " interface.");
+        self::expectExceptionMessage("Invalid service bound to " . TestApplicationService::class . " interface");
         TestApplicationServiceFacade::doSomething();
     }
 
@@ -63,7 +63,7 @@ final class ApplicationServiceFacadeTest extends TestCase
     {
         $this->mockMethod(Application::class, "instance", null);
         self::expectException(LogicException::class);
-        self::expectExceptionMessage(TestApplicationServiceFacade::class . " facade used without Application container instance.");
+        self::expectExceptionMessage(TestApplicationServiceFacade::class . " facade used without Application container instance");
         TestApplicationServiceFacade::doSomething();
     }
 }

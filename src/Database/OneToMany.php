@@ -18,11 +18,13 @@ class OneToMany extends Relation
     /** @var U[]|null The related models. */
     protected ?array $relatedModels;
 
+    /** @inheritdoc  */
     public function reload(): void
     {
         $this->relatedModels = $this->relatedModel()::query($this->relatedKey(), $this->localModel()->{$this->localKey()});
     }
 
+    /** @inheritdoc  */
     public function relatedModels(): array
     {
         if (!isset($this->relatedModels)) {

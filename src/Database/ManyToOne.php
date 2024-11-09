@@ -26,6 +26,7 @@ class ManyToOne extends Relation
      */
     private bool $fetched = false;
 
+    /** @inheritdoc  */
     public function reload(): void
     {
         $key = $this->localModel()->{$this->localKey()};
