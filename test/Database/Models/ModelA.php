@@ -5,4 +5,5 @@ namespace BeadTests\Database\Models;
 use Bead\Database\Model;
 
 class ModelA extends Model
-{}
+{
+}
