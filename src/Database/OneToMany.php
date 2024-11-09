@@ -18,7 +18,11 @@ class OneToMany extends Relation
     /** @var U[]|null The related models. */
     protected ?array $relatedModels;
 
-    /** @inheritdoc  */
+    /**
+     * @inheritdoc
+     *
+     * @psalm-suppress MissingThrowsDocblock we know that query() won't throw with the default operator.
+     */
     public function reload(): void
     {
         $this->relatedModels = $this->relatedModel()::query($this->relatedKey(), $this->localModel()->{$this->localKey()});
