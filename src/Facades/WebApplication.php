@@ -42,7 +42,7 @@ class WebApplication extends Application
     public static function __callStatic(string $method, array $args)
     {
         $app = BeadWebApplication::instance();
-        assert($app instanceof BeadWebApplication, new LogicException("There is no Web\Application instance"));
+        assert($app instanceof BeadWebApplication, new LogicException("There is no Web\\Application instance"));
         return [$app, $method,](...$args);
     }
 }

@@ -47,7 +47,7 @@ class Application
     public static function __callStatic(string $method, array $args)
     {
         $app = CoreApplication::instance();
-        assert($app instanceof CoreApplication, new LogicException("There is no Core\Application instance"));
+        assert($app instanceof CoreApplication, new LogicException("There is no Core\\Application instance"));
         return [$app, $method,](...$args);
     }
 }
