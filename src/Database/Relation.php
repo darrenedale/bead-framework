@@ -7,14 +7,17 @@ use ReflectionException;
 use ReflectionMethod;
 
 /**
+ * @template T of Model
+ * @template U of Model
+ *
  * Abstract base class for relations between models.
  */
 abstract class Relation
 {
-    /** @var Model The model that owns the relation. */
+    /** @var T The model that owns the relation. */
     private Model $model;
 
-    /** @var class-string The class name of the related model. */
+    /** @var class-string<U> The class name of the related model. */
     private string $relatedModel;
 
     /** @var string The property on the local model that links to the related model(s). */
@@ -26,8 +29,8 @@ abstract class Relation
     /**
      * Initialise the base class for a model relation.
      *
-     * @param Model $model The model that has related models.
-     * @param class-string $relatedModel The class name of the related models.
+     * @param T $model The model that has related models.
+     * @param class-string<U> $relatedModel The class name of the related models.
      * @param string $relatedKey The property on the related models that link to the owning model.
      * @param string $localKey The property on the model that links to the related models.
      */
@@ -42,7 +45,7 @@ abstract class Relation
     /**
      * The model instance that has related other models.
      *
-     * @return Model The model instance.
+     * @return T The model instance.
      */
     public function localModel(): Model
     {
@@ -60,9 +63,9 @@ abstract class Relation
     }
 
     /**
-     * The property class of the related model.
+     * The FQ class of the related model.
      *
-     * @return string The model class name.
+     * @return class-string<U> The model class name.
      */
     public function relatedModel(): string
     {
@@ -84,7 +87,7 @@ abstract class Relation
      *
      * @param PDOStatement $stmt The PDO statement.
      *
-     * @return array<Model> The created model.
+     * @return array<U> The created model(s).
      * @throws ReflectionException If the related model class is not actually a model class.
      */
     protected function makeModelsFromQuery(PDOStatement $stmt): array
@@ -110,7 +113,7 @@ abstract class Relation
      * the relation is not set). If the relation is a *-to-many (e.g. has) an array of models should be returned, even
      * if there are none or one.
      *
-     * @return Model|array|null
+     * @return U|array<U>|null
      */
     abstract public function relatedModels();
 }

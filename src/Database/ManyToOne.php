@@ -5,13 +5,17 @@ namespace Bead\Database;
 use PDO;
 
 /**
+ * @template T of Model
+ * @template U of Model
+ * @template-extends Relation<T,U>
+ *
  * A model relation that links many local models to a single related model.
  *
  * This is often a "belongs-to" relation.
  */
 class ManyToOne extends Relation
 {
-    /** @var Model|null The related model. */
+    /** @var U|null The related model. */
     protected ?Model $relatedModel;
 
     /**
@@ -22,9 +26,6 @@ class ManyToOne extends Relation
      */
     private bool $fetched = false;
 
-    /**
-     * @inheritDoc
-     */
     public function reload(): void
     {
         $key = $this->localModel()->{$this->localKey()};
@@ -39,7 +40,9 @@ class ManyToOne extends Relation
     }
 
     /**
-     * @inheritDoc
+     * @inheritdoc
+     *
+     * @return U|null
      */
     public function relatedModels(): ?Model
     {

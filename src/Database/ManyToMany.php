@@ -7,11 +7,16 @@ use ReflectionMethod;
 use ReflectionException;
 
 /**
+ * @template T of Model
+ * @template U of Model
+ * @template TPivot of Model
+ * @template-extends Relation<T,U>
+ *
  * A model relation that links many models of two related types in arbitrary configurations through a pivot table.
  */
 class ManyToMany extends Relation
 {
-    /** @var class-string The model class that contains the pivot records linking the local and related models. */
+    /** @var class-string<TPivot> The model class that contains the pivot records linking the local and related models. */
     protected string $pivotModel;
 
     /** @var string The property in the pivot table that links to the local model. */
@@ -20,15 +25,15 @@ class ManyToMany extends Relation
     /** @var string The property in the pivot table that links to the related model. */
     protected string $pivotRelatedKey;
 
-    /** @var array|null The cahced related models. */
+    /** @var U[]|null The cahced related models. */
     protected ?array $relatedModels;
 
     /**
      * Initialise a new instance of the relation.
      *
-     * @param Model $model The model that has the relation.
-     * @param string $relatedModel The model class of the related models.
-     * @param string $pivotModel The model class of the pivot table.
+     * @param T $model The model that has the relation.
+     * @param class-string<U> $relatedModel The model class of the related models.
+     * @param class-string<TPivot> $pivotModel The model class of the pivot table.
      * @param string $pivotLocalKey
      * @param string $pivotRelatedKey
      * @param string|null $localKey
@@ -45,7 +50,7 @@ class ManyToMany extends Relation
     /**
      * Fetch the class name of the model used to link the local and related models.
      *
-     * @return string The model class name.
+     * @return class-string<TPivot> The pivot model class name.
      */
     public function pivotModel(): string
     {
@@ -73,6 +78,7 @@ class ManyToMany extends Relation
     }
 
     /**
+     * @inheritdoc
      * @throws ReflectionException if hydration fails due to an invalid related model class.
      */
     public function reload(): void
@@ -95,7 +101,9 @@ class ManyToMany extends Relation
     }
 
     /**
+     * @inheritdoc
      * @throws ReflectionException if hydration fails due to an invalid related model class.
+     * @return U[]|null
      */
     public function relatedModels()
     {
