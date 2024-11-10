@@ -145,7 +145,7 @@ class Process
     {
         if (isset($timeout)) {
             if (0 > $timeout) {
-                throw new InvalidArgumentException("The cleanup timeout must be >= 0.");
+                throw new InvalidArgumentException("Expected cleanup timeout >=0, found {$timeout}");
             }
 
             static::$cleanupTimeout = $timeout;
@@ -506,7 +506,7 @@ class Process
         }
 
         if (empty($this->command())) {
-            throw new RuntimeException("Can't start a process with no command.");
+            throw new RuntimeException("Can't start a process with no command");
         }
 
         $this->m_exitCode = null;
@@ -561,13 +561,15 @@ class Process
             throw new RuntimeException("The process is not running.");
         }
 
-        if (0 > $timeout) {
-            throw new InvalidArgumentException("The timeout must be >= 0.");
+        if (null !== $timeout) {
+            if (0 > $timeout) {
+                throw new InvalidArgumentException("The timeout must be >= 0.");
+            }
+
+            $timeout = microtime(true) + $timeout;
         }
 
-        $timeout = (isset($timeout) ? microtime(true) + $timeout : null);
-
-        while ($this->isRunning() && (!isset($timeout) || microtime(true) < $timeout)) {
+        while ($this->isRunning() && (null === $timeout || microtime(true) < $timeout)) {
             usleep(self::TimeoutPollInterval);
         }
     }

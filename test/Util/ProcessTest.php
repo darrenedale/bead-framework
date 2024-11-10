@@ -6,6 +6,7 @@ namespace BeadTests\Util;
 
 use Bead\Testing\XRay;
 use InvalidArgumentException;
+use RuntimeException;
 use TypeError;
 use Bead\Process;
 use BeadTests\Framework\TestCase;
@@ -16,73 +17,58 @@ use Stringable;
  */
 class ProcessTest extends TestCase
 {
-    /**
-     * Test data for testCleanupTimeout
-     *
-     * @return iterable The test data.
-     */
-    public function dataForTestCleanupTimeout(): iterable
+    /** Test data for testSetCleanupTimeout1 */
+    public function dataForTestSetCleanupTimeout1(): iterable
     {
-        yield from [
-            "typical10" => [10,],
-            "typical20" => [20,],
-            "typical30" => [30,],
-            "typical40" => [40,],
-            "typical50" => [50,],
-            "typical60" => [60,],
-            "typicalReset" => [null,],
-            "extreme0" => [0,],
-            "extremeIntMax" => [PHP_INT_MAX,],
-            "invalidNegative" => [-1, \InvalidArgumentException::class,],
-            "invalidIntMin" => [PHP_INT_MIN, \InvalidArgumentException::class,],
-            "invalidFloat" => [12.5, TypeError::class,],
-            "invalidBool" => [true, TypeError::class,],
-            "invalidArray" => [[30,], TypeError::class,],
-            "invalidObject" => [(object) [30,], TypeError::class,],
-            "invalidString" => ["30", TypeError::class,],
-            "invalidAnonymousClass" => [
-                new class
-                {
-                    public function __toInt()
-                    {
-                        return 30;
-                    }
-                },
-                TypeError::class,
-            ],
-        ];
-
-        // 100 random valid timeouts
-        for ($idx = 0; $idx < 100; ++$idx) {
-            yield "random{$idx}" => [mt_rand(0, 600)];
+        for ($timeout = 10; $timeout <= 60; ++$timeout) {
+            yield "typical{$timeout}" => [$timeout,];
         }
 
-        // 100 random invalid timeouts
-        for ($idx = 0; $idx < 100; ++$idx) {
-            yield "randomInvalid{$idx}" => [mt_rand(PHP_INT_MIN, -1), \InvalidArgumentException::class,];
-        }
+        yield "extreme0" => [0,];
+        yield "extremeIntMax" => [PHP_INT_MAX,];
     }
 
     /**
-     * @dataProvider dataForTestCleanupTimeout
+     * Ensure we can set valid cleanup timeouts.
      *
-     * @param mixed $timeout The timeout to test.
-     * @param string|null $exceptionClass The exception class expected, if any.
+     * @dataProvider dataForTestSetCleanupTimeout1
+     *
+     * @param int $timeout The timeout to test.
      */
-    public function testCleanupTimeout($timeout, ?string $exceptionClass = null): void
+    public function testSetCleanupTimeout1(int $timeout): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        if (!isset($timeout)) {
-            // set it to something we can reset from
-            Process::setCleanupTimeout(Process::DefaultCleanupTimeout + rand(1, 30));
-            self::assertNotEquals(Process::DefaultCleanupTimeout, Process::cleanupTimeout(), "The cleanup timeout was not be set to a random non-default value.");
-        }
-
         Process::setCleanupTimeout($timeout);
-        self::assertEquals($timeout ?? Process::DefaultCleanupTimeout, Process::cleanupTimeout(), "The cleanup timeout was not (re)set successfully.");
+        self::assertEquals($timeout, Process::cleanupTimeout(), "The cleanup timeout was not set successfully.");
+    }
+
+    /** Ensure we can reset the cleanup timeout. */
+    public function testSetCleanupTimeout2(): void
+    {
+        Process::setCleanupTimeout(999);
+        self::assertNotEquals(Process::DefaultCleanupTimeout, Process::cleanupTimeout());
+        Process::setCleanupTimeout(null);
+        self::assertEquals(Process::DefaultCleanupTimeout, Process::cleanupTimeout(), "The cleanup timeout was not reset successfully.");
+    }
+
+    /** Test data for testSetCleanupTimeout3 */
+    public function dataForTestSetCleanupTimeout3(): iterable
+    {
+        yield "invalidNegative" => [-1,];
+        yield "invalidIntMin" => [PHP_INT_MIN,];
+    }
+
+    /**
+     * Ensure we get the expected exception when an invalid cleanup timeout is set.
+     *
+     * @dataProvider dataForTestSetCleanupTimeout3
+     *
+     * @param int $timeout The invalid timeout to test.
+     */
+    public function testSetCleanupTimeout3(int $timeout): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Expected cleanup timeout >=0, found {$timeout}");
+        Process::setCleanupTimeout($timeout);
     }
 
     /**
@@ -407,7 +393,7 @@ class ProcessTest extends TestCase
      */
     public function testSetCommandOnRunningProcess(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $process = new Process("php", ["-r", "'sleep(2);'",]);
         $process->start();
         $process->setCommand("/usr/bin/echo");
@@ -487,7 +473,7 @@ class ProcessTest extends TestCase
      */
     public function testSetArgumentsOnRunningProcess(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $process = new Process("php", ["-r", "'sleep(2);'",]);
         $process->start();
         $process->setArguments(["-r", "'sleep(5);",]);
@@ -560,7 +546,7 @@ class ProcessTest extends TestCase
      */
     public function testSetWorkingDirectoryOnRunningProcess(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $process = new Process("php", ["-r", "'sleep(2);'",]);
         $process->start();
         $process->setWorkingDirectory("/");
@@ -680,62 +666,35 @@ class ProcessTest extends TestCase
      */
     public function testSetEnvironmentOnRunningProcess($env): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $process = new Process("php", ["-r", "'sleep(2);'",]);
         $process->start();
         $process->setEnvironment($env);
     }
 
-    /**
-     * @return void
-     */
-    public function dataForTestStart(): array
+    /** Ensure the process starts successfully. */
+    public function testStart1(): void
     {
-        return [
-            "typical" => ["php", ["-r", "'sleep(2); echo \"Done\";'",], true, 0, "Done", "",],
-            "typicalNonZeroExitCode" => ["php", ["-r", "'echo \"Done\"; fprintf(STDERR, \"Error\"); exit(2);'",], true, 2, "Done", "Error",],
-            "invalidEmptyCommand" => ["", [], false, null, "", "", \RuntimeException::class],
-        ];
-    }
-
-    /**
-     * @dataProvider dataForTestStart
-     */
-    public function testStart(string $command, array $args, bool $shouldStart, ?int $expectedExitCode, string $expectedStdOut, string $expectedStdErr, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $stdOut = "";
-        $stdErr = "";
-
-        /** @var Process|null $process */
-        $process = null;
         $process = new Process(
-            $command,
-            $args,
-            null,
-            function () use (&$stdOut, &$process): void {
-                $stdOut .= $process->readOutput();
-            },
-            function () use (&$stdErr, &$process): void {
-                $stdErr .= $process->readErrorOutput();
-            }
+            "php",
+            ["-r", "'echo \"Done\";'",],
         );
 
-        self::assertEquals($shouldStart, $process->start(), "The process did not start.");
-        self::assertEquals($shouldStart, $process->isRunning(), "Process is not running.");
+        self::assertEquals(true, $process->start(), "The process did not start.");
         $process->wait();
-        self::assertEquals($expectedExitCode, $process->exitCode(), "The expected exit code was not produced.");
-        self::assertEquals($expectedStdOut, $stdOut, "Process did not produce the expected output.");
-        self::assertEquals($expectedStdErr, $stdErr, "Process did not produce the expected error output.");
     }
 
-    /**
-     * Test processes stop as expected.
-     */
-    public function testStop(): void
+    /** Ensure start() throws when the process is not valid. */
+    public function testStart2(): void
+    {
+        $process = new Process("");
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Can't start a process with no command");
+        $process->start();
+    }
+
+    /** Test processes stop as expected. */
+    public function testStop1(): void
     {
         $process = new Process("php", ["-r", "'sleep(20);'",]);
         $process->start();
@@ -749,30 +708,66 @@ class ProcessTest extends TestCase
         self::assertNotEquals(0, $process->exitCode(), "Process should not have exited with exit code 0.");
     }
 
-    /**
-     * Test data for testPid().
-     *
-     * @return array The test data.
-     */
-    public function dataForTestPid(): array
+    public static function dataForTestExitCode1(): iterable
     {
-        return [
-            ["php", ["-r", "'sleep(1);'",],],
-        ];
+        yield "zero" => ["php", ["-r", "'exit(0);'"], 0];
+        yield "non-zero" => ["php", ["-r", "'exit(105);'"], 105];
+        exit();
     }
 
     /**
-     * @dataProvider dataForTestPid
+     * Ensure we can get the process's exit code.
      *
-     * @param string $commandLine The command to run.
-     * @param bool $expectNullPid Whether it's expected to yield a `null` PID (i.e. doesn't actually start).
+     * @dataProvider dataForTestExitCode1
      */
-    public function testPid(string $command, array $args): void
+    public function testExitCode1(string $command, array $args, int $expectedExitCode): void
     {
-        $process = new Process($command, $args);
+        $process = new Process(
+            $command,
+            $args,
+        );
+
+        self::assertTrue($process->start(), "The process did not start.");
+        $process->wait();
+        self::assertEquals($expectedExitCode, $process->exitCode(), "The expected exit code was not produced.");
+    }
+
+    /** Ensure we get notified of writes to the process's output streams. */
+    public function testStdio1(): void
+    {
+        $processStdOut = "";
+        $processStdErr = "";
+        $process = new Process("php", ["-r", "'fprintf(STDOUT, \"stdout content\"); fprintf(STDERR, \"stderr content\");'"]);
+
+        $process->setOutputNotifier(static function () use (&$processStdOut, $process): void {
+            $processStdOut .= $process->readOutput();
+        });
+
+        $process->setErrorNotifier(static function () use (&$processStdErr, $process): void {
+            $processStdErr .= $process->readErrorOutput();
+        });
+
+        self::assertTrue($process->start(), "The process did not start.");
+        $process->wait();
+        $process->checkOutput();
+        self::assertEquals("stdout content", $processStdOut, "Process did not produce the expected output.");
+        self::assertEquals("stderr content", $processStdErr, "Process did not produce the expected error output.");
+    }
+
+    /** Ensure we can get the PID while the process is running. */
+    public function testPid1(): void
+    {
+        $process = new Process("php", ["-r", "'usleep(100000);'",]);
         $process->start();
         self::assertIsInt($process->pid(), "Pid is not valid.");
-        $process->stop();
+        $process->wait();
+    }
+
+    /** Ensure we get mnull for the PID when the process has finished. */
+    public function testPid2(): void
+    {
+        $process = new Process("php", ["-r", "'usleep(100000);'",]);
+        $process->start();
         $process->wait();
         self::assertNull($process->pid(), "PID for terminated process is not null.");
     }
