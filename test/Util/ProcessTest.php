@@ -552,91 +552,21 @@ class ProcessTest extends TestCase
         $process->setWorkingDirectory("/");
     }
 
-    /**
-     * Test data for testSetArguments().
-     *
-     * @return array The test data.
-     */
-    public function dataForTestSetEnvironment(): array
+    public function dataForTestSetEnvironment1(): array
     {
         return [
             "typicalString" => [["foo" => "bar",],],
             "typicalInt" => [["meaning" => 42,],],
             "typicalFloat" => [["pi" => 3.1415927,],],
-            "typicalNull" => [null,],
             "extremeEmpty" => [[],],
             "extremeAllTypesOfArgs" => [["foo" => "bar", "meaning" => 42, "pi" => 3.1415927,],],
-
-            "invalidArrayValue" => [["foo" => ["bar"],], InvalidArgumentException::class,],
-            "invalidNullValue" => [["foo" => null,], InvalidArgumentException::class,],
-            "invalidStringableAnonymousClassValue" => [
-                [
-                    "foo" => new class implements Stringable
-                    {
-                        public function __toString(): string
-                        {
-                            return "bar";
-                        }
-                    },
-                ],
-                InvalidArgumentException::class,
-            ],
-            "invalidStringableObjectValue" => [
-                [
-                    "foo" => (object) [
-                        "__toString" => function (): string {
-                            return "bar";
-                        },
-                    ],
-                ],
-                InvalidArgumentException::class,
-            ],
-
-            "invalidOneInvalidElement" => [["foo" => "bar", "baz" => null,], InvalidArgumentException::class,],
-            "invalidAllInvalidElements" => [
-                [
-                    "foo" => null,
-                    "bar" => new class implements Stringable
-                    {
-                        public function __toString(): string
-                        {
-                            return "'foo'";
-                        }
-                    },
-                ],
-                InvalidArgumentException::class,
-            ],
-
-            "invalidArrayableAnonymousClass" => [
-                new class
-                {
-                    public function __toArray(): array
-                    {
-                        return ["foo" => "bar"];
-                    }
-                },
-                TypeError::class,
-            ],
-            "invalidArrayableStdClass" => [
-                (object) [
-                    "__toArray" => function () {
-                        return ["foo" => "bar"];
-                    },
-                ],
-                TypeError::class,
-            ],
-            "invalidString" => ["foo", TypeError::class,],
-            "invalidInt" => [12, TypeError::class,],
-            "invalidFloat" => [29.456, TypeError::class,],
         ];
     }
 
     /**
-     * @dataProvider dataForTestSetEnvironment
-     *
-     * @return void
+     * @dataProvider dataForTestSetEnvironment1
      */
-    public function testSetEnvironment($env, ?string $exceptionClass = null): void
+    public function testSetEnvironment1(array $env, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
             $this->expectException($exceptionClass);
@@ -647,26 +577,105 @@ class ProcessTest extends TestCase
         self::assertEquals($env, $process->environment(), "Process environment was not set successfully.");
     }
 
-    /**
-     * Test data for testSetEnvironmentOnRunningProcess().
-     * @return array The test data.
-     */
-    public function dataForTestSetEnvironmentOnRunningProcess(): array
+    /** Ensure we can set a null environment. */
+    public function testSetEnvironment2(): void
     {
-        return [
-            [["foo" => "bar",]],
-            [null],
-            [[]],
+        $process = new Process("php");
+        $process->setEnvironment(["foo" => "bar",]);
+        self::assertNotNull($process->environment());
+        $process->setEnvironment(null);
+        self::assertNull($process->environment(), "Process environment was not reset successfully.");
+    }
+
+    public function dataForTestSetEnvironment3(): iterable
+    {
+        yield "invalidArrayValue" => [["foo" => ["bar"],],];
+        yield "invalidNullValue" => [["foo" => null,],];
+
+        yield "invalidStringableAnonymousClassValue" => [
+            [
+                "foo" => new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "bar";
+                    }
+                },
+            ],
+        ];
+
+        yield "invalidStringableObjectValue" => [
+            [
+                "foo" => (object) [
+                    "__toString" => function (): string {
+                        return "bar";
+                    },
+                ],
+            ],
+        ];
+
+        yield "invalidOneInvalidElement" => [["foo" => "bar", "baz" => null,],];
+
+        yield "invalidAllInvalidElements" => [
+            [
+                "foo" => null,
+                "bar" => new class implements Stringable
+                {
+                    public function __toString(): string
+                    {
+                        return "'foo'";
+                    }
+                },
+            ],
         ];
     }
 
     /**
-     * Test setEnvironment() throws if used while process is running.
-     * @dataProvider dataForTestSetEnvironmentOnRunningProcess
+     * Ensure setEnvironment() throws with an invalid environment variable values.
+     * @dataProvider dataForTestSetEnvironment3
      */
-    public function testSetEnvironmentOnRunningProcess($env): void
+    public function testSetEnvironment3(array $env): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Environment values must be strings or numbers");
+        $process = new Process("php");
+        $process->setEnvironment($env);
+    }
+
+    public function dataForTestSetEnvironment4(): iterable
+    {
+        yield "invalid-int-last" => [["foo" => "bar", 2 => "baz",],];
+        yield "invalid-int-first" => [[2 => "foo", "foo" => "bar",],];
+        yield "invalid-int-middle" => [["foo" => "bar", 2 => "foo", "fax" => "box",],];
+        yield "invalid-all-ints" => [[3 => "bar", 1 => "foo", 2 => "box",],];
+    }
+
+    /**
+     * Ensure setEnvironment() throws with an invalid environment variable names.
+     * @dataProvider dataForTestSetEnvironment4
+     */
+    public function testSetEnvironment4(array $env): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Environment keys must be strings");
+        $process = new Process("php");
+        $process->setEnvironment($env);
+    }
+
+    public function dataForTestSetEnvironment5(): iterable
+    {
+        yield "null" => [null,];
+        yield "environment" => [["foo" => "bar",],];
+    }
+
+    /**
+     * Test setEnvironment() throws if used while process is running.
+     * @dataProvider dataForTestSetEnvironment5
+     */
+    public function testSetEnvironment5(?array $env): void
     {
         $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("The environment can't be set for a running process");
         $process = new Process("php", ["-r", "'sleep(2);'",]);
         $process->start();
         $process->setEnvironment($env);

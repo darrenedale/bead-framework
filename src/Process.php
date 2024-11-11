@@ -302,7 +302,7 @@ class Process
     public function setEnvironment(?array $env): void
     {
         if ($this->isRunning()) {
-            throw new RuntimeException("The environment can't be set for a running process.");
+            throw new RuntimeException("The environment can't be set for a running process");
         }
 
         if (!isset($env)) {
@@ -312,7 +312,7 @@ class Process
 
         foreach ($env as $key => &$value) {
             if (!is_string($key)) {
-                throw new InvalidArgumentException("Environment keys must be strings.");
+                throw new InvalidArgumentException("Environment keys must be strings");
             }
 
             if (is_string($value)) {
@@ -320,7 +320,7 @@ class Process
             }
 
             if (!is_int($value) && !is_float($value)) {
-                throw new InvalidArgumentException("Environment values must be strings or numbers.");
+                throw new InvalidArgumentException("Environment values must be strings or numbers");
             }
 
             $value = "{$value}";
