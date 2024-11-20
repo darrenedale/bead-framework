@@ -33,15 +33,6 @@ use function Bead\Helpers\Str\build;
  */
 function tr(string $str, string $file = null, int $line = null, ... $args): string
 {
-    $app = Application::instance();
-
-    if (isset($app)) {
-        $translator = $app->translator();
-
-        if (isset($translator)) {
-            $str = $translator->translate($str, $file, $line);
-        }
-    }
-
+    $str = Application::instance()?->translator()?->translate($str, $file, $line, $args) ?? $str;
     return (0 === count($args) ? $str : build($str, ...$args));
 }
