@@ -99,7 +99,7 @@ class ApplicationTest extends TestCase
         $router->expects("route")->with($expectedRequest)->andReturn($expectedResponse);
         $app->setRouter($router);
 
-        $handler = static function(string $event, Request $request) use (&$actualEvents, $expectedRequest): void {
+        $handler = static function (string $event, Request $request) use (&$actualEvents, $expectedRequest): void {
             ApplicationTest::assertSame($expectedRequest, $request);
             $actualEvents[] = $event;
         };
