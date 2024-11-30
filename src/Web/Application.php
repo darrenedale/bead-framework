@@ -34,6 +34,7 @@ use RuntimeException;
 use SplFileInfo;
 use UnexpectedValueException;
 
+use function Bead\Helpers\I18n\tr;
 use function Bead\Helpers\Str\random;
 
 /**
@@ -807,7 +808,7 @@ class Application extends CoreApplication
                 return $postResponse;
             }
         } catch (UnroutableRequestException $err) {
-            throw new NotFoundException($request, "", 0, $err);
+            throw new NotFoundException($request, tr("The requested page could not be found"), previous: $err);
         }
 
         return $response;
