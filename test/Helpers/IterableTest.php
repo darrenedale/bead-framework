@@ -19,6 +19,7 @@ use function Bead\Helpers\Iterable\implode;
 use function Bead\Helpers\Iterable\isSubsetOf;
 use function Bead\Helpers\Iterable\map;
 use function Bead\Helpers\Iterable\none;
+use function Bead\Helpers\Iterable\partition;
 use function Bead\Helpers\Iterable\recursiveCount;
 use function Bead\Helpers\Iterable\reduce;
 use function Bead\Helpers\Iterable\some;
@@ -1695,5 +1696,33 @@ final class IterableTest extends TestCase
 
         $actual = recursiveCount($iterable);
         self::assertEquals($expected, $actual);
+    }
+
+    /** Ensure we can partition with integer keys. */
+    public function testPartition1(): void
+    {
+        $data = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        $classifier = static fn (int $value): int => (int) floor(($value - 1) / 3);
+        [$partition1, $partition2, $partition3,] = partition($data, $classifier);
+        self::assertSame([1, 2, 3,], $partition1);
+        self::assertSame([4, 5, 6,], $partition2);
+        self::assertSame([7, 8, 9,], $partition3);
+    }
+
+    /** Ensure we can partition with string keys. */
+    public function testPartition2(): void
+    {
+        $data = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+        $classifier = static fn (int $value): string => match (true) {
+            1 === ($value % 2) => "odd",
+            0 === ($value % 3) => "even-multiple-of-three",
+            default => "other",
+        };
+
+        ["odd" => $odd, "even-multiple-of-three" => $multiplesOfThree, "other" => $other,] = partition($data, $classifier);
+        self::assertSame([1, 3, 5, 7, 9,], $odd);
+        self::assertSame([6,], $multiplesOfThree);
+        self::assertSame([2, 4, 8,], $other);
     }
 }

@@ -37,7 +37,7 @@ class IsTypedArray extends IsArray
 
         // handle these as special cases since the types don't match what gettype() returns - by recognising both forms
         // we're future-proofing against PHP bringing gettype() into line with the actual types
-        $this->requiredType = match($type) {
+        $this->requiredType = match ($type) {
             "int", "integer" => gettype(42),
             "float", "double" => gettype(3.14),
             "boolean", "bool" => gettype(true),
