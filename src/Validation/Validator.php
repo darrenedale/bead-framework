@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Bead\Validation;
 
 use ArgumentCountError;
+use Bead\Validation\Rules\IsTypedArray;
 use DateTime;
 use DateTimeImmutable;
 use Bead\Exceptions\ValidationException;
@@ -100,6 +101,7 @@ class Validator
         "number" => Number::class,
         "string" => IsString::class,
         "array" => IsArray::class,
+        "typed-array" => IsTypedArray::class,
         "bool" => IsBoolean::class,
         "true" => IsTrue::class,
         "false" => IsFalse::class,

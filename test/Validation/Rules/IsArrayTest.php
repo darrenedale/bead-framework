@@ -10,7 +10,7 @@ use BeadTests\Framework\RuleTestCase;
 use TypeError;
 
 /**
- * Test case for the IsString validator rule.
+ * Test case for the IsArray validator rule.
  */
 class IsArrayTest extends RuleTestCase
 {

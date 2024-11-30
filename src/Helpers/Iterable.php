@@ -350,3 +350,28 @@ function fill(int $count, callable $createValue, ?callable $createKey = null): i
         yield ($createKey ? $createKey($idx) : $idx) => $createValue($idx);
     }
 }
+
+/**
+ * Partition the items in an iterable according to a classification function.
+ *
+ * @param iterable $collection The items to partition.
+ * @param callable $classifier The classification function that identifies which partition each value belongs in.
+ *
+ * @return array The partitioned data.
+ */
+function partition(iterable $collection, callable $classifier): array
+{
+    $partitions = [];
+
+    foreach ($collection as $item) {
+        $key = $classifier($item);
+
+        if (array_key_exists($key, $partitions)) {
+            $partitions[$key][] = $item;
+        } else {
+            $partitions[$key] = [$item];
+        }
+    }
+
+    return $partitions;
+}
