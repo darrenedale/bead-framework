@@ -110,10 +110,10 @@ class IsTypedArrayTest extends RuleTestCase
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
-                1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
-                1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 
+                1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
+                1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
             ],
         ];
@@ -130,10 +130,10 @@ class IsTypedArrayTest extends RuleTestCase
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
-                1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
-                1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 
+                1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
+                1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
                 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 1.1, 2.2, 3.3,
             ],
         ];
@@ -151,7 +151,7 @@ class IsTypedArrayTest extends RuleTestCase
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
-                true, false, false, true, false, false, true, false, false, true, false, false, true, false, false, 
+                true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
@@ -176,7 +176,7 @@ class IsTypedArrayTest extends RuleTestCase
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
-                true, false, false, true, false, false, true, false, false, true, false, false, true, false, false, 
+                true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
                 true, false, false, true, false, false, true, false, false, true, false, false, true, false, false,
@@ -435,5 +435,4 @@ class IsTypedArrayTest extends RuleTestCase
         $rule = $this->ruleInstance($type);
         self::assertFalse($rule->passes("field", $data));
     }
-
 }
