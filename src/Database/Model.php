@@ -1190,7 +1190,6 @@ abstract class Model
      */
     public static function bindValues(PDOStatement $stmt, array $values): void
     {
-        $stmt->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $idx = 1;
 
         foreach ($values as $value) {
@@ -1218,13 +1217,13 @@ abstract class Model
     }
 
     /**
-     * Helper to make an array of models from a prepared statement that has been executed.
+     * Helper to hydrate an array of models from a prepared statement that has been executed.
      *
      * @param PDOStatement $stmt The statement.
      *
      * @return array The models.
      */
-    protected static function makeModelsFromQuery(PDOStatement $stmt): array
+    protected static function hydrateModels(PDOStatement $stmt): array
     {
         $models = [];
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
@@ -1330,7 +1329,7 @@ abstract class Model
         );
 
         $stmt->execute($values);
-        return static::makeModelsFromQuery($stmt);
+        return static::hydrateModels($stmt);
     }
 
     /**
@@ -1353,7 +1352,7 @@ abstract class Model
         );
 
         $stmt->execute($values);
-        return static::makeModelsFromQuery($stmt);
+        return static::hydrateModels($stmt);
     }
 
     /**
@@ -1369,7 +1368,7 @@ abstract class Model
     {
         $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)" . static::fixedWhereExpressionsSql());
         $stmt->execute([$value]);
-        return static::makeModelsFromQuery($stmt);
+        return static::hydrateModels($stmt);
     }
 
     /**
@@ -1385,7 +1384,7 @@ abstract class Model
         if (is_null($value)) {
             $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `{$property}` IS NULL");
             $stmt->execute();
-            return static::makeModelsFromQuery($stmt);
+            return static::hydrateModels($stmt);
         }
 
         return self::querySimpleComparison($property, "=", $value);
@@ -1501,7 +1500,7 @@ abstract class Model
         /** @psalm-suppress MissingThrowsDocblock PDOException won't be thrown - values and placeholders always agree */
         static::bindValues($stmt, $values);
         $stmt->execute();
-        return static::makeModelsFromQuery($stmt);
+        return static::hydrateModels($stmt);
     }
 
     /**
@@ -1519,7 +1518,7 @@ abstract class Model
         /** @psalm-suppress MissingThrowsDocblock PDOException won't be thrown - values and placeholders always agree */
         static::bindValues($stmt, $values);
         $stmt->execute();
-        return static::makeModelsFromQuery($stmt);
+        return static::hydrateModels($stmt);
     }
 
     /**
