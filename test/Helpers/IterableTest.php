@@ -157,7 +157,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test instance.
      */
-    private function createGenerator(array $data): iterable
+    private static function createGenerator(array $data): iterable
     {
         yield from $data;
     }
@@ -305,19 +305,19 @@ final class IterableTest extends TestCase
     {
         yield from [
             "typicalIterable" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 [1, 2, 3,],
             ],
             "typicalEmptyIterable" => [
-                $this->createIterator([]),
+                self::createIterator([]),
                 [],
             ],
             "typicalGenerator" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 [1, 2, 3,],
             ],
             "typicalEmptyGenerator" => [
-                $this->createGenerator([]),
+                self::createGenerator([]),
                 [],
             ],
             "typicalAlreadyArray" => [
@@ -374,67 +374,67 @@ final class IterableTest extends TestCase
     {
         yield from [
             "typicalIterableWithComma" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 ",",
                 "1,2,3",
             ],
             "typicalIterableWithSemicolon" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 ";",
                 "1;2;3",
             ],
             "typicalIterableWithDash" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 "-",
                 "1-2-3",
             ],
             "extremeIterableWithLongString" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 "RIDICULOUSLY-LONG-GLUE",
                 "1RIDICULOUSLY-LONG-GLUE2RIDICULOUSLY-LONG-GLUE3",
             ],
             "extremeIterableWithEmptyString" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 "",
                 "123",
             ],
             "typicalIterableWithCommaSpace" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 ", ",
                 "1, 2, 3",
             ],
             "typicalEmptyIterableComma" => [
-                $this->createIterator([]),
+                self::createIterator([]),
                 ",",
                 "",
             ],
             "typicalEmptyIterableCommaSpace" => [
-                $this->createIterator([]),
+                self::createIterator([]),
                 ", ",
                 "",
             ],
             "typicalGenerator" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 ",",
                 "1,2,3",
             ],
             "extremeGeneratorWithLongString" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 "RIDICULOUSLY-LONG-GLUE",
                 "1RIDICULOUSLY-LONG-GLUE2RIDICULOUSLY-LONG-GLUE3",
             ],
             "extremeGeneratorWithEmptyString" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 "",
                 "123",
             ],
             "typicalEmptyGeneratorComma" => [
-                $this->createGenerator([]),
+                self::createGenerator([]),
                 ",",
                 ""
             ],
             "typicalEmptyGeneratorCommaSpace" => [
-                $this->createGenerator([]),
+                self::createGenerator([]),
                 ", ",
                 ""
             ],
@@ -540,97 +540,97 @@ final class IterableTest extends TestCase
     {
         yield from [
             "typicalIterableWithComma" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 ", ",
                 " and ",
                 "1, 2 and 3",
             ],
             "typicalIterableWithSemicolon" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 "; ",
                 " or ",
                 "1; 2 or 3",
             ],
             "typicalIterableWithDash" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 " - ",
                 " and ",
                 "1 - 2 and 3",
             ],
             "typicalSingleItemIterable" => [
-                $this->createIterator(["foo",]),
+                self::createIterator(["foo",]),
                 " - ",
                 " and ",
                 "foo",
             ],
             "extremeIterableWithLongString" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 "RIDICULOUSLY-LONG-GLUE",
                 "RIDICULOUSLY-LONG-LAST-GLUE",
                 "1RIDICULOUSLY-LONG-GLUE2RIDICULOUSLY-LONG-LAST-GLUE3",
             ],
             "extremeIterableWithEmptyGlue" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 "",
                 " and ",
                 "12 and 3",
             ],
             "extremeIterableWithEmptyLastGlue" => [
-                $this->createIterator([1, 2, 3,]),
+                self::createIterator([1, 2, 3,]),
                 ", ",
                 "",
                 "1, 23",
             ],
             "typicalEmptyIterableComma" => [
-                $this->createIterator([]),
+                self::createIterator([]),
                 ", ",
                 " and ",
                 "",
             ],
             "typicalGenerator" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 ", ",
                 " and ",
                 "1, 2 and 3",
             ],
             "typicalGeneratorSemicolon" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 "; ",
                 " or ",
                 "1; 2 or 3",
             ],
             "typicalSingleItemGenerator" => [
-                $this->createGenerator(["foo",]),
+                self::createGenerator(["foo",]),
                 " - ",
                 " and ",
                 "foo",
             ],
             "extremeGeneratorWithLongString" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 "RIDICULOUSLY-LONG-GLUE",
                 "RIDICULOUSLY-LONG-LAST-GLUE",
                 "1RIDICULOUSLY-LONG-GLUE2RIDICULOUSLY-LONG-LAST-GLUE3",
             ],
             "extremeGeneratorWithEmptyGlue" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 "",
                 " and ",
                 "12 and 3",
             ],
             "extremeGeneratorWithEmptyLastGlue" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 ", ",
                 "",
                 "1, 23",
             ],
             "extremeGeneratorWithEmptyGlues" => [
-                $this->createGenerator([1, 2, 3,]),
+                self::createGenerator([1, 2, 3,]),
                 "",
                 "",
                 "123",
             ],
             "typicalEmptyGeneratorComma" => [
-                $this->createGenerator([]),
+                self::createGenerator([]),
                 ", ",
                 " and ",
                 "",
@@ -1698,31 +1698,25 @@ final class IterableTest extends TestCase
         self::assertEquals($expected, $actual);
     }
 
-    /** Ensure we can partition with integer keys. */
-    public function testPartition1(): void
+    public static function dataForTestPartition1(): iterable
     {
-        $data = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-        $classifier = static fn (int $value): int => (int) floor(($value - 1) / 3);
-        [$partition1, $partition2, $partition3,] = partition($data, $classifier);
-        self::assertSame([1, 2, 3,], $partition1);
-        self::assertSame([4, 5, 6,], $partition2);
-        self::assertSame([7, 8, 9,], $partition3);
+        $data = [1, 2, 3, 4, 5, 6, 7, 8, 9,];
+        yield "array" => [$data,];
+        yield "generator" => [self::createGenerator($data),];
+        yield "iterator" => [self::createIterator($data),];
     }
 
-    /** Ensure we can partition with string keys. */
-    public function testPartition2(): void
+
+    /**
+     * Ensure we can partition all types of iterable.
+     * 
+     * @dataProvider dataForTestPartition1
+     */
+    public function testPartition1(iterable $data): void
     {
-        $data = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-
-        $classifier = static fn (int $value): string => match (true) {
-            1 === ($value % 2) => "odd",
-            0 === ($value % 3) => "even-multiple-of-three",
-            default => "other",
-        };
-
-        ["odd" => $odd, "even-multiple-of-three" => $multiplesOfThree, "other" => $other,] = partition($data, $classifier);
-        self::assertSame([1, 3, 5, 7, 9,], $odd);
-        self::assertSame([6,], $multiplesOfThree);
-        self::assertSame([2, 4, 8,], $other);
+        $predicate = static fn (int $value): bool => $value < 5;
+        [$partition1, $partition2,] = partition($data, $predicate);
+        self::assertSame([1, 2, 3, 4,], $partition1);
+        self::assertSame([5, 6, 7, 8, 9,], $partition2);
     }
 }

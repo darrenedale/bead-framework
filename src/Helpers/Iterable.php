@@ -352,25 +352,23 @@ function fill(int $count, callable $createValue, ?callable $createKey = null): i
 }
 
 /**
- * Partition the items in an iterable according to a classification function.
+ * Partition the items in an iterable according to a predicate.
+ *
+ * The iterable is partitioned into those items that satisfy the predicate and those that do not.
  *
  * @param iterable $collection The items to partition.
- * @param callable $classifier The classification function that identifies which partition each value belongs in.
+ * @param callable $predicate The function that identifies which partition each value belongs in.
  *
- * @return array The partitioned data.
+ * @return array A tuple of two arrays, the first containing the items that satisfy the predicate, the second those that
+ * don't.
  */
-function partition(iterable $collection, callable $classifier): array
+function partition(iterable $collection, callable $predicate): array
 {
-    $partitions = [];
+    $partitions = [[], []];
 
     foreach ($collection as $item) {
-        $key = $classifier($item);
-
-        if (array_key_exists($key, $partitions)) {
-            $partitions[$key][] = $item;
-        } else {
-            $partitions[$key] = [$item];
-        }
+        $idx = ($predicate($item) ? 0 : 1);
+        $partitions[$idx][] = $item;
     }
 
     return $partitions;
