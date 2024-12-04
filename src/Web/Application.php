@@ -196,9 +196,6 @@ class Application extends CoreApplication
     {
         parent::__construct($appRoot);
 
-        // initialise the fixed pre- and post-processors
-        $this->initialiseRequestProcessors();
-
         $this->initialiseSession();
         /** @psalm-suppress MissingThrowsDocblock $context is not empty */
         $this->m_session = $this->sessionData(self::SessionDataContext);
@@ -651,18 +648,6 @@ class Application extends CoreApplication
     public function regenerateCsrf(): void
     {
         SessionFacade::set("csrf-token", random(64));
-    }
-
-    /**
-     * Load the preprocessors that the application kernel always uses.
-     *
-     * Reimplement this to customise this list.
-     */
-    protected function initialiseRequestProcessors(): void
-    {
-        $this->m_requestProcessors = [
-            new CheckCsrfToken(),
-        ];
     }
 
     /**
