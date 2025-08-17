@@ -398,7 +398,7 @@ abstract class Model
     public function delete(): bool
     {
         return $this->connection()
-            ->prepare("DELETE FROM `" . static::table() . "` WHERE `" . static::primaryKey() . "` = ? LIMIT 1")
+            ->prepare(static::baseDeleteSql() . " WHERE `" . static::primaryKey() . "` = ? LIMIT 1")
             ->execute([$this->{static::primaryKey()}]);
     }
 
@@ -1382,7 +1382,7 @@ abstract class Model
     public static function queryEquals(string $property, mixed $value): array
     {
         if (is_null($value)) {
-            $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `{$property}` IS NULL");
+            $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `{$property}` IS NULL" . static::fixedWhereExpressionsSql());
             $stmt->execute();
             return static::hydrateModels($stmt);
         }
@@ -1400,6 +1400,12 @@ abstract class Model
      */
     public static function queryNotEquals(string $property, $value): array
     {
+        if (is_null($value)) {
+            $stmt = static::defaultConnection()->prepare("SELECT " . static::buildSelectList() . " FROM `" . static::table() . "` WHERE `{$property}` IS NOT NULL" . static::fixedWhereExpressionsSql());
+            $stmt->execute();
+            return static::hydrateModels($stmt);
+        }
+
         return self::querySimpleComparison($property, "<>", $value);
     }
 
@@ -1583,6 +1589,12 @@ abstract class Model
         throw new UnrecognisedQueryOperatorException($operator, "The operator {$operator} is not supported.");
     }
 
+    /** The core of the SQL for delete/remove operations. */
+    protected static function baseDeleteSql(): string
+    {
+        return "DELETE FROM `" . static::table() . "`";
+    }
+
     /**
      * Helper to remove rows that match all of a given set of terms.
      *
@@ -1599,7 +1611,7 @@ abstract class Model
     {
         [$values, $where] = self::prepareEqualityWheres($terms);
         $stmt = static::defaultConnection()
-            ->prepare("DELETE FROM `" . static::table() . "` WHERE " . implode(" AND ", $where));
+            ->prepare(static::baseDeleteSql() . "  WHERE " . implode(" AND ", $where));
         return $stmt->execute($values);
     }
 
@@ -1616,7 +1628,7 @@ abstract class Model
      */
     final protected static function removeSimpleComparison(string $property, string $operator, mixed $value): bool
     {
-        $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::table() . "` WHERE (`{$property}` {$operator} ?)");
+        $stmt = static::defaultConnection()->prepare(static::baseDeleteSql() . "  WHERE (`{$property}` {$operator} ?)");
         return $stmt->execute([$value]);
     }
 

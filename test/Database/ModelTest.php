@@ -10,6 +10,8 @@ use Bead\Database\Model;
 use Bead\Exceptions\Database\ModelPropertyCastException;
 use LogicException;
 use PDO;
+use PDOStatement;
+use PHPUnit\Framework\MockObject\MockObject;
 use TypeError;
 
 use function Bead\Helpers\Iterable\all;
@@ -29,20 +31,22 @@ class ModelTest extends TestCase
      *
      * @return Model A mock model.
      */
-    protected function createModel(array $properties, array $data): Model
+    protected function createModel(array $properties, array $data, string $table = "test_table"): Model
     {
-        return new class ($this->createMock(PDO::class), $properties, $data) extends Model
+        return new class ($this->createMock(PDO::class), $properties, $data, $table) extends Model
         {
             private static PDO $connection;
 
-            public function __construct(PDO $connection, array $properties = [], array $data = [])
+            public function __construct(PDO $connection, array $properties, array $data, string $table)
             {
                 static::$connection = $connection;
+                static::$table = $table;
                 parent::__construct();
                 static::$properties = $properties;
                 $this->data = $data;
             }
 
+            /** @return MockObject&PDO */
             public static function defaultConnection(): PDO
             {
                 return static::$connection;
@@ -59,125 +63,129 @@ class ModelTest extends TestCase
      */
     public function dataForTestProperties(): iterable
     {
-        yield from [
-            "typicalStringProperty" => [
-                [
-                    "id" => "int",
-                    "name" => "string",
-                    "email" => "string",
-                ],
-                [
-                    "id" => 1,
-                    "name" => "Darren",
-                    "email" => "bead-framework@equituk.net",
-                ],
-                "name",
-                "Darren",
-                "Susan",
-                "Susan",
+        yield "typicalStringProperty" => [
+            [
+                "id" => "int",
+                "name" => "string",
+                "email" => "string",
             ],
-            "extremeStringPropertyEmpty" => [
-                [
-                    "id" => "int",
-                    "name" => "string",
-                    "email" => "string",
-                ],
-                [
-                    "id" => 1,
-                    "name" => "Darren",
-                    "email" => "bead-framework@equituk.net",
-                ],
-                "name",
-                "Darren",
-                "",
-                "",
+            [
+                "id" => 1,
+                "name" => "Darren",
+                "email" => "bead-framework@equituk.net",
             ],
-            "typicalIntProperty" => [
-                [
-                    "id" => "int",
-                    "name" => "string",
-                    "email" => "string",
-                ],
-                [
-                    "id" => 1,
-                    "name" => "Darren",
-                    "email" => "bead-framework@equituk.net",
-                ],
-                "id",
-                1,
-                2,
-                2,
+            "name",
+            "Darren",
+            "Susan",
+            "Susan",
+        ];
+
+        yield "extremeStringPropertyEmpty" => [
+            [
+                "id" => "int",
+                "name" => "string",
+                "email" => "string",
             ],
-            "typicalTimestampPropertyDateTime" => [
-                [
-                    "id" => "int",
-                    "name" => "string",
-                    "email" => "string",
-                    "created_at" => "timestamp",
-                ],
-                [
-                    "id" => 1,
-                    "name" => "Darren",
-                    "email" => "bead-framework@equituk.net",
-                    "created_at" => 0,
-                ],
-                "created_at",
-                0,
-                new DateTime("@" . (60 * 60 * 24)),
-                (60 * 60 * 24),
+            [
+                "id" => 1,
+                "name" => "Darren",
+                "email" => "bead-framework@equituk.net",
             ],
-            "typicalTimestampPropertyInt" => [
-                [
-                    "id" => "int",
-                    "name" => "string",
-                    "email" => "string",
-                    "created_at" => "timestamp",
-                ],
-                [
-                    "id" => 1,
-                    "name" => "Darren",
-                    "email" => "bead-framework@equituk.net",
-                    "created_at" => 0,
-                ],
-                "created_at",
-                0,
-                (60 * 60 * 24),
-                (60 * 60 * 24),
+            "name",
+            "Darren",
+            "",
+            "",
+        ];
+
+        yield "typicalIntProperty" => [
+            [
+                "id" => "int",
+                "name" => "string",
+                "email" => "string",
             ],
-            "invalidNonExistentProperty" => [
-                [
-                    "id" => "int",
-                    "name" => "string",
-                    "email" => "string",
-                ],
-                [
-                    "id" => 1,
-                    "name" => "Darren",
-                    "email" => "bead-framework@equituk.net",
-                ],
-                "foo",
-                "",
-                "",
-                "",
-                LogicException::class,
+            [
+                "id" => 1,
+                "name" => "Darren",
+                "email" => "bead-framework@equituk.net",
             ],
-            "invalidWrongDataType" => [
-                [
-                    "id" => "int",
-                    "name" => "string",
-                    "email" => "string",
-                ],
-                [
-                    "id" => 1,
-                    "name" => "Darren",
-                    "email" => "bead-framework@equituk.net",
-                ],
-                "id",
-                1,
-                "foo",
-                "foo",
-                TypeError::class,
+            "id",
+            1,
+            2,
+            2,
+        ];
+
+        yield "typicalTimestampPropertyDateTime" => [
+            [
+                "id" => "int",
+                "name" => "string",
+                "email" => "string",
+                "created_at" => "timestamp",
             ],
+            [
+                "id" => 1,
+                "name" => "Darren",
+                "email" => "bead-framework@equituk.net",
+                "created_at" => 0,
+            ],
+            "created_at",
+            0,
+            new DateTime("@" . (60 * 60 * 24)),
+            (60 * 60 * 24),
+        ];
+
+        yield "typicalTimestampPropertyInt" => [
+            [
+                "id" => "int",
+                "name" => "string",
+                "email" => "string",
+                "created_at" => "timestamp",
+            ],
+            [
+                "id" => 1,
+                "name" => "Darren",
+                "email" => "bead-framework@equituk.net",
+                "created_at" => 0,
+            ],
+            "created_at",
+            0,
+            (60 * 60 * 24),
+            (60 * 60 * 24),
+        ];
+
+        yield "invalidNonExistentProperty" => [
+            [
+                "id" => "int",
+                "name" => "string",
+                "email" => "string",
+            ],
+            [
+                "id" => 1,
+                "name" => "Darren",
+                "email" => "bead-framework@equituk.net",
+            ],
+            "foo",
+            "",
+            "",
+            "",
+            LogicException::class,
+        ];
+
+        yield "invalidWrongDataType" => [
+            [
+                "id" => "int",
+                "name" => "string",
+                "email" => "string",
+            ],
+            [
+                "id" => 1,
+                "name" => "Darren",
+                "email" => "bead-framework@equituk.net",
+            ],
+            "id",
+            1,
+            "foo",
+            "foo",
+            TypeError::class,
         ];
 
         // 50 random DateTime columns
@@ -408,5 +416,19 @@ class ModelTest extends TestCase
         self::assertIsString($actual, "Value of foo_bar property expected to be string.");
         self::assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
         self::assertEquals(1, $callTracker->callCount(), "Custom mutator was not called the correct number of times.");
+    }
+
+    /** Ensure delete() submits the expected SQL. */
+    public function testDelete1(): void
+    {
+        $model = $this->createModel(["id" => "int",], ["id" => 0]);
+        $mock = $this->createMock(PDOStatement::class);
+
+        $model->defaultConnection()->expects($this->once())
+            ->method("prepare")
+            ->with("DELETE FROM `test_table` WHERE `id` = ? LIMIT 1")
+            ->willReturn($mock);
+
+        $model->delete();
     }
 }
