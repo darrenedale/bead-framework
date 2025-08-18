@@ -422,12 +422,17 @@ class ModelTest extends TestCase
     public function testDelete1(): void
     {
         $model = $this->createModel(["id" => "int",], ["id" => 0]);
-        $mock = $this->createMock(PDOStatement::class);
+        $stmt = $this->createMock(PDOStatement::class);
 
         $model->defaultConnection()->expects($this->once())
             ->method("prepare")
             ->with("DELETE FROM `test_table` WHERE `id` = ? LIMIT 1")
-            ->willReturn($mock);
+            ->willReturn($stmt);
+
+        $stmt->expects($this->once())
+            ->method("execute")
+            ->with($this->anything())
+            ->willReturn(true);
 
         $model->delete();
     }
