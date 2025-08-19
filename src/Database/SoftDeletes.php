@@ -111,7 +111,7 @@ trait SoftDeletes
      */
     public function delete(): bool
     {
-        assert ($this instanceof Model);
+        assert($this instanceof Model);
 
         if (parent::delete()) {
             $this->{static::deletedTimestampPropertyName()} = new DateTimeImmutable();
