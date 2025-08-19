@@ -2,6 +2,7 @@
 
 namespace BeadTests\Database;
 
+use Bead\Database\Connection;
 use Bead\Testing\XRay;
 use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
@@ -31,9 +32,9 @@ class ModelTest extends TestCase
      *
      * @return Model A mock model.
      */
-    protected function createModel(array $properties, array $data, string $table = "test_table"): Model
+    protected function createModel(array $properties, array $data, string $table = "test_table", ?Connection $connection = null): Model
     {
-        return new class ($this->createMock(PDO::class), $properties, $data, $table) extends Model
+        return new class ($connection ?? $this->createMock(Connection::class), $properties, $data, $table) extends Model
         {
             private static PDO $connection;
 
@@ -421,10 +422,11 @@ class ModelTest extends TestCase
     /** Ensure delete() submits the expected SQL. */
     public function testDelete1(): void
     {
-        $model = $this->createModel(["id" => "int",], ["id" => 0]);
+        $connection = $this->createMock(Connection::class);
+        $model = $this->createModel(["id" => "int",], ["id" => 0], connection: $connection);
         $stmt = $this->createMock(PDOStatement::class);
 
-        $model->defaultConnection()->expects($this->once())
+        $connection->expects($this->once())
             ->method("prepare")
             ->with("DELETE FROM `test_table` WHERE `id` = ? LIMIT 1")
             ->willReturn($stmt);
