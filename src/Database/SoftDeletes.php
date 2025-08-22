@@ -2,7 +2,8 @@
 
 namespace Bead\Database;
 
-use DateTime;
+use DateTimeImmutable;
+use DateTimeZone;
 use PDO;
 
 /**
@@ -97,6 +98,12 @@ trait SoftDeletes
         return ["`" . ($tableAlias ?? static::table()) . "`.`" . static::deletedTimestampPropertyName() . "` IS NULL",];
     }
 
+    /** Override the base implementation to do soft-deletes. */
+    protected static function baseDeleteSql(): string
+    {
+        return "UPDATE `" . static::table() . "` SET `" . static::deletedTimestampPropertyName() . "` = '" . (new DateTimeImmutable("now", new DateTimeZone("UTC")))->format("Y-m-d H:i:s") . "'";
+    }
+
     /**
      * Override the implementation of delete() from Model with one that soft-deletes the model instead.
      *
@@ -104,11 +111,14 @@ trait SoftDeletes
      */
     public function delete(): bool
     {
-        $this->{static::deletedTimestampPropertyName()} = new DateTime();
+        assert($this instanceof Model);
 
-        return $this->connection()
-            ->prepare("UPDATE `" . static::table() . "` AS `t` SET `t`.`" . static::deletedTimestampPropertyName() . "` = ? WHERE `t`.`" . static::primaryKey() . "` = ?")
-            ->execute([$this->{static::deletedTimestampPropertyName()}->format("Y-m-d H:i:s"),  $this->{static::primaryKey()},]);
+        if (parent::delete()) {
+            $this->{static::deletedTimestampPropertyName()} = new DateTimeImmutable();
+            return true;
+        }
+
+        return false;
     }
 
     /**
