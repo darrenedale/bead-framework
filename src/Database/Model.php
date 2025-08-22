@@ -1611,7 +1611,7 @@ abstract class Model
     {
         [$values, $where] = self::prepareEqualityWheres($terms);
         $stmt = static::defaultConnection()
-            ->prepare(static::baseDeleteSql() . "  WHERE " . implode(" AND ", $where));
+            ->prepare(static::baseDeleteSql() . " WHERE " . implode(" AND ", $where));
         return $stmt->execute($values);
     }
 
@@ -1628,7 +1628,7 @@ abstract class Model
      */
     final protected static function removeSimpleComparison(string $property, string $operator, mixed $value): bool
     {
-        $stmt = static::defaultConnection()->prepare(static::baseDeleteSql() . "  WHERE (`{$property}` {$operator} ?)");
+        $stmt = static::defaultConnection()->prepare(static::baseDeleteSql() . " WHERE (`{$property}` {$operator} ?)");
         return $stmt->execute([$value]);
     }
 
@@ -1645,7 +1645,7 @@ abstract class Model
     public static function removeEquals(string $property, mixed $value): bool
     {
         if (is_null($value)) {
-            $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NULL");
+            $stmt = static::defaultConnection()->prepare(static::baseDeleteSql() . " WHERE `{$property}` IS NULL");
             return $stmt->execute();
         }
 
@@ -1665,7 +1665,7 @@ abstract class Model
     public static function removeNotEquals(string $property, mixed $value): bool
     {
         if (is_null($value)) {
-            $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE `{$property}` IS NOT NULL");
+            $stmt = static::defaultConnection()->prepare(static::baseDeleteSql() . " WHERE `{$property}` IS NOT NULL");
             return $stmt->execute();
         }
 
@@ -1778,7 +1778,7 @@ abstract class Model
      */
     public static function removeIn(string $property, array $values): bool
     {
-        $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` IN " . static::buildInOperand($values) . ")");
+        $stmt = static::defaultConnection()->prepare(static::baseDeleteSql() . " WHERE (`{$property}` IN " . static::buildInOperand($values) . ")");
 
         /** @psalm-suppress MissingThrowsDocblock PDOException won't be thrown - values and placeholders always agree */
         static::bindValues($stmt, $values);
@@ -1797,7 +1797,7 @@ abstract class Model
      */
     public static function removeNotIn(string $property, array $values): bool
     {
-        $stmt = static::defaultConnection()->prepare("DELETE FROM `" . static::$table . "` WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")");
+        $stmt = static::defaultConnection()->prepare(static::baseDeleteSql() . " WHERE (`{$property}` NOT IN " . static::buildInOperand($values) . ")");
 
         /** @psalm-suppress MissingThrowsDocblock PDOException won't be thrown - values and placeholders always agree */
         static::bindValues($stmt, $values);
