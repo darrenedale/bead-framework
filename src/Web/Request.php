@@ -4,6 +4,7 @@ namespace Bead\Web;
 
 use InvalidArgumentException;
 use TypeError;
+use function Bead\Helpers\Iterable\all;
 
 /**
  * Abstract representation of an incoming HTTP request.
@@ -33,7 +34,7 @@ class Request
     /** @var array<string,UploadedFile> The files uploaded with the request. */
     private array $m_files = [];
 
-    /** @var array<string, string> The request's HTTP headers. */
+    /** @var Header[] The request's HTTP headers. */
     private array $m_headers = [];
 
     /** @var string The full request URL. */
@@ -526,12 +527,19 @@ class Request
      *
      * @param string $name The header requested.
      *
-     * @return string|null The header value, or `null` if the header is not set.
+     * @return string|null The value of the first header with a matching name, or `null` if the header is not set.
      */
     public function header(string $name): ?string
     {
         $name = mb_strtolower($name, "UTF-8");
-        return $this->m_headers[$name] ?? $this->m_headers[str_replace("-", "_", $name)] ?? null;
+
+        foreach ($this->m_headers as $header) {
+            if (mb_strtolower($header->name(), "UTF-8") === $name) {
+                return $header->value();
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -544,7 +552,7 @@ class Request
     public function isAjax(): bool
     {
         // FE frameworks need to set this header. many popular frameworks do so
-        return "XMLHttpRequest" == $this->header("x_requested_with");
+        return "XMLHttpRequest" === $this->header("x-requested-with");
     }
 
     /** @throws InvalidArgumentException if the IP is not valid. */
@@ -618,11 +626,11 @@ class Request
             $req->m_files = UploadedFile::allUploadedFiles();
 
             foreach ($_SERVER as $key => $value) {
-                if ("HTTP_" === substr($key, 0, 5)) {
-                    $req->m_headers[mb_strtolower(substr($key, 5), "UTF-8")] = $value;
+                if (str_starts_with($key, "HTTP_")) {
+                    $req->m_headers[] = new Header(str_replace("_", "-", substr($key, 5)), $value);
                 } else {
                     if (in_array($key, ["CONTENT_TYPE", "CONTENT_LENGTH", "CONTENT_MD5",])) {
-                        $req->m_headers[strtolower($key)] = $value;
+                        $req->m_headers[] = new Header(str_replace("_", "-", $key), $value);
                     }
                 }
             }

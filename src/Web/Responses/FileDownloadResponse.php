@@ -2,9 +2,7 @@
 
 namespace Bead\Web\Responses;
 
-/**
- * Response to stream a file to the client.
- */
+/** Response to stream a file to the client. */
 class FileDownloadResponse extends DownloadResponse
 {
     /** @var string The path to the file to stream. */
@@ -55,9 +53,7 @@ class FileDownloadResponse extends DownloadResponse
         return $this;
     }
 
-    /**
-     * Send the response.
-     */
+    /** Send the response. */
     public function send(): void
     {
         http_response_code($this->statusCode());
