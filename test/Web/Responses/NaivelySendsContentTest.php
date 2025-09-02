@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Web\Responses;
 
+use Bead\Web\Header;
 use Bead\Web\Responses\HasDefaultReasonPhrase;
 use Bead\Web\Responses\NaivelySendsContent;
 use BeadTests\Framework\TestCase;
@@ -39,7 +40,15 @@ final class NaivelySendsContentTest extends TestCase
 
             public function headers(): array
             {
-                return NaivelySendsContentTest::TestHeaders;
+                $headers = NaivelySendsContentTest::TestHeaders;
+
+                array_walk(
+                    $headers,
+                    static fn (string &$value, string $key) => $value = new Header($key, $value),
+                    NaivelySendsContentTest::TestHeaders,
+                );
+
+                return $headers;
             }
 
             public function contentType(): string
@@ -64,13 +73,18 @@ final class NaivelySendsContentTest extends TestCase
         );
 
         $expectedHeaders[] = "HTTP/1.1 200 OK";
-        $expectedHeaders[] = "content-type: " . self::TestContentType;
+        $expectedHeaders[] = "Content-Type: " . self::TestContentType;
         $test = $this;
 
         $this->mockFunction(
             "header",
             function (string $header, bool $replace = true) use (&$expectedHeaders, $test) {
-                $test->assertTrue($replace);
+                if (str_starts_with($header, "Content-Type:") || str_starts_with($header, "HTTP/1.1")) {
+                    $test->assertTrue($replace);
+                } else {
+                    $test->assertFalse($replace);
+                }
+
                 $idx = array_search($header, $expectedHeaders);
                 $test->assertIsInt($idx, "Unexpected header '{$header}' generated.");
                 array_splice($expectedHeaders, $idx, 1);
