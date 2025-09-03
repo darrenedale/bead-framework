@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BeadTests\Web\Responses;
 
 use Bead\Testing\XRay;
+use Bead\Web\Header;
 use Bead\Web\Responses\SendsHeaders;
 use BeadTests\Framework\TestCase;
 
@@ -29,7 +30,9 @@ final class SendsHeadersTest extends TestCase
 
             public function headers(): array
             {
-                return SendsHeadersTest::TestHeaders;
+                $headers = SendsHeadersTest::TestHeaders;
+                array_walk($headers, static fn (string & $value, string $key) => $value = new Header($key, $value));
+                return $headers;
             }
         };
     }
@@ -43,13 +46,18 @@ final class SendsHeadersTest extends TestCase
             array_values(self::TestHeaders)
         );
 
-        $expectedHeaders[] = "content-type: text/plain";
+        $expectedHeaders[] = "Content-Type: text/plain";
         $test = $this;
 
         $this->mockFunction(
             "header",
             function (string $header, bool $replace) use (&$expectedHeaders, $test) {
-                $test->assertTrue($replace);
+                if (str_starts_with($header, "Content-Type")) {
+                    $test->assertTrue($replace);
+                } else {
+                    $test->assertFalse($replace);
+                }
+
                 $idx = array_search($header, $expectedHeaders);
                 $test->assertIsInt($idx, "Unexpected header '{$header}' generated.");
                 array_splice($expectedHeaders, $idx, 1);

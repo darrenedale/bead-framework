@@ -2,6 +2,8 @@
 
 namespace Bead\Web\Responses;
 
+use Bead\Contracts\Web\Header;
+
 /**
  * Trait to endow a response with a method to send the HTTP headers.
  *
@@ -12,23 +14,21 @@ trait SendsHeaders
 {
     /**
      * Constrain the trait to classes that implement the headers() method.
+     *
+     * @return Header[]
      */
     abstract public function headers(): array;
 
-    /**
-     * Constrain the trait to classes that implement the contentType() method.
-     */
+    /** Constrain the trait to classes that implement the contentType() method. */
     abstract public function contentType(): string;
 
-    /**
-     * Send the headers.
-     */
+    /** Send the headers. */
     protected function sendHeaders(): void
     {
-        foreach ($this->headers() as $header => $value) {
-            header("{$header}: {$value}", true);
+        foreach ($this->headers() as $header) {
+            header($header->line(), false);
         }
 
-        header("content-type: {$this->contentType()}", true);
+        header("Content-Type: {$this->contentType()}", true);
     }
 }
