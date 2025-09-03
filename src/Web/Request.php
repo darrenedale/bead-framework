@@ -4,7 +4,6 @@ namespace Bead\Web;
 
 use InvalidArgumentException;
 use TypeError;
-use function Bead\Helpers\Iterable\all;
 
 /**
  * Abstract representation of an incoming HTTP request.

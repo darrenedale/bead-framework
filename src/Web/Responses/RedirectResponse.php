@@ -73,6 +73,7 @@ class RedirectResponse implements Response
      */
     public function headers(): array
     {
+        /** @psalm-suppress MissingThrowsDocblock - "location" is known to be a valid header name. */
         return [new Header("location", $this->url()),];
     }
 

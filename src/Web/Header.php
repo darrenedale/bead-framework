@@ -28,6 +28,7 @@ class Header implements HeaderContract
      *
      * @param string $name Must be a valid RFC822 message header name.
      * @param string $value The header's value.
+     * @throws RuntimeException if the provided header name is not valid.
      */
     public function __construct(string $name, string $value)
     {
@@ -36,7 +37,7 @@ class Header implements HeaderContract
         $this->value = $value;
     }
 
-    /** Throw if a string contains an invalid RFC822 header name. */
+    /** @throws RuntimeException if the provided header name is not valid. */
     private static function checkName(string $name): void
     {
         if (!self::isValidName($name)) {
@@ -56,7 +57,10 @@ class Header implements HeaderContract
         return $this->name;
     }
 
-    /** Fetch a clone of the header with a different name. */
+    /**
+     * Fetch a clone of the header with a different name.
+     * @throws RuntimeException if the provided header name is not valid.
+     */
     public function withName(string $name): self
     {
         self::checkName($name);

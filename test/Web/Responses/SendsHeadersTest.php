@@ -31,7 +31,7 @@ final class SendsHeadersTest extends TestCase
             public function headers(): array
             {
                 $headers = SendsHeadersTest::TestHeaders;
-                array_walk($headers, static fn (string &$value, string $key) => $value = new Header($key, $value));
+                array_walk($headers, static fn (string & $value, string $key) => $value = new Header($key, $value));
                 return $headers;
             }
         };
