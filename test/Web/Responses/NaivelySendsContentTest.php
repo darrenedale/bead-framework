@@ -42,11 +42,7 @@ final class NaivelySendsContentTest extends TestCase
             {
                 $headers = NaivelySendsContentTest::TestHeaders;
 
-                array_walk(
-                    $headers,
-                    static fn (string & $value, string $key) => $value = new Header($key, $value),
-                    NaivelySendsContentTest::TestHeaders,
-                );
+                array_walk($headers, static fn (string & $value, string $key) => $value = new Header($key, $value));
 
                 return $headers;
             }
