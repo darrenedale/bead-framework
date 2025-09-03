@@ -26,13 +26,11 @@ class Header implements HeaderContract
     /**
      * Initialise a new header with a name and value.
      *
-     * @param string $name Must be a valid RFC822 message header name. Leading and trailing whitespace will be trimmed
-     * before checking.
+     * @param string $name Must be a valid RFC822 message header name.
      * @param string $value The header's value.
      */
     public function __construct(string $name, string $value)
     {
-        $name = trim($name);
         self::checkName($name);
         $this->name = mb_strtolower($name, "UTF-8");
         $this->value = $value;
@@ -61,7 +59,6 @@ class Header implements HeaderContract
     /** Fetch a clone of the header with a different name. */
     public function withName(string $name): self
     {
-        $name = trim($name);
         self::checkName($name);
         $clone = clone $this;
         $clone->name = $name;
