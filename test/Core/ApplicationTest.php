@@ -4,10 +4,10 @@ namespace BeadTests\Core;
 
 use Bead\Contracts\FeatureFlag as FeatureFlagContract;
 use Bead\Core\Application;
-use Bead\Core\FeatureFlag;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Testing\XRay;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Stringable as Stringable;
 
@@ -88,7 +88,7 @@ class ApplicationTest extends TestCase
         self::assertSame($replacement, $this->m_app->service("foo"));
     }
 
-    public function testBindService(): void
+    public function testBindService1(): void
     {
         $original = (object) ["foo" => "bar",];
         $replacement = (object) ["fox" => "bax",];
@@ -99,6 +99,16 @@ class ApplicationTest extends TestCase
 
         $this->expectException(ServiceAlreadyBoundException::class);
         $this->m_app->bindService("foo", $replacement);
+    }
+
+    public function testBindService2(): void
+    {
+        if ("1" !== ini_get("zend.assertions")) {
+            $this->markTestSkipped("Assertions are not enabled, Application::bindService() must fail an assertion for this test.");
+        }
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->m_app->bindService("foo", null);
     }
 
     public function testService(): void

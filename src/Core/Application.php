@@ -18,6 +18,7 @@ use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Exceptions\ServiceNotFoundException;
 use Bead\Facades\Log;
 use DirectoryIterator;
+use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use SplFileInfo;
@@ -301,6 +302,8 @@ abstract class Application implements ServiceContainer, ContainerInterface
      */
     public function bindService(string $service, mixed $instance): void
     {
+        assert(null !== $instance, new InvalidArgumentException("Expected service instance to bind to '{$service}', found null"));
+
         if ($this->serviceIsBound($service)) {
             throw new ServiceAlreadyBoundException($service, "The service '{$service}' is already bound to the Application instance.");
         }
