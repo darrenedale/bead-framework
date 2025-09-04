@@ -527,7 +527,7 @@ class Application extends CoreApplication
             $dir = new SplFileInfo("{$this->rootDir()}/{$this->routesDirectory()}");
 
             if (!$dir->isDir()) {
-                throw new InvalidRoutesDirectoryException($this->pluginsDirectory(), "Routes directory \"{$this->pluginsDirectory()}\" is not a directory.");
+                throw new InvalidRoutesDirectoryException($this->routesDirectory(), "Routes directory \"{$this->routesDirectory()}\" is not a directory.");
             }
 
             if (!$dir->isReadable() || !$dir->isExecutable()) {
