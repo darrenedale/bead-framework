@@ -9,8 +9,9 @@ use Bead\Email\Message;
 use Bead\Email\Part;
 use Bead\Testing\StaticXRay;
 use Bead\Testing\XRay;
-use InvalidArgumentException;
 use BeadTests\Framework\TestCase;
+use InvalidArgumentException;
+use RuntimeException;
 
 final class MessageTest extends TestCase
 {
@@ -390,7 +391,7 @@ final class MessageTest extends TestCase
     /** Ensure setting an invalid media type throws. */
     public function testWithContentType3(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(RuntimeException::class);
         self::expectExceptionMessage("Expected valid media type, found \"foo\"");
         $this->message->withContentType("foo");
     }
@@ -423,7 +424,7 @@ final class MessageTest extends TestCase
     /** Ensure setting an invalid transfer encoding throws. */
     public function testWithContentTransferEncoding3(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(RuntimeException::class);
         self::expectExceptionMessage("Expected valid content transfer encoding, found \"foo\"");
         $this->message->withContentTransferEncoding("foo");
     }

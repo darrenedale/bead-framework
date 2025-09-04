@@ -6,7 +6,7 @@ use Bead\Email\Header;
 use Bead\Email\Part;
 use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
-use InvalidArgumentException;
+use RuntimeException;
 
 class PartTest extends TestCase
 {
@@ -96,7 +96,7 @@ class PartTest extends TestCase
      */
     public function testWithContentType2(string $contentType): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(RuntimeException::class);
         self::expectExceptionMessage("Expected valid media type, found \"{$contentType}\"");
         $this->part->withContentType($contentType);
     }
@@ -164,7 +164,7 @@ class PartTest extends TestCase
      */
     public function testWithContentEncoding2(string $encoding): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(RuntimeException::class);
         self::expectExceptionMessage("Expecting valid content encoding, found \"{$encoding}\"");
         $this->part->withContentEncoding($encoding);
     }
