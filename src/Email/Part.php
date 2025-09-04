@@ -74,13 +74,13 @@ class Part implements PartContract, MultipartContract
      * Setting the content type does not transform the content. The caller is responsible for ensuring the content is
      * correct for the type.
      *
-     * @api
      * @param $contentType string the new content type.
      * @param $parameters array<string,string> the content type header parameters, if any.
      *
      * @return $this A clone of the Message, with the content type set to that provided.
+     * @throws InvalidArgumentException if any provided parameter name or value is of an incorrect type.
      * @throws RuntimeException if the content type is not valid or if any of the provided parameters is not
-     * valid
+     * @api
      */
     public function withContentType(string $contentType, array $parameters = []): self
     {
