@@ -7,6 +7,7 @@ namespace BeadTests\Email;
 use Bead\Email\Header;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
+use RuntimeException;
 
 class HeaderTest extends TestCase
 {
@@ -44,7 +45,7 @@ class HeaderTest extends TestCase
     /** Ensure constructor throws with invalid header name. */
     public function testConstructor3(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(RuntimeException::class);
         self::expectExceptionMessage("Invalid header name \"\".");
         new Header("", "value");
     }
@@ -87,7 +88,7 @@ class HeaderTest extends TestCase
     /** Ensure withName() throws with an invalid name. */
     public function testWithName2(): void
     {
-        self::expectException(InvalidArgumentException::class);
+        self::expectException(RuntimeException::class);
         self::expectExceptionMessage("Invalid header name \"\".");
         $this->header->withName("");
     }

@@ -2,6 +2,7 @@
 
 namespace BeadTests\Web\Responses;
 
+use Bead\Web\Header;
 use Bead\Web\Responses\RedirectResponse;
 use BeadTests\Framework\TestCase;
 
@@ -41,7 +42,7 @@ class RedirectResponseTest extends TestCase
     /** Ensure we get the expected redirect location header. */
     public function testHeaders1(): void
     {
-        self::assertEquals(["location" => "/redirect"], $this->response->headers());
+        self::assertEquals([new Header("location", "/redirect")], $this->response->headers());
     }
 
     /** Ensure we can set the redirect URL. */
@@ -59,7 +60,7 @@ class RedirectResponseTest extends TestCase
 
         $expectedHeaders = [
             "location: /redirect",
-            "content-type: ",
+            "Content-Type: ",
         ];
 
         $httpResponseCode = function (int $statusCode) use ($response): void {
@@ -69,7 +70,12 @@ class RedirectResponseTest extends TestCase
         $header = function (string $header, bool $replace) use (&$expectedHeaders): void {
             $expected = array_shift($expectedHeaders);
             TestCase::assertEquals($expected, $header);
-            TestCase::assertTrue($replace);
+
+            if (str_starts_with($header, "Content-Type:")) {
+                TestCase::assertTrue($replace);
+            } else {
+                TestCase::assertFalse($replace);
+            }
         };
 
         $this->mockFunction("http_response_code", $httpResponseCode);

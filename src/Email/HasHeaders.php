@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bead\Email;
 
 use InvalidArgumentException;
+use RuntimeException;
 
 use function Bead\Helpers\Iterable\all;
 
@@ -65,7 +66,8 @@ trait HasHeaders
      * This violates the immutability of the object, so must only be used internally in the constructor, or when working
      * with the clone object in other methods.
      *
-     * @throws InvalidArgumentException if the header name is not valid or any provided parameter is not valid.
+     * @throws InvalidArgumentException if any provided parameter name or value is of an incorrect type.
+     * @throws RuntimeException if the header name is not valid.
      */
     private function setHeader(string $name, string $value, array $parameters = []): void
     {
@@ -187,7 +189,8 @@ trait HasHeaders
      *
      * @return self A clone of the object with the provided header.
      *
-     * @throws InvalidArgumentException if the header name or value is not valid.
+     * @throws InvalidArgumentException if the value is null when required to be a string.
+     * @throws RuntimeException if the header name is not valid.
      */
     public function withHeader(string|Header $header, ?string $value = null): self
     {

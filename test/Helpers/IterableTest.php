@@ -1709,7 +1709,7 @@ final class IterableTest extends TestCase
 
     /**
      * Ensure we can partition all types of iterable.
-     * 
+     *
      * @dataProvider dataForTestPartition1
      */
     public function testPartition1(iterable $data): void

@@ -2,9 +2,9 @@
 
 namespace Bead\Web\Responses;
 
-/**
- * Send a response to be downloaded as a file.
- */
+use Bead\Contracts\Web\Header;
+
+/** Send a response to be downloaded as a file. */
 class DownloadResponse extends AbstractResponse
 {
     /** @var string The default content-type header value for responses. */
@@ -16,7 +16,7 @@ class DownloadResponse extends AbstractResponse
     /** @var string The content for the download. */
     private string $m_data = "";
 
-    /** @var array The headers. */
+    /** @var Header[] The headers. */
     private array $m_headers = [];
 
     /**
@@ -81,7 +81,7 @@ class DownloadResponse extends AbstractResponse
     /**
      * Fluently set the headers for the download response.
      *
-     * @param array<string,string> $headers The response headers.
+     * @param Header[] $headers The response headers.
      *
      * @return $this This Response object for further method chaining.
      */
@@ -94,7 +94,7 @@ class DownloadResponse extends AbstractResponse
     /**
      * Set the download response HTTP headers.
      *
-     * @param array<string,string> $headers The headers.
+     * @param Header[] $headers The headers.
      */
     public function setHeaders(array $headers): void
     {
@@ -106,7 +106,7 @@ class DownloadResponse extends AbstractResponse
      *
      * Regardless of whether the `content-disposition` header has been set manually, the `content-disposition` in the
      * returned array is always set to 'attachment; filename="..."' (where ... is the filename set using `setFileName()`.
-     * @return array<string,string>
+     * @return Header[]
      */
     public function headers(): array
     {

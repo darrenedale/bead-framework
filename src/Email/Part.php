@@ -7,6 +7,7 @@ namespace Bead\Email;
 use Bead\Contracts\Email\Multipart as MultipartContract;
 use Bead\Contracts\Email\Part as PartContract;
 use InvalidArgumentException;
+use RuntimeException;
 
 use function trim;
 
@@ -73,22 +74,23 @@ class Part implements PartContract, MultipartContract
      * Setting the content type does not transform the content. The caller is responsible for ensuring the content is
      * correct for the type.
      *
-     * @api
      * @param $contentType string the new content type.
      * @param $parameters array<string,string> the content type header parameters, if any.
      *
      * @return $this A clone of the Message, with the content type set to that provided.
-     * @throws InvalidArgumentException if the content type is not valid or if any of the provided parameters is not
-     * valid
+     * @throws InvalidArgumentException if any provided parameter name or value is of an incorrect type.
+     * @throws RuntimeException if the content type is not valid or if any of the provided parameters is not
+     * @api
      */
     public function withContentType(string $contentType, array $parameters = []): self
     {
         $contentType = trim($contentType);
 
         if (!Mime::isValidMediaType($contentType)) {
-            throw new InvalidArgumentException("Expected valid media type, found \"{$contentType}\"");
+            throw new RuntimeException("Expected valid media type, found \"{$contentType}\"");
         }
 
+        /** @psalm-suppress MissingThrowsDocblock InvalidArgumentException is only thrown if $contentType is null. */
         return $this->withHeader(new Header("content-type", $contentType, $parameters));
     }
 
@@ -112,12 +114,12 @@ class Part implements PartContract, MultipartContract
      * @param $contentEncoding string is the content encoding. It is assumed to be a UTF-8 string.
      *
      * @return $this A clone of the Part with the given encoding.
-     * @throws InvalidArgumentException if the content transfer encoding is not valid.
+     * @throws RuntimeException if the content transfer encoding is not valid.
      */
     public function withContentEncoding(string $contentEncoding): self
     {
         if (!Mime::isValidContentTransferEncoding($contentEncoding)) {
-            throw new InvalidArgumentException("Expecting valid content encoding, found \"{$contentEncoding}\"");
+            throw new RuntimeException("Expecting valid content encoding, found \"{$contentEncoding}\"");
         }
 
         /** @psalm-suppress MissingThrowsDocblock These args are guaranteed to be valid. */

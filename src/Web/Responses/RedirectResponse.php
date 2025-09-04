@@ -3,6 +3,7 @@
 namespace Bead\Web\Responses;
 
 use Bead\Contracts\Web\Response;
+use Bead\Web\Header;
 
 /**
  * A response to redirect the user agent to a different URL.
@@ -72,7 +73,8 @@ class RedirectResponse implements Response
      */
     public function headers(): array
     {
-        return ["location" => $this->url(),];
+        /** @psalm-suppress MissingThrowsDocblock - "location" is known to be a valid header name. */
+        return [new Header("location", $this->url()),];
     }
 
     /**
@@ -95,9 +97,7 @@ class RedirectResponse implements Response
         $this->m_url = $url;
     }
 
-    /**
-     * Send the redirect response.
-     */
+    /** Send the redirect response. */
     public function send(): void
     {
         http_response_code($this->statusCode());

@@ -9,6 +9,7 @@ use Bead\Contracts\Email\Message as MessageContract;
 use Bead\Contracts\Email\Multipart as MutlipartContract;
 use InvalidArgumentException;
 use LogicException;
+use RuntimeException;
 
 use function Bead\Helpers\Iterable\all;
 
@@ -40,7 +41,7 @@ class Message implements MessageContract, MutlipartContract
      * @param $body string|null The initial body content for the message.
      * @param $from string|null The sender of the message.
      *
-     * @throws InvalidArgumentException if any invalid header is found.
+     * @psalm-suppress MissingThrowsDocblock all header names are known to be a valid.
      */
     public function __construct(?string $to = null, ?string $subject = null, ?string $body = null, ?string $from = null)
     {
@@ -85,14 +86,15 @@ class Message implements MessageContract, MutlipartContract
      * @param $parameters array<string,string> the content type header parameters, if any.
      *
      * @return $this A clone of the Message, with the content type set to that provided.
-     * @throws InvalidArgumentException if the content type is not valid.
+     * @throws InvalidArgumentException if any of the parameter names or values are of an invalid type.
+     * @throws RuntimeException if the content type is not valid.
      */
     public function withContentType(string $contentType, array $parameters = []): self
     {
         $contentType = trim($contentType);
 
         if (!Mime::isValidMediaType($contentType)) {
-            throw new InvalidArgumentException("Expected valid media type, found \"{$contentType}\"");
+            throw new RuntimeException("Expected valid media type, found \"{$contentType}\"");
         }
 
         return $this->withHeader(new Header("content-type", $contentType, $parameters));
@@ -117,19 +119,20 @@ class Message implements MessageContract, MutlipartContract
      * Setting the content transfer encoding does not transform the content. The caller is responsible for ensuring the
      * content is correct for the content transfer encoding.
      *
-     * @api
      * @param $contentEncoding string the new content transfer encoding.
      * @param $parameters array<string,string> the content transfer encoding header parameters, if any.
      *
      * @return $this A clone of the Message, with the content transfer encoding set to that provided.
-     * @throws InvalidArgumentException if the transfer encoding is not valid.
+     * @throws RuntimeException if the transfer encoding is not valid.
+     * @throws InvalidArgumentException if any of the parameter names or values are of an invalid type.
+     * @api
      */
     public function withContentTransferEncoding(string $contentEncoding, array $parameters = []): self
     {
         $contentEncoding = trim($contentEncoding);
 
         if (!Mime::isValidContentTransferEncoding($contentEncoding)) {
-            throw new InvalidArgumentException("Expected valid content transfer encoding, found \"{$contentEncoding}\"");
+            throw new RuntimeException("Expected valid content transfer encoding, found \"{$contentEncoding}\"");
         }
 
         return $this->withHeader(new Header("content-transfer-encoding", $contentEncoding, $parameters));
@@ -359,16 +362,21 @@ class Message implements MessageContract, MutlipartContract
      * @param $contentEncoding string The transfer encoding of the attachment to add.
      * @param $filename string The name of the file to assign to the attachment when it is attached to the message.
      *
-     * @throws InvalidArgumentException if the content type or content encoding (or both) are not valid.
+     * @throws RuntimeException if the content type or content encoding (or both) are not valid.
      */
     public function withAttachment(string $content, string $contentType, string $contentEncoding, string $filename): self
     {
+        /** @psalm-suppress MissingThrowsDocblock content-disposition is known to be a valid header name. */
         $dispositionHeader = new Header(
             "content-disposition",
             "attachment",
             ["filename" => "\"" . self::escapeAttachmentFilename($filename) . "\""]
         );
 
+        /**
+         * @psalm-suppress MissingThrowsDocblock InvalidArgumentException is only thrown if providing a name-value
+         * pair rather than a Header object.
+         */
         $newPart = (new Part($content))
             ->withContentType($contentType)
             ->withContentEncoding($contentEncoding)
