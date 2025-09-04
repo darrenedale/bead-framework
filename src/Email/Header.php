@@ -57,7 +57,8 @@ class Header implements HeaderContract, Stringable
      * @param $value string The value for the header.
      * @param $params array<string,string> The parameters for the header.
      *
-     * @throws InvalidArgumentException if the header name is not valid or any provided parameter is not valid.
+     * @throws InvalidArgumentException if any provided parameter name or value is of an incorrect type.
+     * @throws RuntimeException if the header name is not valid.
      */
     public function __construct(string $name, string $value, array $params = [])
     {
@@ -71,7 +72,7 @@ class Header implements HeaderContract, Stringable
         $this->params = $params;
     }
 
-    /** @throws InvalidArgumentException if the name is not valid for a MIME header. */
+    /** @throws RuntimeException if the name is not valid for a MIME header. */
     private static function checkName(string $name): void
     {
         if (!Mime::isValidHeaderName($name)) {
@@ -84,7 +85,7 @@ class Header implements HeaderContract, Stringable
      *
      * @param $name string The name for the header.
      *
-     * @throws InvalidArgumentException If the name is not valid.
+     * @throws RuntimeException if the header name is not valid.
      */
     final public function withName(string $name): self
     {
