@@ -8,6 +8,7 @@ use Bead\Contracts\Email\Multipart as MultipartContract;
 use Bead\Contracts\Email\Part as PartContract;
 use InvalidArgumentException;
 
+use RuntimeException;
 use function trim;
 
 /**
@@ -78,7 +79,7 @@ class Part implements PartContract, MultipartContract
      * @param $parameters array<string,string> the content type header parameters, if any.
      *
      * @return $this A clone of the Message, with the content type set to that provided.
-     * @throws InvalidArgumentException if the content type is not valid or if any of the provided parameters is not
+     * @throws RuntimeException if the content type is not valid or if any of the provided parameters is not
      * valid
      */
     public function withContentType(string $contentType, array $parameters = []): self
@@ -86,9 +87,10 @@ class Part implements PartContract, MultipartContract
         $contentType = trim($contentType);
 
         if (!Mime::isValidMediaType($contentType)) {
-            throw new InvalidArgumentException("Expected valid media type, found \"{$contentType}\"");
+            throw new RuntimeException("Expected valid media type, found \"{$contentType}\"");
         }
 
+        /** @psalm-suppress MissingThrowsDocblock InvalidArgumentException is only thrown if $contentType is null. */
         return $this->withHeader(new Header("content-type", $contentType, $parameters));
     }
 
@@ -112,12 +114,12 @@ class Part implements PartContract, MultipartContract
      * @param $contentEncoding string is the content encoding. It is assumed to be a UTF-8 string.
      *
      * @return $this A clone of the Part with the given encoding.
-     * @throws InvalidArgumentException if the content transfer encoding is not valid.
+     * @throws RuntimeException if the content transfer encoding is not valid.
      */
     public function withContentEncoding(string $contentEncoding): self
     {
         if (!Mime::isValidContentTransferEncoding($contentEncoding)) {
-            throw new InvalidArgumentException("Expecting valid content encoding, found \"{$contentEncoding}\"");
+            throw new RuntimeException("Expecting valid content encoding, found \"{$contentEncoding}\"");
         }
 
         /** @psalm-suppress MissingThrowsDocblock These args are guaranteed to be valid. */
