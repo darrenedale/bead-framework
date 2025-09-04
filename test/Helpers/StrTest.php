@@ -10,13 +10,14 @@ use Exception;
 use RuntimeException;
 use TypeError;
 
+use function Bead\Helpers\Str\attr;
+use function Bead\Helpers\Str\build;
 use function Bead\Helpers\Str\camelToSnake;
+use function Bead\Helpers\Str\html;
+use function Bead\Helpers\Str\random;
 use function Bead\Helpers\Str\scrub;
 use function Bead\Helpers\Str\snakeToCamel;
-use function Bead\Helpers\Str\html;
-use function Bead\Helpers\Str\build;
 use function Bead\Helpers\Str\toCodePoints;
-use function Bead\Helpers\Str\random;
 use function range;
 use function strlen;
 use function strspn;
@@ -133,6 +134,37 @@ final class StrTest extends TestCase
         }
 
         $actual = snakeToCamel($str, $encoding);
+        self::assertEquals($expected, $actual);
+    }
+
+    /**
+     * Test data for testAttr.
+     *
+     * @return iterable The test data.
+     */
+    public function dataForTestAttr(): iterable
+    {
+        yield from [
+            "typicalNoEscaping" => ["foo", "foo",],
+            "bothTypesOfQuotes" => ["\"''\"", "&quot;&apos;&apos;&quot;",],
+            "ampersand-not-escaped" => ["a \"quoted\" & unquoted value", "a &quot;quoted&quot; & unquoted value",],
+        ];
+    }
+
+    /**
+     * @dataProvider dataForTestAttr
+     *
+     * @param mixed $raw The content to escape.
+     * @param string $expected The expected escaped content.
+     * @param string|null $exceptionClass The type of exception expected, if any.
+     */
+    public function testAttr(mixed $raw, string $expected, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        $actual = attr($raw);
         self::assertEquals($expected, $actual);
     }
 

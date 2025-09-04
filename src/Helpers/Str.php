@@ -140,6 +140,21 @@ function snakeToCamel(string $str, ?string $encoding = null): string
 }
 
 /**
+ * Escape some content for inclusion as an attribute value in the page.
+ * *
+ * * Single ' and double " quotes are escaped to &amp;apos; and &amp;quot; respectively. The content provided must
+ * * be UTF-8 encoded; the returned, escaped, content will be UTF-8 encoded too.
+ * *
+ * * @param $str string The content to escape.
+ * *
+ * * @return string The escaped content.
+ */
+function attr(string $str)
+{
+    return str_replace(["'", "\"",], ["&apos;", "&quot;",], $str);
+}
+
+/**
  * Escape some content for inclusion in the page.
  *
  * Content is escaped with all available HTML5 entities. The content provided must be UTF-8 encoded, and the returned,
