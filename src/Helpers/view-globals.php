@@ -7,6 +7,7 @@
 namespace
 {
 
+    use function Bead\Helpers\Str\attr as namespacedAttr;
     use function Bead\Helpers\Str\html as namespacedHtml;
     use function Bead\Helpers\I18n\tr as namespacedTr;
 
@@ -14,9 +15,9 @@ namespace
         /**
          * Escape some content for inclusion in the page.
          *
-         * Any characters in the string that have syntactic meaning in HTML are escaped such that they will be interpreted by
-         * the user agent as a normal text character rather than something meaningful in HTML. The content provided must be
-         * UTF-8 encoded, and the returned, escaped, content will be UTF-8 encoded too.
+         * Any characters in the string that have syntactic meaning in HTML are escaped such that they will be
+         * interpreted by the user agent as a normal text character rather than something meaningful in HTML. The
+         * content provided must be UTF-8 encoded; the returned, escaped, content will be UTF-8 encoded too.
          *
          * @param $str string The content to escape.
          *
@@ -25,6 +26,23 @@ namespace
         function html(string $str): string
         {
             return namespacedHtml($str);
+        }
+    }
+
+    if (!function_exists("attr")) {
+        /**
+         * Escape some content for inclusion as an attribute value in the page.
+         *
+         * Single ' and double " quotes are escaped to &amp;apos; and &amp;quot; respectively. The content provided must
+         * be UTF-8 encoded; the returned, escaped, content will be UTF-8 encoded too.
+         *
+         * @param $str string The content to escape.
+         *
+         * @return string The escaped content.
+         */
+        function attr(string $str): string
+        {
+            return namespacedAttr($str);
         }
     }
 
