@@ -6,6 +6,7 @@ namespace Bead\Email;
 
 use Bead\Contracts\Email\Header as HeaderContract;
 use InvalidArgumentException;
+use RuntimeException;
 use Stringable;
 
 use function Bead\Helpers\Iterable\all;
@@ -74,7 +75,7 @@ class Header implements HeaderContract, Stringable
     private static function checkName(string $name): void
     {
         if (!Mime::isValidHeaderName($name)) {
-            throw new InvalidArgumentException("Invalid header name \"{$name}\".");
+            throw new RuntimeException("Invalid header name \"{$name}\".");
         }
     }
 
