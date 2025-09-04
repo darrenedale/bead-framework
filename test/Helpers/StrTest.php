@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace BeadTests\Helpers;
 
 use BeadTests\Framework\TestCase;
-use InvalidArgumentException;
 use Exception;
 use RuntimeException;
 use TypeError;
@@ -341,12 +340,8 @@ final class StrTest extends TestCase
 
     public function testRandomThrowsWithInvalidLength(): void
     {
-        if (1 !== ini_get("zend.assertions")) {
-            $this->markTestSkipped("Assertions are not enabled, Str\\random() must fail an assertion for this test.");
-        }
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage("Can't produce a random string of < 0 characters in length.");
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Can't produce a random string of < 1 character in length.");
         random(-1);
     }
 
