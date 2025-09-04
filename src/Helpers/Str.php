@@ -246,11 +246,15 @@ function toCodePoints(string $str, string $encoding): array
  * @param int $length The number of characters in the string.
  *
  * @return string
- * @throws RuntimeException if a cryptographically-secure source of randomness is not available.
+ * @throws RuntimeException if a cryptographically-secure source of randomness is not available or if the requested
+ * length is too short (i.e. <= 0).
  */
 function random(int $length): string
 {
-    assert(0 <= $length, new LogicException("Can't produce a random string of < 0 characters in length."));
+    if (1 > $length) {
+        throw new RuntimeException("Can't produce a random string of < 1 character in length.");
+    }
+
     $str = "";
 
     try {
