@@ -9,8 +9,8 @@ use Bead\Contracts\Email\Message as MessageContract;
 use Bead\Contracts\Email\Multipart as MutlipartContract;
 use InvalidArgumentException;
 use LogicException;
-
 use RuntimeException;
+
 use function Bead\Helpers\Iterable\all;
 
 /**

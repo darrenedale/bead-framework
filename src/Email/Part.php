@@ -7,8 +7,8 @@ namespace Bead\Email;
 use Bead\Contracts\Email\Multipart as MultipartContract;
 use Bead\Contracts\Email\Part as PartContract;
 use InvalidArgumentException;
-
 use RuntimeException;
+
 use function trim;
 
 /**
