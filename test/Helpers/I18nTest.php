@@ -26,7 +26,7 @@ final class I18nTest extends TestCase
                 return true;
             }
 
-            public function translate(string $string, string $file = null, int $line = null, mixed ... $args): string
+            public function translate(string $string, ?string $file = null, ?int $line = null, mixed ... $args): string
             {
                 return match ($string) {
                     "window" => "fenetre",

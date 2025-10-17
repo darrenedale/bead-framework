@@ -21,7 +21,7 @@ class ValidationRuleException extends \Exception
      * @param int $code The optional error code. Defaults to 0.
      * @param Throwable|null $previous The optional previously-thrown Throwbale. Defaults to null.
      */
-    public function __construct(Rule $rule, string $message = "", int $code = 0, Throwable $previous = null)
+    public function __construct(Rule $rule, string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->m_rule = $rule;

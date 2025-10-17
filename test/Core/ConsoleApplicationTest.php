@@ -64,7 +64,7 @@ final class ConsoleApplicationTest extends TestCase
      * @param Closure|null $run A closure to use as the run() method of the test console application.
      * @return ConsoleApplication The test instance.
      */
-    private function createApplication(string $root = __DIR__ . "/console-application-root", array $args = ["test-command.php"], Closure $configure = null, Closure $run = null): ConsoleApplication
+    private function createApplication(string $root = __DIR__ . "/console-application-root", array $args = ["test-command.php"], ?Closure $configure = null, ?Closure $run = null): ConsoleApplication
     {
         return new class (
             $root,
