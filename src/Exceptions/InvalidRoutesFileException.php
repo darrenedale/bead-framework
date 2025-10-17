@@ -19,7 +19,7 @@ class InvalidRoutesFileException extends Exception
      * @param int $code The optional error code. Defaults to 0.
      * @param Throwable|null $previous The optional previous throwable. Defaults to null.
      */
-    public function __construct(string $fileName, string $message = "", int $code = 0, Throwable $previous = null)
+    public function __construct(string $fileName, string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->m_fileName = $fileName;

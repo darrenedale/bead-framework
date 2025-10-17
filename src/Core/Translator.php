@@ -411,7 +411,7 @@ class Translator implements TranslatorContract
      *
      * @return string The translated string, or the original string if no suitable translation can be found.
      */
-    public function translate(string $string, string $file = null, int $line = null): string
+    public function translate(string $string, ?string $file = null, ?int $line = null): string
     {
         $keys = [
             [$string, $file, $line],

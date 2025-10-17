@@ -24,7 +24,7 @@ class InvalidPluginException extends Exception
      * @param int $code The optional error code. Defaults to 0.
      * @param \Throwable|null $previous The optional previous Throwable. Defaults to null.
      */
-    public function __construct(string $path, ?Plugin $plugin = null, string $message = "", int $code = 0, Throwable $previous = null)
+    public function __construct(string $path, ?Plugin $plugin = null, string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->m_path = $path;

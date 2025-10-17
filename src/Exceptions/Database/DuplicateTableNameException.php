@@ -22,7 +22,7 @@ class DuplicateTableNameException extends QueryBuilderException
      * @param int $code The optional error code. Defaults to 0.
      * @param Throwable|null $previous The optional previous throwable. Defualst to null.
      */
-    public function __construct(string $name, string $message = "", int $code = 0, Throwable $previous = null)
+    public function __construct(string $name, string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->m_name = $name;

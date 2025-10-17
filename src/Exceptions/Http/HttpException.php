@@ -38,7 +38,7 @@ abstract class HttpException extends Exception implements Response
      * @param int $code The exception code. This is NOT the HTTP response code.
      * @param Throwable|null $previous The previous exception that occurred before this.
      */
-    public function __construct(Request $request, string $message = "", int $code = 0, Throwable $previous = null)
+    public function __construct(Request $request, string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->m_request = $request;

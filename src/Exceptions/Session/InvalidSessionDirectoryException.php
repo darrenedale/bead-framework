@@ -20,7 +20,7 @@ class InvalidSessionDirectoryException extends SessionException
      * @param int $code The optional error code. Defaults to 0.
      * @param Throwable|null $previous The optional Throwable that was thrown previously. Defaults to `null`.
      */
-    public function __construct(string $directory, string $message = "", int $code = 0, Throwable $previous = null)
+    public function __construct(string $directory, string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->m_directory = $directory;
