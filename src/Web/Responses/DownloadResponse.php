@@ -2,7 +2,8 @@
 
 namespace Bead\Web\Responses;
 
-use Bead\Contracts\Web\Header;
+use Bead\Contracts\Web\Header as HeaderContract;
+use Bead\Web\Header;
 
 /** Send a response to be downloaded as a file. */
 class DownloadResponse extends AbstractResponse
@@ -16,7 +17,7 @@ class DownloadResponse extends AbstractResponse
     /** @var string The content for the download. */
     private string $m_data = "";
 
-    /** @var Header[] The headers. */
+    /** @var HeaderContract[] The headers. */
     private array $m_headers = [];
 
     /**
@@ -81,7 +82,7 @@ class DownloadResponse extends AbstractResponse
     /**
      * Fluently set the headers for the download response.
      *
-     * @param Header[] $headers The response headers.
+     * @param HeaderContract[] $headers The response headers.
      *
      * @return $this This Response object for further method chaining.
      */
@@ -94,7 +95,7 @@ class DownloadResponse extends AbstractResponse
     /**
      * Set the download response HTTP headers.
      *
-     * @param Header[] $headers The headers.
+     * @param HeaderContract[] $headers The headers.
      */
     public function setHeaders(array $headers): void
     {
@@ -106,7 +107,7 @@ class DownloadResponse extends AbstractResponse
      *
      * Regardless of whether the `content-disposition` header has been set manually, the `content-disposition` in the
      * returned array is always set to 'attachment; filename="..."' (where ... is the filename set using `setFileName()`.
-     * @return Header[]
+     * @return HeaderContract[]
      */
     public function headers(): array
     {
@@ -116,9 +117,8 @@ class DownloadResponse extends AbstractResponse
             $fileName = "download";
         }
 
-        $headers = $this->m_headers;
-        $headers["content-disposition"] = "attachment; filename=\"{$fileName}\"";
-        return $headers;
+        /** @psalm-suppress MissingThrowsDocblock - "content-disposition" is known to be a valid header name. */
+        return [...$this->m_headers, new Header("content-disposition", "attachment; filename=\"{$fileName}\"")];
     }
 
     /**
