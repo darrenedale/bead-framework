@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Web;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\RequestPostprocessor;
 use Bead\Contracts\Web\RequestPreprocessor;
 use Bead\Contracts\Web\Response as ResponseContract;
@@ -15,8 +16,6 @@ use Bead\Testing\StaticXRay;
 use Bead\Testing\XRay;
 use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
-use Bead\Web\Responses\AbstractResponse;
-use Bead\Web\Request;
 use BeadTests\Framework\TestCase;
 use Mockery;
 
@@ -42,6 +41,7 @@ class ApplicationTest extends TestCase
     private static function makeTestWebApplication(): WebApplication
     {
         return new class extends WebApplication {
+            /** @noinspection PhpMissingParentConstructorInspection we're creating a test double, we don't want to call the parent constructor. */
             public function __construct()
             {
             }
@@ -94,12 +94,12 @@ class ApplicationTest extends TestCase
         $actualEvents = [];
         $app = self::makeTestWebApplication();
         $router = Mockery::mock(RouterContract::class);
-        $expectedRequest = Mockery::mock(Request::class);
+        $expectedRequest = Mockery::mock(RequestContract::class);
         $expectedResponse = Mockery::mock(ResponseContract::class);
         $router->expects("route")->with($expectedRequest)->andReturn($expectedResponse);
         $app->setRouter($router);
 
-        $handler = static function (string $event, Request $request) use (&$actualEvents, $expectedRequest): void {
+        $handler = static function (string $event, RequestContract $request) use (&$actualEvents, $expectedRequest): void {
             ApplicationTest::assertSame($expectedRequest, $request);
             $actualEvents[] = $event;
         };
@@ -117,7 +117,7 @@ class ApplicationTest extends TestCase
     {
         $app = self::makeTestWebApplication();
         $router = Mockery::mock(RouterContract::class);
-        $expectedRequest = Mockery::mock(Request::class);
+        $expectedRequest = Mockery::mock(RequestContract::class);
         $expectedResponse = Mockery::mock(ResponseContract::class);
         $router->expects("route")->with($expectedRequest)->andReturn($expectedResponse);
         $app->setRouter($router);
@@ -131,7 +131,7 @@ class ApplicationTest extends TestCase
     {
         $app = self::makeTestWebApplication();
         $router = Mockery::mock(RouterContract::class);
-        $expectedRequest = Mockery::mock(Request::class);
+        $expectedRequest = Mockery::mock(RequestContract::class);
         $expectedResponse = Mockery::mock(ResponseContract::class);
         $postProcessor = Mockery::mock(RequestPreprocessor::class);
         $router->shouldNotReceive("route");
@@ -153,7 +153,7 @@ class ApplicationTest extends TestCase
     {
         $app = self::makeTestWebApplication();
         $router = Mockery::mock(RouterContract::class);
-        $expectedRequest = Mockery::mock(Request::class);
+        $expectedRequest = Mockery::mock(RequestContract::class);
         $expectedResponse = Mockery::mock(ResponseContract::class);
         $preProcessor = Mockery::mock(RequestPreprocessor::class);
         $app->setRouter($router);
@@ -178,7 +178,7 @@ class ApplicationTest extends TestCase
     {
         $app = self::makeTestWebApplication();
         $router = Mockery::mock(RouterContract::class);
-        $expectedRequest = Mockery::mock(Request::class);
+        $expectedRequest = Mockery::mock(RequestContract::class);
         $routedResponse = Mockery::mock(ResponseContract::class);
         $postProcessedResponse = Mockery::mock(ResponseContract::class);
         $postProcessor = Mockery::mock(RequestPostprocessor::class);
@@ -204,7 +204,7 @@ class ApplicationTest extends TestCase
     {
         $app = self::makeTestWebApplication();
         $router = Mockery::mock(RouterContract::class);
-        $expectedRequest = Mockery::mock(Request::class);
+        $expectedRequest = Mockery::mock(RequestContract::class);
         $expectedResponse = Mockery::mock(ResponseContract::class);
         $postProcessor = Mockery::mock(RequestPostprocessor::class);
         $app->setRouter($router);
@@ -229,7 +229,7 @@ class ApplicationTest extends TestCase
     {
         $app = self::makeTestWebApplication();
         $router = Mockery::mock(RouterContract::class);
-        $expectedRequest = Mockery::mock(Request::class);
+        $expectedRequest = Mockery::mock(RequestContract::class);
         $app->setRouter($router);
 
         $router->expects("route")

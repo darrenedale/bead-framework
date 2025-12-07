@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Bead\Web;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\Response;
 use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Core\Application;
@@ -70,11 +71,11 @@ class Router implements RouterContract
     /**
      * Fetch the route definition that matches a request, if any.
      *
-     * @param \Bead\Web\Request $request
+     * @param RequestContract $request
      *
      * @return string|null
      */
-    protected function matchedRoute(Request $request): ?string
+    protected function matchedRoute(RequestContract $request): ?string
     {
         $requestRoute = $request->path();
 
@@ -163,11 +164,11 @@ class Router implements RouterContract
      * Given a route that's been matched to a request, extract the route's arguments from the request's URI.
      *
      * @param string $route The matched route definition.
-     * @param \Bead\Web\Request $request The request that it was matched to.
+     * @param RequestContract $request The request that it was matched to.
      *
      * @return array The arguments for the route's parameters, keyed by the parameter name.
      */
-    protected static function extractRouteArgumentsFromRequest(string $route, Request $request): array
+    protected static function extractRouteArgumentsFromRequest(string $route, RequestContract $request): array
     {
         $routeParameterNames = self::parametersForRoute($route);
         preg_match(self::regularExpressionForRoute($route), $request->path(), $requestArguments);
@@ -189,14 +190,14 @@ class Router implements RouterContract
      *
      * @param callable|array<class-string, string> $handler The handler that has been matched to the request.
      * @param string $route The route definition that matched the request.
-     * @param \Bead\Web\Request $request The request.
+     * @param RequestContract $request The request.
      *
      * @return array The argument list for the handle.r
      *
      * @throws LogicException if the handler has any non-optional parameters that don't have matches in the route
      * definition.
      */
-    protected static function buildHandlerArguments($handler, string $route, Request $request): array
+    protected static function buildHandlerArguments($handler, string $route, RequestContract $request): array
     {
         $app = Application::instance();
 
@@ -209,7 +210,7 @@ class Router implements RouterContract
             $type = $parameter->getType();
 
             // if the handler wants a Request object, give it the request being routed
-            if (isset($type) && Request::class === $type->getName()) {
+            if (isset($type) && RequestContract::class === $type->getName()) {
                 $handlerArguments[] = $request;
                 continue;
             }
@@ -303,7 +304,7 @@ class Router implements RouterContract
      * - the arguments for the route handler cannot be created from the request; or
      * - the handler is a class instance method and the class cannot be instantiated
      */
-    public function route(Request $request): Response
+    public function route(RequestContract $request): Response
     {
         $route = $this->matchedRoute($request);
 
@@ -374,7 +375,7 @@ class Router implements RouterContract
     }
 
     /**
-     * @param callable|array $handler
+     * @param callable|array|string $handler
      *
      * @throws InvalidArgumentException if $methods is/contains one or more invalid HTTP methods
      * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name

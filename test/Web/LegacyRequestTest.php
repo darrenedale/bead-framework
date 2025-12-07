@@ -5,21 +5,21 @@ declare(strict_types=1);
 namespace BeadTests\Web;
 
 use Bead\Testing\StaticXRay;
-use Bead\Web\Request;
+use Bead\Web\LegacyRequest;
 use BeadTests\Framework\TestCase;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionProperty;
 
-class RequestTest extends TestCase
+class LegacyRequestTest extends TestCase
 {
-    private Request $request;
+    private LegacyRequest $request;
 
     public function setUp(): void
     {
         $_SERVER["REQUEST_METHOD"] = "GET";
-        $reflector = new ReflectionClass(Request::class);
+        $reflector = new ReflectionClass(LegacyRequest::class);
         $this->request = $reflector->newInstanceWithoutConstructor();
         $reflector = $reflector->getConstructor();
         self::assertInstanceOf(ReflectionMethod::class, $reflector);
@@ -30,7 +30,7 @@ class RequestTest extends TestCase
     public function tearDown(): void
     {
         // ensure the request doesn't persist between tests.
-        $xRay = new StaticXRay(Request::class);
+        $xRay = new StaticXRay(LegacyRequest::class);
         $xRay->s_originalRequest = null;
         unset($this->request);
     }
@@ -205,14 +205,14 @@ class RequestTest extends TestCase
     public function testOriginalRequest1(string $uri, string $expectedPath): void
     {
         $_SERVER["REQUEST_URI"] = $expectedPath;
-        self::assertEquals($expectedPath, Request::originalRequest()->path());
+        self::assertEquals($expectedPath, LegacyRequest::originalRequest()->path());
     }
 
     /** Ensure a request URI without a path gets "/" as the path. */
     public function testOriginalRequest2(): void
     {
         $_SERVER["REQUEST_URI"] = "http://bead.example.com";
-        self::assertEquals("/", Request::originalRequest()->path());
+        self::assertEquals("/", LegacyRequest::originalRequest()->path());
     }
 
     /** Ensure IPv4 is successfully read from $_SERVER */
@@ -220,8 +220,8 @@ class RequestTest extends TestCase
     {
         $_SERVER["REQUEST_URI"] = "http://bead.example.com";
         $_SERVER["REMOTE_ADDR"] = "172.16.1.81";
-        self::assertEquals("172.16.1.81", Request::originalRequest()->remoteIp4());
-        self::assertEquals("", Request::originalRequest()->remoteIp6());
+        self::assertEquals("172.16.1.81", LegacyRequest::originalRequest()->remoteIp4());
+        self::assertEquals("", LegacyRequest::originalRequest()->remoteIp6());
     }
 
     /** Ensure IPv6 is successfully read from $_SERVER */
@@ -229,7 +229,7 @@ class RequestTest extends TestCase
     {
         $_SERVER["REQUEST_URI"] = "http://bead.example.com";
         $_SERVER["REMOTE_ADDR"] = "2001:db8:85a3::8a2e:370:7334";
-        self::assertEquals("", Request::originalRequest()->remoteIp4());
-        self::assertEquals("2001:db8:85a3::8a2e:370:7334", Request::originalRequest()->remoteIp6());
+        self::assertEquals("", LegacyRequest::originalRequest()->remoteIp4());
+        self::assertEquals("2001:db8:85a3::8a2e:370:7334", LegacyRequest::originalRequest()->remoteIp6());
     }
 }

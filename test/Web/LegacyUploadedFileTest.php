@@ -8,7 +8,7 @@ use Bead\Contracts\Logger as LoggerContract;
 use Bead\Core\Application;
 use Bead\Facades\Log;
 use Bead\Logging\NullLogger;
-use Bead\Web\UploadedFile;
+use Bead\Web\LegacyUploadedFile;
 use BeadTests\Framework\TestCase;
 use Mockery;
 use ReflectionClass;
@@ -18,7 +18,7 @@ use function uopz_get_mock;
 use function uopz_set_mock;
 use function uopz_unset_mock;
 
-class UploadedFileTest extends TestCase
+class LegacyUploadedFileTest extends TestCase
 {
     public const TempFileName = "/tmp/uploaded-file.txt";
 
@@ -62,18 +62,18 @@ class UploadedFileTest extends TestCase
         ];
     }
 
-    private static function createUploadedFile(array $file): UploadedFile
+    private static function createUploadedFile(array $file): LegacyUploadedFile
     {
         static $class = null;
         static $constructor = null;
 
         if (!isset($class)) {
-            $class = new ReflectionClass(UploadedFile::class);
+            $class = new ReflectionClass(LegacyUploadedFile::class);
             $constructor = $class->getConstructor();
             $constructor->setAccessible(true);
         }
 
-        /** @var UploadedFile $instance */
+        /** @var LegacyUploadedFile $instance */
         $instance = $class->newInstanceWithoutConstructor();
         $constructor->invoke($instance, $file);
         return $instance;
@@ -197,19 +197,19 @@ class UploadedFileTest extends TestCase
         $this->mockFunction(
             "file_exists",
             function (string $file) use ($callCounts): bool {
-                if ($file === UploadedFileTest::TempFileName) {
+                if ($file === LegacyUploadedFileTest::TempFileName) {
                     $callCounts->file_exists = ($callCounts->file_exists ?? 0) + 1;
                     return true;
                 }
 
-                UploadedFileTest::fail("file_exists() called with unexpected file name '{$file}'.");
+                LegacyUploadedFileTest::fail("file_exists() called with unexpected file name '{$file}'.");
             }
         );
 
         $this->mockFunction(
             "is_file",
             function (string $file) use ($callCounts): bool {
-                if ($file === UploadedFileTest::TempFileName) {
+                if ($file === LegacyUploadedFileTest::TempFileName) {
                     $callCounts->is_file = ($callCounts->is_file ?? 0) + 1;
                     return true;
                 }
@@ -221,48 +221,48 @@ class UploadedFileTest extends TestCase
         $this->mockFunction(
             "is_readable",
             function (string $file) use ($callCounts): bool {
-                if ($file === UploadedFileTest::TempFileName) {
+                if ($file === LegacyUploadedFileTest::TempFileName) {
                     $callCounts->is_readable = ($callCounts->is_readable ?? 0) + 1;
                     return true;
                 }
 
-                UploadedFileTest::fail("is_readable() called with unexpected file name '{$file}'.");
+                LegacyUploadedFileTest::fail("is_readable() called with unexpected file name '{$file}'.");
             }
         );
 
         $this->mockFunction(
             "file_get_contents",
             function (string $file) use ($callCounts): string {
-                if ($file === UploadedFileTest::TempFileName) {
+                if ($file === LegacyUploadedFileTest::TempFileName) {
                     $callCounts->file_get_contents = ($callCounts->file_get_contents ?? 0) + 1;
-                    return UploadedFileTest::tempFileContents();
+                    return LegacyUploadedFileTest::tempFileContents();
                 }
 
-                UploadedFileTest::fail("file_get_contents() called with unexpected file name '{$file}'.");
+                LegacyUploadedFileTest::fail("file_get_contents() called with unexpected file name '{$file}'.");
             }
         );
 
         $this->mockFunction(
             "move_uploaded_file",
             function (string $file, string $destination) use ($callCounts): bool {
-                if (UploadedFileTest::TempFileName === $file && UploadedFileTest::DestinationFileName === $destination) {
+                if (LegacyUploadedFileTest::TempFileName === $file && LegacyUploadedFileTest::DestinationFileName === $destination) {
                     $callCounts->move_uploaded_file = ($callCounts->move_uploaded_file ?? 0) + 1;
                     return true;
                 }
 
-                UploadedFileTest::fail("move_uploaded_file() called with unexpected temp file name and destination file name combination.");
+                LegacyUploadedFileTest::fail("move_uploaded_file() called with unexpected temp file name and destination file name combination.");
             }
         );
 
         $this->mockFunction(
             "unlink",
             function (string $file) use ($callCounts): bool {
-                if ($file === UploadedFileTest::TempFileName) {
+                if ($file === LegacyUploadedFileTest::TempFileName) {
                     $callCounts->unlink = ($callCounts->unlink ?? 0) + 1;
                     return true;
                 }
 
-                UploadedFileTest::fail("unlink() called with unexpected file name.");
+                LegacyUploadedFileTest::fail("unlink() called with unexpected file name.");
             }
         );
 

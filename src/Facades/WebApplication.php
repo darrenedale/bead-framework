@@ -2,11 +2,12 @@
 
 namespace Bead\Facades;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\Response as ResponseContract;
 use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Core\Plugin;
 use Bead\Web\Application as BeadWebApplication;
-use Bead\Web\Request;
+use Bead\Web\LegacyRequest;
 use LogicException;
 
 use function assert;
@@ -25,10 +26,10 @@ use function assert;
  * @method static void setRouter(RouterContract $router)
  * @method static RouterContract router()
  * @method static void sendResponse(ResponseContract $response)
- * @method static Request request()
+ * @method static RequestContract request()
  * @method static string csrf()
  * @method static string regenerateCsrf()
- * @method static ResponseContract handleRequest(Request $request)
+ * @method static ResponseContract handleRequest(RequestContract $request)
  * @method static int exec()
  */
 class WebApplication extends Application

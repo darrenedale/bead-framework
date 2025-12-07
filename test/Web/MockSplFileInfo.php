@@ -16,8 +16,8 @@ class MockSplFileInfo extends SplFileInfo
 
     public function getSize(): int
     {
-        if (UploadedFileTest::TempFileName === $this->getPathname()) {
-            return UploadedFileTest::TempFileSize;
+        if (LegacyUploadedFileTest::TempFileName === $this->getPathname()) {
+            return LegacyUploadedFileTest::TempFileSize;
         }
 
         return parent::getSize();

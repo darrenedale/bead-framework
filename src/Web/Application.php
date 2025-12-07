@@ -2,6 +2,7 @@
 
 namespace Bead\Web;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\RequestPostprocessor;
 use Bead\Contracts\Web\RequestPreprocessor;
 use Bead\Contracts\Web\Response;
@@ -614,11 +615,11 @@ class Application extends CoreApplication
      *
      * @see-also currentRequest()
      *
-     * @return Request The user's original request.
+     * @return RequestContract The user's original request.
      */
-    public function request(): Request
+    public function request(): RequestContract
     {
-        return Request::originalRequest();
+        return Request::capture();
     }
 
     /**
@@ -712,7 +713,7 @@ class Application extends CoreApplication
      * @return Response|null The Response provided by the first preprocessor that returns one, or null if none of them
      * return a Response.
      */
-    protected function preprocessRequest(Request $request): ?Response
+    protected function preprocessRequest(RequestContract $request): ?Response
     {
         foreach ($this->m_requestProcessors as $preprocessor) {
             if (!$preprocessor instanceof RequestPreprocessor) {
@@ -739,7 +740,7 @@ class Application extends CoreApplication
      * @return Response|null The Response provided by the first postprocessor that returns one, or null if none of them
      * return a Response.
      */
-    protected function postprocessRequest(Request $request, Response $response): ?Response
+    protected function postprocessRequest(RequestContract $request, Response $response): ?Response
     {
         foreach ($this->m_requestProcessors as $postprocessor) {
             if (!$postprocessor instanceof RequestPostprocessor) {
@@ -762,13 +763,13 @@ class Application extends CoreApplication
      * This method submits a request to the application for processing. Processing of the request starts immediately and
      * any current request is held until it finishes.
      *
-     * @param $request Request The request to handle.
+     * @param $request RequestContract The request to handle.
      *
      * @return Response A Response to send to the client.
      * @throws InvalidConfigurationException if an invalid set of preprocessors is found
      * @throws NotFoundException if the request can't be routed
      */
-    public function handleRequest(Request $request): Response
+    public function handleRequest(RequestContract $request): Response
     {
         $this->emitEvent("application.handlerequest.requestreceived", $request);
 
@@ -837,7 +838,7 @@ class Application extends CoreApplication
         $this->loadRoutes();
 
         $this->emitEvent("application.executionstarted");
-        $response = $this->handleRequest(Request::originalRequest());
+        $response = $this->handleRequest(Request::capture());
         $this->emitEvent("application.executionfinished");
 
         $this->emitEvent("application.sendingresponse");

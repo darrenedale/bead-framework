@@ -1,253 +1,159 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bead\Web;
 
-use Bead\Facades\Log;
+use Bead\Contracts\Web\UploadedFile as UploadedFileContract;
+use Bead\Exceptions\Web\UploadedFileException;
+use LogicException;
 use SplFileInfo;
 
-/**
- * Represents a file uploaded to the application.
- *
- * This class is used by the Bead\Request class to manage files uploaded to the application. Each file uploaded is
- * represented by a single object of this class.
- *
- * This is a read-only class - instances can only be retrieved from the Request object that has read them from the
- * incoming HTTP request.
- *
- * @package bead-framework
- */
-final class UploadedFile
+/** Default implementation of the UploadedFile contract. */
+class UploadedFile implements UploadedFileContract
 {
-    /** The original name of the file uploaded by the user. */
+    /** @var string The name of the uploaded file. */
     private string $m_name;
 
-    /** The full original path of the file uploaded by the user. Only available after PHP 8.1 and not trustworthy. */
-    private string $m_clientPath;
+    /** @var int The size in bytes of the file reported by the user agent. */
+    private int $m_reportedSize;
 
-    /** The path to the file's content. */
-    private ?string $m_tempFile;
+    /** @var int The actual size in bytes of the file received. */
+    private int $m_actualSize;
 
-    /** The file data, if loaded. */
-    private ?string $m_fileData;
-
-    /** The MIME type of the file reported by the user agent. */
-    private string $m_mimeType;
-
-    /** The size in bytes of the file reported by the user agent. */
-    private int $m_size;
+    /** @var string The temporary location of the uploaded file, or an empty string once it's been moved */
+    private string $m_temporaryPath;
 
     /** @var int The error code for the upload. */
-    private int $m_errorCode;
+    private int $m_error;
+
+    /** @var string The file's media type. */
+    private string $m_mediaType;
+
+    /** @var string The contents of the temporary file (lazy-initialised). */
+    private string $m_contents;
 
     /**
-     * Create a new UploadedFile object.
+     * @param array{
+     *     tmp_name: string,
+     *     name: string,
+     *     full_path: string | null,
+     *     size: int,
+     *     error: int,
+     *     type: string,
+     * } $uploadedFile
      *
-     * @param array $uploadedFile The entry from $_FILES from which to initialise the object..
+     * @throws UploadedFileException if the temporary file's size cannot be determined.
      */
-    private function __construct(array $uploadedFile)
+    public function __construct(array $uploadedFile)
     {
-        $this->m_tempFile = $uploadedFile["tmp_name"];
+        $this->m_temporaryPath = $uploadedFile["tmp_name"];
         $this->m_name = $uploadedFile["name"];
-        $this->m_clientPath = $uploadedFile["full_path"] ?? "";
-        $this->m_size = $uploadedFile["size"];
-        $this->m_errorCode = $uploadedFile["error"] ?? 0;
-        $this->m_mimeType = $uploadedFile["type"] ?? "";
-        $this->m_fileData = null;
+        $this->m_reportedSize = $uploadedFile["size"];
+        $this->m_error = $uploadedFile["error"] ?? 0;
+        $this->m_mediaType = $uploadedFile["type"] ?? "";
+        $this->m_actualSize = -1;
+        $this->m_contents = "";
     }
 
-    /**
-     * Fetch all the files uploaded.
-     *
-     * The superglobal $_FILES is parsed and the result cached. Subsequent calls are therefore fast.
-     *
-     * @return self[]
-     */
-    public static function allUploadedFiles(): array
+    /** Helper to read the contents of the temporary file. */
+    private function readTemporaryFile(): void
     {
-        static $files = null;
+        $contents = file_get_contents($this->m_temporaryPath);
 
-        if (!isset($files)) {
-            $files = [];
-
-            foreach ($_FILES as $name => $file) {
-                $files[$name] = new UploadedFile($file);
-            }
+        if (false === $contents) {
+            throw new UploadedFileException($this, "The contents of the temporary uploaded file cannot be read");
         }
 
-        return $files;
+        $this->m_contents = $contents;
     }
 
-    /**
-     * Internal helper to invalidate the UploadedFile when moved/discarded.
-     */
-    private function invalidate(): void
-    {
-        $this->m_tempFile = null;
-        $this->m_fileData = null;
-    }
-
-    /**
-     * Fetch the name of the uploaded file on the client's machine.
-     *
-     * @return string The file name.
-     */
+    /** @inheritDoc */
     public function name(): string
     {
         return $this->m_name;
     }
 
-    /**
-     * The original full path name on the client machine of the file.
-     *
-     * This is reported by the user agent and is therefore not trustworthy. It will be an empty string if the user agent
-     * did not supply this or if running on PHP < 8.1.
-     *
-     * @return string
-     */
-    public function clientPath(): string
-    {
-        return $this->m_clientPath;
-    }
-
-    /**
-     * Fetch the path for the uploaded file's temporary file.
-     *
-     * @return string The path to the temporary file, or `null` if the file has been discarded or moved.
-     */
-    public function tempFile(): string
-    {
-        return $this->m_tempFile;
-    }
-
-    /**
-     * Move the uploaded file to a more permanent storage location.
-     *
-     * If this is successful, the `UploadedFile` object will become invalid.
-     *
-     * @param string $path The destination for the file.
-     *
-     * @return SplFileInfo|null The moved file, or null if the file could not be moved.
-     */
-    public function moveTo(string $path): ?SplFileInfo
-    {
-        if (isset($this->m_tempFile) && move_uploaded_file($this->m_tempFile, $path)) {
-            $this->invalidate();
-            return new SplFileInfo($path);
-        }
-
-        return null;
-    }
-
-    /**
-     * Discard the uploaded file.
-     *
-     * If this is successful, the `UploadedFile` object will become invalid.
-     *
-     * @return bool `true` if the file was discarded, `false` if not or if the uploaded file is not valid.
-     */
-    public function discard(): bool
-    {
-        if (isset($this->m_tempFile) && @unlink($this->m_tempFile)) {
-            $this->invalidate();
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Fetch the MIME type for the uploaded file data.
-     *
-     * This is reported by the user agent and may not be accurate. It will be an empty string if the user agent did not
-     * supply a MIME type.
-     *
-     * @return string|null The MIME type.
-     */
-    public function mimeType(): ?string
-    {
-        return $this->m_mimeType;
-    }
-
-    /**
-     * Fetch the size, in bytes, reported for the uploaded file by the user agent.
-     *
-     * @return int The size.
-     */
+    /** @inheritDoc */
     public function reportedSize(): int
     {
-        return $this->m_size;
+        return $this->m_reportedSize;
     }
 
-    /**
-     * Fetch the actual size, in bytes, of the uploaded file.
-     *
-     * @return int|null The size if the file is valid, `null` if it is not.
-     */
-    public function actualSize(): ?int
+    /** @inheritDoc */
+    public function actualSize(): int
     {
         if (!$this->isValid()) {
-            return null;
+            throw new LogicException("The uploaded file \"{$this->name()}\" is not valid");
         }
 
-        if (isset($this->m_fileData)) {
-            return strlen($this->m_fileData);
-        }
+        if (-1 === $this->m_actualSize) {
+            $size = @filesize($this->m_temporaryPath);
 
-        $size = (new SplFileInfo($this->m_tempFile))->getSize();
-        return (false === $size ? null : $size);
-    }
-
-    /**
-     * Fetch the file data.
-     *
-     * This method returns the uploaded file content unless the file is invalid. The content of the file is read and
-     * cached on the first call. If the file is valid but cannot be read for some reason, null is returned.
-     *
-     * @return string The file data, or `null` the file is not valid or the temporary file cannot be read.
-     */
-    public function data(): ?string
-    {
-        if (!isset($this->m_fileData) && $this->isValid()) {
-            if (!is_file($this->m_tempFile)) {
-                Log::error("file \"{$this->m_tempFile}\" is not a file");
-            } elseif (!is_readable($this->m_tempFile)) {
-                Log::error("file \"{$this->m_tempFile}\" is not readable");
-            } else {
-                $this->m_fileData = file_get_contents($this->m_tempFile);
+            if (false === $size) {
+                throw new UploadedFileException($this, "The size of the temporary uploaded file \"{$this->m_temporaryPath}\" could not be determined");
             }
+
+            $this->m_actualSize = $size;
         }
 
-        return $this->m_fileData;
+        return $this->m_actualSize;
     }
 
-    /**
-     * Fetch the upload error code.
-     *
-     * @return int The error code. 0 if successful.
-     */
-    public function errorCode(): int
+    /** @inheritDoc */
+    public function mediaType(): string
     {
-        return $this->m_errorCode;
+        return $this->m_mediaType;
     }
 
-    /**
-     * @return bool
-     * @deprecated Use !isValid() instead.
-     */
-    public function isNull(): bool
+    /** @inheritDoc */
+    public function path(): string
     {
-        return !$this->isValid();
+        if (!$this->isValid()) {
+            throw new LogicException("The uploaded file \"{$this->name()}\" is not valid");
+        }
+
+        return $this->m_temporaryPath;
     }
 
-    /**
-     * Check whether the uploaded file is valid.
-     *
-     * Valid files have not been discarded or moved and have an error code of 0.
-     *
-     * @return bool
-     */
+    /** @inheritDoc */
+    public function moveTo(string $path): SplFileInfo
+    {
+        if (!$this->isValid()) {
+            throw new LogicException("The uploaded file \"{$this->name()}\" is not valid and cannot be moved");
+        }
+
+        if (!@move_uploaded_file($this->m_temporaryPath, $path)) {
+            throw new UploadedFileException($this, "The file \"{$this->name()}\" could not be moved to \"{$path}\"");
+        }
+
+        $this->m_temporaryPath = "";
+        return new SplFileInfo($path);
+    }
+
+    /** @inheritDoc */
+    public function contents(): string
+    {
+        if (!$this->isValid()) {
+            throw new LogicException("The uploaded file \"{$this->name()}\" is not valid");
+        }
+
+        if ("" === $this->m_contents) {
+            $this->readTemporaryFile();
+        }
+
+        return $this->m_contents;
+    }
+
+    /** @inheritDoc */
+    public function error(): int
+    {
+        return $this->m_error;
+    }
+
+    /** @inheritDoc */
     public function isValid(): bool
     {
-        return isset($this->m_tempFile) && (0 === $this->m_errorCode) && (file_exists($this->m_tempFile) || isset($this->m_fileData));
+        return UPLOAD_ERR_OK !== $this->m_error || "" === $this->m_temporaryPath;
     }
 }

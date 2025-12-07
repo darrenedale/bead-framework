@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace BeadTests\Web\RequestProcessors;
 
 use Bead\Contracts\Logger as LoggerContract;
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\Response;
 use Bead\Core\Application;
 use Bead\Testing\XRay;
-use Bead\Web\Request;
 use Bead\Web\RequestProcessors\LogRequestDuration;
 use BeadTests\Framework\TestCase;
 use Mockery;
@@ -48,7 +48,7 @@ class LogRequestDurationTest extends TestCase
     {
         $this->mockFunction("hrtime", 1023498675);
         $processor = new XRay($this->processor);
-        $actual = $this->processor->preprocessRequest(Mockery::mock(Request::class));
+        $actual = $this->processor->preprocessRequest(Mockery::mock(RequestContract::class));
         self::assertNull($actual);
         self::assertEquals(1023498675, $processor->m_started);
     }
@@ -58,14 +58,13 @@ class LogRequestDurationTest extends TestCase
     {
         $this->mockFunction("hrtime", 10234759086);
 
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive("url")->once()->andReturn("/bead/framework");
-        $request->shouldReceive("remoteIp4")->once()->andReturn("172.16.1.1");
+        $request = Mockery::mock(RequestContract::class);
+        $request->shouldReceive("path")->once()->andReturn("/bead/framework");
 
         $log = Mockery::mock(LoggerContract::class);
 
         $log->shouldReceive("log")
-            ->with(LoggerContract::DebugLevel, "Request /bead/framework from 172.16.1.1 took 99999ns (0.00010s)")
+            ->with(LoggerContract::DebugLevel, "Request /bead/framework took 99999ns (0.00010s)")
             ->once();
 
         $app = Mockery::mock(Application::class);

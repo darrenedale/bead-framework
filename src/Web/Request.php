@@ -1,657 +1,294 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Bead\Web;
 
-use InvalidArgumentException;
-use TypeError;
+use Bead\Contracts\Web\Request as RequestContract;
+use Bead\Contracts\Web\UploadedFile as UploadedFileContract;
+use LogicException;
 
-/**
- * Abstract representation of an incoming HTTP request.
- *
- * The original request submitted by the user agent is always available using the static method `originalRequest()`. The
- * data submitted with the request can be retrieved using `urlParameter()`, `postData()` and `uploadedFile()` for,
- * respectively, URL parameters, POST data and uploaded files. For a subset of URL parameters or POST data use
- * `onlyUrlParameters()` and `onlyPostData()`, giving an array of keys to retrieve.
- */
-class Request
+use const ARRAY_FILTER_USE_KEY;
+
+/** Default implementation of the Request contract. */
+class Request implements RequestContract
 {
-    /** @var string The HTTP protocol. */
-    public const HttpProtocol = "http";
+    private static ?Request $capturedRequest = null;
 
-    /** @var string The HTTPS protocol. */
-    public const HttpsProtocol = "https";
+    private string $m_method;
 
-    /** @var Request|null The request parsed from the superglobals. */
-    private static ?Request $s_originalRequest = null;
+    private string $m_scheme;
 
-    /** @var array<string, string> The request's URL parameters. */
-    private array $m_urlParams = [];
-
-    /** @var array<string, array|string> The request's POST data. */
-    private array $m_postData = [];
-
-    /** @var array<string,UploadedFile> The files uploaded with the request. */
-    private array $m_files = [];
-
-    /** @var Header[] The request's HTTP headers. */
-    private array $m_headers = [];
-
-    /** @var string The full request URL. */
-    private string $m_url;
-
-    /** @var string The request's protocol. */
-    private string $m_protocol;
-
-    /** @var string The host part of the request URL. */
     private string $m_host;
 
-    /** @var string The path part of the request URL. */
+    private ?int $m_port;
+
     private string $m_path;
 
-    /** @var string The PathInfo part of the request URL. */
-    private string $m_pathInfo = "";
+    /** @var Header[]  */
+    private array $m_headers;
 
-    /** @var string The HTTP request method for the request. */
-    private string $m_method = "";
+    private string $m_query;
 
-    /** @var string The dotted-decimal IPv4 address of the remote making the request. */
-    private string $remoteIp4 = "";
+    private string $m_fragment;
 
-    /** @var string The IPv6 address of the remote making the request. */
-    private string $remoteIp6 = "";
+    /** @var array<string,string|string[]> */
+    private array $m_queryParameters;
+
+    /** @var array<string,string|string[]> */
+    private array $m_formFields;
+
+    /** @var UploadedFile[] $m_uploadedFiles */
+    private array $m_uploadedFiles;
 
     /**
-     * Create a new Request.
+     * Capture the incoming request.
      *
-     * @param $action string|null The action the request is for.
+     * @return Request The request.
      */
-    private function __construct()
+    public static function capture(): Request
     {
-        $scheme = (!empty($_SERVER["HTTPS"]) ? self::HttpsProtocol : self::HttpProtocol);
-        $host = $_SERVER["HTTP_HOST"] ?? $_SERVER["SERVER_NAME"] ?? "";
+        if (null === static::$capturedRequest) {
+            self::$capturedRequest = new Request();
+            self::$capturedRequest->captureMethod();
+            self::$capturedRequest->captureScheme();
+            self::$capturedRequest->captureHost();
+            self::$capturedRequest->capturePort();
+            self::$capturedRequest->capturePath();
+            self::$capturedRequest->captureHeaders();
+            self::$capturedRequest->captureQueryString();
+            self::$capturedRequest->captureFragment();
+            self::$capturedRequest->captureQueryParameters();
+            self::$capturedRequest->captureFormFields();
+            self::$capturedRequest->captureUploadedFiles();
+        }
 
-        $this->setProtocol($scheme);
-        $this->setHost($host);
-        $this->setPath("/");
-        $this->setPathInfo("/");
-        $this->setMethod("GET");
-
-        $this->m_url = "{$scheme}://{$host}/";
+        return self::$capturedRequest;
     }
 
-    /**
-     * Provide a string representation of the request.
-     *
-     * At present, this method just returns the request URL. The URL provided
-     * will be %-encoded.
-     *
-     * @return string The request URL.
-     */
-    public function __toString(): string
+    protected function captureMethod(): void
     {
-        return $this->url();
+        $this->m_method = strtoupper($_SERVER["REQUEST_METHOD"]);
     }
 
-    /**
-     * Fetch the request URL.
-     *
-     * The URL provided will be as it is in the incoming request. It is constructed from the HTTP headers and server
-     * variables. It is therefore not 100% guaranteed to match the address in the user's browser - it's dependent on
-     * the web server providing the information.
-     *
-     * @return string The request URL.
-     */
-    public function url(): string
+    protected function captureScheme(): void
     {
-        return $this->m_url;
+        $this->m_scheme = (!empty($_SERVER["HTTPS"]) ? RequestContract::SchemeHttps : RequestContract::SchemeHttp);
     }
 
-    /**
-     * Fetch the request protocol.
-     *
-     * @return string The protocol.
-     */
-    public function protocol(): string
+    protected function captureHost(): void
     {
-        return $this->m_protocol;
+        $this->m_host = $_SERVER["HTTP_HOST"] ?? $_SERVER["SERVER_NAME"] ?? "";
     }
 
-    /**
-     * Set the request protocol.
-     *
-     * The protocol should be one of the class protocol constants - HTTP or HTTPS.
-     *
-     * @param string $protocol The protocol.
-     */
-    public function setProtocol(string $protocol): void
+    protected function capturePort(): void
     {
-        $this->m_protocol = $protocol;
+        $this->m_port = $_SERVER["SERVER_PORT"] ?? null;
     }
 
-    /**
-     * Fetch the request host.
-     *
-     * @return string The host.
-     */
-    public function host(): string
+    protected function capturePath(): void
     {
-        return $this->m_host;
+        $this->m_path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
     }
 
-    /**
-     * Set the request host.
-     *
-     * The host should be a valid hostname or IP.
-     *
-     * @param string $host The host.
-     */
-    public function setHost(string $host): void
+    protected function captureQueryString(): void
     {
-        $this->m_host = $host;
+        $this->m_query = $_SERVER["QUERY_STRING"];
     }
 
-    /**
-     * Fetch the request method.
-     *
-     * @return string The method.
-     */
+    protected function captureFragment(): void
+    {
+        $this->m_fragment = parse_url($_SERVER["REQUEST_URI"], PHP_URL_FRAGMENT);
+    }
+
+    protected function captureHeaders(): void
+    {
+        $this->m_headers = [];
+
+        foreach ($_SERVER as $key => $value) {
+            if (str_starts_with($key, "HTTP_")) {
+                $this->m_headers[] = new Header(str_replace("_", "-", substr($key, 5)), $value);
+            } else if (in_array($key, ["CONTENT_TYPE", "CONTENT_LENGTH", "CONTENT_MD5",])) {
+                $this->m_headers[] = new Header(str_replace("_", "-", $key), $value);
+            }
+        }
+    }
+
+    protected function captureQueryParameters(): void
+    {
+        $this->m_queryParameters = $_GET;
+    }
+
+    protected function captureFormFields(): void
+    {
+        $this->m_formFields = $_POST;
+    }
+
+    protected function captureUploadedFiles(): void
+    {
+        // TODO handle peculiarities around arrays of uploaded files with the same name in $_FILES (see
+        //  https://www.php-fig.org/psr/psr-7/#16-uploaded-files)
+        // array_map preserves keys when just one array is mapped
+        $this->m_uploadedFiles = array_map(
+            static fn (array $uploadedFile): UploadedFile => new UploadedFile($uploadedFile),
+            $_FILES,
+        );
+    }
+
+    /** @inheritDoc */
     public function method(): string
     {
         return $this->m_method;
     }
 
-    /**
-     * Set the request method.
-     *
-     * The method should be one of the supported HTTP methods. It is not case sensitive, it will be converted to all
-     * upper-case when set.
-     *
-     * @param string $method The method.
-     */
-    public function setMethod(string $method): void
+    /** @inheritDoc */
+    public function headers(): array
     {
-        $this->m_method = strtoupper($method);
+        return $this->m_headers;
     }
 
-    /**
-     * Fetch the request path.
-     *
-     * The path is the part of the request URL between the host and the query string/fragment/end of the URL.
-     *
-     * @return string The path.
-     */
+    /** @inheritDoc */
+    public function header(string $name): array
+    {
+        return array_filter(
+            $this->m_headers,
+            static fn (Header $header): bool => $header->name() === mb_strtolower($name, "UTF-8"),
+        );
+    }
+
+    /** @inheritDoc */
+    public function scheme(): string
+    {
+        return $this->m_scheme;
+    }
+
+    /** @inheritDoc */
+    public function host(): string
+    {
+        return $this->m_host;
+    }
+
+    /** @inheritDoc */
+    public function port(): ?int
+    {
+        return $this->m_port;
+    }
+
+    /** @inheritDoc */
     public function path(): string
     {
         return $this->m_path;
     }
 
-    /**
-     * Set the request path.
-     *
-     * @param string $path The path.
-     */
-    public function setPath(string $path): void
+    /** @inheritDoc */
+    public function query(): string
     {
-        $this->m_path = $path;
+        return $this->m_query;
     }
 
-    /**
-     * Fetch the request path.
-     *
-     * The path is the part of the request URL between the host and the query string/fragment/end of the URL.
-     *
-     * @return string The path.
-     * @deprecated use URI paths instead
-     */
-    public function pathInfo(): string
+    /** @inheritDoc */
+    public function fragment(): string
     {
-        return $this->m_pathInfo;
+        return $this->m_fragment;
     }
 
-    /**
-     * Set the request path.
-     *
-     * @param string $path The path.
-     * @deprecated use URI paths instead
-     */
-    public function setPathInfo(string $path): void
+    /** @inheritDoc */
+    public function hasQueryParameter(string $name): bool
     {
-        $this->m_pathInfo = $path;
+        return array_key_exists($name, $this->m_queryParameters);
     }
 
-    /**
-     * Fetch the query string.
-     *
-     * The query string returned is %-encoded.
-     *
-     * @return string The %-encoded query string.
-     */
-    public function encodedQueryString(): string
+    /** @inheritDoc */
+    public function queryParameter(string $name): string|array|null
     {
-        $query = "";
+        return $this->m_queryParameters[$name] ?? null;
+    }
 
-        foreach ($this->m_urlParams as $key => $value) {
-            if (is_null($value)) {
+    /** @inheritDoc */
+    public function queryParameters(array $names): array
+    {
+        return array_filter(
+            $this->m_queryParameters,
+            static fn (string $parameterName): bool => in_array($parameterName, $names, true),
+            ARRAY_FILTER_USE_KEY,
+        );
+    }
+
+    /** @inheritDoc */
+    public function allQueryParameters(): array
+    {
+        return $this->m_queryParameters;
+    }
+
+    /** @inheritDoc */
+    public function hasFormField(string $name): bool
+    {
+        return array_key_exists($name, $this->m_formFields);
+    }
+
+    /** @inheritDoc */
+    public function formField(string $name): string|array|null
+    {
+        return $this->m_formFields[$name] ?? null;
+    }
+
+    /** @inheritDoc */
+    public function formFields(array $names): array
+    {
+        return array_filter(
+            $this->m_formFields,
+            static fn (string $fieldName): bool => in_array($fieldName, $names, true),
+            ARRAY_FILTER_USE_KEY,
+        );
+    }
+
+    /** @inheritDoc */
+    public function allFormFields(): array
+    {
+        return $this->m_formFields;
+    }
+
+    /** @inheritDoc */
+    public function has(string $name): bool
+    {
+        return $this->hasFormField($name) || $this->hasQueryParameter($name);
+    }
+
+    /** @inheritDoc */
+    public function data(array|string $names): string|array|null
+    {
+        if (is_string($names)) {
+            return $this->m_formFields[$names] ?? $this->m_queryParameters[$names] ?? null;
+        }
+
+        $data = [];
+
+        foreach ($names as $name) {
+            $value = $this->m_formFields[$name] ?? $this->m_queryParameters[$name] ?? null;
+
+            if (null === $value) {
                 continue;
             }
 
-            if (empty($query)) {
-                $query .= "?";
-            } else {
-                $query .= "&";
-            }
-
-            $query .= urlencode($key) . "=" . urlencode($value);
+            $data[$name] = $value;
         }
 
-        return $query;
+        return $data;
     }
 
-    /**
-     * Fetch the query string.
-     *
-     * The plain-text query string.
-     *
-     * @return string The %-encoded query string.
-     */
-    public function queryString(): string
+    /** @inheritDoc */
+    public function hasUploadedFile(string $name): bool
     {
-        $query = "";
+        return array_key_exists($name, $this->m_uploadedFiles);
+    }
 
-        foreach ($this->m_urlParams as $key => $value) {
-            if (is_null($value)) {
-                continue;
-            }
-
-            if (empty($query)) {
-                $query .= "?";
-            } else {
-                $query .= "&";
-            }
-
-            $query .= "{$key}={$value}";
+    /** @inheritDoc */
+    public function uploadedFile(string $name): UploadedFileContract
+    {
+        if (!$this->hasUploadedFile($name)) {
+            throw new LogicException("Uploaded file \"{$name}\" does not exist");
         }
 
-        return $query;
-    }
-
-    /**
-     * Set a URL parameter in the request.
-     *
-     * The value parameter may be `null` to unset a parameter in the URL. After this is done, the parameter will no
-     * longer appear in the URL.
-     *
-     * URL parameter keys are not case-sensitive. All keys are converted to lower-case for consistency. Updating a
-     * parameter that already exists using a version of the key that differs only in case will overwrite the existing
-     * parameter value.
-     *
-     * @param $key string The key for the URL parameter.
-     * @param $value string|null The value for the URL parameter.
-     */
-    public function setUrlParameter(string $key, ?string $value): void
-    {
-        $key = mb_strtolower($key, "UTF-8");
-
-        if (is_null($value)) {
-            unset($this->m_urlParams[$key]);
-        } else {
-            $this->m_urlParams[$key] = $value;
-        }
-    }
-
-    /**
-     * Check whether a URL parameter was provided with the request.
-     *
-     * Keys are not case-sensitive.
-     *
-     * @param $key string They key of the parameter to check.
-     *
-     * @return bool `true` if the URL parameter was provided, `false` otherwise.
-     */
-    public function hasUrlParameter(string $key): bool
-    {
-        $key = mb_strtolower($key, "UTF-8");
-        return array_key_exists($key, $this->m_urlParams);
-    }
-
-    /**
-     * Fetch the value of a URL parameter.
-     *
-     * Keys are not case-sensitive.
-     *
-     * @param $key string They key of the value to fetch.
-     *
-     * @return string|null The URL parameter value, or `null` if the parameter is not set.
-     */
-    public function urlParameter(string $key): ?string
-    {
-        $key = mb_strtolower($key, "UTF-8");
-        return $this->m_urlParams[$key] ?? null;
-    }
-
-    /**
-     * Fetch a subset of the URL parameters.
-     *
-     * The URL parameters are provided as an associative array. All parameter keys are guaranteed to be all lower-case.
-     * Only those URL parameters whose name matches one of the provided keys are provided. Any keys that don't
-     * identify URL parameters will be absent from the returned array.
-     *
-     * @return array<string, string> The URL parameters.
-     */
-    public function onlyUrlParameters(array $keys): array
-    {
-        return array_filter($this->m_urlParams, fn (string $key): bool => in_array(strtolower($key), $keys), ARRAY_FILTER_USE_KEY);
-    }
-
-    /**
-     * Fetch all URL parameters.
-     *
-     * The URL parameters are provided as an associative array. All parameter
-     * keys are guaranteed to be all lower-case.
-     *
-     * @return array<string, string> The URL parameters.
-     */
-    public function allUrlParameters(): array
-    {
-        return $this->m_urlParams;
-    }
-
-    /**
-     * Fetch the value of a URL parameter, or if it is absent the POST data.
-     *
-     * The URL parameter takes precedence.
-     *
-     * Keys are not case-sensitive.
-     *
-     * @param $key string They key of the value to fetch.
-     *
-     * @return string|array|null The value or `null` if neither the URL parameter nor POST data is set.
-     */
-    public function urlParameterOrPostData(string $key)
-    {
-        return $this->urlParameter($key) ?? $this->postData($key);
-    }
-
-    /**
-     * Check whether some POST data was provided with the request.
-     *
-     * Keys are not case-sensitive.
-     *
-     * @param $key string The key of the data to check.
-     *
-     * @return bool `true` if the POST data was provided, `false` otherwise.
-     */
-    public function hasPostData(string $key): bool
-    {
-        $key = mb_strtolower($key, "UTF-8");
-        return array_key_exists($key, $this->m_postData);
-    }
-
-    /**
-     * Set the value for some POST data.
-     *
-     * The value parameter may be `null` to unset a piece of POST data. After this is done, the parameter will no
-     * longer appear in the POST data.
-     *
-     * POST data keys are not case-sensitive. All keys are converted to lower-case for consistency. Updating some data
-     * that already exists using a version of the key that differs only in case will overwrite the existing value.
-     *
-     * @param $key string The key for the POST data.
-     * @param $value string|array|null The value for the POST data.
-     *
-     * @throws TypeError if `$value` is not string, array or null.
-     */
-    public function setPostData(string $key, $value): void
-    {
-        $key = mb_strtolower($key, "UTF-8");
-
-        if (is_null($value)) {
-            unset($this->m_postData[$key]);
-        } elseif (is_string($value) || is_array($value)) {
-            $this->m_postData[$key] = $value;
-        } else {
-            throw new TypeError("POST data value required to be string, array or null");
-        }
-    }
-
-    /**
-     * Fetch the value of some POST data.
-     *
-     * Keys are not case-sensitive.
-     *
-     * @param $key string They key of the value to fetch.
-     *
-     * @return string|array|null The POST data value, or `null` if the POST data with the key provided is not set.
-     */
-    public function postData(string $key)
-    {
-        $key = mb_strtolower($key, "UTF-8");
-
-        if (array_key_exists($key, $this->m_postData)) {
-            return $this->m_postData[$key];
-        }
-
-        return null;
-    }
-
-    /**
-     * Fetch a subset of the POST data.
-     *
-     * The POST data are provided as an associative array. All keys are guaranteed to be all lower-case. Only those URL
-     * parameters whose name matches one of the provided keys are provided. Any keys that don't identify URL parameters
-     * will be absent from the returned array.
-     *
-     * @return array<string, string> The requested POST data.
-     */
-    public function onlyPostData(array $keys): array
-    {
-        return array_filter($this->m_postData, fn (string $key): bool => in_array(strtolower($key), $keys), ARRAY_FILTER_USE_KEY);
-    }
-
-    /**
-     * Fetch all the POST data.
-     *
-     * The POST data is provided as an associative array. All POST data keys are guaranteed to be all lower-case.
-     *
-     * @return array<string, string> The POST data.
-     */
-    public function allPostData(): array
-    {
-        return $this->m_postData;
-    }
-
-    /**
-     * Fetch the value of some POST data, or if it is absent the URL parameter.
-     *
-     * The POST data takes precedence.
-     *
-     * Keys are not case-sensitive.
-     *
-     * @param $key string They key of the value to fetch.
-     *
-     * @return string|array|null The value or `null` if neither the POST data nor the URL parameter is set.
-     */
-    public function postDataOrUrlParameter(string $key)
-    {
-        return $this->postData($key) ?? $this->urlParameter($key);
-    }
-
-    /**
-     * Fetch an uploaded file.
-     *
-     * Uploaded file identifiers are not case-sensitive.
-     *
-     * @param $identifier string The identifier of the file to fetch.
-     *
-     * @return UploadedFile|null The requested file, or `null` if the file does not exist.
-     */
-    public function uploadedFile(string $identifier): ?UploadedFile
-    {
-        $identifier = mb_strtolower($identifier, "UTF-8");
-
-        if (array_key_exists($identifier, $this->m_files)) {
-            return $this->m_files[$identifier];
-        }
-
-        return null;
-    }
-
-    /**
-     * Set an uploaded file.
-     *
-     * @param $identifier string The identifier for the uploaded file.
-     * @param $file UploadedFile The file to set.
-     *
-     * Uploaded file identifiers are not case-sensitive. All identifiers are
-     * converted to lower- case for consistency. Updating a file that already
-     * exists using a version of the identifier that differs only in case will
-     * discard and replace the existing file object.
-     *
-     * This method is of most use when the application is parsing the request
-     * sent by the user agent.
-     */
-    public function setUploadedFile(string $identifier, ?UploadedFile $file): void
-    {
-        $identifier = mb_strtolower($identifier, "UTF-8");
-
-        if (!isset($file)) {
-            unset($this->m_files[$identifier]);
-        } else {
-            $this->m_files[$identifier] = $file;
-        }
-    }
-
-    /**
-     * Fetch the value for an HTTP header.
-     *
-     * @param string $name The header requested.
-     *
-     * @return string|null The value of the first header with a matching name, or `null` if the header is not set.
-     */
-    public function header(string $name): ?string
-    {
-        $name = mb_strtolower($name, "UTF-8");
-
-        foreach ($this->m_headers as $header) {
-            if (mb_strtolower($header->name(), "UTF-8") === $name) {
-                return $header->value();
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Determine whether the request was submitted as an AJAX request.
-     *
-     * This depends on a specific HTTP header being set to a specific value, which many frameworks provide.
-     *
-     * @return bool `true` if the request is AJAX, `false` if not.
-     */
-    public function isAjax(): bool
-    {
-        // FE frameworks need to set this header. many popular frameworks do so
-        return "XMLHttpRequest" === $this->header("x-requested-with");
-    }
-
-    /** @throws InvalidArgumentException if the IP is not valid. */
-    public function setRemoteIp4(string $ip): void
-    {
-        $validIp = filter_var($ip, FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV4,]);
-
-        if (false === $validIp) {
-            throw new InvalidArgumentException("Expected valid IPv4 dotted-decimal address, found \"{$ip}\"");
-        }
-
-        $this->remoteIp4 = $ip;
-    }
-
-
-    public function remoteIp4(): string
-    {
-        return $this->remoteIp4;
-    }
-
-
-    /** @throws InvalidArgumentException if the IP is not valid. */
-    public function setRemoteIp6(string $ip): void
-    {
-        $validIp = filter_var($ip, FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV6,]);
-
-        if (false === $validIp) {
-            throw new InvalidArgumentException("Expected valid IPv6 address, found \"{$ip}\"");
-        }
-
-        $this->remoteIp6 = $ip;
-    }
-
-
-    public function remoteIp6(): string
-    {
-        return $this->remoteIp6;
-    }
-
-
-    /**
-     * Fetch the original request submitted by the user agent.
-     *
-     * The request provided is parsed from the $_GET, $_POST, $_FILES and $_SERVER superglobals. The parsing happens
-     * only once, on the first call - the request is then cached so subsequent calls are fast. The provided request
-     * remains owned by the `Request` class and must not be modified by external code.
-     *
-     * The PathInfo is taken from the PATH_INFO member of tehe $_SERVER superglobal, if it's present. If it isn't, it
-     * is computed as the portion of the path that is between the location of the running script and the query string or
-     * fragment or the end of the URL, whichever occurs soonest. For example, if the request is for
-     * "https://example.com/foo/bar/baz" and the script "index.php" from inside "/foo/" is running, the PathInfo will
-     * be "/baz".
-     *
-     * @return Request The original request submitted to the server.
-     */
-    public static function originalRequest(): Request
-    {
-        if (is_null(Request::$s_originalRequest)) {
-            $req = new Request();
-
-            foreach ($_GET as $key => $value) {
-                $key = mb_strtolower($key, "UTF-8");
-                $req->setUrlParameter($key, $value);
-            }
-
-            foreach ($_POST as $key => $value) {
-                $key = mb_strtolower($key, "UTF-8");
-                $req->setPostData($key, $value);
-            }
-
-            $req->m_files = UploadedFile::allUploadedFiles();
-
-            foreach ($_SERVER as $key => $value) {
-                if (str_starts_with($key, "HTTP_")) {
-                    $req->m_headers[] = new Header(str_replace("_", "-", substr($key, 5)), $value);
-                } else {
-                    if (in_array($key, ["CONTENT_TYPE", "CONTENT_LENGTH", "CONTENT_MD5",])) {
-                        $req->m_headers[] = new Header(str_replace("_", "-", $key), $value);
-                    }
-                }
-            }
-
-            $req->setMethod(strtoupper($_SERVER["REQUEST_METHOD"]));
-            $req->m_url = "{$req->protocol()}://{$req->host()}{$_SERVER["REQUEST_URI"]}";
-
-            if (array_key_exists("REMOTE_ADDR", $_SERVER)) {
-                if (false !== filter_var($_SERVER["REMOTE_ADDR"], FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV4,])) {
-                    $req->remoteIp4 = $_SERVER["REMOTE_ADDR"];
-                } elseif (false !== filter_var($_SERVER["REMOTE_ADDR"], FILTER_VALIDATE_IP, ["flags" => FILTER_FLAG_IPV6,])) {
-                    $req->remoteIp6 = $_SERVER["REMOTE_ADDR"];
-                }
-            }
-
-            $path = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) ?? "/";
-            $req->setPath($path);
-            $req->setPathInfo($path);
-
-            Request::$s_originalRequest = $req;
-        }
-
-        return Request::$s_originalRequest;
+        return $this->m_uploadedFiles[$name];
     }
 }

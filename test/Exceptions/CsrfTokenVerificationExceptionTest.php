@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace BeadTests\Exceptions;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Exceptions\Http\CsrfTokenVerificationException;
-use Bead\Web\Request;
+use Bead\Web\LegacyRequest;
 use BeadTests\Framework\TestCase;
 use Mockery;
 use RuntimeException;
@@ -14,9 +15,9 @@ final class CsrfTokenVerificationExceptionTest extends TestCase
 {
     use AssertsCommonExceptionProperties;
 
-    private static function createRequest(): Request
+    private static function createRequest(): RequestContract
     {
-        return Mockery::mock(Request::class);
+        return Mockery::mock(RequestContract::class);
     }
 
     /** Ensure the erroneous request can be set in the exception constructor. */

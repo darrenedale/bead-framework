@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace BeadTests\Web;
 
 use Bead\Contracts\Logger;
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\Response;
 use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Core\Application;
@@ -34,9 +35,7 @@ use function in_array;
 use function is_string;
 use function mt_rand;
 
-/**
- * Test case for the Router class.
- */
+/** Test case for the Router class. */
 class RouterTest extends TestCase
 {
     /**
@@ -75,18 +74,30 @@ class RouterTest extends TestCase
      * @param string $pathInfo The path_info for the request (used in route matching).
      * @param string $method The HTTP method.
      *
-     * @return Request
+     * @return RequestContract
      */
-    protected static function makeRequest(string $pathInfo, string $method = RouterContract::GetMethod): Request
+    protected static function makeRequest(string $pathInfo, string $method = RouterContract::GetMethod): RequestContract
     {
         return new class ($pathInfo, $method) extends Request
         {
-            /** @noinspection PhpMissingParentConstructorInspection we're creating a test double, we don't want to call the parent constructor. */
+            private string $path;
+
+            private string $method;
+
             public function __construct(string $path, string $method)
             {
-                $this->setPath($path);
-                $this->setPathInfo($path);
-                $this->setMethod($method);
+                $this->path = $path;
+                $this->method = $method;
+            }
+            
+            public function path(): string
+            {
+                return $this->path;
+            }
+            
+            public function method(): string
+            {
+                return $this->method;
             }
         };
     }
@@ -2578,9 +2589,9 @@ class RouterTest extends TestCase
     public function dataForTestRoute1(): array
     {
         return [
-            "typicalGetWithNoParameters" => [RouterContract::GetMethod, "/home", RouterContract::GetMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalGetWithNoParameters" => [RouterContract::GetMethod, "/home", RouterContract::GetMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2588,9 +2599,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithLongerPathAndNoParameters" => [RouterContract::GetMethod, "/admin/users/home", RouterContract::GetMethod, "/admin/users/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/admin/users/home", $request->pathInfo());
+            "typicalGetWithLongerPathAndNoParameters" => [RouterContract::GetMethod, "/admin/users/home", RouterContract::GetMethod, "/admin/users/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/admin/users/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2598,9 +2609,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyGetWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::GetMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalAnyGetWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::GetMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2608,9 +2619,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPostWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PostMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalAnyPostWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PostMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2618,9 +2629,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPutWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PutMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalAnyPutWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PutMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2628,9 +2639,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyDeleteWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::DeleteMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalAnyDeleteWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::DeleteMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2638,9 +2649,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyHeadWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::HeadMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalAnyHeadWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::HeadMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2648,9 +2659,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyOptionsWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::OptionsMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalAnyOptionsWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::OptionsMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2658,9 +2669,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyConnectWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::ConnectMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalAnyConnectWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::ConnectMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2668,9 +2679,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPatchWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PatchMethod, "/home", function (Request $request): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/home", $request->pathInfo());
+            "typicalAnyPatchWithNoParameters" => [RouterContract::AnyMethod, "/home", RouterContract::PatchMethod, "/home", function (RequestContract $request): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/home", $request->path());
                 return new class extends AbstractResponse {
                     public function content(): string
                     {
@@ -2678,9 +2689,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithParameterInt" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalGetWithParameterInt" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2689,9 +2700,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithParameterString" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalGetWithParameterString" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2700,9 +2711,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithParameterFloat" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalGetWithParameterFloat" => [RouterContract::GetMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2711,9 +2722,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithParameterBoolTrueInt" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalGetWithParameterBoolTrueInt" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2722,9 +2733,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithParameterBoolTrueString" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalGetWithParameterBoolTrueString" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2733,9 +2744,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithParameterBoolFalseInt" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalGetWithParameterBoolFalseInt" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2744,9 +2755,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithParameterBoolFalseString" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalGetWithParameterBoolFalseString" => [RouterContract::GetMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2755,9 +2766,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyGetWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyGetWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2766,9 +2777,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyGetWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyGetWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2777,9 +2788,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyGetWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyGetWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::GetMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2788,9 +2799,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyGetWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalAnyGetWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2799,9 +2810,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyGetWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalAnyGetWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2810,9 +2821,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyGetWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalAnyGetWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2821,9 +2832,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyGetWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalAnyGetWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::GetMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2832,9 +2843,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPostWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPostWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2843,9 +2854,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPostWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPostWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2854,9 +2865,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPostWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPostWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PostMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2865,9 +2876,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPostWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalAnyPostWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2876,9 +2887,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPostWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalAnyPostWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2887,9 +2898,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPostWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalAnyPostWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2898,9 +2909,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPostWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalAnyPostWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PostMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2909,9 +2920,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPutWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPutWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2920,9 +2931,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPutWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPutWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2931,9 +2942,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPutWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPutWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PutMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2942,9 +2953,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPutWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalAnyPutWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2953,9 +2964,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPutWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalAnyPutWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2964,9 +2975,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPutWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalAnyPutWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2975,9 +2986,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPutWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalAnyPutWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PutMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2986,9 +2997,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyHeadWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyHeadWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -2997,9 +3008,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyHeadWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyHeadWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3008,9 +3019,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyHeadWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyHeadWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::HeadMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3019,9 +3030,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyHeadWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalAnyHeadWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3030,9 +3041,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyHeadWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalAnyHeadWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3041,9 +3052,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyHeadWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalAnyHeadWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3052,9 +3063,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyHeadWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalAnyHeadWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::HeadMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3063,9 +3074,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyConnectWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyConnectWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3074,9 +3085,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyConnectWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyConnectWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3085,9 +3096,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyConnectWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyConnectWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::ConnectMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3096,9 +3107,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyConnectWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalAnyConnectWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3107,9 +3118,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyConnectWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalAnyConnectWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3118,9 +3129,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyConnectWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalAnyConnectWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3129,9 +3140,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyConnectWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalAnyConnectWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::ConnectMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3140,9 +3151,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyDeleteWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyDeleteWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3151,9 +3162,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyDeleteWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyDeleteWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3162,9 +3173,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyDeleteWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyDeleteWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::DeleteMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3173,9 +3184,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyDeleteWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalAnyDeleteWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3184,9 +3195,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyDeleteWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalAnyDeleteWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3195,9 +3206,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyDeleteWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalAnyDeleteWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3206,9 +3217,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyDeleteWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalAnyDeleteWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::DeleteMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3217,9 +3228,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPatchWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPatchWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3228,9 +3239,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPatchWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPatchWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3239,9 +3250,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPatchWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyPatchWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::PatchMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3250,9 +3261,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPatchWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalAnyPatchWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3261,9 +3272,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPatchWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalAnyPatchWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3272,9 +3283,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPatchWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalAnyPatchWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3283,9 +3294,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyPatchWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalAnyPatchWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::PatchMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3294,9 +3305,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyOptionsWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function (Request $request, int $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyOptionsWithParameterInt" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function (RequestContract $request, int $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3305,9 +3316,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyOptionsWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function (Request $request, string $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyOptionsWithParameterString" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function (RequestContract $request, string $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame("123", $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3316,9 +3327,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyOptionsWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function (Request $request, float $id): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/123", $request->pathInfo());
+            "typicalAnyOptionsWithParameterFloat" => [RouterContract::AnyMethod, "/edit/{id}", RouterContract::OptionsMethod, "/edit/123", function (RequestContract $request, float $id): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/123", $request->path());
                 self::assertSame(123.0, $id);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3327,9 +3338,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyOptionsWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/1", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/1", $request->pathInfo());
+            "typicalAnyOptionsWithParameterBoolTrueInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/1", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/1", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3338,9 +3349,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyOptionsWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/true", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/true", $request->pathInfo());
+            "typicalAnyOptionsWithParameterBoolTrueString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/true", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/true", $request->path());
                 self::assertSame(true, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3349,9 +3360,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyOptionsWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/0", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/0", $request->pathInfo());
+            "typicalAnyOptionsWithParameterBoolFalseInt" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/0", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/0", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3360,9 +3371,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalAnyOptionsWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/false", function (Request $request, bool $confirmed): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/edit/false", $request->pathInfo());
+            "typicalAnyOptionsWithParameterBoolFalseString" => [RouterContract::AnyMethod, "/edit/{confirmed}", RouterContract::OptionsMethod, "/edit/false", function (RequestContract $request, bool $confirmed): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/edit/false", $request->path());
                 self::assertSame(false, $confirmed);
                 return new class extends AbstractResponse {
                     public function content(): string
@@ -3371,9 +3382,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithParametersDifferentOrderManyTypes" => [RouterContract::GetMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::GetMethod, "/object/article/9563/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+            "typicalGetWithParametersDifferentOrderManyTypes" => [RouterContract::GetMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::GetMethod, "/object/article/9563/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/object/article/9563/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(9563, $id);
                 self::assertSame("set", $action);
@@ -3386,9 +3397,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalGetWithAllParametersDifferentOrderManyTypes" => [RouterContract::GetMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::GetMethod, "/article/123456789/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+            "typicalGetWithAllParametersDifferentOrderManyTypes" => [RouterContract::GetMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::GetMethod, "/article/123456789/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/article/123456789/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(123456789, $id);
                 self::assertSame("set", $action);
@@ -3401,9 +3412,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalPostWithParametersDifferentOrderManyTypes" => [RouterContract::PostMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PostMethod, "/object/article/9563/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+            "typicalPostWithParametersDifferentOrderManyTypes" => [RouterContract::PostMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PostMethod, "/object/article/9563/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/object/article/9563/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(9563, $id);
                 self::assertSame("set", $action);
@@ -3416,9 +3427,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalPostWithAllParametersDifferentOrderManyTypes" => [RouterContract::PostMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PostMethod, "/article/123456789/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+            "typicalPostWithAllParametersDifferentOrderManyTypes" => [RouterContract::PostMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PostMethod, "/article/123456789/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/article/123456789/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(123456789, $id);
                 self::assertSame("set", $action);
@@ -3431,9 +3442,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalPutWithParametersDifferentOrderManyTypes" => [RouterContract::PutMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PutMethod, "/object/article/9563/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+            "typicalPutWithParametersDifferentOrderManyTypes" => [RouterContract::PutMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PutMethod, "/object/article/9563/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/object/article/9563/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(9563, $id);
                 self::assertSame("set", $action);
@@ -3446,9 +3457,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalPutWithAllParametersDifferentOrderManyTypes" => [RouterContract::PutMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PutMethod, "/article/123456789/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+            "typicalPutWithAllParametersDifferentOrderManyTypes" => [RouterContract::PutMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PutMethod, "/article/123456789/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/article/123456789/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(123456789, $id);
                 self::assertSame("set", $action);
@@ -3461,9 +3472,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalHeadWithParametersDifferentOrderManyTypes" => [RouterContract::HeadMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::HeadMethod, "/object/article/9563/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+            "typicalHeadWithParametersDifferentOrderManyTypes" => [RouterContract::HeadMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::HeadMethod, "/object/article/9563/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/object/article/9563/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(9563, $id);
                 self::assertSame("set", $action);
@@ -3476,9 +3487,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalHeadWithAllParametersDifferentOrderManyTypes" => [RouterContract::HeadMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::HeadMethod, "/article/123456789/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+            "typicalHeadWithAllParametersDifferentOrderManyTypes" => [RouterContract::HeadMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::HeadMethod, "/article/123456789/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/article/123456789/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(123456789, $id);
                 self::assertSame("set", $action);
@@ -3491,9 +3502,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalOptionsWithParametersDifferentOrderManyTypes" => [RouterContract::OptionsMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::OptionsMethod, "/object/article/9563/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+            "typicalOptionsWithParametersDifferentOrderManyTypes" => [RouterContract::OptionsMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::OptionsMethod, "/object/article/9563/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/object/article/9563/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(9563, $id);
                 self::assertSame("set", $action);
@@ -3506,9 +3517,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalOptionsWithAllParametersDifferentOrderManyTypes" => [RouterContract::OptionsMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::OptionsMethod, "/article/123456789/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+            "typicalOptionsWithAllParametersDifferentOrderManyTypes" => [RouterContract::OptionsMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::OptionsMethod, "/article/123456789/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/article/123456789/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(123456789, $id);
                 self::assertSame("set", $action);
@@ -3521,9 +3532,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalDeleteWithParametersDifferentOrderManyTypes" => [RouterContract::DeleteMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::DeleteMethod, "/object/article/9563/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+            "typicalDeleteWithParametersDifferentOrderManyTypes" => [RouterContract::DeleteMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::DeleteMethod, "/object/article/9563/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/object/article/9563/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(9563, $id);
                 self::assertSame("set", $action);
@@ -3536,9 +3547,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalDeleteWithAllParametersDifferentOrderManyTypes" => [RouterContract::DeleteMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::DeleteMethod, "/article/123456789/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+            "typicalDeleteWithAllParametersDifferentOrderManyTypes" => [RouterContract::DeleteMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::DeleteMethod, "/article/123456789/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/article/123456789/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(123456789, $id);
                 self::assertSame("set", $action);
@@ -3551,9 +3562,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalPatchWithParametersDifferentOrderManyTypes" => [RouterContract::PatchMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PatchMethod, "/object/article/9563/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+            "typicalPatchWithParametersDifferentOrderManyTypes" => [RouterContract::PatchMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::PatchMethod, "/object/article/9563/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/object/article/9563/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(9563, $id);
                 self::assertSame("set", $action);
@@ -3566,9 +3577,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalPatchWithAllParametersDifferentOrderManyTypes" => [RouterContract::PatchMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PatchMethod, "/article/123456789/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+            "typicalPatchWithAllParametersDifferentOrderManyTypes" => [RouterContract::PatchMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::PatchMethod, "/article/123456789/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/article/123456789/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(123456789, $id);
                 self::assertSame("set", $action);
@@ -3581,9 +3592,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalConnectWithParametersDifferentOrderManyTypes" => [RouterContract::ConnectMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::ConnectMethod, "/object/article/9563/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/object/article/9563/set/status/draft", $request->pathInfo());
+            "typicalConnectWithParametersDifferentOrderManyTypes" => [RouterContract::ConnectMethod, "/object/{type}/{id}/{action}/{property}/{value}", RouterContract::ConnectMethod, "/object/article/9563/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/object/article/9563/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(9563, $id);
                 self::assertSame("set", $action);
@@ -3596,9 +3607,9 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalConnectWithAllParametersDifferentOrderManyTypes" => [RouterContract::ConnectMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::ConnectMethod, "/article/123456789/set/status/draft", function (Request $request, int $id, string $type, string $action, string $property, string $value): Response {
-                self::assertInstanceOf(Request::class, $request);
-                self::assertSame("/article/123456789/set/status/draft", $request->pathInfo());
+            "typicalConnectWithAllParametersDifferentOrderManyTypes" => [RouterContract::ConnectMethod, "/{type}/{id}/{action}/{property}/{value}", RouterContract::ConnectMethod, "/article/123456789/set/status/draft", function (RequestContract $request, int $id, string $type, string $action, string $property, string $value): Response {
+                self::assertInstanceOf(RequestContract::class, $request);
+                self::assertSame("/article/123456789/set/status/draft", $request->path());
                 self::assertSame("article", $type);
                 self::assertSame(123456789, $id);
                 self::assertSame("set", $action);
@@ -3611,32 +3622,14 @@ class RouterTest extends TestCase
                     }
                 };
             }],
-            "typicalUnroutableIncorrectMethodOneRegisteredMethod" => [RouterContract::GetMethod, "/", RouterContract::PostMethod, "/", function (Request $request, bool $confirmed): Response {
+            "typicalUnroutableIncorrectMethodOneRegisteredMethod" => [RouterContract::GetMethod, "/", RouterContract::PostMethod, "/", function (RequestContract $request, bool $confirmed): Response {
                 $this->fail("Handler should not be called: Request method '{$request->method()}' should not match registered method '" . RouterContract::GetMethod . "'.");
-                return new class extends AbstractResponse {
-                    public function content(): string
-                    {
-                        return "";
-                    }
-                };
             }, UnroutableRequestException::class,],
-            "typicalUnroutableIncorrectMethodManyRegisteredMethods" => [[RouterContract::GetMethod, RouterContract::PostMethod,], "/", RouterContract::PutMethod, "/", function (Request $request, bool $confirmed): Response {
+            "typicalUnroutableIncorrectMethodManyRegisteredMethods" => [[RouterContract::GetMethod, RouterContract::PostMethod,], "/", RouterContract::PutMethod, "/", function (RequestContract $request, bool $confirmed): Response {
                 $this->fail("Handler should not be called: Request method '{$request->method()}' should not match registered methods '" . implode("', '", [RouterContract::GetMethod, RouterContract::PostMethod,]) . "'.");
-                return new class extends AbstractResponse {
-                    public function content(): string
-                    {
-                        return "";
-                    }
-                };
             }, UnroutableRequestException::class,],
-            "typicalUnroutableNoMatchedRoute" => [RouterContract::GetMethod, "/", RouterContract::PostMethod, "/home", function (Request $request, bool $confirmed): Response {
-                $this->fail("Handler should not be called: Request path '{$request->pathInfo()}' should not match registered route '/'.");
-                return new class extends AbstractResponse {
-                    public function content(): string
-                    {
-                        return "";
-                    }
-                };
+            "typicalUnroutableNoMatchedRoute" => [RouterContract::GetMethod, "/", RouterContract::PostMethod, "/home", function (RequestContract $request, bool $confirmed): Response {
+                $this->fail("Handler should not be called: Request path '{$request->path()}' should not match registered route '/'.");
             }, UnroutableRequestException::class,],
         ];
     }
