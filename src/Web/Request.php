@@ -68,18 +68,19 @@ class Request implements RequestContract
 
     protected function captureUri(): void
     {
-        $host = $_SERVER["HTTP_HOST"] ?? $_SERVER["SERVER_NAME"] ?? "";
+        $hostAndPort = $_SERVER["HTTP_HOST"] ?? $_SERVER["SERVER_NAME"] ?? "";
 
-        if (str_contains($host, ":")) {
-            $pos = strpos($host, ":");
-            $host = substr($host, 0, $pos);
-            $port = filter_var(substr($host, $pos + 1), FILTER_VALIDATE_INT) ?: null;
+        if (str_contains($hostAndPort, ":")) {
+            $pos = strpos($hostAndPort, ":");
+            $host = substr($hostAndPort, 0, $pos);
+            $port = filter_var(substr($hostAndPort, $pos + 1), FILTER_VALIDATE_INT) ?: null;
         } else {
+            $host = $hostAndPort;
             $port = null;
         }
 
         $this->m_uri = (new Uri(
-            "" !== $_SERVER["HTTPS"] ? RequestContract::SchemeHttps : RequestContract::SchemeHttp,
+            "" !== ($_SERVER["HTTPS"] ?? "") ? RequestContract::SchemeHttps : RequestContract::SchemeHttp,
             $host,
             parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH),
         ))
