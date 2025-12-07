@@ -57,6 +57,9 @@ interface Request
      */
     public function header(string $name): array;
 
+    /** Whether the request is an asynchronous AJAX request. */
+    public function isAjax(): bool;
+
     /**
      * The HTTP scheme used for the request.
      *

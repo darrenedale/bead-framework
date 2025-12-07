@@ -9,6 +9,7 @@ use Bead\Contracts\Web\UploadedFile as UploadedFileContract;
 use Bead\Contracts\Web\Uri as UriContract;
 use LogicException;
 
+use function Bead\Helpers\Iterable\some;
 use const ARRAY_FILTER_USE_KEY;
 
 /** Default implementation of the Request contract. */
@@ -161,6 +162,16 @@ class Request implements RequestContract
         return array_filter(
             $this->m_headers,
             static fn (Header $header): bool => $header->name() === mb_strtolower($name, "UTF-8"),
+        );
+    }
+
+    /** @inheritDoc */
+    public function isAjax(): bool
+    {
+        // FE frameworks need to set this header. many popular frameworks do so
+        return some(
+            $this->header("x-requested-with"),
+            static fn (Header $header): bool => $header->value() === "XMLHttpRequest",
         );
     }
 
