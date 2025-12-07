@@ -24,7 +24,9 @@ class UriAuthority implements UriAuthorityContract
 
     public function __clone(): void
     {
-        $this->m_userInfo = clone $this->m_userInfo;
+        if (null !== $this->m_userInfo) {
+            $this->m_userInfo = clone $this->m_userInfo;
+        }
     }
 
     public function userInfo(): ?UriUserInfo
