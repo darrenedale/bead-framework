@@ -41,6 +41,13 @@ class Request implements RequestContract
     /** @var UploadedFile[] $m_uploadedFiles */
     private array $m_uploadedFiles;
 
+    /** @var array<string,string> */
+    private array $m_cookies;
+
+    // TODO temporary private constructor to forbid external instantiation
+    private function __construct()
+    {}
+
     /**
      * Capture the incoming request.
      *
@@ -61,6 +68,7 @@ class Request implements RequestContract
             self::$capturedRequest->captureQueryParameters();
             self::$capturedRequest->captureFormFields();
             self::$capturedRequest->captureUploadedFiles();
+            self::$capturedRequest->captureCookies();
         }
 
         return self::$capturedRequest;
@@ -83,7 +91,7 @@ class Request implements RequestContract
 
     protected function capturePort(): void
     {
-        $this->m_port = $_SERVER["SERVER_PORT"] ?? null;
+        $this->m_port = filter_var($_SERVER["SERVER_PORT"] ?? "", FILTER_VALIDATE_INT) ?: null;
     }
 
     protected function capturePath(): void
@@ -133,6 +141,11 @@ class Request implements RequestContract
             static fn (array $uploadedFile): UploadedFile => new UploadedFile($uploadedFile),
             $_FILES,
         );
+    }
+
+    protected function captureCookies(): void
+    {
+        $this->m_cookies = $_COOKIE;
     }
 
     /** @inheritDoc */
@@ -290,5 +303,23 @@ class Request implements RequestContract
         }
 
         return $this->m_uploadedFiles[$name];
+    }
+
+    /** @inheritDoc */
+    public function hasCookie(string $name): bool
+    {
+        return array_key_exists($name, $this->m_cookies);
+    }
+
+    /** @inheritDoc */
+    public function cookie(string $name): ?string
+    {
+        return $this->m_cookies[$name] ?? null;
+    }
+
+    /** @inheritDoc */
+    public function cookies(): array
+    {
+        return $this->m_cookies;
     }
 }

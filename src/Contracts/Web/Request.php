@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Bead\Contracts\Web;
 
 /**
- * TODO add body access
+ * TODO add body access, incl. JSON
  */
 interface Request
 {
@@ -89,7 +89,7 @@ interface Request
     /**
      * The query string of the Request URL.
      *
-     * The query string will be in its encoded form, and will include the ? delimiter at the start.
+     * The query string will be in its encoded form, and will not include the ? delimiter at the start.
      *
      * @return string The query string.
      */
@@ -203,4 +203,21 @@ interface Request
 
     /** Fetch a named uploaded file. */
     public function uploadedFile(string $name): UploadedFile;
+
+    /** Check whether the request contains a named cookie. */
+    public function hasCookie(string $name): bool;
+
+    /**
+     * Fetch the value of a single cookie from the request.
+     *
+     * @return string|null The value of the cookie, or null if the cookie is not set.
+     */
+    public function cookie(string $name): ?string;
+
+    /**
+     * Fetch all the request's cookies.
+     *
+     * @return array<string,string> All the cookies that are set.
+     */
+    public function cookies(): array;
 }
