@@ -106,7 +106,7 @@ class Request implements RequestContract
 
     protected function captureFragment(): void
     {
-        $this->m_fragment = parse_url($_SERVER["REQUEST_URI"], PHP_URL_FRAGMENT);
+        $this->m_fragment = parse_url($_SERVER["REQUEST_URI"], PHP_URL_FRAGMENT) ?? "";
     }
 
     protected function captureHeaders(): void
