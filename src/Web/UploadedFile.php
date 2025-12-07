@@ -37,7 +37,6 @@ class UploadedFile implements UploadedFileContract
      * @param array{
      *     tmp_name: string,
      *     name: string,
-     *     full_path: string | null,
      *     size: int,
      *     error: int,
      *     type: string,

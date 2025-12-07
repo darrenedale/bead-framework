@@ -210,7 +210,7 @@ class Router implements RouterContract
             $type = $parameter->getType();
 
             // if the handler wants a Request object, give it the request being routed
-            if (isset($type) && RequestContract::class === $type->getName()) {
+            if (isset($type) && is_a($type->getName(), RequestContract::class, true) && is_a($request, $type->getName(), true)) {
                 $handlerArguments[] = $request;
                 continue;
             }

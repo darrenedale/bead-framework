@@ -6,6 +6,7 @@ namespace Bead\Contracts\Web;
 
 /**
  * TODO add body access, incl. JSON
+ * TODO add URL access
  */
 interface Request
 {
@@ -75,6 +76,9 @@ interface Request
     /**
      * The port part of the Request URL, if set.
      *
+     * This is the port used to access the service (from the Host header), which may not be the host the server is
+     * actually listening on (e.g. if it's behind a load balancer or reverse proxy).
+     *
      * @return int|null The port if set, null if not.
      */
     public function port(): ?int;
@@ -95,14 +99,8 @@ interface Request
      */
     public function query(): string;
 
-    /**
-     * The fragment part of the Request URL.
-     *
-     * The fragment will be decoded, and will include the leading # delimiter.
-     *
-     * @return string The fragment.
-     */
-    public function fragment(): string;
+    /** The full request URI. */
+    public function uri(): Uri;
 
     /** Check whether the request contains a named query parameter. */
     public function hasQueryParameter(string $name): bool;
@@ -201,8 +199,12 @@ interface Request
     /** Check whether an uploaded file with a given name exists in the Request. */
     public function hasUploadedFile(string $name): bool;
 
-    /** Fetch a named uploaded file. */
-    public function uploadedFile(string $name): UploadedFile;
+    /**
+     * Fetch the files uploaded under a given name.
+     *
+     * @return UploadedFile[]
+     */
+    public function uploadedFiles(string $name): array;
 
     /** Check whether the request contains a named cookie. */
     public function hasCookie(string $name): bool;
