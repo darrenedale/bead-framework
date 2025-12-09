@@ -153,6 +153,6 @@ class UploadedFile implements UploadedFileContract
     /** @inheritDoc */
     public function isValid(): bool
     {
-        return UPLOAD_ERR_OK !== $this->m_error || "" === $this->m_temporaryPath;
+        return UPLOAD_ERR_OK === $this->m_error && "" !== $this->m_temporaryPath;
     }
 }
