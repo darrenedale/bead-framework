@@ -92,6 +92,16 @@ class UploadedFileTest extends TestCase
         self::assertFalse($file->isValid());
     }
 
+    /** Ensure we get the expected exception when fetching the temporary path of an invalid uploaded file. */
+    public function testPath1(): void
+    {
+        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42, UPLOAD_ERR_FORM_SIZE);
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage("The uploaded file \"upload\" is not valid");
+        $file->path();
+    }
+
+
     /** Ensure a file can be moved and we get the expected SplFileInfo object. */
     public function testMoveTo1(): void
     {
@@ -112,7 +122,7 @@ class UploadedFileTest extends TestCase
         $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42, UPLOAD_ERR_CANT_WRITE);
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage("The uploaded file \"upload\" is not valid and cannot be moved");
-        $actual = $file->moveTo("/tmp/moved-uploaded-file.txt");
+        $file->moveTo("/tmp/moved-uploaded-file.txt");
     }
 
     /** Ensure we get the expected exception when attempting to move a file fails. */
@@ -124,9 +134,71 @@ class UploadedFileTest extends TestCase
             return false;
         });
 
-        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42, UPLOAD_ERR_OK);
+        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42);
         $this->expectException(UploadedFileException::class);
         $this->expectExceptionMessage("The file \"upload\" could not be moved to \"/tmp/moved-uploaded-file.txt\"");
-        $actual = $file->moveTo("/tmp/moved-uploaded-file.txt");
+        $file->moveTo("/tmp/moved-uploaded-file.txt");
+    }
+
+    /** Ensure we can get the actual size of the uploaded file. */
+    public function testActualSize1(): void
+    {
+        $this->mockFunction("filesize", static function (string $path): int {
+            TestCase::assertSame("/tmp/uploaded-file.txt", $path);
+            return 84;
+        });
+
+        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42);
+        self::assertSame(84, $file->actualSize());
+    }
+
+    /** Ensure we get the expected exception when querying the actual size of an invalid uploaded file. */
+    public function testActualSize2(): void
+    {
+        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42, UPLOAD_ERR_EXTENSION);
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage("The uploaded file \"upload\" is not valid");
+        $file->actualSize();
+    }
+
+    /** Ensure we get the expected exception when querying the actual size of an uploaded file fails. */
+    public function testActualSize3(): void
+    {
+        $this->mockFunction("filesize", false);
+        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42);
+        $this->expectException(UploadedFileException::class);
+        $this->expectExceptionMessage("The size of the temporary uploaded file \"/tmp/uploaded-file.txt\" could not be determined");
+        $file->actualSize();
+    }
+
+    /** Ensure we can read the contents of a valid uploaded file. */
+    public function testContents1(): void
+    {
+        $this->mockFunction("file_get_contents", static function (string $path): string {
+            TestCase::assertSame("/tmp/uploaded-file.txt", $path);
+            return "dummy-file-content";
+        });
+
+        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42);
+        self::assertSame("dummy-file-content", $file->contents());
+    }
+
+    /** Ensure we get the expected exception when fetching the content of an invalid uploaded file. */
+    public function testContents2(): void
+    {
+        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42, UPLOAD_ERR_FORM_SIZE);
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage("The uploaded file \"upload\" is not valid");
+        $file->contents();
+    }
+
+    /** Ensure we get the expected exception when fetching the content a valid uploaded file fails. */
+    public function testContents3(): void
+    {
+        $this->mockFunction("file_get_contents", false);
+        $file = UploadedFile::create("upload", "text/plain", "/tmp/uploaded-file.txt", 42);
+        $this->expectException(UploadedFileException::class);
+        $this->expectExceptionMessage("The contents of the temporary uploaded file cannot be read");
+        $file->contents();
     }
 }
