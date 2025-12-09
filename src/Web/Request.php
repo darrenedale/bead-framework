@@ -125,16 +125,16 @@ class Request implements RequestContract
                 $this->m_uploadedFiles[$name] = [];
 
                 for ($idx = 0; $idx < count($files["name"]); $idx++) {
-                    $this->m_uploadedFiles[$name][] = new UploadedFile([
-                        "name" => $files["name"][$idx],
-                        "type" => $files["type"][$idx],
-                        "tmp_name" => $files["tmp_name"][$idx],
-                        "error" => $files["error"][$idx],
-                        "size" => $files["size"][$idx],
-                    ]);
+                    $this->m_uploadedFiles[$name][] = UploadedFile::create(
+                        $files["name"][$idx],
+                        $files["type"][$idx],
+                        $files["tmp_name"][$idx],
+                        $files["size"][$idx],
+                        $files["error"][$idx],
+                    );
                 }
             } else {
-                $this->m_uploadedFiles[$name] = [new UploadedFile($files)];
+                $this->m_uploadedFiles[$name] = [UploadedFile::fromFilesArray($files)];
             }
         }
     }

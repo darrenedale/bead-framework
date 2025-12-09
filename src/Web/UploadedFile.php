@@ -33,6 +33,9 @@ class UploadedFile implements UploadedFileContract
     /** @var string The contents of the temporary file (lazy-initialised). */
     private string $m_contents;
 
+    private function __construct()
+    {}
+
     /**
      * @param array{
      *     tmp_name: string,
@@ -41,18 +44,31 @@ class UploadedFile implements UploadedFileContract
      *     error: int,
      *     type: string,
      * } $uploadedFile
-     *
-     * @throws UploadedFileException if the temporary file's size cannot be determined.
      */
-    public function __construct(array $uploadedFile)
+    public static function fromFilesArray(array $uploadedFile): self
     {
-        $this->m_temporaryPath = $uploadedFile["tmp_name"];
-        $this->m_name = $uploadedFile["name"];
-        $this->m_reportedSize = $uploadedFile["size"];
-        $this->m_error = $uploadedFile["error"] ?? 0;
-        $this->m_mediaType = $uploadedFile["type"] ?? "";
-        $this->m_actualSize = -1;
-        $this->m_contents = "";
+        $file = new UploadedFile();
+        $file->m_name = $uploadedFile["name"];
+        $file->m_mediaType = $uploadedFile["type"] ?? "";
+        $file->m_temporaryPath = $uploadedFile["tmp_name"];
+        $file->m_reportedSize = $uploadedFile["size"];
+        $file->m_error = $uploadedFile["error"] ?? 0;
+        $file->m_actualSize = -1;
+        $file->m_contents = "";
+        return $file;
+    }
+
+    public static function create(string $name, string $type, string $tempPath, int $size, int $errorCode = UPLOAD_ERR_OK): self
+    {
+        $file = new UploadedFile();
+        $file->m_name = $name;
+        $file->m_mediaType = $type;
+        $file->m_temporaryPath = $tempPath;
+        $file->m_reportedSize = $size;
+        $file->m_error = $errorCode;
+        $file->m_actualSize = -1;
+        $file->m_contents = "";
+        return $file;
     }
 
     /** Helper to read the contents of the temporary file. */
