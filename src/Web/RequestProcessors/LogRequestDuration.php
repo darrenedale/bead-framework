@@ -8,7 +8,6 @@ use Bead\Contracts\Web\RequestPostprocessor;
 use Bead\Contracts\Web\RequestPreprocessor;
 use Bead\Contracts\Web\Response;
 use Bead\Facades\Log;
-use Bead\Web\LegacyRequest;
 
 /** Request pre- and post-processor to time how long requests take to process. */
 class LogRequestDuration implements RequestPostprocessor, RequestPreprocessor

@@ -9,7 +9,6 @@ use Bead\Exceptions\Http\ServiceUnavailableException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Facades\Application as App;
 use Bead\View;
-use Bead\Web\LegacyRequest;
 
 /** Pre-processor to render the maintenance-mode page (or send a 503 response) when the app is in maintenance mode. */
 class CheckMaintenanceMode implements RequestPreprocessor

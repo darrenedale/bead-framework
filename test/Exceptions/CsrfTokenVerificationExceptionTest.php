@@ -6,7 +6,6 @@ namespace BeadTests\Exceptions;
 
 use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Exceptions\Http\CsrfTokenVerificationException;
-use Bead\Web\LegacyRequest;
 use BeadTests\Framework\TestCase;
 use Mockery;
 use RuntimeException;

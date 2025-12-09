@@ -7,7 +7,6 @@ use Bead\Contracts\Web\Response as ResponseContract;
 use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Core\Plugin;
 use Bead\Web\Application as BeadWebApplication;
-use Bead\Web\LegacyRequest;
 use LogicException;
 
 use function assert;

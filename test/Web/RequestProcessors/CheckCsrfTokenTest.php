@@ -10,7 +10,6 @@ use Bead\Testing\XRay;
 use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
 use Bead\Web\Header;
-use Bead\Web\LegacyRequest;
 use Bead\Web\RequestProcessors\CheckCsrfToken;
 use BeadTests\Framework\TestCase;
 use Mockery;
