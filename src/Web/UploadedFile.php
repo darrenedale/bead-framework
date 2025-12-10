@@ -9,6 +9,8 @@ use Bead\Exceptions\Web\UploadedFileException;
 use LogicException;
 use SplFileInfo;
 
+use const UPLOAD_ERR_OK;
+
 /** Default implementation of the UploadedFile contract. */
 class UploadedFile implements UploadedFileContract
 {
@@ -33,10 +35,13 @@ class UploadedFile implements UploadedFileContract
     /** @var string The contents of the temporary file (lazy-initialised). */
     private string $m_contents;
 
+    /** UploadedFile instances can't be constructed directly, use one of the factory methods. */
     private function __construct()
     {}
 
     /**
+     * Create a new uploaded file from the content of an entry in $_FILES.
+     *
      * @param array{
      *     tmp_name: string,
      *     name: string,
@@ -58,6 +63,7 @@ class UploadedFile implements UploadedFileContract
         return $file;
     }
 
+    /** Create a new uploaded file. */
     public static function create(string $name, string $type, string $tempPath, int $size, int $errorCode = UPLOAD_ERR_OK): self
     {
         $file = new UploadedFile();
