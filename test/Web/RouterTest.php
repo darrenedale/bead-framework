@@ -71,14 +71,14 @@ class RouterTest extends TestCase
     /**
      * Make a Request test double with a given pathInfo and HTTP method.
      *
-     * @param string $pathInfo The path_info for the request (used in route matching).
+     * @param string $path The path for the request (used in route matching).
      * @param string $method The HTTP method.
      *
      * @return RequestContract
      */
-    protected static function makeRequest(string $pathInfo, string $method = RouterContract::GetMethod): RequestContract
+    protected static function makeRequest(string $path, string $method = RouterContract::GetMethod): RequestContract
     {
-        return new class ($pathInfo, $method) extends Request
+        return new class ($path, $method) extends Request
         {
             private string $path;
 

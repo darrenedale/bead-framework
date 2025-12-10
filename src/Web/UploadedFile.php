@@ -14,6 +14,9 @@ use const UPLOAD_ERR_OK;
 /** Default implementation of the UploadedFile contract. */
 class UploadedFile implements UploadedFileContract
 {
+    /** @var int Indicator that the actual size of the uploaded file has yet to be determined. */
+    private const ActualSizeUnknown = -1;
+
     /** @var string The name of the uploaded file. */
     private string $m_name;
 
@@ -58,7 +61,7 @@ class UploadedFile implements UploadedFileContract
         $file->m_temporaryPath = $uploadedFile["tmp_name"];
         $file->m_reportedSize = $uploadedFile["size"];
         $file->m_error = $uploadedFile["error"] ?? 0;
-        $file->m_actualSize = -1;
+        $file->m_actualSize = self::ActualSizeUnknown;
         $file->m_contents = "";
         return $file;
     }
@@ -108,7 +111,7 @@ class UploadedFile implements UploadedFileContract
             throw new LogicException("The uploaded file \"{$this->name()}\" is not valid");
         }
 
-        if (-1 === $this->m_actualSize) {
+        if (self::ActualSizeUnknown === $this->m_actualSize) {
             $size = @filesize($this->m_temporaryPath);
 
             if (false === $size) {

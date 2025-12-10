@@ -7,21 +7,26 @@ namespace Bead\Web;
 use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\UploadedFile as UploadedFileContract;
 use Bead\Contracts\Web\Uri as UriContract;
-use LogicException;
+use Bead\Exceptions\Web\RequestException;
 
+use function Bead\Helpers\Iterable\flatten;
 use function Bead\Helpers\Iterable\some;
+
 use const ARRAY_FILTER_USE_KEY;
 
 /** Default implementation of the Request contract. */
 class Request implements RequestContract
 {
+    /** @var Request|null Lazy-initialised request captured from PHP superglobals. */
     private static ?Request $capturedRequest = null;
 
+    /** @var string The HTTPP requst method. */
     private string $m_method;
 
+    /** @var UriContract The request URI. */
     private UriContract $m_uri;
 
-    /** @var Header[]  */
+    /** @var array<string,Header[]>  */
     private array $m_headers;
 
     /** @var array<string,string|string[]> */
@@ -36,9 +41,13 @@ class Request implements RequestContract
     /** @var array<string,string> */
     private array $m_cookies;
 
+    /** @var string|null Lazy-initialised string containing the full (raw) body of the request. */
+    private ?string $m_body;
+
     /** Forbid external construction. */
     private function __construct()
     {
+        $this->m_body = null;
     }
 
     /**
@@ -48,7 +57,7 @@ class Request implements RequestContract
      */
     public static function capture(): Request
     {
-        if (null === static::$capturedRequest) {
+        if (null === self::$capturedRequest) {
             self::$capturedRequest = new Request();
             self::$capturedRequest->captureMethod();
             self::$capturedRequest->captureUri();
@@ -62,11 +71,13 @@ class Request implements RequestContract
         return self::$capturedRequest;
     }
 
+    /** Helper to capture the request method. */
     protected function captureMethod(): void
     {
         $this->m_method = strtoupper($_SERVER["REQUEST_METHOD"]);
     }
 
+    /** Helper to capture the request URI. */
     protected function captureUri(): void
     {
         $hostAndPort = $_SERVER["HTTP_HOST"] ?? $_SERVER["SERVER_NAME"] ?? "";
@@ -85,37 +96,56 @@ class Request implements RequestContract
             $host,
             parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH),
         ))
-            ->withQuery($_SERVER["QUERY_STRING"])
-            ->withFragment(parse_url($_SERVER["REQUEST_URI"], PHP_URL_FRAGMENT) ?? "");
+            ->withQuery($_SERVER["QUERY_STRING"]);
 
         if (null !== $port) {
             $this->m_uri = $this->m_uri->withPort($port);
         }
     }
 
+    /** Helper to add a header. */
+    private function addHeader(string $name, string $value): void
+    {
+        $key = strtolower($name);
+
+        if (!array_key_exists($key, $this->m_headers)) {
+            $this->m_headers[$key] = [];
+        }
+
+        $this->m_headers[$key][] = new Header($name, $value);
+    }
+
+    /** Helper to capture the request headers. */
     protected function captureHeaders(): void
     {
         $this->m_headers = [];
 
         foreach ($_SERVER as $key => $value) {
             if (str_starts_with($key, "HTTP_")) {
-                $this->m_headers[] = new Header(str_replace("_", "-", substr($key, 5)), $value);
+                $this->addHeader(str_replace("_", "-", substr($key, 5)), $value);
             } else if (in_array($key, ["CONTENT_TYPE", "CONTENT_LENGTH", "CONTENT_MD5",])) {
-                $this->m_headers[] = new Header(str_replace("_", "-", $key), $value);
+                // if we also have the header prefixed with HTTP_, prefer that one
+                if (!array_key_exists("HTTP_{$key}", $_SERVER)) {
+                    $this->addHeader(str_replace("_", "-", $key), $value);
+                }
+
             }
         }
     }
 
+    /** Helper to capture the request query parameters. */
     protected function captureQueryParameters(): void
     {
         $this->m_queryParameters = $_GET;
     }
 
+    /** Helper to capture the request form data. */
     protected function captureFormFields(): void
     {
         $this->m_formFields = $_POST;
     }
 
+    /** Helper to capture the uploaded files. */
     protected function captureUploadedFiles(): void
     {
         $this->m_uploadedFiles = [];
@@ -139,6 +169,7 @@ class Request implements RequestContract
         }
     }
 
+    /** Helper to capture the request cookies. */
     protected function captureCookies(): void
     {
         $this->m_cookies = $_COOKIE;
@@ -151,18 +182,21 @@ class Request implements RequestContract
     }
 
     /** @inheritDoc */
+    public function hasHeader(string $name): bool
+    {
+        return array_key_exists(strtolower($name), $this->m_headers);
+    }
+
+    /** @inheritDoc */
     public function headers(): array
     {
-        return $this->m_headers;
+        return flatten($this->m_headers);
     }
 
     /** @inheritDoc */
     public function header(string $name): array
     {
-        return array_values(array_filter(
-            $this->m_headers,
-            static fn (Header $header): bool => $header->name() === mb_strtolower($name, "UTF-8"),
-        ));
+        return $this->m_headers[strtolower($name)] ?? [];
     }
 
     /** @inheritDoc */
@@ -205,6 +239,7 @@ class Request implements RequestContract
         return $this->m_uri->query();
     }
 
+    /** @inheritDoc */
     public function uri(): UriContract
     {
         return $this->m_uri;
@@ -214,6 +249,12 @@ class Request implements RequestContract
     public function hasQueryParameter(string $name): bool
     {
         return array_key_exists($name, $this->m_queryParameters);
+    }
+
+    /** @inheritDoc */
+    public function allQueryParameters(): array
+    {
+        return $this->m_queryParameters;
     }
 
     /** @inheritDoc */
@@ -233,15 +274,15 @@ class Request implements RequestContract
     }
 
     /** @inheritDoc */
-    public function allQueryParameters(): array
-    {
-        return $this->m_queryParameters;
-    }
-
-    /** @inheritDoc */
     public function hasFormField(string $name): bool
     {
         return array_key_exists($name, $this->m_formFields);
+    }
+
+    /** @inheritDoc */
+    public function allFormFields(): array
+    {
+        return $this->m_formFields;
     }
 
     /** @inheritDoc */
@@ -258,12 +299,6 @@ class Request implements RequestContract
             static fn (string $fieldName): bool => in_array($fieldName, $names, true),
             ARRAY_FILTER_USE_KEY,
         ));
-    }
-
-    /** @inheritDoc */
-    public function allFormFields(): array
-    {
-        return $this->m_formFields;
     }
 
     /** @inheritDoc */
@@ -301,13 +336,15 @@ class Request implements RequestContract
     }
 
     /** @inheritDoc */
-    public function uploadedFiles(string $name): array
+    public function uploadedFiles(): array
     {
-        if (!$this->hasUploadedFile($name)) {
-            throw new LogicException("Uploaded file \"{$name}\" does not exist");
-        }
+        return flatten($this->m_uploadedFiles);
+    }
 
-        return $this->m_uploadedFiles[$name];
+    /** @inheritDoc */
+    public function uploadedFile(string $name): array
+    {
+        return $this->m_uploadedFiles[$name] ?? [];
     }
 
     /** @inheritDoc */
@@ -317,14 +354,52 @@ class Request implements RequestContract
     }
 
     /** @inheritDoc */
+    public function cookies(): array
+    {
+        return $this->m_cookies;
+    }
+
+    /** @inheritDoc */
     public function cookie(string $name): ?string
     {
         return $this->m_cookies[$name] ?? null;
     }
 
     /** @inheritDoc */
-    public function cookies(): array
+    public function body(): string
     {
-        return $this->m_cookies;
+        if (null === $this->m_body) {
+            $body = @file_get_contents("php://input");
+
+            if (false === $body) {
+                throw new RequestException($this, "Unable to read request body");
+            }
+        }
+
+        return $this->m_body;
+    }
+
+    /** @inheritDoc */
+    public function isJson(): bool
+    {
+        $contentType = $this->header("Content-Type");
+
+        if (0 === count($contentType)) {
+            return false;
+        }
+
+        $contentType = $contentType[0]->value();
+        return "application/json" === $contentType || preg_match("/^application\/json( *;.*)?$/", $contentType);
+    }
+
+    /** @inheritDoc */
+    public function json(): array
+    {
+        if (!$this->isJson()) {
+            throw new RequestException($this, "Request body is not JSON");
+        }
+
+        // TODO reject if charset option in content-type header is not UTF-8 (json_decode() only accepts UTF-8)
+        return json_decode($this->body(), true);
     }
 }

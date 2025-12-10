@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Bead\Contracts\Web;
 
-/**
- * TODO add body access, incl. JSON
- * TODO add URL access
- */
+/** Representation of an incoming HTTP request. */
 interface Request
 {
     /** @var string The unencrypted HTTP scheme. */
@@ -47,6 +44,9 @@ interface Request
      */
     public function method(): string;
 
+    /** Determine whether a named header is included in the request. */
+    public function hasHeader(string $name): bool;
+
     /** @return Header[] The request headers. */
     public function headers(): array;
 
@@ -57,7 +57,12 @@ interface Request
      */
     public function header(string $name): array;
 
-    /** Whether the request is an asynchronous AJAX request. */
+    /**
+     * Whether the request is an asynchronous AJAX request.
+     *
+     * The typical way to determine this is to check the value of the x-requested-with header. By convention a number of
+     * frontend frameworks set this to XMLHttpRequest for AJAX requests.
+     */
     public function isAjax(): bool;
 
     /**
@@ -109,6 +114,15 @@ interface Request
     public function hasQueryParameter(string $name): bool;
 
     /**
+     * Fetch all query parameters.
+     *
+     * The values will have been decoded from the query string.
+     *
+     * @return array<string,string|string[]> The values of all the query parameters.
+     */
+    public function allQueryParameters(): array;
+
+    /**
      * @param string $name The name of the query parameter to fetch.
      *
      * The values will have been decoded from the query string.
@@ -133,17 +147,17 @@ interface Request
      */
     public function queryParameters(array $names): array;
 
-    /**
-     * Fetch all query parameters.
-     *
-     * The values will have been decoded from the query string.
-     *
-     * @return array<string,string|string[]> The values of all the query parameters.
-     */
-    public function allQueryParameters(): array;
-
     /** Check whether the request contains a named form field. */
     public function hasFormField(string $name): bool;
+
+    /**
+     * Fetch all form fields.
+     *
+     * The values will have been decoded from whatever encoding was used in the request body.
+     *
+     * @return array<string,string|string[]> The values of all the form fields.
+     */
+    public function allFormFields(): array;
 
     /**
      * @param string $name The name of the form data to fetch.
@@ -170,15 +184,6 @@ interface Request
      */
     public function formFields(array $names): array;
 
-    /**
-     * Fetch all form fields.
-     *
-     * The values will have been decoded from whatever encoding was used in the request body.
-     *
-     * @return array<string,string|string[]> The values of all the form fields.
-     */
-    public function allFormFields(): array;
-
     /** Check whether the request contains a named form field or query parameter. */
     public function has(string $name): bool;
 
@@ -202,15 +207,25 @@ interface Request
     /** Check whether an uploaded file with a given name exists in the Request. */
     public function hasUploadedFile(string $name): bool;
 
+    /** @return UploadedFile[] */
+    public function uploadedFiles(): array;
+
     /**
      * Fetch the files uploaded under a given name.
      *
-     * @return UploadedFile[]
+     * @return UploadedFile[] The files, or an empty array if no files were uploaded under the given name.
      */
-    public function uploadedFiles(string $name): array;
+    public function uploadedFile(string $name): array;
 
     /** Check whether the request contains a named cookie. */
     public function hasCookie(string $name): bool;
+
+    /**
+     * Fetch all the request's cookies.
+     *
+     * @return array<string,string> All the cookies that are set.
+     */
+    public function cookies(): array;
 
     /**
      * Fetch the value of a single cookie from the request.
@@ -219,10 +234,12 @@ interface Request
      */
     public function cookie(string $name): ?string;
 
-    /**
-     * Fetch all the request's cookies.
-     *
-     * @return array<string,string> All the cookies that are set.
-     */
-    public function cookies(): array;
+    /** Fetch the raw request body. */
+    public function body(): string;
+
+    /** Check whether the Request's content-type header is application/json. */
+    public function isJson(): bool;
+
+    /** Fetch the decoded JSON from the request body, if the content-type is application/json. */
+    public function json(): array;
 }
