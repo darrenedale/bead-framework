@@ -18,6 +18,7 @@ class UriUserInfo implements UriUserInfoContract
         $this->m_password = $password;
     }
 
+    /** @inheritDoc */
     public function username(): string
     {
         return $this->m_username;
@@ -30,6 +31,7 @@ class UriUserInfo implements UriUserInfoContract
         return $clone;
     }
 
+    /** @inheritDoc */
     public function password(): ?string
     {
         return $this->m_password;
