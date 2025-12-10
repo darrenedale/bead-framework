@@ -266,11 +266,11 @@ class Request implements RequestContract
     /** @inheritDoc */
     public function queryParameters(array $names): array
     {
-        return array_values(array_filter(
+        return array_filter(
             $this->m_queryParameters,
             static fn (string $parameterName): bool => in_array($parameterName, $names, true),
             ARRAY_FILTER_USE_KEY,
-        ));
+        );
     }
 
     /** @inheritDoc */
@@ -294,11 +294,11 @@ class Request implements RequestContract
     /** @inheritDoc */
     public function formFields(array $names): array
     {
-        return array_values(array_filter(
+        return array_filter(
             $this->m_formFields,
             static fn (string $fieldName): bool => in_array($fieldName, $names, true),
             ARRAY_FILTER_USE_KEY,
-        ));
+        );
     }
 
     /** @inheritDoc */
