@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Bead\Contracts\Web;
 
-interface UriUserInfo
+use Stringable;
+
+interface UriUserInfo extends Stringable
 {
     /** Fetch the username part of the user info. */
     public function username(): string;

@@ -29,6 +29,7 @@ class UriAuthority implements UriAuthorityContract
         }
     }
 
+    /** @inheritDoc */
     public function userInfo(): ?UriUserInfo
     {
         return $this->m_userInfo;
@@ -39,6 +40,18 @@ class UriAuthority implements UriAuthorityContract
         $clone = clone $this;
         $clone->m_userInfo = $userInfo;
         return $clone;
+    }
+
+    /** Fetch the username, if the authority has one. */
+    public function username(): ?string
+    {
+        return $this->m_userInfo?->username();
+    }
+
+    /** Fetch the password, if the authority has one. */
+    public function password(): ?string
+    {
+        return $this->m_userInfo?->password();
     }
 
     public function withoutUserInfo(): static
@@ -52,10 +65,10 @@ class UriAuthority implements UriAuthorityContract
     {
         $clone = clone $this;
 
-        if (null !== $clone->m_userInfo) {
-            $clone->m_userInfo = $clone->m_userInfo->withUsername($username);
-        } else {
+        if (null === $clone->m_userInfo) {
             $clone->m_userInfo = new UriUserInfo($username);
+        } else {
+            $clone->m_userInfo = $clone->m_userInfo->withUsername($username);
         }
 
         return $clone;
@@ -68,14 +81,22 @@ class UriAuthority implements UriAuthorityContract
         return $clone;
     }
 
+    /**
+     * Set the password on the user info part of the authority.
+     *
+     * If the authority doesn't yet have a user info part one will be created with an empty username.
+     *
+     * @param string $password The password to set.
+     * @return static a new UriAuthority that's the same as the current one, but with the given password.
+     */
     public function withPassword(string $password): static
     {
         $clone = clone $this;
 
-        if (null !== $clone->m_userInfo) {
-            $clone->m_userInfo = $clone->m_userInfo->withPassword($password);
-        } else {
+        if (null === $clone->m_userInfo) {
             $clone->m_userInfo = new UriUserInfo("", $password);
+        } else {
+            $clone->m_userInfo = $clone->m_userInfo->withPassword($password);
         }
 
         return $clone;
@@ -92,6 +113,7 @@ class UriAuthority implements UriAuthorityContract
         return $clone;
     }
 
+    /** @inheritDoc */
     public function host(): string
     {
         return $this->m_host;
@@ -104,6 +126,7 @@ class UriAuthority implements UriAuthorityContract
         return $clone;
     }
 
+    /** @inheritDoc */
     public function port(): ?int
     {
         return $this->m_port;
@@ -122,6 +145,8 @@ class UriAuthority implements UriAuthorityContract
         $clone->m_port = null;
         return $clone;
     }
+
+    /** @inheritDoc */
     public function __toString(): string
     {
         $ui = "";
