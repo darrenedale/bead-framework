@@ -234,4 +234,11 @@ class UriAuthorityTest extends TestCase
         $authority = $this->m_uriAuthority->withoutPassword()->withoutPort();
         self::assertSame("darren@www.example.net", $authority->__toString());
     }
+
+    /** Ensure an authority's user info is percent-encoded when required. */
+    public function testToString7(): void
+    {
+        $authority = $this->m_uriAuthority->withUsernameAndPassword("d@rren:ed@le", "p@ss w/rd");
+        self::assertSame("d%40rren%3Aed%40le:p%40ss%20w%2Frd@www.example.net:8010", $authority->__toString());
+    }
 }

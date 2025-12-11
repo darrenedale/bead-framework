@@ -53,10 +53,10 @@ class UriUserInfo implements UriUserInfoContract
 
     public function __toString(): string
     {
-        $ui = $this->username();
+        $ui = rawurlencode($this->username());
 
         if (null !== $this->password()) {
-            $ui .= ":{$this->password()}";
+            $ui .= ":" . rawurlencode($this->password());
         }
 
         return $ui;
