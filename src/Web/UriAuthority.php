@@ -149,18 +149,18 @@ class UriAuthority implements UriAuthorityContract
     /** @inheritDoc */
     public function __toString(): string
     {
-        $ui = "";
+        $authority = "";
 
         if (null !== $this->userInfo()) {
-            $ui = "{$this->userInfo()}@";
+            $authority = "{$this->userInfo()}@";
         }
 
-        $ui .= $this->host();
+        $authority .= $this->host();
 
         if (null !== $this->port()) {
-            $ui .= ":{$this->port()}";
+            $authority .= ":{$this->port()}";
         }
 
-        return $ui;
+        return $authority;
     }
 }

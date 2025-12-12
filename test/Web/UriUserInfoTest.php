@@ -87,4 +87,11 @@ class UriUserInfoTest extends TestCase
         $userInfo = $this->m_userInfo->withoutPassword();
         self::assertSame("darren", $userInfo->__toString());
     }
+
+    /** Ensure username and password are percent-encoded when required. */
+    public function testToString3(): void
+    {
+        $userInfo = $this->m_userInfo->withUsername("darren/edale")->withPassword("p@ss: word/");
+        self::assertSame("darren%2Fedale:p%40ss%3A%20word%2F", $userInfo->__toString());
+    }
 }
