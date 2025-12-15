@@ -9,6 +9,10 @@ use Bead\Contracts\Web\UriAuthority as UriAuthorityContract;
 
 class Uri implements UriContract
 {
+    public const string SchemeHttp = "http";
+
+    public const string SchemeHttps = "https";
+
     private string $m_scheme;
 
     private UriAuthorityContract $m_authority;

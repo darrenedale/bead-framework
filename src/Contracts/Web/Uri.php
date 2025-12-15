@@ -8,6 +8,10 @@ use Psr\Http\Message\UriInterface;
 
 interface Uri extends UriInterface
 {
+    public const string SchemeHttp = "http";
+
+    public const string SchemeHttps = "https";
+
     public function scheme(): string;
 
     public function authority(): UriAuthority;

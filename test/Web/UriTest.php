@@ -44,7 +44,7 @@ class UriTest extends TestCase
         self::assertSame("sftp", $this->m_uri->scheme());
     }
 
-    /** Ensure we can set the scheme. */
+    /** Ensure the scheme can be set. */
     public function testScheme2(): void
     {
         $uri = $this->m_uri->withScheme("http");
@@ -146,7 +146,7 @@ class UriTest extends TestCase
         self::assertSame("example.org", $this->m_uri->host());
     }
 
-    /** Ensure we can set the host. */
+    /** Ensure the host can be set. */
     public function testHost2(): void
     {
         $uri = $this->m_uri->withHost("example.com");
@@ -166,7 +166,7 @@ class UriTest extends TestCase
         self::assertSame(22, $this->m_uri->port());
     }
 
-    /** Ensure we can set the port. */
+    /** Ensure the port can be set. */
     public function testPort2(): void
     {
         $uri = $this->m_uri->withPort(509);
@@ -180,7 +180,7 @@ class UriTest extends TestCase
         self::assertSame(22, $this->m_uri->port());
     }
 
-    /** Ensure we can remove the port. */
+    /** Ensure the port can be removed. */
     public function testPort4(): void
     {
         $uri = $this->m_uri->withoutPort();
@@ -200,7 +200,7 @@ class UriTest extends TestCase
         self::assertSame("/home", $this->m_uri->path());
     }
 
-    /** Ensure we can set the path. */
+    /** Ensure the path can be set. */
     public function testPath2(): void
     {
         $uri = $this->m_uri->withPath("/elsewhere");
@@ -220,21 +220,21 @@ class UriTest extends TestCase
         self::assertSame("framework=bead", $this->m_uri->query());
     }
 
-    /** Ensure we can set the query. */
+    /** Ensure the query can be set. */
     public function testQuery2(): void
     {
         $uri = $this->m_uri->withQuery("foo=bar");
         self::assertSame("foo=bar", $uri->query());
     }
 
-    /** Ensure we setting the query preserves immutability. */
+    /** Ensure setting the query preserves immutability. */
     public function testQuery3(): void
     {
         $this->m_uri->withQuery("foo=bar");
         self::assertSame("framework=bead", $this->m_uri->query());
     }
 
-    /** Ensure we can remove the query. */
+    /** Ensure the query can be removed. */
     public function testQuery4(): void
     {
         $uri = $this->m_uri->withoutQuery();

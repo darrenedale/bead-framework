@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Bead\Web;
 
+use Bead\Contracts\Web\Header as HeaderContract;
 use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\UploadedFile as UploadedFileContract;
 use Bead\Contracts\Web\Uri as UriContract;
 use Bead\Exceptions\Web\RequestException;
+use LogicException;
 
+use function Bead\Helpers\Iterable\all;
 use function Bead\Helpers\Iterable\flatten;
 use function Bead\Helpers\Iterable\some;
 
@@ -20,8 +23,8 @@ class Request implements RequestContract
     /** @var Request|null Lazy-initialised request captured from PHP superglobals. */
     private static ?Request $capturedRequest = null;
 
-    /** @var string The HTTPP requst method. */
-    private string $m_method;
+    /** @var HttpMethod The HTTP requst method. */
+    private HttpMethod $m_method;
 
     /** @var UriContract The request URI. */
     private UriContract $m_uri;
@@ -71,6 +74,56 @@ class Request implements RequestContract
         return self::$capturedRequest;
     }
 
+    /**
+     * @param HttpMethod $method
+     * @param UriContract $uri
+     * @param array<string,string> $queryParameters
+     * @param array<string,string> $formFields
+     * @param array<string,string> $cookies
+     * @param HeaderContract[] $headers
+     * @param UploadedFileContract[] $uploadedFiles
+     * @param string $body
+     * @return Request
+     */
+    public static function create(
+        HttpMethod $method,
+        UriContract $uri,
+        array $queryParameters = [],
+        array $formFields = [],
+        array $cookies = [],
+        array $headers = [],
+        array $uploadedFiles = [],
+        string $body = ""
+    ): Request
+    {
+        assert(all($queryParameters, static fn(mixed $value): bool => self::isValidValue($value)), new LogicException("Request::create(): invalid query parameters"));
+        assert(all(array_keys($queryParameters), static fn(mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid query parameters"));
+        assert(all($formFields, static fn(mixed $value): bool => self::isValidValue($value)), new LogicException("Request::create(): invalid form fields"));
+        assert(all(array_keys($formFields), static fn(mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid form fields"));
+        assert(all($cookies, static fn(mixed $value): bool => is_string($value)), new LogicException("Request::create(): invalid cookies"));
+        assert(all(array_keys($cookies), static fn(mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid cookies"));
+        assert(all($headers, static fn(mixed $header): bool => $header instanceof HeaderContract), new LogicException("Request::create(): invalid headers"));
+        assert(all($uploadedFiles, static fn(mixed $uploadedFile): bool => $uploadedFile instanceof UploadedFileContract), new LogicException("Request::create(): invalid uploaded files"));
+
+        $request = new Request();
+        $request->m_method = $method;
+        $request->m_uri = $uri;
+        $request->m_queryParameters = $queryParameters;
+        $request->m_formFields = $formFields;
+        $request->m_cookies = $cookies;
+        $request->m_headers = $headers;
+        $request->m_uploadedFiles = $uploadedFiles;
+        $request->m_body = $body;
+        return $request;
+    }
+
+    /** Helper to check a value is a valid query argument or form field. */
+    private static function isValidValue(mixed $value): bool
+    {
+        return is_string($value) ||
+            (is_array($value) && all($value, static fn (mixed $value): bool => is_string($value)));
+    }
+
     /** Helper to capture the request method. */
     protected function captureMethod(): void
     {
@@ -92,7 +145,7 @@ class Request implements RequestContract
         }
 
         $this->m_uri = (new Uri(
-            "" !== ($_SERVER["HTTPS"] ?? "") ? RequestContract::SchemeHttps : RequestContract::SchemeHttp,
+            "" !== ($_SERVER["HTTPS"] ?? "") ? UriContract::SchemeHttps : UriContract::SchemeHttp,
             $host,
             parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH),
         ))
@@ -176,7 +229,7 @@ class Request implements RequestContract
     }
 
     /** @inheritDoc */
-    public function method(): string
+    public function method(): \Bead\Web\HttpMethod
     {
         return $this->m_method;
     }

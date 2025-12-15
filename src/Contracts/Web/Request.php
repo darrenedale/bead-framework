@@ -4,45 +4,15 @@ declare(strict_types=1);
 
 namespace Bead\Contracts\Web;
 
+use Bead\Web\HttpMethod;
+
 /** Representation of an incoming HTTP request. */
 interface Request
 {
-    /** @var string The unencrypted HTTP scheme. */
-    public const SchemeHttp = "http";
-
-    /** @var string The encrypted HTTP scheme. */
-    public const SchemeHttps = "https";
-
-    /** @var string The GET HTTP method. */
-    public const MethodGet = "GET";
-
-    /** @var string The POST HTTP method. */
-    public const MethodPost = "POST";
-
-    /** @var string The PUT HTTP method. */
-    public const MethodPut = "PUT";
-
-    /** @var string The DELETE HTTP method. */
-    public const MethodDelete = "DELETE";
-
-    /** @var string The PATCH HTTP method. */
-    public const MethodPatch = "PATCH";
-
-    /** @var string The HEAD HTTP method. */
-    public const MethodHead = "HEAD";
-
-    /** @var string The OPTIONS HTTP method. */
-    public const MethodOptions = "OPTIONS";
-
-    /** @var string The TRACE HTTP method. */
-    public const MethodTrace = "TRACE";
-
     /**
      * The request HTTP method.
-     *
-     * Must be one of the class Method... constants.
      */
-    public function method(): string;
+    public function method(): HttpMethod;
 
     /** Determine whether a named header is included in the request. */
     public function hasHeader(string $name): bool;
