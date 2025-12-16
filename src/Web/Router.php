@@ -79,7 +79,7 @@ class Router implements RouterContract
     {
         $requestRoute = $request->path();
 
-        foreach (array_keys($this->m_routes[$request->method()]) as $route) {
+        foreach (array_keys($this->m_routes[$request->method()->value]) as $route) {
             $rxRegisteredRoute = self::regularExpressionForRoute($route);
 
             if (preg_match($rxRegisteredRoute, $requestRoute)) {
@@ -312,7 +312,7 @@ class Router implements RouterContract
             throw new UnroutableRequestException($request, "No handler was found for the request.");
         }
 
-        $handler = $this->m_routes[$request->method()][$route];
+        $handler = $this->m_routes[$request->method()->value][$route];
         $handlerArgs = self::buildHandlerArguments($handler, $route, $request);
 
         // NOTE reflectorForHandler is always a ReflectionMethod in this case
