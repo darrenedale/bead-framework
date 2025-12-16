@@ -213,11 +213,11 @@ class Uri implements UriContract
     {
         $uri = "{$this->scheme()}://{$this->authority()}{$this->path()}";
 
-        if ("" !== $this->query()) {
+        if (null !== $this->query()) {
             $uri .= "?{$this->query()}";
         }
 
-        if ("" !== $this->fragment()) {
+        if (null !== $this->fragment()) {
             $uri .= "#" . rawurlencode($this->fragment());
         }
 
