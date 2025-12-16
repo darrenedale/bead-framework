@@ -4,6 +4,7 @@ namespace BeadTests\Web;
 
 use Bead\Web\Uri;
 use Bead\Web\UriAuthority;
+use Bead\Web\UriUserInfo;
 use BeadTests\Framework\TestCase;
 
 class UriTest extends TestCase
@@ -14,7 +15,7 @@ class UriTest extends TestCase
     {
         parent::setUp();
         $this->m_uri = (new Uri("sftp", "example.org", "/home"))
-            ->withUserInfo("darren", "password")
+            ->withUserInfo(new UriUserInfo("darren", "password"))
             ->withPort(22)
             ->withQuery("framework=bead")
             ->withFragment("uri");
@@ -56,12 +57,6 @@ class UriTest extends TestCase
     {
         $this->m_uri->withScheme("http");
         self::assertSame("sftp", $this->m_uri->scheme());
-    }
-
-    /** Ensure the scheme is reported correctly. */
-    public function testGetScheme1(): void
-    {
-        self::assertSame("sftp", $this->m_uri->getScheme());
     }
 
     /** Ensure the username is reported correctly. */
@@ -125,17 +120,49 @@ class UriTest extends TestCase
         self::assertSame("password", $this->m_uri->userInfo()?->password());
     }
 
-    /** Ensure the user info can be removed. */
+    /** Ensure the user info can be set. */
     public function testUserInfo2(): void
+    {
+        $uri = $this->m_uri->withUserInfo(new UriUserInfo("susan", "secret"));
+        self::assertSame("susan", $uri->userInfo()?->username());
+        self::assertSame("secret", $uri->userInfo()?->password());
+    }
+
+    /** Ensure setting the user info preserves immutability. */
+    public function testUserInfo3(): void
+    {
+        $this->m_uri->withUserInfo(new UriUserInfo("susan", "secret"));
+        self::assertSame("darren", $this->m_uri->userInfo()?->username());
+        self::assertSame("password", $this->m_uri->userInfo()?->password());
+    }
+
+    /** Ensure the user info can be removed. */
+    public function testUserInfo4(): void
     {
         $uri = $this->m_uri->withoutUserInfo();
         self::assertNull($uri->userInfo());
     }
 
     /** Ensure removing the user info preserves immutability. */
-    public function testUserInfo3(): void
+    public function testUserInfo5(): void
     {
         $this->m_uri->withoutUserInfo();
+        self::assertSame("darren", $this->m_uri->userInfo()?->username());
+        self::assertSame("password", $this->m_uri->userInfo()?->password());
+    }
+
+    /** Ensure the username and password can be set simultaneously. */
+    public function testUserInfo6(): void
+    {
+        $uri = $this->m_uri->withUsernameAndPassword("susan", "secret");
+        self::assertSame("susan", $uri->userInfo()?->username());
+        self::assertSame("secret", $uri->userInfo()?->password());
+    }
+
+    /** Ensure setting the username and password preserves immutability. */
+    public function testUserInfo7(): void
+    {
+        $this->m_uri->withUsernameAndPassword("susan", "secret");
         self::assertSame("darren", $this->m_uri->userInfo()?->username());
         self::assertSame("password", $this->m_uri->userInfo()?->password());
     }
@@ -194,6 +221,26 @@ class UriTest extends TestCase
         self::assertSame(22, $this->m_uri->port());
     }
 
+    /** Ensure the authority can be set. */
+    public function testAuthority1(): void
+    {
+        $uri = $this->m_uri->withAuthority(new UriAuthority("example.net", 509, new UriUserInfo("susan", "secret")));
+        self::assertSame("susan", $uri->authority()->userInfo()?->username());
+        self::assertSame("secret", $uri->authority()->userInfo()?->password());
+        self::assertSame("example.net", $uri->authority()->host());
+        self::assertSame(509, $uri->authority()->port());
+    }
+
+    /** Ensure setting the authority preserves immutability. */
+    public function testAuthority2(): void
+    {
+        $this->m_uri->withAuthority(new UriAuthority("example.net", 509, new UriUserInfo("susan", "secret")));
+        self::assertSame("darren", $this->m_uri->authority()->userInfo()?->username());
+        self::assertSame("password", $this->m_uri->authority()->userInfo()?->password());
+        self::assertSame("example.org", $this->m_uri->authority()->host());
+        self::assertSame(22, $this->m_uri->authority()->port());
+    }
+
     /** Ensure the path is reported correctly. */
     public function testPath1(): void
     {
@@ -238,7 +285,7 @@ class UriTest extends TestCase
     public function testQuery4(): void
     {
         $uri = $this->m_uri->withoutQuery();
-        self::assertSame("", $uri->query());
+        self::assertNull($uri->query());
     }
 
     /** Ensure removing the query preserves immutability. */
@@ -246,5 +293,39 @@ class UriTest extends TestCase
     {
         $this->m_uri->withoutQuery();
         self::assertSame("framework=bead", $this->m_uri->query());
+    }
+
+    /** Ensure the fragment is reported correctly. */
+    public function testFragment1(): void
+    {
+        self::assertSame("uri", $this->m_uri->fragment());
+    }
+
+    /** Ensure the fragment can be set. */
+    public function testFragment2(): void
+    {
+        $uri = $this->m_uri->withFragment("fragment");
+        self::assertSame("fragment", $uri->fragment());
+    }
+
+    /** Ensure setting the fragment preserves immutability. */
+    public function testFragment3(): void
+    {
+        $this->m_uri->withFragment("fragment");
+        self::assertSame("uri", $this->m_uri->fragment());
+    }
+
+    /** Ensure the fragment can be removed. */
+    public function testFragment4(): void
+    {
+        $uri = $this->m_uri->withoutFragment();
+        self::assertNull($uri->fragment());
+    }
+
+    /** Ensure removing the fragment preserves immutability. */
+    public function testFragment5(): void
+    {
+        $this->m_uri->withoutFragment();
+        self::assertSame("uri", $this->m_uri->fragment());
     }
 }

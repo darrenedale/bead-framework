@@ -127,7 +127,7 @@ class Request implements RequestContract
     /** Helper to capture the request method. */
     protected function captureMethod(): void
     {
-        $this->m_method = strtoupper($_SERVER["REQUEST_METHOD"]);
+        $this->m_method = HttpMethod::from(strtoupper($_SERVER["REQUEST_METHOD"]));
     }
 
     /** Helper to capture the request URI. */

@@ -4,49 +4,49 @@ declare(strict_types=1);
 
 namespace Bead\Contracts\Web;
 
-use Psr\Http\Message\UriInterface;
+use Stringable;
 
-interface Uri extends UriInterface
+interface Uri extends Stringable
 {
-    public const string SchemeHttp = "http";
+    public const SchemeHttp = "http";
 
-    public const string SchemeHttps = "https";
+    public const SchemeHttps = "https";
 
+    /** Fetch the URI scheme. */
     public function scheme(): string;
 
+    /** Fetch the URI authority section. */
     public function authority(): UriAuthority;
 
+    /** Fetch the URI user info section, if it has one. */
     public function userInfo(): ?UriUserInfo;
 
+    /** Fetch the URI username from the user info section, if it has one. */
     public function username(): ?string;
 
+    /** Fetch the URI password from the user info section, if it has one. */
     public function password(): ?string;
 
+    /** Fetch the URI host from the authority section. */
     public function host(): string;
 
+    /** Fetch the URI port, if it has one, from the authority section. */
     public function port(): ?int;
 
+    /** Fetch the URI path. */
     public function path(): string;
 
-    public function query(): string;
+    /**
+     * Fetch the URI query string.
+     *
+     * @return string|null The escaped query string, or null if the URI has no query.
+     */
+    public function query(): ?string;
 
-    public function fragment(): string;
-
-    public function withUsername(string $username): static;
-
-    public function withPassword(string $password): static;
-
-    public function withoutPassword(): static;
-
-    public function withoutUserInfo(): static;
-
-    public function withAuthority(UriAuthority $authority): static;
-
-    public function withPort(?int $port): static;
-
-    public function withoutPort(): static;
-
-    public function withoutQuery(): static;
-
-    public function withoutFragment(): static;
+    /**
+     * Fetch the URI fragment.
+     *
+     * @return string|null The fragment, or null if the URI has no fragment.
+     */
+    public function fragment(): ?string;
 }

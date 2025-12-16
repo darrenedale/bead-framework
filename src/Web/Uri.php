@@ -6,12 +6,10 @@ namespace Bead\Web;
 
 use Bead\Contracts\Web\Uri as UriContract;
 use Bead\Contracts\Web\UriAuthority as UriAuthorityContract;
+use Bead\Contracts\Web\UriUserInfo as UriUserInfoContract;
 
 class Uri implements UriContract
 {
-    public const string SchemeHttp = "http";
-
-    public const string SchemeHttps = "https";
 
     private string $m_scheme;
 
@@ -19,9 +17,9 @@ class Uri implements UriContract
 
     private string $m_path;
 
-    private string $m_query;
+    private ?string $m_query;
 
-    private string $m_fragment;
+    private ?string $m_fragment;
 
     /** By default constructs the URI https://localhost/. */
     public function __construct(string $scheme = "https", string $host = "localhost", string $path = "/")
@@ -29,56 +27,66 @@ class Uri implements UriContract
         $this->m_scheme = $scheme;
         $this->m_authority = new UriAuthority($host);
         $this->m_path = $path;
-        $this->m_query = "";
-        $this->m_fragment = "";
+        $this->m_query = null;
+        $this->m_fragment = null;
     }
 
+    /** @inheritDoc */
     public function scheme(): string
     {
         return $this->m_scheme;
     }
 
+    /** @inheritDoc */
     public function authority(): UriAuthorityContract
     {
         return $this->m_authority;
     }
 
+    /** @inheritDoc */
     public function userInfo(): ?UriUserInfo
     {
         return $this->m_authority->userInfo();
     }
 
+    /** @inheritDoc */
     public function username(): ?string
     {
         return $this->userInfo()?->username();
     }
 
+    /** @inheritDoc */
     public function password(): ?string
     {
         return $this->userInfo()?->password();
     }
 
+    /** @inheritDoc */
     public function host(): string
     {
         return $this->authority()->host();
     }
 
+    /** @inheritDoc */
     public function port(): ?int
     {
         return $this->authority()->port();
     }
 
+    /** @inheritDoc */
     public function path(): string
     {
         return $this->m_path;
     }
 
-    public function query(): string
+    /** @inheritDoc */
+    public function query(): ?string
     {
         return $this->m_query;
     }
 
-    public function fragment(): string
+    /** @inheritDoc */
+    public function fragment(): ?string
     {
         return $this->m_fragment;
     }
@@ -97,14 +105,7 @@ class Uri implements UriContract
         return $clone;
     }
 
-    public function withUserInfo(string $username, ?string $password = null): static
-    {
-        $clone = clone $this;
-        $clone->m_authority = $clone->m_authority->withUsernameAndPassword($username, $password);
-        return $clone;
-    }
-
-    public function withUserInfoObject(\Bead\Contracts\Web\UriUserInfo $userInfo): static
+    public function withUserInfo(UriUserInfoContract $userInfo): static
     {
         $clone = clone $this;
         $clone->m_authority = $clone->m_authority->withUserInfo($userInfo);
@@ -118,6 +119,7 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /** The provided username must not be escaped. */
     public function withUsername(string $username): static
     {
         $clone = clone $this;
@@ -125,6 +127,7 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /** The provided password must not be escaped. */
     public function withPassword(string $password): static
     {
         $clone = clone $this;
@@ -136,6 +139,14 @@ class Uri implements UriContract
     {
         $clone = clone $this;
         $clone->m_authority = $clone->m_authority->withoutPassword();
+        return $clone;
+    }
+
+    /** The provided username and password must not be escaped. */
+    public function withUsernameAndPassword(string $username, ?string $password = null): static
+    {
+        $clone = clone $this;
+        $clone->m_authority = $clone->m_authority->withUsernameAndPassword($username, $password);
         return $clone;
     }
 
@@ -160,6 +171,7 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /** The provied path must be properly escaped. */
     public function withPath(string $path): static
     {
         $clone = clone $this;
@@ -167,6 +179,7 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /** The provided query string must be properly escaped. */
     public function withQuery(string $query): static
     {
         $clone = clone $this;
@@ -174,6 +187,14 @@ class Uri implements UriContract
         return $clone;
     }
 
+    public function withoutQuery(): static
+    {
+        $clone = clone $this;
+        $clone->m_query = null;
+        return $clone;
+    }
+
+    /** The provided fragment must not be escaped. */
     public function withFragment(string $fragment): static
     {
         $clone = clone $this;
@@ -181,70 +202,23 @@ class Uri implements UriContract
         return $clone;
     }
 
-    public function withoutQuery(): static
-    {
-        $clone = clone $this;
-        $clone->m_query = "";
-        return $clone;
-    }
-
     public function withoutFragment(): static
     {
         $clone = clone $this;
-        $clone->m_fragment = "";
+        $clone->m_fragment = null;
         return $clone;
     }
 
-    public function getScheme(): string
+    public function __toString(): string
     {
-        return $this->scheme();
-    }
-
-    public function getAuthority(): string
-    {
-        return (string) $this->authority();
-    }
-
-    public function getUserInfo(): string
-    {
-        return (string) $this->userInfo();
-    }
-
-    public function getHost(): string
-    {
-        return $this->host();
-    }
-
-    public function getPort(): ?int
-    {
-        return $this->port();
-    }
-
-    public function getPath(): string
-    {
-        return $this->path();
-    }
-
-    public function getQuery(): string
-    {
-        return $this->query();
-    }
-
-    public function getFragment(): string
-    {
-        return $this->fragment();
-    }
-
-    public function __toString()
-    {
-        $uri = "{$this->scheme()}://{$this->authority()}{$this->m_path}";
+        $uri = "{$this->scheme()}://{$this->authority()}{$this->path()}";
 
         if ("" !== $this->query()) {
             $uri .= "?{$this->query()}";
         }
 
         if ("" !== $this->fragment()) {
-            $uri .= "#{$this->fragment()}";
+            $uri .= "#" . rawurlencode($this->fragment());
         }
 
         return $uri;
