@@ -8,6 +8,7 @@ use Bead\Contracts\Web\Response;
 use Bead\Exceptions\Http\CsrfTokenVerificationException;
 use Bead\Facades\WebApplication as WebApp;
 
+use Bead\Web\HttpMethod;
 use function hash_equals;
 
 /** Pre-processor to ensure the CSRF token is verified. */
@@ -27,7 +28,7 @@ class CheckCsrfToken implements RequestPreprocessor
     protected function requiresCsrf(RequestContract $request): bool
     {
         return match ($request->method()) {
-            "GET", "HEAD", "OPTIONS" => false,
+            HttpMethod::Get, HttpMethod::Head, HttpMethod::Options => false,
             default => true,
         };
     }
