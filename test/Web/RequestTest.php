@@ -23,8 +23,8 @@ class RequestTest extends TestCase
                 ->withQuery("framework=bead")
                 ->withFragment("top"),
             ["framework" => "bead", "query-key" => "query-value",],
-            ["data" => "value"],
-            ["bead-session" => "BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR"],
+            ["data" => "value", "more-data" => "another-value"],
+            ["bead-session" => "BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", "foo" => "bar"],
             [new Header("content-type","application/json")],
             [UploadedFile::create("the-file", "text/plain", __DIR__ . "/files/uploaded-file.txt", filesize(__DIR__ . "/files/uploaded-file.txt"))],
             "{\"framework\": \"bead\"}",
@@ -109,5 +109,77 @@ class RequestTest extends TestCase
         self::assertCount(2, $actual);
         self::assertSame("query-value", $actual["query-key"]);
         self::assertSame("bead", $actual["framework"]);
+    }
+
+    /** Ensure the presence of a form field is correctly reported. */
+    public function testHasFormField1(): void
+    {
+        self::assertTrue($this->m_request->hasFormField("data"));
+    }
+
+    /** Ensure the absence of a form field is correctly reported. */
+    public function testHasFormField2(): void
+    {
+        self::assertFalse($this->m_request->hasFormField("value"));
+    }
+
+    /** Ensure form field values are reported correctly. */
+    public function testFormField1(): void
+    {
+        self::assertSame("value", $this->m_request->formField("data"));
+    }
+
+    /** Ensure null is returned for form fields that don't exist. */
+    public function testFormField2(): void
+    {
+        self::assertNull($this->m_request->formField("value"));
+    }
+
+    /** Ensure a subset of form fields can be fetched correctly. */
+    public function testFormFields1(): void
+    {
+        self::assertSame(["data" => "value"], $this->m_request->formFields(["data"]));
+    }
+
+    /** Ensure all form fields can be fetched. */
+    public function testAllFormFields1(): void
+    {
+        $actual = $this->m_request->allFormFields();
+        self::assertCount(2, $actual);
+        self::assertSame("value", $actual["data"]);
+        self::assertSame("another-value", $actual["more-data"]);
+    }
+
+    /** Ensure the presence of a cookie is correctly reported. */
+    public function testHasCookie1(): void
+    {
+        self::assertTrue($this->m_request->hasCookie("bead-session"));
+    }
+
+    /** Ensure the absence of a cookie is correctly reported. */
+    public function testHasCookie2(): void
+    {
+        self::assertFalse($this->m_request->hasCookie("something-else"));
+    }
+
+    /** Ensure form cookie are reported correctly. */
+    public function testCookie1(): void
+    {
+        self::assertSame("BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", $this->m_request->cookie("bead-session"));
+    }
+
+    /** Ensure null is returned for cookies that don't exist. */
+    public function testCookie2(): void
+    {
+        self::assertNull($this->m_request->cookie("missing-cookie"));
+    }
+
+    /** Ensure all cookies can be fetched. */
+    public function testCookies1(): void
+    {
+        $actual = $this->m_request->cookies();
+        self::assertCount(2, $actual);
+        self::assertSame("bar", $actual["foo"]);
+        self::assertSame("BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", $actual["bead-session"]);
     }
 }
