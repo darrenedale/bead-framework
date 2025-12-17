@@ -159,6 +159,43 @@ class RequestTest extends TestCase
         self::assertSame("another-value", $actual["more-data"]);
     }
 
+    /** Ensure has() reports presence of a query parameter correctly. */
+    public function testHas1(): void
+    {
+        self::assertTrue($this->m_request->has("framework"));
+    }
+
+    /** Ensure has() reports presence of a form field correctly. */
+    public function testHas2(): void
+    {
+        self::assertTrue($this->m_request->has("more-data"));
+    }
+
+    /** Ensure data() correctly returns query parameters and form fields. */
+    public function testData1(): void
+    {
+        $actual = $this->m_request->data(["framework", "data"]);
+        self::assertCount(2, $actual);
+        self::assertSame("bead", $actual["framework"]);
+        self::assertSame("value", $actual["data"]);
+    }
+
+    /** Ensure data() prioritises form fields over query parameters. */
+    public function testData2(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            new Uri(\Bead\Contracts\Web\Uri::SchemeHttps, "example.org", "/home/page"),
+            ["key1" => "value1", "key2" => "value2"],
+            ["key2" => "value3"],
+        );
+
+        $actual = $request->data(["key1", "key2"]);
+        self::assertCount(2, $actual);
+        self::assertSame("value1", $actual["key1"]);
+        self::assertSame("value3", $actual["key2"]);
+    }
+
     /** Ensure the presence of a cookie is correctly reported. */
     public function testHasCookie1(): void
     {
