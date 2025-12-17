@@ -33,7 +33,7 @@ class Header implements HeaderContract
     public function __construct(string $name, string $value)
     {
         self::checkName($name);
-        $this->name = mb_strtolower($name, "UTF-8");
+        $this->name = $name;
         $this->value = $value;
     }
 

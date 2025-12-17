@@ -533,7 +533,7 @@ class LegacyRequest
         $name = mb_strtolower($name, "UTF-8");
 
         foreach ($this->m_headers as $header) {
-            if (mb_strtolower($header->name(), "UTF-8") === $name) {
+            if (strtolower($header->name()) === $name) {
                 return $header->value();
             }
         }
