@@ -10,6 +10,7 @@ use Bead\Contracts\Web\UploadedFile as UploadedFileContract;
 use Bead\Contracts\Web\Uri as UriContract;
 use Bead\Exceptions\Web\RequestException;
 use LogicException;
+use ValueError;
 
 use function Bead\Helpers\Iterable\all;
 use function Bead\Helpers\Iterable\flatten;
@@ -111,7 +112,18 @@ class Request implements RequestContract
         $request->m_queryParameters = $queryParameters;
         $request->m_formFields = $formFields;
         $request->m_cookies = $cookies;
-        $request->m_headers = $headers;
+        $request->m_headers = [];
+
+        foreach ($headers as $header) {
+            $key = strtolower($header->name());
+
+            if (!array_key_exists($key, $request->m_headers)) {
+                $request->m_headers[$key] = [$header];
+            } else {
+                $request->m_headers[$key][] = $header;
+            }
+        }
+
         $request->m_uploadedFiles = $uploadedFiles;
         $request->m_body = $body;
         return $request;
@@ -437,7 +449,7 @@ class Request implements RequestContract
     {
         $contentType = $this->header("Content-Type");
 
-        if (0 === count($contentType)) {
+        if (1 !== count($contentType)) {
             return false;
         }
 
@@ -445,14 +457,44 @@ class Request implements RequestContract
         return "application/json" === $contentType || preg_match("/^application\/json( *;.*)?$/", $contentType);
     }
 
-    /** @inheritDoc */
+    /**
+     * @inheritDoc
+     *
+     * If the request body is in a character encoding other than UTF-8, the body will be transcoded to UTF-8 before
+     * being JSON-decoded. The decoded JSON is always returned as an associative array in UTF-8 encoding (regardless of
+     * the encoding of the request body).
+     */
     public function json(): array
     {
-        if (!$this->isJson()) {
+        $contentType = $this->header("Content-Type");
+
+        if (1 !== count($contentType)) {
             throw new RequestException($this, "Request body is not JSON");
         }
 
-        // TODO reject if charset option in content-type header is not UTF-8 (json_decode() only accepts UTF-8)
-        return json_decode($this->body(), true);
+        $contentType = $contentType[0]->value();
+
+        if (!preg_match("/^application\/json(?: *;(?:.*;)? *charset *= *([^;]+) *(?:;.*)?)?$/", $contentType, $captures)) {
+            throw new RequestException($this, "Request body is not JSON");
+        }
+
+        // check for a character encoding and convert to UTF-8 if necessary (json_decode() only supports UTF-8)
+        $encoding = null;
+
+        if (1 < count($captures)) {
+            $encoding = $captures[1];
+        }
+
+        if (null !== $encoding && "UTF-8" !== strtoupper($encoding)) {
+            try {
+                $body = mb_convert_encoding($this->body(), "UTF-8", $encoding);
+            } catch (ValueError $err) {
+                throw new RequestException($this, "Unable to convert request body to UTF-8: {$err->getMessage()}", previous: $err);
+            }
+        } else {
+            $body = $this->body();
+        }
+
+        return json_decode($body, true, flags: JSON_THROW_ON_ERROR);
     }
 }

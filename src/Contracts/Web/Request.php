@@ -9,9 +9,7 @@ use Bead\Web\HttpMethod;
 /** Representation of an incoming HTTP request. */
 interface Request
 {
-    /**
-     * The request HTTP method.
-     */
+    /** The request HTTP method. */
     public function method(): HttpMethod;
 
     /** Determine whether a named header is included in the request. */
