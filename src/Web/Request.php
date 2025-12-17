@@ -113,6 +113,7 @@ class Request implements RequestContract
         $request->m_formFields = $formFields;
         $request->m_cookies = $cookies;
         $request->m_headers = [];
+        $request->m_uploadedFiles = [];
 
         foreach ($headers as $header) {
             $key = strtolower($header->name());
@@ -124,7 +125,14 @@ class Request implements RequestContract
             }
         }
 
-        $request->m_uploadedFiles = $uploadedFiles;
+        foreach ($uploadedFiles as $uploadedFile) {
+            if (!array_key_exists($uploadedFile->name(), $request->m_uploadedFiles)) {
+                $request->m_uploadedFiles[$uploadedFile->name()] = [$uploadedFile];
+            } else {
+                $request->m_uploadedFiles[$uploadedFile->name()][] = $uploadedFile;
+            }
+        }
+
         $request->m_body = $body;
         return $request;
     }
