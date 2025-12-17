@@ -31,7 +31,11 @@ class RequestTest extends TestCase
                 new Header("x-multi-header","value 1"),
                 new Header("X-Multi-Header","value 2"),
             ],
-            [UploadedFile::create("the-file", "text/plain", __DIR__ . "/files/uploaded-file.txt", filesize(__DIR__ . "/files/uploaded-file.txt"))],
+            [
+                UploadedFile::create("the-file", "text/plain", __DIR__ . "/files/uploaded-file-1.txt", filesize(__DIR__ . "/files/uploaded-file-1.txt")),
+                UploadedFile::create("the-file", "text/plain", __DIR__ . "/files/uploaded-file-1.txt", filesize(__DIR__ . "/files/uploaded-file-1.txt")),
+                UploadedFile::create("another-file", "text/plain", __DIR__ . "/files/uploaded-file-2.txt", filesize(__DIR__ . "/files/uploaded-file-2.txt")),
+            ],
             "{\"framework\": \"bead\"}",
         );
     }
@@ -244,9 +248,63 @@ class RequestTest extends TestCase
         self::assertSame([], $this->m_request->header("Content-Transfer-Encoding"));
     }
 
+    /** Ensure the presence of an uploaded file is reported correctly. */
+    public function testHasUploadedFile1(): void
+    {
+        self::assertTrue($this->m_request->hasUploadedFile("the-file"));
+    }
+
+    /** Ensure the absence of an uploaded file is reported correctly. */
+    public function testHasUploadedFile2(): void
+    {
+        self::assertFalse($this->m_request->hasUploadedFile("missing-file"));
+    }
+
+    /** Ensure all uploaded files are reported correctly. */
+    public function testUploadedFiles1(): void
+    {
+        $actual = $this->m_request->uploadedFiles();
+        self::assertCount(3, $actual);
+        usort($actual, static fn (UploadedFile $a, UploadedFile $b): int => $a->name() <=> $b->name());
+        self::assertSame("another-file", $actual[0]->name());
+        self::assertSame("the-file", $actual[1]->name());
+        self::assertSame("the-file", $actual[2]->name());
+    }
+
+    /** Ensure named uploaded files are reported correctly.  */
+    public function testUploadedFile1(): void
+    {
+        $actual = $this->m_request->uploadedFile("the-file");
+        self::assertCount(2, $actual);
+        self::assertSame("the-file", $actual[0]->name());
+        self::assertSame("the-file", $actual[1]->name());
+    }
+
+    /** Ensure an empty array is returned for uploaded files that don't exist. */
+    public function testUploadedFile2(): void
+    {
+        self::assertSame([], $this->m_request->uploadedFile("missing-file"));
+    }
+
     public function testBody1(): void
     {
         self::assertSame("{\"framework\": \"bead\"}", $this->m_request->body());
+    }
+
+    /** Ensure whether the request's body is JSON is reported correctly. */
+    public function testIsJson1(): void
+    {
+        self::assertTrue($this->m_request->isJson());
+    }
+
+    /** Ensure whether the request's body is JSON is reported correctly. */
+    public function testIsJson2(): void
+    {
+        self::assertFalse(Request::create(
+            HttpMethod::Get,
+            new Uri("https", "example.org", "/home/page"),
+            headers: [new Header("content-type", "text/plain")]
+        )->isJson());
     }
 
     /** Ensure decoded JSON is correctly returned when the content type is application/json. */
@@ -280,5 +338,22 @@ class RequestTest extends TestCase
         );
 
         self::assertSame(["framework" => "bead",], $request->json());
+    }
+
+    /** Ensure AJAX requests are correctly reported. */
+    public function testIsAjax1(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+            headers: [new Header("X-Requested-With","XMLHttpRequest"),],
+        );
+        self::assertTrue($request->isAjax());
+    }
+
+    /** Ensure non-AJAX requests are correctly reported. */
+    public function testIsAjax2(): void
+    {
+        self::assertFalse($this->m_request->isAjax());
     }
 }
