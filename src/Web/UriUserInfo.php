@@ -6,6 +6,8 @@ namespace Bead\Web;
 
 use Bead\Contracts\Web\UriUserInfo as UriUserInfoContract;
 
+use function Bead\Helpers\Str\scrub;
+
 class UriUserInfo implements UriUserInfoContract
 {
     private string $m_username;
@@ -16,6 +18,13 @@ class UriUserInfo implements UriUserInfoContract
     {
         $this->m_username = $username;
         $this->m_password = $password;
+    }
+
+    public function __destruct()
+    {
+        if (null !== $this->m_password) {
+            scrub($this->m_password);
+        }
     }
 
     /** @inheritDoc */
