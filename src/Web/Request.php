@@ -447,6 +447,8 @@ class Request implements RequestContract
             if (false === $body) {
                 throw new RequestException($this, "Unable to read request body");
             }
+
+            $this->m_body = $body;
         }
 
         return $this->m_body;
