@@ -249,7 +249,7 @@ class Request implements RequestContract
     }
 
     /** @inheritDoc */
-    public function method(): \Bead\Web\HttpMethod
+    public function method(): HttpMethod
     {
         return $this->m_method;
     }
@@ -482,16 +482,12 @@ class Request implements RequestContract
 
         $contentType = $contentType[0]->value();
 
+        // check for a character encoding and convert to UTF-8 if necessary (json_decode() only supports UTF-8)
         if (!preg_match("/^application\/json(?: *;(?:.*;)? *charset *= *([^;]+) *(?:;.*)?)?$/", $contentType, $captures)) {
             throw new RequestException($this, "Request body is not JSON");
         }
 
-        // check for a character encoding and convert to UTF-8 if necessary (json_decode() only supports UTF-8)
-        $encoding = null;
-
-        if (1 < count($captures)) {
-            $encoding = $captures[1];
-        }
+        $encoding = $captures[1] ?? null;
 
         if (null !== $encoding && "UTF-8" !== strtoupper($encoding)) {
             try {

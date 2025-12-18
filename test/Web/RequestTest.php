@@ -4,12 +4,15 @@ namespace BeadTests\Web;
 
 use Bead\Contracts\Web\Uri as UriContract;
 use Bead\Exceptions\Web\RequestException;
+use Bead\Testing\StaticXRay;
 use Bead\Web\Header;
 use Bead\Web\HttpMethod;
 use Bead\Web\Request;
 use Bead\Web\UploadedFile;
 use Bead\Web\Uri;
 use BeadTests\Framework\TestCase;
+use JsonException;
+use ValueError;
 
 class RequestTest extends TestCase
 {
@@ -18,6 +21,7 @@ class RequestTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
         $this->m_request = Request::create(
             HttpMethod::Get,
             (new Uri(UriContract::SchemeHttps, "example.org", "/home/page"))
@@ -40,6 +44,13 @@ class RequestTest extends TestCase
         );
     }
 
+    public function tearDown(): void
+    {
+        $xray = new StaticXRay(Request::class);
+        $xray->capturedRequest = null;
+        parent::tearDown();
+    }
+
     /** Ensure the method is reported correctly. */
     public function testMethod1(): void
     {
@@ -56,6 +67,22 @@ class RequestTest extends TestCase
     public function testHost1(): void
     {
         self::assertSame("example.org", $this->m_request->host());
+    }
+
+    /** Ensure the port is reported as null when not set. */
+    public function testPort1(): void
+    {
+        self::assertNull($this->m_request->port());
+    }
+
+    /** Ensure the port is reported correctly when set. */
+    public function testPort2(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page"))->withPort(80)
+        );
+        self::assertSame(80, $request->port());
     }
 
     /** Ensure the path is reported correctly. */
@@ -194,6 +221,21 @@ class RequestTest extends TestCase
         self::assertCount(2, $actual);
         self::assertSame("value1", $actual["key1"]);
         self::assertSame("value3", $actual["key2"]);
+    }
+
+    /** Ensure data() can return a single value. */
+    public function testData3(): void
+    {
+        self::assertSame("query-value", $this->m_request->data("query-key"));
+    }
+
+    /** Ensure data() skips missing keys and returns everything it can find. */
+    public function testData4(): void
+    {
+        $actual = $this->m_request->data(["framework", "missing", "data"]);
+        self::assertCount(2, $actual);
+        self::assertSame("bead", $actual["framework"]);
+        self::assertSame("value", $actual["data"]);
     }
 
     /** Ensure the presence of a cookie is correctly reported. */
@@ -344,6 +386,15 @@ class RequestTest extends TestCase
         )->isJson());
     }
 
+    /** Ensure requests with no content-type are not reported as JSON. */
+    public function testIsJson3(): void
+    {
+        self::assertFalse(Request::create(
+            HttpMethod::Get,
+            new Uri("https", "example.org", "/home/page"),
+        )->isJson());
+    }
+
     /** Ensure decoded JSON is correctly returned when the content type is application/json. */
     public function testJson1(): void
     {
@@ -364,8 +415,21 @@ class RequestTest extends TestCase
         $request->json();
     }
 
-    /** Ensure the body is transcoded to UTF-8 if necessary before being JSON-decoded. */
+    /** Ensure a RequestException is thrown when fetching the JSON of a request without a content type. */
     public function testJson3(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+        );
+
+        $this->expectException(RequestException::class);
+        $this->expectExceptionMessage("Request body is not JSON");
+        $request->json();
+    }
+
+    /** Ensure the body is transcoded to UTF-8 if necessary before being JSON-decoded. */
+    public function testJson4(): void
     {
         $request = Request::create(
             HttpMethod::Get,
@@ -375,6 +439,36 @@ class RequestTest extends TestCase
         );
 
         self::assertSame(["framework" => "bead",], $request->json());
+    }
+
+    /** Ensure the expected exception is thrown if transcoding fails. */
+    public function testJson5(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+            headers: [new Header("content-type","application/json; charset=utf-16le"),],
+            body: "{\"framework\":\"bead\"}",
+        );
+
+        $this->mockFunction("mb_convert_encoding", static fn() => throw new ValueError("Test transcoding exception"));
+        $this->expectException(RequestException::class);
+        $this->expectExceptionMessage("Unable to convert request body to UTF-8: Test transcoding exception");
+        $request->json();
+    }
+
+    /** Ensure a JsonException is thrown if the content can't be decoded as JSON. */
+    public function testJson6(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+            headers: [new Header("content-type","application/json"),],
+            body: "{\"framework\":\"bead\"",
+        );
+
+        $this->expectException(JsonException::class);
+        $request->json();
     }
 
     /** Ensure AJAX requests are correctly reported. */
@@ -393,4 +487,120 @@ class RequestTest extends TestCase
     {
         self::assertFalse($this->m_request->isAjax());
     }
+
+    public function testCapture1(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTPS"] = 1;
+        $_SERVER["HTTP_HOST"] = "example.org:8080";
+        $_SERVER["REQUEST_URI"] = "/home/page";
+        $_SERVER["QUERY_STRING"] = "framework=bead";
+        $_SERVER["HTTP_CONTENT_TYPE"] = "application/json";
+        $_SERVER["CONTENT_LENGTH"] = "14";
+        $_SERVER["CONTENT_TYPE"] = "text/plain";
+        $_GET["framework"] = "bead";
+        $_POST["data"] = "value";
+        $_COOKIE["bead-session"] = "BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR";
+
+        $_FILES["file"] = [
+            "name" => "file",
+            "type" => "application/octet-stream",
+            "tmp_name" => "/tmp/file",
+            "error" => UPLOAD_ERR_OK,
+            "size" => 14,
+        ];
+
+        $request = Request::capture();
+        self::assertSame(HttpMethod::Get, $request->method());
+        self::assertSame("https", $request->scheme());
+        self::assertSame("example.org", $request->host());
+        self::assertSame(8080, $request->port());
+        self::assertSame("framework=bead", $request->query());
+
+        $actual = $request->allQueryParameters();
+        self::assertCount(1, $actual);
+        self::assertSame("bead", $actual["framework"]);
+
+        $actual = $request->allFormFields();
+        self::assertCount(1, $actual);
+        self::assertSame("value", $actual["data"]);
+
+        $actual = $request->cookies();
+        self::assertCount(1, $actual);
+        self::assertSame("BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", $actual["bead-session"]);
+
+        $actual = $request->header("content-type");
+        self::assertCount(1, $actual);
+        self::assertSame("application/json", $actual[0]->value());
+
+        $actual = $request->header("content-length");
+        self::assertCount(1, $actual);
+        self::assertSame("14", $actual[0]->value());
+
+        self::assertCount(1, $request->uploadedFiles());
+        $actual = $request->uploadedFile("file");
+        self::assertCount(1, $actual);
+        self::assertSame("file", $actual[0]->name());
+        self::assertSame("application/octet-stream", $actual[0]->mediaType());
+        self::assertSame(14, $actual[0]->reportedSize());
+        self::assertSame("/tmp/file", $actual[0]->path());
+        self::assertSame(UPLOAD_ERR_OK, $actual[0]->error());
+    }
+
+    /** Ensure a host with no port is captured correctly. */
+    public function testCapture2(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTP_HOST"] = "example.org";
+        $_SERVER["REQUEST_URI"] = "/";
+        $_SERVER["QUERY_STRING"] = "";
+        self::assertNull(Request::capture()->port());
+    }
+
+    /** Ensure the captured request captures array files. */
+    public function testCapture3(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTP_HOST"] = "example.org";
+        $_SERVER["REQUEST_URI"] = "/";
+        $_SERVER["QUERY_STRING"] = "";
+        $_FILES["file"] = [
+            "name" => [
+                "file",
+                "file",
+            ],
+            "type" => [
+                "application/octet-stream",
+                "application/json",
+            ],
+            "tmp_name" => [
+                "/tmp/file",
+                "/tmp/file2",
+            ],
+            "size" => [
+                14,
+                42,
+            ],
+            "error" => [
+                UPLOAD_ERR_OK,
+                UPLOAD_ERR_OK,
+            ],
+        ];
+
+        $actual = Request::capture()->uploadedFile("file");
+        self::assertCount(2, $actual);
+        usort($actual, static fn (UploadedFile $a, UploadedFile $b): int => $a->reportedSize() <=> $b->reportedSize());
+        self::assertSame("file", $actual[0]->name());
+        self::assertSame("file", $actual[1]->name());
+        self::assertSame("application/octet-stream", $actual[0]->mediaType());
+        self::assertSame("application/json", $actual[1]->mediaType());
+        self::assertSame("/tmp/file", $actual[0]->path());
+        self::assertSame("/tmp/file2", $actual[1]->path());
+        self::assertSame(14, $actual[0]->reportedSize());
+        self::assertSame(42, $actual[1]->reportedSize());
+        self::assertSame(UPLOAD_ERR_OK, $actual[0]->error());
+        self::assertSame(UPLOAD_ERR_OK, $actual[1]->error());
+    }
+
+    /** TODO Ensure the captured request body is read from standard input. */
 }
