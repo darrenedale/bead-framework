@@ -66,6 +66,7 @@ class Router implements RouterContract
         self::ConnectMethod => [],
         self::OptionsMethod => [],
         self::PatchMethod  => [],
+        self::TraceMethod  => [],
     ];
 
     /**
@@ -525,5 +526,17 @@ class Router implements RouterContract
     {
         /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
         $this->register($route, self::PatchMethod, $handler);
+    }
+
+    /**
+     * @throws InvalidRouteParameterNameException if the route contains a parameter segment that has an invalid name
+     * @throws DuplicateRouteParameterNameException if the route contains the same parameter name more than once
+     * @throws ConflictingRouteException if the route is found to conflict with another (i.e. a single request cuold
+     * match both routes)
+     */
+    public function registerTrace(string $route, callable|array|string $handler): void
+    {
+        /** @psalm-suppress MissingThrowsDocblock Can't throw InvalidArgumentException, method is known to be valid. */
+        $this->register($route, self::TraceMethod, $handler);
     }
 }

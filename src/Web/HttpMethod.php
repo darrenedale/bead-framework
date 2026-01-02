@@ -17,6 +17,8 @@ enum HttpMethod: string
 
     case Head = "HEAD";
 
+    case Connect = "CONNECT";
+
     case Options = "OPTIONS";
 
     case Trace = "TRACE";
