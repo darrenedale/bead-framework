@@ -8,6 +8,7 @@ use Bead\Web\UriAuthority;
 use Bead\Web\UriUserInfo;
 use BeadTests\Framework\TestCase;
 
+/** @covers \Bead\Web\UriAuthority */
 class UriAuthorityTest extends TestCase
 {
     private UriAuthority $m_uriAuthority;

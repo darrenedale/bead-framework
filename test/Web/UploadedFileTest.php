@@ -16,6 +16,7 @@ use const UPLOAD_ERR_NO_TMP_DIR;
 use const UPLOAD_ERR_OK;
 use const UPLOAD_ERR_PARTIAL;
 
+/** @covers \Bead\Web\UploadedFile */
 class UploadedFileTest extends TestCase
 {
     /** Ensure we can create a file. */

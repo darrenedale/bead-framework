@@ -7,6 +7,7 @@ use Bead\Web\UriAuthority;
 use Bead\Web\UriUserInfo;
 use BeadTests\Framework\TestCase;
 
+/** @covers \Bead\Web\Uri */
 class UriTest extends TestCase
 {
     private Uri $m_uri;
@@ -327,5 +328,60 @@ class UriTest extends TestCase
     {
         $this->m_uri->withoutFragment();
         self::assertSame("uri", $this->m_uri->fragment());
+    }
+
+    /** Ensure converting to string produces the expected URI. */
+    public function testToString1(): void
+    {
+        self::assertSame("sftp://darren:password@example.org:22/home?framework=bead#uri", (string) $this->m_uri);
+    }
+
+    /** Ensure a URI with no password in the user info section is stringified as expected. */
+    public function testToString2(): void
+    {
+        $uri = $this->m_uri->withoutPassword();
+        self::assertSame("sftp://darren@example.org:22/home?framework=bead#uri", (string) $uri);
+    }
+
+    /** Ensure a URI with no user info section is stringified as expected. */
+    public function testToString3(): void
+    {
+        $uri = $this->m_uri->withoutUserInfo();
+        self::assertSame("sftp://example.org:22/home?framework=bead#uri", (string) $uri);
+    }
+
+    /** Ensure a URI with no port is stringified as expected. */
+    public function testToString4(): void
+    {
+        $uri = $this->m_uri->withoutPort();
+        self::assertSame("sftp://darren:password@example.org/home?framework=bead#uri", (string) $uri);
+    }
+
+    /** Ensure a URI with no query is stringified as expected. */
+    public function testToString5(): void
+    {
+        $uri = $this->m_uri->withoutQuery();
+        self::assertSame("sftp://darren:password@example.org:22/home#uri", (string) $uri);
+    }
+
+    /** Ensure a URI with no fragment is stringified as expected. */
+    public function testToString6(): void
+    {
+        $uri = $this->m_uri->withoutFragment();
+        self::assertSame("sftp://darren:password@example.org:22/home?framework=bead", (string) $uri);
+    }
+
+    /** Ensure a URI with no query or fragment is stringified as expected. */
+    public function testToString7(): void
+    {
+        $uri = $this->m_uri->withoutQuery()->withoutFragment();
+        self::assertSame("sftp://darren:password@example.org:22/home", (string) $uri);
+    }
+
+    /** Ensure a minimal URI is stringified as expected. */
+    public function testToString8(): void
+    {
+        $uri = new Uri(host: "example.net");
+        self::assertSame("https://example.net/", (string) $uri);
     }
 }

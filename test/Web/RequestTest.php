@@ -4,16 +4,17 @@ namespace BeadTests\Web;
 
 use Bead\Contracts\Web\Uri as UriContract;
 use Bead\Exceptions\Web\RequestException;
-use Bead\Testing\StaticXRay;
 use Bead\Web\Header;
 use Bead\Web\HttpMethod;
 use Bead\Web\Request;
 use Bead\Web\UploadedFile;
 use Bead\Web\Uri;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
 use JsonException;
 use ValueError;
 
+/** @covers \Bead\Web\Request */
 class RequestTest extends TestCase
 {
     private Request $m_request;
@@ -370,6 +371,41 @@ class RequestTest extends TestCase
         self::assertSame("{\"framework\": \"bead\"}", $this->m_request->body());
     }
 
+    /** Ensure the captured request body is read from standard input. */
+    public function testBody2(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTP_HOST"] = "example.org";
+        $_SERVER["REQUEST_URI"] = "/";
+        $_SERVER["QUERY_STRING"] = "";
+
+        $this->mockFunction("file_get_contents", static function (string $path): false|string {
+            RequestTest::assertSame("php://input", $path);
+            return "read from mock standard input";
+        });
+
+        $request = Request::capture();
+        self::assertSame("read from mock standard input", $request->body());
+    }
+
+    /** Ensure failure to read the request body from standard input throws the expected exception. */
+    public function testBody3(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTP_HOST"] = "example.org";
+        $_SERVER["REQUEST_URI"] = "/";
+        $_SERVER["QUERY_STRING"] = "";
+
+        $this->mockFunction("file_get_contents", static function (string $path): false|string {
+            RequestTest::assertSame("php://input", $path);
+            return false;
+        });
+
+        $this->expectException(RequestException::class);
+        $this->expectExceptionMessage("Unable to read request body");
+        Request::capture()->body();
+    }
+
     /** Ensure whether the request's body is JSON is reported correctly. */
     public function testIsJson1(): void
     {
@@ -601,6 +637,4 @@ class RequestTest extends TestCase
         self::assertSame(UPLOAD_ERR_OK, $actual[0]->error());
         self::assertSame(UPLOAD_ERR_OK, $actual[1]->error());
     }
-
-    /** TODO Ensure the captured request body is read from standard input. */
 }
