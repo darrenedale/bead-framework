@@ -6,7 +6,7 @@ A basic MVC application framework for PHP.
 
 ## Introduction
 
-Bead is a simple MVC framework for PHP 8.0 and later.
+Bead is a simple MVC framework for PHP 8.1 and later.
 
 ## WebApplication
 
@@ -37,13 +37,13 @@ for the POST HTTP method. The following registration methods are available in th
 - `register($path, $methods, $handler)` - register a handler for a path with a specified set of HTTP methods
 - `registerGet($path, $handler)` - register a handler for a path with the GET HTTP method only
 - `registerPost($path, $handler)` - register a handler for a path with the POST HTTP method only
-- `registerPut($path, $handler)` - register a handler for a path with the POST HTTP method only
-- `registerHead($path, $handler)` - register a handler for a path with the POST HTTP method only
-- `registerDelete($path, $handler)` - register a handler for a path with the POST HTTP method only
-- `registerConnect($path, $handler)` - register a handler for a path with the POST HTTP method only
-- `registerOptions($path, $handler)` - register a handler for a path with the POST HTTP method only
-- `registerPatch($path, $handler)` - register a handler for a path with the POST HTTP method only
-- `registerPatch($path, $handler)` - register a handler for a path with the POST HTTP method only
+- `registerPut($path, $handler)` - register a handler for a path with the PUT HTTP method only
+- `registerHead($path, $handler)` - register a handler for a path with the HEAD HTTP method only
+- `registerDelete($path, $handler)` - register a handler for a path with the DELETE HTTP method only
+- `registerConnect($path, $handler)` - register a handler for a path with the CONNECT HTTP method only
+- `registerOptions($path, $handler)` - register a handler for a path with the OPTIONS HTTP method only
+- `registerPatch($path, $handler)` - register a handler for a path with the PATCH HTTP method only
+- `registerTrace($path, $handler)` - register a handler for a path with the TRACE HTTP method only
 - `registerAny($path, $handler)` - register a handler for a path with any HTTP method
 
 You can organise your route files any way that makes sense for your project. There is no artificial limit on the number
@@ -103,7 +103,7 @@ request. It also provides access to the HTTP headers.
 Views are plain PHP files, stored in the `/views` directory. You can structure your views in whatever way makes sense
 for your project. Views are identified using dot notation. To instantiate a view pass its name to the `View` constuctor -
 for example the view stored in `/views/users/edit.php` would be instantiated using `new View("users.edit")` Note that
-the base `/views` directory is not included in the name, nor is the `.php` fiole extension.
+the base `/views` directory is not included in the name, nor is the `.php` file extension.
 
 You can pass data to views using a second argument to the constructor. Data is passed as an assiciative array. The view
 will receive a set of variables named after the keys in the array. All views also receive two convenience variables:
