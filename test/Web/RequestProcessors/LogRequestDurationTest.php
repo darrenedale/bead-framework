@@ -10,6 +10,7 @@ use Bead\Contracts\Web\Response;
 use Bead\Core\Application;
 use Bead\Testing\XRay;
 use Bead\Web\RequestProcessors\LogRequestDuration;
+use Bead\Web\Uri;
 use BeadTests\Framework\TestCase;
 use Mockery;
 
@@ -59,12 +60,12 @@ class LogRequestDurationTest extends TestCase
         $this->mockFunction("hrtime", 10234759086);
 
         $request = Mockery::mock(RequestContract::class);
-        $request->shouldReceive("path")->once()->andReturn("/bead/framework");
+        $request->shouldReceive("uri")->once()->andReturn(new Uri("https", "example.org", "/bead/framework"));
 
         $log = Mockery::mock(LoggerContract::class);
 
         $log->shouldReceive("log")
-            ->with(LoggerContract::DebugLevel, "Request /bead/framework took 99999ns (0.00010s)")
+            ->with(LoggerContract::DebugLevel, "Request https://example.org/bead/framework took 99999ns (0.00010s)")
             ->once();
 
         $app = Mockery::mock(Application::class);

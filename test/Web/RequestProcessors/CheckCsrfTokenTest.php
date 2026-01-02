@@ -10,6 +10,7 @@ use Bead\Testing\XRay;
 use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
 use Bead\Web\Header;
+use Bead\Web\HttpMethod;
 use Bead\Web\RequestProcessors\CheckCsrfToken;
 use BeadTests\Framework\TestCase;
 use Mockery;
@@ -32,7 +33,7 @@ class CheckCsrfTokenTest extends TestCase
     }
 
     /** @return RequestContract&MockInterface */
-    private static function createRequest(string $method = "GET", string $path = "/"): RequestContract
+    private static function createRequest(HttpMethod $method = HttpMethod::Get, string $path = "/"): RequestContract
     {
         $request = Mockery::mock(RequestContract::class);
         $request->shouldReceive("method")->andReturn($method)->byDefault();
@@ -43,15 +44,15 @@ class CheckCsrfTokenTest extends TestCase
     /** @return iterable<array{RequestContract,bool}> */
     public static function dataForTestRequiresCsrf1(): iterable
     {
-        yield "get" => [self::createRequest("GET"), false,];
-        yield "head" => [self::createRequest("HEAD"), false,];
-        yield "options" => [self::createRequest("OPTIONS"), false,];
-        yield "post" => [self::createRequest("POST"), true,];
-        yield "put" => [self::createRequest("PUT"), true,];
-        yield "delete" => [self::createRequest("DELETE"), true,];
-        yield "connect" => [self::createRequest("CONNECT"), true,];
-        yield "trace" => [self::createRequest("TRACE"), true,];
-        yield "patch" => [self::createRequest("PATCH"), true,];
+        yield "get" => [self::createRequest(HttpMethod::Get), false,];
+        yield "head" => [self::createRequest(HttpMethod::Head), false,];
+        yield "options" => [self::createRequest(HttpMethod::Options), false,];
+        yield "post" => [self::createRequest(HttpMethod::Post), true,];
+        yield "put" => [self::createRequest(HttpMethod::Put), true,];
+        yield "delete" => [self::createRequest(HttpMethod::Delete), true,];
+        yield "connect" => [self::createRequest(HttpMethod::Connect), true,];
+        yield "trace" => [self::createRequest(HttpMethod::Trace), true,];
+        yield "patch" => [self::createRequest(HttpMethod::Patch), true,];
     }
 
     /**
@@ -68,7 +69,7 @@ class CheckCsrfTokenTest extends TestCase
     /** Ensure CRSF token is in POST data is preferred. */
     public function testRetrieveCsrfToken1(): void
     {
-        $request = self::createRequest("POST");
+        $request = self::createRequest(HttpMethod::Post);
 
         $request->shouldReceive("hasFormField")
             ->with("_token")
@@ -89,7 +90,7 @@ class CheckCsrfTokenTest extends TestCase
     /** Ensure CRSF token is taken from request header if _token is not in POST data. */
     public function testRetrieveCsrfToken2(): void
     {
-        $request = self::createRequest("POST");
+        $request = self::createRequest(HttpMethod::Post);
 
         $request->shouldReceive("hasFormField")
             ->with("_token")
@@ -110,7 +111,7 @@ class CheckCsrfTokenTest extends TestCase
     /** Ensure CRSF token is null if not in the POST data or headers. */
     public function testRetrieveCsrfToken3(): void
     {
-        $request = self::createRequest("POST");
+        $request = self::createRequest(HttpMethod::Post);
 
         $request->shouldReceive("hasFormField")
             ->with("_token")

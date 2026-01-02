@@ -5,6 +5,7 @@ namespace BeadTests\Web;
 use Bead\Web\UriUserInfo;
 use BeadTests\Framework\TestCase;
 
+/** @covers \Bead\Web\UriUserInfo */
 class UriUserInfoTest extends TestCase
 {
     private UriUserInfo $m_userInfo;
