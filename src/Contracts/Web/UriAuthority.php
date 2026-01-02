@@ -6,6 +6,7 @@ namespace Bead\Contracts\Web;
 
 use Stringable;
 
+/** Abstract representation of the authority part of a URI. */
 interface UriAuthority extends Stringable
 {
     /** Fetch the userinfo part of the authority, if it has one. */

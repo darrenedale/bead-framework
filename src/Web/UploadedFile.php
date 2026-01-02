@@ -43,7 +43,7 @@ class UploadedFile implements UploadedFileContract
     {}
 
     /**
-     * Create a new uploaded file from the content of an entry in $_FILES.
+     * Create a new uploaded file using the content of an entry from $_FILES.
      *
      * @param array{
      *     tmp_name: string,
@@ -83,7 +83,7 @@ class UploadedFile implements UploadedFileContract
     /** Helper to read the contents of the temporary file. */
     private function readTemporaryFile(): void
     {
-        $contents = file_get_contents($this->m_temporaryPath);
+        $contents = @file_get_contents($this->m_temporaryPath);
 
         if (false === $contents) {
             throw new UploadedFileException($this, "The contents of the temporary uploaded file cannot be read");

@@ -6,6 +6,7 @@ namespace Bead\Contracts\Web;
 
 use Stringable;
 
+/** Abstract representation of a URI. */
 interface Uri extends Stringable
 {
     public const SchemeHttp = "http";

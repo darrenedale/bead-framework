@@ -8,7 +8,6 @@
 namespace Bead\Contracts\Web;
 
 use Bead\Exceptions\UnroutableRequestException;
-use Bead\Contracts\Web\Request as RequestContract;
 
 /**
  * Contract for classes that want to route requests for a WebApplication.
@@ -45,12 +44,12 @@ interface Router
     /**
      * Route a given request.
      *
-     * @param RequestContract $request The request to route.
+     * @param Request $request The request to route.
      *
      * @return Response The response to the request. `null` if the handler sends its own response.
      * @throws UnroutableRequestException if no registered route can be found for the request.
      */
-    public function route(RequestContract $request): Response;
+    public function route(Request $request): Response;
 
     /**
      * Register a route with the router.

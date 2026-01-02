@@ -39,7 +39,7 @@ class LogRequestDuration implements RequestPostprocessor, RequestPreprocessor
         $nanoSeconds = hrtime(true) - $this->m_started;
         $seconds = sprintf("%0.{$this->decimalPlaces()}f", $nanoSeconds / 1_000_000_000);
 
-        Log::log($this->logLevel(), "Request {$request->path()} took {$nanoSeconds}ns ({$seconds}s)");
+        Log::log($this->logLevel(), "Request {$request->uri()} took {$nanoSeconds}ns ({$seconds}s)");
         return null;
     }
 }

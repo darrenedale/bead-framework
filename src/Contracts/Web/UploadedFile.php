@@ -8,6 +8,7 @@ use Bead\Exceptions\Web\UploadedFileException;
 use LogicException;
 use SplFileInfo;
 
+/** Representation of a file uploaded with a request. */
 interface UploadedFile
 {
     /** Fetch the name of the uploaded file. */
@@ -41,7 +42,7 @@ interface UploadedFile
     /**
      * Move the temporary uploaded file to a permanent location.
      *
-     * Once the file has been moved it is an error to call this method (see isValid()).
+     * Once the file has been successfully moved it is an error to call this method (see isValid()).
      *
      * @param string $path The destination path for the uploaded file.
      *

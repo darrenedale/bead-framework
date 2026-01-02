@@ -15,10 +15,16 @@ interface Request
     /** Determine whether a named header is included in the request. */
     public function hasHeader(string $name): bool;
 
-    /** @return Header[] The request headers. */
+    /**
+     * Fetch all the headers.
+     *
+     * @return Header[] All the request headers.
+     */
     public function headers(): array;
 
     /**
+     * Fetch all the headers with a given name.
+     *
      * @param string $name The name of the header(s) to retrieve.
      *
      * @return Header[] All the request headers with the given name.
@@ -84,7 +90,7 @@ interface Request
     /**
      * Fetch all query parameters.
      *
-     * The values will have been decoded from the query string.
+     * The keys and values will not be URL-encoded.
      *
      * @return array<string,string|string[]> The values of all the query parameters.
      */
@@ -93,7 +99,7 @@ interface Request
     /**
      * @param string $name The name of the query parameter to fetch.
      *
-     * The values will have been decoded from the query string.
+     * The value(s) will not be URL-encoded.
      *
      * @return string|string[]|null The string value of the parameter, or an array of string values if it's an array
      * parameter, or null if there's no such query parameter.
@@ -107,7 +113,7 @@ interface Request
      * not contain any other query parameters. Any names provided that don't exist in the Request object should be
      * absent from the returned array.
      *
-     * The values will have been decoded from the query string.
+     * The keys and values will not be URL-encoded.
      *
      * @param string[] $names The query parameter names to fetch.
      *
@@ -121,7 +127,7 @@ interface Request
     /**
      * Fetch all form fields.
      *
-     * The values will have been decoded from whatever encoding was used in the request body.
+     * The keys and values will not be encoded.
      *
      * @return array<string,string|string[]> The values of all the form fields.
      */
@@ -130,7 +136,7 @@ interface Request
     /**
      * @param string $name The name of the form data to fetch.
      *
-     * The values will have been decoded from whatever encoding was used in the request body.
+     * The value(s) will not be encoded
      *
      * @return string|string[]|null The string value of the form data, or an array of string values if it's an array
      * parameter, or null if there's no such form data.
@@ -144,7 +150,7 @@ interface Request
      * contain any other form fields. Any names provided that don't exist in the Request object should be absent from
      * the returned array.
      *
-     * The values will have been decoded from whatever encoding was used in the request body.
+     * The keys and values will not be encoded.
      *
      * @param string[] $names The form field names to fetch.
      *
@@ -164,7 +170,7 @@ interface Request
      * names to values (the values being strings or arrays of strings). If a single name is provided and it doesn't
      * exist, null is returned.
      *
-     * The values will have been decoded from the URL query string or whatever encoding was used in the request body.
+     * The keys and values will not be encoded.
      *
      * @param string|array $names The names of the items to fetch.
      *
@@ -175,7 +181,11 @@ interface Request
     /** Check whether an uploaded file with a given name exists in the Request. */
     public function hasUploadedFile(string $name): bool;
 
-    /** @return UploadedFile[] */
+    /**
+     * Fetch all the uploaded files.
+     *
+     * @return UploadedFile[]
+     */
     public function uploadedFiles(): array;
 
     /**

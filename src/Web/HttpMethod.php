@@ -2,6 +2,7 @@
 
 namespace Bead\Web;
 
+/** Enumeration of valid HTTP methods. */
 enum HttpMethod: string
 {
     case Get = "GET";

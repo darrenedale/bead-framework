@@ -24,7 +24,6 @@ use Bead\Exceptions\Session\SessionNotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session as SessionFacade;
 use Bead\Session\DataAccessor as SessionDataAccessor;
-use Bead\Web\RequestProcessors\CheckCsrfToken;
 use DirectoryIterator;
 use Exception;
 use InvalidArgumentException;

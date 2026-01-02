@@ -21,7 +21,7 @@ use const ARRAY_FILTER_USE_KEY;
 /** Default implementation of the Request contract. */
 class Request implements RequestContract
 {
-    /** @var Request|null Lazy-initialised request captured from PHP superglobals. */
+    /** @var Request|null Lazy-initialised singleton captured from PHP superglobals. */
     private static ?Request $capturedRequest = null;
 
     /** @var HttpMethod The HTTP requst method. */
@@ -45,13 +45,17 @@ class Request implements RequestContract
     /** @var array<string,string> */
     private array $m_cookies;
 
-    /** @var string|null Lazy-initialised string containing the full (raw) body of the request. */
+    /**
+     * The request body.
+     *
+     * This is set directly for artificially-created Request objects. For the captured requests it's lazy-initialised
+     * from the stdin input stream when body() is first called.
+     */
     private ?string $m_body;
 
     /** Forbid external construction. */
     private function __construct()
     {
-        $this->m_body = null;
     }
 
     /**
@@ -70,12 +74,20 @@ class Request implements RequestContract
             self::$capturedRequest->captureFormFields();
             self::$capturedRequest->captureUploadedFiles();
             self::$capturedRequest->captureCookies();
+            self::$capturedRequest->m_body = null;
         }
 
         return self::$capturedRequest;
     }
 
     /**
+     * Artificially create a request.
+     *
+     * The primary use-case for this method is to enable testing.
+     *
+     * Most of the parameters have default arguments to enable initialisation of only what's required. It's safe to use
+     * named arguments when calling this method, the parameter names won't change.
+     *
      * @param HttpMethod $method
      * @param UriContract $uri
      * @param array<string,string> $queryParameters

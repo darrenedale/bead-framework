@@ -8,6 +8,7 @@ use Bead\Contracts\Web\Uri as UriContract;
 use Bead\Contracts\Web\UriAuthority as UriAuthorityContract;
 use Bead\Contracts\Web\UriUserInfo as UriUserInfoContract;
 
+/** Default implementation of the Uri contract. */
 class Uri implements UriContract
 {
 
@@ -17,8 +18,10 @@ class Uri implements UriContract
 
     private string $m_path;
 
+    /** @var string|null The URI's query string, if it has one. */
     private ?string $m_query;
 
+    /** @var string|null The URI's fragment, if it has one. */
     private ?string $m_fragment;
 
     /** By default constructs the URI https://localhost/. */
@@ -91,6 +94,13 @@ class Uri implements UriContract
         return $this->m_fragment;
     }
 
+    /**
+     * Obtain a replica of the URI with a potentially different scheme.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @return static A replica of the URI with a potentially different scheme.
+     */
     public function withScheme(string $scheme): static
     {
         $clone = clone $this;
@@ -98,6 +108,13 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /**
+     * Obtain a replica of the URI with a potentially different authority.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @return static A replica of the URI with a potentially different authority.
+     */
     public function withAuthority(UriAuthorityContract $authority): static
     {
         $clone = clone $this;
@@ -105,6 +122,13 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /**
+     * Obtain a replica of the URI with a potentially different user info section.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @return static A replica of the URI with a potentially different user info section.
+     */
     public function withUserInfo(UriUserInfoContract $userInfo): static
     {
         $clone = clone $this;
@@ -112,6 +136,13 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /**
+     * Obtain a replica of the URI with no user info section.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @return static A replica of the URI with no user info section.
+     */
     public function withoutUserInfo(): static
     {
         $clone = clone $this;
@@ -119,7 +150,15 @@ class Uri implements UriContract
         return $clone;
     }
 
-    /** The provided username must not be escaped. */
+    /**
+     * Obtain a replica of the URI with a potentially different username.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @param string $username The new username. It must not be escaped.
+     *
+     * @return static A replica of the URI with a potentially different username.
+     */
     public function withUsername(string $username): static
     {
         $clone = clone $this;
@@ -127,7 +166,15 @@ class Uri implements UriContract
         return $clone;
     }
 
-    /** The provided password must not be escaped. */
+    /**
+     * Obtain a replica of the URI with a potentially different password.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @param string $password The new password. It must not be escaped.
+     *
+     * @return static A replica of the URI with a potentially different password.
+     */
     public function withPassword(string $password): static
     {
         $clone = clone $this;
@@ -135,6 +182,13 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /**
+     * Obtain a replica of the URI without a password.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @return static A replica of the URI without a password.
+     */
     public function withoutPassword(): static
     {
         $clone = clone $this;
@@ -142,7 +196,17 @@ class Uri implements UriContract
         return $clone;
     }
 
-    /** The provided username and password must not be escaped. */
+    /**
+     * Obtain a replica of the URI with a potentially different username and password.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @param string $username The new username. It must not be escaped.
+     * @param string|null $password The new password. It must not be escaped. The default of null will result in the
+     * password being removed from the replica URI.
+     *
+     * @return static A replica of the URI with a potentially different username and password.
+     */
     public function withUsernameAndPassword(string $username, ?string $password = null): static
     {
         $clone = clone $this;
@@ -150,6 +214,15 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /**
+     * Obtain a replica of the URI with a potentially different host.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @param string $host The new host.
+     *
+     * @return static A replica of the URI with a potentially different host.
+     */
     public function withHost(string $host): static
     {
         $clone = clone $this;
@@ -157,13 +230,29 @@ class Uri implements UriContract
         return $clone;
     }
 
-    public function withPort(?int $port): static
+    /**
+     * Obtain a replica of the URI with a potentially different port.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @param int $port The new port.
+     *
+     * @return static A replica of the URI with a potentially different port.
+     */
+    public function withPort(int $port): static
     {
         $clone = clone $this;
         $clone->m_authority = $clone->m_authority->withPort($port);
         return $clone;
     }
 
+    /**
+     * Obtain a replica of the URI without a port.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @return static A replica of the URI without a port.
+     */
     public function withoutPort(): static
     {
         $clone = clone $this;
@@ -171,7 +260,15 @@ class Uri implements UriContract
         return $clone;
     }
 
-    /** The provied path must be properly escaped. */
+    /**
+     * Obtain a replica of the URI with a potentially different path.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @param string $path The new path. It must be properly escaped.
+     *
+     * @return static A replica of the URI with a potentially different path.
+     */
     public function withPath(string $path): static
     {
         $clone = clone $this;
@@ -179,7 +276,15 @@ class Uri implements UriContract
         return $clone;
     }
 
-    /** The provided query string must be properly escaped. */
+    /**
+     * Obtain a replica of the URI with a potentially different query string.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @param string $query The new query string. It must be properly escaped.
+     *
+     * @return static A replica of the URI with a potentially different query string.
+     */
     public function withQuery(string $query): static
     {
         $clone = clone $this;
@@ -187,6 +292,13 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /**
+     * Obtain a replica of the URI without a query string.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @return static A replica of the URI without a query string.
+     */
     public function withoutQuery(): static
     {
         $clone = clone $this;
@@ -194,7 +306,15 @@ class Uri implements UriContract
         return $clone;
     }
 
-    /** The provided fragment must not be escaped. */
+    /**
+     * Obtain a replica of the URI with a potentially different fragment.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @param string $fragment The new fragment. It must not be escaped.
+     *
+     * @return static A replica of the URI with a potentially different fragment.
+     */
     public function withFragment(string $fragment): static
     {
         $clone = clone $this;
@@ -202,6 +322,13 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /**
+     * Obtain a replica of the URI without a fragment.
+     *
+     * The immutability of the original object is preserved.
+     *
+     * @return static A replica of the URI without a fragment.
+     */
     public function withoutFragment(): static
     {
         $clone = clone $this;
@@ -209,6 +336,7 @@ class Uri implements UriContract
         return $clone;
     }
 
+    /** Obtain a string representation of the URI. */
     public function __toString(): string
     {
         $uri = "{$this->scheme()}://{$this->authority()}{$this->path()}";
