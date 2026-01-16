@@ -1,235 +1,642 @@
 <?php
 
-declare(strict_types=1);
-
 namespace BeadTests\Web;
 
-use Bead\Testing\StaticXRay;
+use Bead\Contracts\Web\Uri as UriContract;
+use Bead\Exceptions\Web\RequestException;
+use Bead\Web\Header;
+use Bead\Web\HttpMethod;
 use Bead\Web\Request;
+use Bead\Web\UploadedFile;
+use Bead\Web\Uri;
 use BeadTests\Framework\TestCase;
-use InvalidArgumentException;
-use ReflectionClass;
-use ReflectionMethod;
-use ReflectionProperty;
+use Equit\XRay\StaticXRay;
+use JsonException;
+use ValueError;
 
+/** @covers \Bead\Web\Request */
 class RequestTest extends TestCase
 {
-    private Request $request;
+    private Request $m_request;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
-        $_SERVER["REQUEST_METHOD"] = "GET";
-        $reflector = new ReflectionClass(Request::class);
-        $this->request = $reflector->newInstanceWithoutConstructor();
-        $reflector = $reflector->getConstructor();
-        self::assertInstanceOf(ReflectionMethod::class, $reflector);
-        $reflector->setAccessible(true);
-        $reflector->invoke($this->request);
+        parent::setUp();
+
+        $this->m_request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page"))
+                ->withQuery("framework=bead")
+                ->withFragment("top"),
+            ["framework" => "bead", "query-key" => "query-value",],
+            ["data" => "value", "more-data" => "another-value"],
+            ["bead-session" => "BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", "foo" => "bar"],
+            [
+                new Header("content-type", "application/json"),
+                new Header("x-multi-header", "value 1"),
+                new Header("X-Multi-Header", "value 2"),
+            ],
+            [
+                UploadedFile::create("the-file", "text/plain", __DIR__ . "/files/uploaded-file-1.txt", filesize(__DIR__ . "/files/uploaded-file-1.txt")),
+                UploadedFile::create("the-file", "text/plain", __DIR__ . "/files/uploaded-file-1.txt", filesize(__DIR__ . "/files/uploaded-file-1.txt")),
+                UploadedFile::create("another-file", "text/plain", __DIR__ . "/files/uploaded-file-2.txt", filesize(__DIR__ . "/files/uploaded-file-2.txt")),
+            ],
+            "{\"framework\": \"bead\"}",
+        );
     }
 
     public function tearDown(): void
     {
-        // ensure the request doesn't persist between tests.
-        $xRay = new StaticXRay(Request::class);
-        $xRay->s_originalRequest = null;
-        unset($this->request);
+        $xray = new StaticXRay(Request::class);
+        $xray->capturedRequest = null;
+        parent::tearDown();
     }
 
-    /** Ensure ipv4 is empty by default. */
-    public function testRemoteIpV41(): void
+    /** Ensure the method is reported correctly. */
+    public function testMethod1(): void
     {
-        self::assertEquals("", $this->request->remoteIp4());
+        self::assertSame(HttpMethod::Get, $this->m_request->method());
     }
 
-    public static function dataForTestSetRemoteIpV41(): iterable
+    /** Ensure the scheme is reported correctly. */
+    public function testScheme1(): void
     {
-        yield "broadcast" => ["0.0.0.0",];
-        yield "typical localhost" => ["127.0.0.1",];
-        yield "atypical localhost 1" => ["127.0.0.99",];
-        yield "atypical localhost 2" => ["127.0.99.0",];
-        yield "atypical localhost 3" => ["127.99.0.0",];
-        yield "private 192.168.0.0/16 1" => ["192.168.0.0",];
-        yield "private 192.168.0.0/16 2" => ["192.168.0.1",];
-        yield "private 192.168.0.0/16 3" => ["192.168.1.0",];
-        yield "private 192.168.0.0/16 4" => ["192.168.1.1",];
-        yield "private 192.168.0.0/16 5" => ["192.168.0.255",];
-        yield "private 192.168.0.0/16 6" => ["192.168.255.0",];
-        yield "private 192.168.0.0/16 7" => ["192.168.255.255",];
-        yield "private 192.168.0.0/16 8" => ["192.168.165.32",];
-        yield "private 192.168.0.0/16 9" => ["192.168.12.191",];
-        yield "private 10.0.0.0/8 1" => ["10.0.0.0",];
-        yield "private 10.0.0.0/8 2" => ["10.0.0.1",];
-        yield "private 10.0.0.0/8 3" => ["10.0.1.0",];
-        yield "private 10.0.0.0/8 4" => ["10.0.1.1",];
-        yield "private 10.0.0.0/8 5" => ["10.1.0.0",];
-        yield "private 10.0.0.0/8 6" => ["10.1.0.1",];
-        yield "private 10.0.0.0/8 7" => ["10.1.1.0",];
-        yield "private 10.0.0.0/8 8" => ["10.1.1.1",];
-        yield "private 10.0.0.0/8 9" => ["10.0.0.255",];
-        yield "private 10.0.0.0/8 10" => ["10.0.255.0",];
-        yield "private 10.0.0.0/8 11" => ["10.0.255.255",];
-        yield "private 10.0.0.0/8 12" => ["10.255.0.0",];
-        yield "private 10.0.0.0/8 13" => ["10.255.0.255",];
-        yield "private 10.0.0.0/8 14" => ["10.255.255.0",];
-        yield "private 10.0.0.0/8 15" => ["10.255.255.255",];
-        yield "private 10.0.0.0/8 16" => ["10.99.108.14",];
-        yield "private 10.0.0.0/8 17" => ["10.54.42.7",];
-        yield "private 172.16.0.0/12 1" => ["172.16.0.0",];
-        yield "private 172.16.0.0/12 2" => ["172.16.0.1",];
-        yield "private 172.16.0.0/12 3" => ["172.16.1.0",];
-        yield "private 172.16.0.0/12 4" => ["172.16.1.1",];
-        yield "private 172.16.0.0/12 5" => ["172.16.0.255",];
-        yield "private 172.16.0.0/12 6" => ["172.16.255.0",];
-        yield "private 172.16.0.0/12 7" => ["172.16.255.255",];
-        yield "private 172.16.0.0/12 8" => ["172.31.0.0",];
-        yield "private 172.16.0.0/12 9" => ["172.31.0.255",];
-        yield "private 172.16.0.0/12 10" => ["172.31.255.0",];
-        yield "private 172.16.0.0/12 11" => ["172.31.255.255",];
-        yield "private 172.16.0.0/12 12" => ["172.28.10.19",];
-        yield "private 172.16.0.0/12 13" => ["172.17.24.18",];
-        yield "public UK" => ["86.4.47.14",];
+        self::assertSame(UriContract::SchemeHttps, $this->m_request->scheme());
     }
 
-    /** @dataProvider dataForTestSetRemoteIpV41 */
-    public function testSetRemoteIpV41(string $ip): void
+    /** Ensure the host is reported correctly. */
+    public function testHost1(): void
     {
-        $this->request->setRemoteIp4($ip);
-        self::assertEquals($ip, $this->request->remoteIp4());
+        self::assertSame("example.org", $this->m_request->host());
     }
 
-    public static function dataForTestSetRemoteIpV42(): iterable
+    /** Ensure the port is reported as null when not set. */
+    public function testPort1(): void
     {
-        yield "empty" => ["",];
-        yield "whitespace" => ["   ",];
-        yield "whitespace before" => [" 192.168.1.1",];
-        yield "whitespace after" => ["192.168.1.1 ",];
-        yield "whitespace inside" => ["192. 168.1.1",];
-        yield "excess segments" => ["192.168.1.1.1",];
-        yield "insufficient segments" => ["192.168.1",];
-        yield "msb too large" => ["256.168.1.1",];
-        yield "msb2 too large" => ["192.256.1.1",];
-        yield "lsb2 too large" => ["192.168.256.1",];
-        yield "lsb too large" => ["192.168.1.256",];
-        yield "invalid characters" => ["a.b.c.d",];
-        yield "broadcast leading 0s" => ["000.000.000.000",];
-        yield "private leading 0s" => ["010.001.001.001",];
-        yield "nonsense" => ["bead framework",];
+        self::assertNull($this->m_request->port());
     }
 
-    /** @dataProvider dataForTestSetRemoteIpV42 */
-    public function testSetRemoteIpV42(string $ip): void
+    /** Ensure the port is reported correctly when set. */
+    public function testPort2(): void
     {
-        self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage("Expected valid IPv4 dotted-decimal address, found \"{$ip}\"");
-        $this->request->setRemoteIp4($ip);
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page"))->withPort(80)
+        );
+        self::assertSame(80, $request->port());
     }
 
-    /** Ensure ipV6 is empty by default. */
-    public function testRemoteIpV61(): void
+    /** Ensure the path is reported correctly. */
+    public function testPath1(): void
     {
-        self::assertEquals("", $this->request->remoteIp6());
+        self::assertSame("/home/page", $this->m_request->path());
     }
 
-    public static function dataForTestSetRemoteIpV61(): iterable
+    /** Ensure the query string is reported correctly. */
+    public function testQuery1(): void
     {
-        yield "broadcast full" => ["0000:0000:0000:0000:0000:0000:0000:0000",];
-        yield "broadcast leading 0s suppressed" => ["0:0:0:0:0:0:0:0",];
-        yield "broadcast compressed" => ["::",];
-        yield "localhost full" => ["0000:0000:0000:0000:0000:0000:0000:0002",];
-        yield "localhost leading 0s suppressed" => ["0:0:0:0:0:0:0:1",];
-        yield "localhost compressed" => ["::1",];
-        yield "full" => ["2001:0db8:85a3:0000:0000:8a2e:0370:7334",];
-        yield "leading 0s suppressed" => ["2001:db8:85a3:0:0:8a2e:370:7334",];
-        yield "0 run compressed" => ["2001:db8:85a3::8a2e:370:7334",];
+        self::assertSame("framework=bead", $this->m_request->query());
     }
 
-    /** @dataProvider dataForTestSetRemoteIpV61 */
-    public function testSetRemoteIpV61(string $ip): void
+    /** Ensure the URI is reported correctly. */
+    public function testUri1(): void
     {
-        $this->request->setRemoteIp6($ip);
-        self::assertEquals($ip, $this->request->remoteIp6());
+        $actual = $this->m_request->uri();
+        self::assertSame(UriContract::SchemeHttps, $actual->scheme());
+        self::assertSame("example.org", $actual->host());
+        self::assertSame("/home/page", $actual->path());
+        self::assertSame("framework=bead", $actual->query());
+        self::assertSame("top", $actual->fragment());
     }
 
-    public static function dataForTestSetRemoteIpV62(): iterable
+    /** Ensure the presence of a query parameter is correctly reported. */
+    public function testHasQueryParameter1(): void
     {
-        yield "empty" => ["",];
-        yield "whitespace" => ["   ",];
-        yield "whitespace before" => [" ::",];
-        yield "whitespace after" => [":: ",];
-        yield "whitespace inside" => [": :",];
-        yield "excess segments" => ["2001:db8:85a3:0:0:8a2e:370:7334:0",];
-        yield "insufficient segments" => ["2001:db8:85a3:0:0:8a2e:370",];
-        yield "invalid characters" => ["200g:db8:85a3:0:0:8a2e:370:7334",];
-        yield "nonsense" => ["bead framework",];
+        self::assertTrue($this->m_request->hasQueryParameter("framework"));
     }
 
-    /** @dataProvider dataForTestSetRemoteIpV62 */
-    public function testSetRemoteIpV62(string $ip): void
+    /** Ensure the absence of a query parameter is correctly reported. */
+    public function testHasQueryParameter2(): void
     {
-        self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage("Expected valid IPv6 address, found \"{$ip}\"");
-        $this->request->setRemoteIp6($ip);
+        self::assertFalse($this->m_request->hasQueryParameter("bead"));
     }
 
-    public static function dataForTestOriginalRequest1(): iterable
+    /** Ensure query parameter values are reported correctly. */
+    public function testQueryParameter1(): void
     {
-        yield "simple URI" => ["http://bead.example.com/home", "/home",];
-        yield "URI with port" => ["http://bead.example.com:8080/home", "/home",];
-        yield "URI with file" => ["http://bead.example.com:8080/home/index.php", "/home",];
-        yield "URI with query string" => ["http://bead.example.com:8080/home/?bead=framework", "/home",];
-        yield "URI with file, query string" => ["http://bead.example.com:8080/home/index.php?bead=framework", "/home",];
-        yield "URI with fragment" => ["http://bead.example.com:8080/home/#bead", "/home",];
-        yield "URI with file, fragment" => ["http://bead.example.com:8080/home/index.php#bead", "/home",];
-        yield "URI with file, query string, fragment" => ["http://bead.example.com:8080/home/index.php#bead?bead=framework", "/home",];
-        yield "URI with username, port" => ["http://bead@bead.example.com:8080/home", "/home",];
-        yield "URI with username, file" => ["http://bead@bead.example.com:8080/home/index.php", "/home",];
-        yield "URI with username, query string" => ["http://bead@bead.example.com:8080/home/?bead=framework", "/home",];
-        yield "URI with username, file and query string" => ["http://bead@bead.example.com:8080/home/index.php?bead=framework", "/home",];
-        yield "URI with username, fragment" => ["http://bead@bead.example.com:8080/home/#bead", "/home",];
-        yield "URI with username, file and fragment" => ["http://bead@bead.example.com:8080/home/index.php#bead", "/home",];
-        yield "URI with username, file, query string and fragment" => ["http://bead@bead.example.com:8080/home/index.php#bead?bead=framework", "/home",];
-        yield "URI with username, password, port" => ["http://bead:framework@bead.example.com:8080/home", "/home",];
-        yield "URI with username, password, file" => ["http://bead:framework@bead.example.com:8080/home/index.php", "/home",];
-        yield "URI with username, password, query string" => ["http://bead:framework@bead.example.com:8080/home/?bead=framework", "/home",];
-        yield "URI with username, password, file and query string" => ["http://bead:framework@bead.example.com:8080/home/index.php?bead=framework", "/home",];
-        yield "URI with username, password, fragment" => ["http://bead:framework@bead.example.com:8080/home/#bead", "/home",];
-        yield "URI with username, password, file and fragment" => ["http://bead:framework@bead.example.com:8080/home/index.php#bead", "/home",];
-        yield "URI with username, password, file, query string and fragment" => ["http://bead:framework@bead.example.com:8080/home/index.php#bead?bead=framework", "/home",];
+        self::assertSame("bead", $this->m_request->queryParameter("framework"));
     }
 
-    /**
-     * Ensure the path is extracted from the request URI
-     *
-     * @dataProvider dataForTestOriginalRequest1
-     */
-    public function testOriginalRequest1(string $uri, string $expectedPath): void
+    /** Ensure null is returned for query parameters that don't exist. */
+    public function testQueryParameter2(): void
     {
-        $_SERVER["REQUEST_URI"] = $expectedPath;
-        self::assertEquals($expectedPath, Request::originalRequest()->path());
+        self::assertNull($this->m_request->queryParameter("bead"));
     }
 
-    /** Ensure a request URI without a path gets "/" as the path. */
-    public function testOriginalRequest2(): void
+    /** Ensure a subset of query parameters can be fetched correctly. */
+    public function testQueryParameters1(): void
     {
-        $_SERVER["REQUEST_URI"] = "http://bead.example.com";
-        self::assertEquals("/", Request::originalRequest()->path());
+        self::assertSame(["query-key" => "query-value"], $this->m_request->queryParameters(["query-key"]));
     }
 
-    /** Ensure IPv4 is successfully read from $_SERVER */
-    public function testOriginalRequest3(): void
+    /** Ensure all query parameters can be fetched. */
+    public function testAllQueryParameters1(): void
     {
-        $_SERVER["REQUEST_URI"] = "http://bead.example.com";
-        $_SERVER["REMOTE_ADDR"] = "172.16.1.81";
-        self::assertEquals("172.16.1.81", Request::originalRequest()->remoteIp4());
-        self::assertEquals("", Request::originalRequest()->remoteIp6());
+        $actual = $this->m_request->allQueryParameters();
+        self::assertCount(2, $actual);
+        self::assertSame("query-value", $actual["query-key"]);
+        self::assertSame("bead", $actual["framework"]);
     }
 
-    /** Ensure IPv6 is successfully read from $_SERVER */
-    public function testOriginalRequest4(): void
+    /** Ensure the presence of a form field is correctly reported. */
+    public function testHasFormField1(): void
     {
-        $_SERVER["REQUEST_URI"] = "http://bead.example.com";
-        $_SERVER["REMOTE_ADDR"] = "2001:db8:85a3::8a2e:370:7334";
-        self::assertEquals("", Request::originalRequest()->remoteIp4());
-        self::assertEquals("2001:db8:85a3::8a2e:370:7334", Request::originalRequest()->remoteIp6());
+        self::assertTrue($this->m_request->hasFormField("data"));
+    }
+
+    /** Ensure the absence of a form field is correctly reported. */
+    public function testHasFormField2(): void
+    {
+        self::assertFalse($this->m_request->hasFormField("value"));
+    }
+
+    /** Ensure form field values are reported correctly. */
+    public function testFormField1(): void
+    {
+        self::assertSame("value", $this->m_request->formField("data"));
+    }
+
+    /** Ensure null is returned for form fields that don't exist. */
+    public function testFormField2(): void
+    {
+        self::assertNull($this->m_request->formField("value"));
+    }
+
+    /** Ensure a subset of form fields can be fetched correctly. */
+    public function testFormFields1(): void
+    {
+        self::assertSame(["data" => "value"], $this->m_request->formFields(["data"]));
+    }
+
+    /** Ensure all form fields can be fetched. */
+    public function testAllFormFields1(): void
+    {
+        $actual = $this->m_request->allFormFields();
+        self::assertCount(2, $actual);
+        self::assertSame("value", $actual["data"]);
+        self::assertSame("another-value", $actual["more-data"]);
+    }
+
+    /** Ensure has() reports presence of a query parameter correctly. */
+    public function testHas1(): void
+    {
+        self::assertTrue($this->m_request->has("framework"));
+    }
+
+    /** Ensure has() reports presence of a form field correctly. */
+    public function testHas2(): void
+    {
+        self::assertTrue($this->m_request->has("more-data"));
+    }
+
+    /** Ensure data() correctly returns query parameters and form fields. */
+    public function testData1(): void
+    {
+        $actual = $this->m_request->data(["framework", "data"]);
+        self::assertCount(2, $actual);
+        self::assertSame("bead", $actual["framework"]);
+        self::assertSame("value", $actual["data"]);
+    }
+
+    /** Ensure data() prioritises form fields over query parameters. */
+    public function testData2(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            new Uri(\Bead\Contracts\Web\Uri::SchemeHttps, "example.org", "/home/page"),
+            ["key1" => "value1", "key2" => "value2"],
+            ["key2" => "value3"],
+        );
+
+        $actual = $request->data(["key1", "key2"]);
+        self::assertCount(2, $actual);
+        self::assertSame("value1", $actual["key1"]);
+        self::assertSame("value3", $actual["key2"]);
+    }
+
+    /** Ensure data() can return a single value. */
+    public function testData3(): void
+    {
+        self::assertSame("query-value", $this->m_request->data("query-key"));
+    }
+
+    /** Ensure data() skips missing keys and returns everything it can find. */
+    public function testData4(): void
+    {
+        $actual = $this->m_request->data(["framework", "missing", "data"]);
+        self::assertCount(2, $actual);
+        self::assertSame("bead", $actual["framework"]);
+        self::assertSame("value", $actual["data"]);
+    }
+
+    /** Ensure the presence of a cookie is correctly reported. */
+    public function testHasCookie1(): void
+    {
+        self::assertTrue($this->m_request->hasCookie("bead-session"));
+    }
+
+    /** Ensure the absence of a cookie is correctly reported. */
+    public function testHasCookie2(): void
+    {
+        self::assertFalse($this->m_request->hasCookie("something-else"));
+    }
+
+    /** Ensure cookie values are reported correctly. */
+    public function testCookie1(): void
+    {
+        self::assertSame("BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", $this->m_request->cookie("bead-session"));
+    }
+
+    /** Ensure null is returned for cookies that don't exist. */
+    public function testCookie2(): void
+    {
+        self::assertNull($this->m_request->cookie("missing-cookie"));
+    }
+
+    /** Ensure all cookies can be fetched. */
+    public function testCookies1(): void
+    {
+        $actual = $this->m_request->cookies();
+        self::assertCount(2, $actual);
+        self::assertSame("bar", $actual["foo"]);
+        self::assertSame("BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", $actual["bead-session"]);
+    }
+
+    /** Ensure the presence of a header is reported correctly. */
+    public function testHasHeader1(): void
+    {
+        self::assertTrue($this->m_request->hasHeader("content-type"));
+    }
+
+    /** Ensure the absence of a header is reported correctly. */
+    public function testHasHeader2(): void
+    {
+        self::assertFalse($this->m_request->hasHeader("content-transfer-encoding"));
+    }
+
+    /** Ensure all the headers are reported correctly. */
+    public function testHeaders1(): void
+    {
+        $actual = $this->m_request->headers();
+        self::assertCount(3, $actual);
+        usort($actual, static fn (Header $a, Header $b): int => strtolower($a->name()) <=> strtolower($b->name()) ?: strtolower($a->value()) <=> strtolower($b->value()));
+        self::assertSame("content-type", $actual[0]->name());
+        self::assertSame("application/json", $actual[0]->value());
+        self::assertSame("x-multi-header", $actual[1]->name());
+        self::assertSame("value 1", $actual[1]->value());
+        self::assertSame("X-Multi-Header", $actual[2]->name());
+        self::assertSame("value 2", $actual[2]->value());
+    }
+
+    /** Ensure all of a header's values are reported. */
+    public function testHeader1(): void
+    {
+        $actual = $this->m_request->header("x-multi-header");
+        self::assertCount(2, $actual);
+        usort($actual, static fn (Header $a, Header $b): int => $a->value() <=> $b->value());
+        self::assertSame("x-multi-header", $actual[0]->name());
+        self::assertSame("value 1", $actual[0]->value());
+        self::assertSame("X-Multi-Header", $actual[1]->name());
+        self::assertSame("value 2", $actual[1]->value());
+    }
+
+    /** Ensure header name matching is not case sensitive. */
+    public function testHeader2(): void
+    {
+        $actual = $this->m_request->header("X-MULTI-HEADER");
+        self::assertCount(2, $actual);
+        usort($actual, static fn (Header $a, Header $b): int => $a->value() <=> $b->value());
+        self::assertSame("x-multi-header", $actual[0]->name());
+        self::assertSame("value 1", $actual[0]->value());
+        self::assertSame("X-Multi-Header", $actual[1]->name());
+        self::assertSame("value 2", $actual[1]->value());
+    }
+
+    /** Ensure an empty array is returned for a named header that does not exist. */
+    public function testHeader3(): void
+    {
+        self::assertSame([], $this->m_request->header("Content-Transfer-Encoding"));
+    }
+
+    /** Ensure the presence of an uploaded file is reported correctly. */
+    public function testHasUploadedFile1(): void
+    {
+        self::assertTrue($this->m_request->hasUploadedFile("the-file"));
+    }
+
+    /** Ensure the absence of an uploaded file is reported correctly. */
+    public function testHasUploadedFile2(): void
+    {
+        self::assertFalse($this->m_request->hasUploadedFile("missing-file"));
+    }
+
+    /** Ensure all uploaded files are reported correctly. */
+    public function testUploadedFiles1(): void
+    {
+        $actual = $this->m_request->uploadedFiles();
+        self::assertCount(3, $actual);
+        usort($actual, static fn (UploadedFile $a, UploadedFile $b): int => $a->name() <=> $b->name());
+        self::assertSame("another-file", $actual[0]->name());
+        self::assertSame("the-file", $actual[1]->name());
+        self::assertSame("the-file", $actual[2]->name());
+    }
+
+    /** Ensure named uploaded files are reported correctly.  */
+    public function testUploadedFile1(): void
+    {
+        $actual = $this->m_request->uploadedFile("the-file");
+        self::assertCount(2, $actual);
+        self::assertSame("the-file", $actual[0]->name());
+        self::assertSame("the-file", $actual[1]->name());
+    }
+
+    /** Ensure an empty array is returned for uploaded files that don't exist. */
+    public function testUploadedFile2(): void
+    {
+        self::assertSame([], $this->m_request->uploadedFile("missing-file"));
+    }
+
+    /** Ensure the request body is reported correctly. */
+    public function testBody1(): void
+    {
+        self::assertSame("{\"framework\": \"bead\"}", $this->m_request->body());
+    }
+
+    /** Ensure the captured request body is read from standard input. */
+    public function testBody2(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTP_HOST"] = "example.org";
+        $_SERVER["REQUEST_URI"] = "/";
+        $_SERVER["QUERY_STRING"] = "";
+
+        $this->mockFunction("file_get_contents", static function (string $path): false|string {
+            RequestTest::assertSame("php://input", $path);
+            return "read from mock standard input";
+        });
+
+        $request = Request::capture();
+        self::assertSame("read from mock standard input", $request->body());
+    }
+
+    /** Ensure failure to read the request body from standard input throws the expected exception. */
+    public function testBody3(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTP_HOST"] = "example.org";
+        $_SERVER["REQUEST_URI"] = "/";
+        $_SERVER["QUERY_STRING"] = "";
+
+        $this->mockFunction("file_get_contents", static function (string $path): false|string {
+            RequestTest::assertSame("php://input", $path);
+            return false;
+        });
+
+        $this->expectException(RequestException::class);
+        $this->expectExceptionMessage("Unable to read request body");
+        Request::capture()->body();
+    }
+
+    /** Ensure whether the request's body is JSON is reported correctly. */
+    public function testIsJson1(): void
+    {
+        self::assertTrue($this->m_request->isJson());
+    }
+
+    /** Ensure whether the request's body is JSON is reported correctly. */
+    public function testIsJson2(): void
+    {
+        self::assertFalse(Request::create(
+            HttpMethod::Get,
+            new Uri("https", "example.org", "/home/page"),
+            headers: [new Header("content-type", "text/plain")]
+        )->isJson());
+    }
+
+    /** Ensure requests with no content-type are not reported as JSON. */
+    public function testIsJson3(): void
+    {
+        self::assertFalse(Request::create(
+            HttpMethod::Get,
+            new Uri("https", "example.org", "/home/page"),
+        )->isJson());
+    }
+
+    /** Ensure decoded JSON is correctly returned when the content type is application/json. */
+    public function testJson1(): void
+    {
+        self::assertSame(["framework" => "bead",], $this->m_request->json());
+    }
+
+    /** Ensure a RequestException is thrown when fetching the JSON of a request whose content type isn't application/json. */
+    public function testJson2(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+            headers: [new Header("content-type", "text/plain"),],
+        );
+
+        $this->expectException(RequestException::class);
+        $this->expectExceptionMessage("Request body is not JSON");
+        $request->json();
+    }
+
+    /** Ensure a RequestException is thrown when fetching the JSON of a request without a content type. */
+    public function testJson3(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+        );
+
+        $this->expectException(RequestException::class);
+        $this->expectExceptionMessage("Request body is not JSON");
+        $request->json();
+    }
+
+    /** Ensure the body is transcoded to UTF-8 if necessary before being JSON-decoded. */
+    public function testJson4(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+            headers: [new Header("content-type", "application/json; charset=utf-16le"),],
+            body: "\x7B\x00\x22\x00\x66\x00\x72\x00\x61\x00\x6D\x00\x65\x00\x77\x00\x6F\x00\x72\x00\x6B\x00\x22\x00\x3A\x00\x22\x00\x62\x00\x65\x00\x61\x00\x64\x00\x22\x00\x7D\x00",
+        );
+
+        self::assertSame(["framework" => "bead",], $request->json());
+    }
+
+    /** Ensure the expected exception is thrown if transcoding fails. */
+    public function testJson5(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+            headers: [new Header("content-type", "application/json; charset=utf-16le"),],
+            body: "{\"framework\":\"bead\"}",
+        );
+
+        $this->mockFunction("mb_convert_encoding", static fn () => throw new ValueError("Test transcoding exception"));
+        $this->expectException(RequestException::class);
+        $this->expectExceptionMessage("Unable to convert request body to UTF-8: Test transcoding exception");
+        $request->json();
+    }
+
+    /** Ensure a JsonException is thrown if the content can't be decoded as JSON. */
+    public function testJson6(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+            headers: [new Header("content-type", "application/json"),],
+            body: "{\"framework\":\"bead\"",
+        );
+
+        $this->expectException(JsonException::class);
+        $request->json();
+    }
+
+    /** Ensure AJAX requests are correctly reported. */
+    public function testIsAjax1(): void
+    {
+        $request = Request::create(
+            HttpMethod::Get,
+            (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
+            headers: [new Header("X-Requested-With", "XMLHttpRequest"),],
+        );
+        self::assertTrue($request->isAjax());
+    }
+
+    /** Ensure non-AJAX requests are correctly reported. */
+    public function testIsAjax2(): void
+    {
+        self::assertFalse($this->m_request->isAjax());
+    }
+
+    /** Ensure the captured request is as expected. */
+    public function testCapture1(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTPS"] = 1;
+        $_SERVER["HTTP_HOST"] = "example.org:8080";
+        $_SERVER["REQUEST_URI"] = "/home/page";
+        $_SERVER["QUERY_STRING"] = "framework=bead";
+        $_SERVER["HTTP_CONTENT_TYPE"] = "application/json";
+        $_SERVER["CONTENT_LENGTH"] = "14";
+        $_SERVER["CONTENT_TYPE"] = "text/plain";
+        $_GET["framework"] = "bead";
+        $_POST["data"] = "value";
+        $_COOKIE["bead-session"] = "BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR";
+
+        $_FILES["file"] = [
+            "name" => "file",
+            "type" => "application/octet-stream",
+            "tmp_name" => "/tmp/file",
+            "error" => UPLOAD_ERR_OK,
+            "size" => 14,
+        ];
+
+        $request = Request::capture();
+        self::assertSame(HttpMethod::Get, $request->method());
+        self::assertSame("https", $request->scheme());
+        self::assertSame("example.org", $request->host());
+        self::assertSame(8080, $request->port());
+        self::assertSame("framework=bead", $request->query());
+
+        $actual = $request->allQueryParameters();
+        self::assertCount(1, $actual);
+        self::assertSame("bead", $actual["framework"]);
+
+        $actual = $request->allFormFields();
+        self::assertCount(1, $actual);
+        self::assertSame("value", $actual["data"]);
+
+        $actual = $request->cookies();
+        self::assertCount(1, $actual);
+        self::assertSame("BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", $actual["bead-session"]);
+
+        $actual = $request->header("content-type");
+        self::assertCount(1, $actual);
+        self::assertSame("application/json", $actual[0]->value());
+
+        $actual = $request->header("content-length");
+        self::assertCount(1, $actual);
+        self::assertSame("14", $actual[0]->value());
+
+        self::assertCount(1, $request->uploadedFiles());
+        $actual = $request->uploadedFile("file");
+        self::assertCount(1, $actual);
+        self::assertSame("file", $actual[0]->name());
+        self::assertSame("application/octet-stream", $actual[0]->mediaType());
+        self::assertSame(14, $actual[0]->reportedSize());
+        self::assertSame("/tmp/file", $actual[0]->path());
+        self::assertSame(UPLOAD_ERR_OK, $actual[0]->error());
+    }
+
+    /** Ensure a host with no port is captured correctly. */
+    public function testCapture2(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTP_HOST"] = "example.org";
+        $_SERVER["REQUEST_URI"] = "/";
+        $_SERVER["QUERY_STRING"] = "";
+        self::assertNull(Request::capture()->port());
+    }
+
+    /** Ensure the captured request captures array files. */
+    public function testCapture3(): void
+    {
+        $_SERVER["REQUEST_METHOD"] = "GET";
+        $_SERVER["HTTP_HOST"] = "example.org";
+        $_SERVER["REQUEST_URI"] = "/";
+        $_SERVER["QUERY_STRING"] = "";
+        $_FILES["file"] = [
+            "name" => [
+                "file",
+                "file",
+            ],
+            "type" => [
+                "application/octet-stream",
+                "application/json",
+            ],
+            "tmp_name" => [
+                "/tmp/file",
+                "/tmp/file2",
+            ],
+            "size" => [
+                14,
+                42,
+            ],
+            "error" => [
+                UPLOAD_ERR_OK,
+                UPLOAD_ERR_OK,
+            ],
+        ];
+
+        $actual = Request::capture()->uploadedFile("file");
+        self::assertCount(2, $actual);
+        usort($actual, static fn (UploadedFile $a, UploadedFile $b): int => $a->reportedSize() <=> $b->reportedSize());
+        self::assertSame("file", $actual[0]->name());
+        self::assertSame("file", $actual[1]->name());
+        self::assertSame("application/octet-stream", $actual[0]->mediaType());
+        self::assertSame("application/json", $actual[1]->mediaType());
+        self::assertSame("/tmp/file", $actual[0]->path());
+        self::assertSame("/tmp/file2", $actual[1]->path());
+        self::assertSame(14, $actual[0]->reportedSize());
+        self::assertSame(42, $actual[1]->reportedSize());
+        self::assertSame(UPLOAD_ERR_OK, $actual[0]->error());
+        self::assertSame(UPLOAD_ERR_OK, $actual[1]->error());
     }
 }

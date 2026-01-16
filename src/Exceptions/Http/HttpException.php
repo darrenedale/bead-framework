@@ -2,13 +2,13 @@
 
 namespace Bead\Exceptions\Http;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\Response;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
 use Bead\Facades\Application as App;
 use Bead\View;
 use Bead\Web\Application;
-use Bead\Web\Request;
 use Bead\Web\Responses\DoesntHaveHeaders;
 use Bead\Web\Responses\HasDefaultReasonPhrase;
 use Bead\Web\Responses\NaivelySendsContent;
@@ -29,16 +29,16 @@ abstract class HttpException extends Exception implements Response
     use DoesntHaveHeaders;
     use NaivelySendsContent;
 
-    /** @var Request The request that triggered the HTTP exception. */
-    private Request $m_request;
+    /** @var RequestContract The request that triggered the HTTP exception. */
+    private RequestContract $m_request;
 
     /**
-     * @param Request $request The incoming request that triggered the exception.
+     * @param RequestContract $request The incoming request that triggered the exception.
      * @param string $message The message. This may be displayed in the response.
      * @param int $code The exception code. This is NOT the HTTP response code.
      * @param Throwable|null $previous The previous exception that occurred before this.
      */
-    public function __construct(Request $request, string $message = "", int $code = 0, ?Throwable $previous = null)
+    public function __construct(RequestContract $request, string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->m_request = $request;
@@ -47,9 +47,9 @@ abstract class HttpException extends Exception implements Response
     /**
      * Fetch the request that triggered the exception.
      *
-     * @return Request The request.
+     * @return RequestContract The request.
      */
-    public function getRequest(): Request
+    public function getRequest(): RequestContract
     {
         return $this->m_request;
     }

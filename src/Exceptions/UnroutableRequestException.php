@@ -2,7 +2,7 @@
 
 namespace Bead\Exceptions;
 
-use Bead\Web\Request;
+use Bead\Contracts\Web\Request as RequestContract;
 use Exception;
 use Throwable;
 
@@ -11,17 +11,17 @@ use Throwable;
  */
 class UnroutableRequestException extends Exception
 {
-    private Request $m_request;
+    private RequestContract $m_request;
 
     /**
      * Initialise a new UnroutableRequestException.
      *
-     * @param Request $request The request that could not be routed.
+     * @param RequestContract $request The request that could not be routed.
      * @param string $message The optional error message. Defaults to an empty string.
      * @param int $code The optional error code. Defaults to 0.
      * @param Throwable|null $previous The previous throwable, if any. Defaults to null.
      */
-    public function __construct(Request $request, string $message = "", int $code = 0, ?Throwable $previous = null)
+    public function __construct(RequestContract $request, string $message = "", int $code = 0, ?Throwable $previous = null)
     {
         parent::__construct($message, $code, $previous);
         $this->m_request = $request;
@@ -30,9 +30,9 @@ class UnroutableRequestException extends Exception
     /**
      * The request that could not be routed.
      *
-     * @return Request The request.
+     * @return RequestContract The request.
      */
-    public function getRequest(): Request
+    public function getRequest(): RequestContract
     {
         return $this->m_request;
     }

@@ -8,7 +8,6 @@
 namespace Bead\Contracts\Web;
 
 use Bead\Exceptions\UnroutableRequestException;
-use Bead\Web\Request;
 
 /**
  * Contract for classes that want to route requests for a WebApplication.
@@ -38,6 +37,9 @@ interface Router
 
     /** @var string Use to register a handler for a route requested with the HTTP PATCH method. */
     public const PatchMethod  = "PATCH";
+
+    /** @var string Use to register a handler for a route requested with the HTTP TRACE method. */
+    public const TraceMethod  = "TRACE";
 
     /** @var string Use to register a handler for a route requested with any HTTP method. */
     public const AnyMethod = "";
@@ -146,6 +148,16 @@ interface Router
      * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
      */
     public function registerPatch(string $route, callable|array $handler): void;
+
+    /**
+     * Register a route with the router that responds only to TRACE requests.
+     *
+     * @param string $route The route to register.
+     * @param callable|array<class-string, string> $handler The handler to call when the route matches a request.
+     *
+     * @throws \Bead\Exceptions\ConflictingRouteException if a matching route is already registered.
+     */
+    public function registerTrace(string $route, callable|array $handler): void;
 
     /**
      * Register a route with the router that responds to requests using any HTTP method.

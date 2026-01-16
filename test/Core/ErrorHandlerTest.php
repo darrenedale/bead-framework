@@ -3,6 +3,7 @@
 namespace BeadTests\Core;
 
 use Bead\Contracts\Logger;
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Core\Application;
 use Bead\Core\ErrorHandler;
 use Bead\Exceptions\Http\NotFoundException;
@@ -10,7 +11,6 @@ use Bead\Exceptions\ViewNotFoundException;
 use Bead\Testing\XRay;
 use Bead\View;
 use Bead\Web\Application as WebApplication;
-use Bead\Web\Request;
 use Bead\Web\Responses\AbstractResponse;
 use BeadTests\Framework\TestCase;
 use Error;
@@ -164,7 +164,7 @@ class ErrorHandlerTest extends TestCase
     public function testHandleException2(): void
     {
         $called = false;
-        $request = Mockery::mock(Request::class);
+        $request = Mockery::mock(RequestContract::class);
         $error = new NotFoundException($request, "Mock exception");
         $log = Mockery::mock(Logger::class);
 

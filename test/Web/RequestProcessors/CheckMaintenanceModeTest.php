@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace BeadTests\Web\RequestProcessors;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
 use Bead\Exceptions\Http\ServiceUnavailableException;
 use Bead\Testing\XRay;
 use Bead\View;
-use Bead\Web\Request;
 use Bead\Web\RequestProcessors\CheckMaintenanceMode;
 use Mockery;
 use BeadTests\Framework\TestCase;
@@ -87,7 +87,7 @@ class CheckMaintenanceModeTest extends TestCase
     /** Ensure preprocessRequest() returns null when app is not in maintenance mode. */
     public function testPreprocessRequest1(): void
     {
-        $request = Mockery::mock(Request::class);
+        $request = Mockery::mock(RequestContract::class);
         $app = Mockery::mock(WebApplication::class);
         $this->mockMethod(CoreApplication::class, "instance", $app);
 
@@ -102,7 +102,7 @@ class CheckMaintenanceModeTest extends TestCase
     /** Ensure preprocessRequest() uses the correct view when in maintenance mode. */
     public function testPreprocessRequest2(): void
     {
-        $request = Mockery::mock(Request::class);
+        $request = Mockery::mock(RequestContract::class);
         $app = Mockery::mock(WebApplication::class);
         $this->mockMethod(CoreApplication::class, "instance", $app);
 
@@ -127,7 +127,7 @@ class CheckMaintenanceModeTest extends TestCase
     public function testPreprocessRequest3(): void
     {
         $this->mockMethod(CheckMaintenanceMode::class, "viewName", null);
-        $request = Mockery::mock(Request::class);
+        $request = Mockery::mock(RequestContract::class);
         $app = Mockery::mock(WebApplication::class);
         $this->mockMethod(CoreApplication::class, "instance", $app);
 
@@ -148,7 +148,7 @@ class CheckMaintenanceModeTest extends TestCase
     public function testPreprocessRequest4(): void
     {
         $this->mockMethod(CheckMaintenanceMode::class, "viewName", "this-view-does-not-exist");
-        $request = Mockery::mock(Request::class);
+        $request = Mockery::mock(RequestContract::class);
         $app = Mockery::mock(WebApplication::class);
         $this->mockMethod(CoreApplication::class, "instance", $app);
 

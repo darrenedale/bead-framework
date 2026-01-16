@@ -2,13 +2,13 @@
 
 namespace Bead\Web\RequestProcessors;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\RequestPreprocessor;
 use Bead\Contracts\Web\Response;
 use Bead\Exceptions\Http\ServiceUnavailableException;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Facades\Application as App;
 use Bead\View;
-use Bead\Web\Request;
 
 /** Pre-processor to render the maintenance-mode page (or send a 503 response) when the app is in maintenance mode. */
 class CheckMaintenanceMode implements RequestPreprocessor
@@ -44,7 +44,7 @@ class CheckMaintenanceMode implements RequestPreprocessor
      *
      * @throws ServiceUnavailableException if no maintenance mode view is available.
      */
-    public function preprocessRequest(Request $request): ?Response
+    public function preprocessRequest(RequestContract $request): ?Response
     {
         if ($this->isInMaintenanceMode()) {
             $viewName = $this->viewName();

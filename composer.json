@@ -10,7 +10,7 @@
     }
   ],
   "require": {
-    "php": "^8",
+    "php": "^8.1",
     "ext-mbstring": "*",
     "ext-dom": "*",
     "ext-pdo": "*",
@@ -34,7 +34,8 @@
     "mockery/mockery": "^1.5",
     "phpunit/phpunit": "^9.5",
     "squizlabs/php_codesniffer": "^3.7",
-    "vimeo/psalm": "^5.15"
+    "vimeo/psalm": "^5.15",
+    "equit/xray": "dev-main"
   },
   "autoload": {
     "psr-4": {

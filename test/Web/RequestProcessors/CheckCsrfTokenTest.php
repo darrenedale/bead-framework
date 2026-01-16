@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace BeadTests\Web\RequestProcessors;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Exceptions\Http\CsrfTokenVerificationException;
 use Bead\Testing\XRay;
 use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
-use Bead\Web\Request;
+use Bead\Web\Header;
+use Bead\Web\HttpMethod;
 use Bead\Web\RequestProcessors\CheckCsrfToken;
 use BeadTests\Framework\TestCase;
 use Mockery;
@@ -30,26 +32,27 @@ class CheckCsrfTokenTest extends TestCase
         parent::tearDown();
     }
 
-    /** @return Request&MockInterface */
-    private static function createRequest(string $method = "GET", string $url = "/"): Request
+    /** @return RequestContract&MockInterface */
+    private static function createRequest(HttpMethod $method = HttpMethod::Get, string $path = "/"): RequestContract
     {
-        $request = Mockery::mock(Request::class);
+        $request = Mockery::mock(RequestContract::class);
         $request->shouldReceive("method")->andReturn($method)->byDefault();
-        $request->shouldReceive("url")->andReturn($url)->byDefault();
+        $request->shouldReceive("path")->andReturn($path)->byDefault();
         return $request;
     }
 
+    /** @return iterable<array{RequestContract,bool}> */
     public static function dataForTestRequiresCsrf1(): iterable
     {
-        yield "get" => [self::createRequest("GET"), false,];
-        yield "head" => [self::createRequest("HEAD"), false,];
-        yield "options" => [self::createRequest("OPTIONS"), false,];
-        yield "post" => [self::createRequest("POST"), true,];
-        yield "put" => [self::createRequest("PUT"), true,];
-        yield "delete" => [self::createRequest("DELETE"), true,];
-        yield "connect" => [self::createRequest("CONNECT"), true,];
-        yield "trace" => [self::createRequest("TRACE"), true,];
-        yield "patch" => [self::createRequest("PATCH"), true,];
+        yield "get" => [self::createRequest(HttpMethod::Get), false,];
+        yield "head" => [self::createRequest(HttpMethod::Head), false,];
+        yield "options" => [self::createRequest(HttpMethod::Options), false,];
+        yield "post" => [self::createRequest(HttpMethod::Post), true,];
+        yield "put" => [self::createRequest(HttpMethod::Put), true,];
+        yield "delete" => [self::createRequest(HttpMethod::Delete), true,];
+        yield "connect" => [self::createRequest(HttpMethod::Connect), true,];
+        yield "trace" => [self::createRequest(HttpMethod::Trace), true,];
+        yield "patch" => [self::createRequest(HttpMethod::Patch), true,];
     }
 
     /**
@@ -57,7 +60,7 @@ class CheckCsrfTokenTest extends TestCase
      *
      * @dataProvider dataForTestRequiresCsrf1
      */
-    public function testRequiresCsrf1(Request $request, bool $expected): void
+    public function testRequiresCsrf1(RequestContract $request, bool $expected): void
     {
         $processor = new XRay($this->processor);
         self::assertEquals($expected, $processor->requiresCsrf($request));
@@ -66,9 +69,14 @@ class CheckCsrfTokenTest extends TestCase
     /** Ensure CRSF token is in POST data is preferred. */
     public function testRetrieveCsrfToken1(): void
     {
-        $request = self::createRequest("POST");
+        $request = self::createRequest(HttpMethod::Post);
 
-        $request->shouldReceive("postData")
+        $request->shouldReceive("hasFormField")
+            ->with("_token")
+            ->once()
+            ->andReturn(true);
+
+        $request->shouldReceive("formField")
             ->with("_token")
             ->once()
             ->andReturn("the-test-token");
@@ -82,19 +90,19 @@ class CheckCsrfTokenTest extends TestCase
     /** Ensure CRSF token is taken from request header if _token is not in POST data. */
     public function testRetrieveCsrfToken2(): void
     {
-        $request = self::createRequest("POST");
+        $request = self::createRequest(HttpMethod::Post);
 
-        $request->shouldReceive("postData")
+        $request->shouldReceive("hasFormField")
             ->with("_token")
             ->once()
             ->ordered()
-            ->andReturn(null);
+            ->andReturn(false);
 
         $request->shouldReceive("header")
             ->with("X-CSRF-TOKEN")
             ->once()
             ->ordered()
-            ->andReturn("the-header-test-token");
+            ->andReturn([new Header("X-CSRF-TOKEN", "the-header-test-token")]);
 
         $processor = new XRay($this->processor);
         self::assertEquals("the-header-test-token", $processor->retrieveCsrfToken($request));
@@ -103,19 +111,19 @@ class CheckCsrfTokenTest extends TestCase
     /** Ensure CRSF token is null if not in the POST data or headers. */
     public function testRetrieveCsrfToken3(): void
     {
-        $request = self::createRequest("POST");
+        $request = self::createRequest(HttpMethod::Post);
 
-        $request->shouldReceive("postData")
+        $request->shouldReceive("hasFormField")
             ->with("_token")
             ->once()
             ->ordered()
-            ->andReturn(null);
+            ->andReturn(false);
 
         $request->shouldReceive("header")
             ->with("X-CSRF-TOKEN")
             ->once()
             ->ordered()
-            ->andReturn(null);
+            ->andReturn([]);
 
         $processor = new XRay($this->processor);
         self::assertNull($processor->retrieveCsrfToken($request));
@@ -124,18 +132,23 @@ class CheckCsrfTokenTest extends TestCase
     public static function dataForTestPreprocessRequest1(): iterable
     {
         foreach (self::dataForTestRequiresCsrf1() as $key => $args) {
-            /** @var Request&MockInterface $request */
             [$originalRequest, $requiresCsrf,] = $args;
             $request = clone $originalRequest;
 
             if (!$requiresCsrf) {
-                $request->shouldNotReceive("postData");
+                $request->shouldNotReceive("hasFormField");
                 $request->shouldNotReceive("header");
                 yield "{$key}" => [$request, $requiresCsrf, false, "the-test-token", true,];
                 continue;
             }
 
-            $request->shouldReceive("postData")
+            $request->shouldReceive("hasFormField")
+                ->with("_token")
+                ->once()
+                ->ordered()
+                ->andReturn(true);
+
+            $request->shouldReceive("formField")
                 ->with("_token")
                 ->once()
                 ->ordered()
@@ -146,39 +159,45 @@ class CheckCsrfTokenTest extends TestCase
 
             $request = clone $args[0];
 
-            $request->shouldReceive("postData")
+            $request->shouldReceive("hasFormField")
                 ->with("_token")
                 ->once()
                 ->ordered()
-                ->andReturn(null);
+                ->andReturn(false);
 
             $request->shouldReceive("header")
                 ->with("X-CSRF-TOKEN")
                 ->once()
                 ->ordered()
-                ->andReturn("the-header-test-token");
+                ->andReturn([new Header("X-CSRF-TOKEN", "the-header-test-token")]);
 
             yield "{$key} token in header" => [$request, $requiresCsrf, true, "the-header-test-token", true,];
 
             $request = clone $args[0];
 
-            $request->shouldReceive("postData")
+            $request->shouldReceive("hasFormField")
                 ->with("_token")
                 ->once()
                 ->ordered()
-                ->andReturn(null);
+                ->andReturn(false);
 
             $request->shouldReceive("header")
                 ->with("X-CSRF-TOKEN")
                 ->once()
                 ->ordered()
-                ->andReturn(null);
+                ->andReturn([]);
 
             yield "{$key} no token" => [$request, $requiresCsrf, false, "the-non-existent-test-token", false,];
 
             $request = clone $args[0];
 
-            $request->shouldReceive("postData")
+            $request->shouldReceive("hasFormField")
+                ->with("_token")
+                ->once()
+                ->ordered()
+                ->andReturn(true);
+
+            $request->shouldReceive("formField")
                 ->with("_token")
                 ->once()
                 ->ordered()
@@ -190,17 +209,17 @@ class CheckCsrfTokenTest extends TestCase
 
             $request = clone $args[0];
 
-            $request->shouldReceive("postData")
+            $request->shouldReceive("hasFormField")
                 ->with("_token")
                 ->once()
                 ->ordered()
-                ->andReturn("the-wrong-test-token");
+                ->andReturn(false);
 
             $request->shouldReceive("header")
                 ->with("X-CSRF-TOKEN")
                 ->once()
                 ->ordered()
-                ->andReturn("the wrong-header-test-token");
+                ->andReturn([new Header("X-CSRF-TOKEN", "the wrong-header-test-token")]);
 
             yield "{$key} wrong header token" => [$request, $requiresCsrf, true, "the-test-token", false,];
         }
@@ -209,12 +228,12 @@ class CheckCsrfTokenTest extends TestCase
     /**
      * @dataProvider dataForTestPreprocessRequest1
      *
-     * @param Request $request The request to test with
+     * @param RequestContract $request The request to test with
      * @param bool $verificationRequired Whether verification should be detected as required.
      * @param string $csrf
      * @param bool $expected
      */
-    public function testPreprocessRequest1(Request $request, bool $verificationRequired, bool $requestHasToken, string $csrf, bool $expected): void
+    public function testPreprocessRequest1(RequestContract $request, bool $verificationRequired, bool $requestHasToken, string $csrf, bool $expected): void
     {
         if ($verificationRequired && $requestHasToken) {
             $app = Mockery::mock(WebApplication::class);

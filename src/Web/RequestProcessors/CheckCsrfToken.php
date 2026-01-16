@@ -2,11 +2,12 @@
 
 namespace Bead\Web\RequestProcessors;
 
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\RequestPreprocessor;
 use Bead\Contracts\Web\Response;
 use Bead\Exceptions\Http\CsrfTokenVerificationException;
 use Bead\Facades\WebApplication as WebApp;
-use Bead\Web\Request;
+use Bead\Web\HttpMethod;
 
 use function hash_equals;
 
@@ -20,14 +21,14 @@ class CheckCsrfToken implements RequestPreprocessor
      * methods. Use this method as a customisation point in your WebApplication subclass to implement more detailed
      * logic.
      *
-     * @param Request $request The incoming request.
+     * @param RequestContract $request The incoming request.
      *
      * @return bool `true` if the request requires CSRF validation, `false` if not.
      */
-    protected function requiresCsrf(Request $request): bool
+    protected function requiresCsrf(RequestContract $request): bool
     {
         return match ($request->method()) {
-            "GET", "HEAD", "OPTIONS" => false,
+            HttpMethod::Get, HttpMethod::Head, HttpMethod::Options => false,
             default => true,
         };
     }
@@ -40,13 +41,23 @@ class CheckCsrfToken implements RequestPreprocessor
      * from Requests. The default behaviour is to look for a `_token` POST field, or an X-CSRF-TOKEN header if the
      * field is not present (the latter case is primarily for AJAX requests).
      *
-     * @param Request $request The request from which to extract the CSRF token.
+     * @param RequestContract $request The request from which to extract the CSRF token.
      *
      * @return string|null The token, or `null` if no CSRF token is found in the request.
      */
-    protected function retrieveCsrfToken(Request $request): ?string
+    protected function retrieveCsrfToken(RequestContract $request): ?string
     {
-        return $request->postData("_token") ?? $request->header("X-CSRF-TOKEN");
+        if ($request->hasFormField("_token")) {
+            return $request->formField("_token");
+        }
+
+        $headers = $request->header("X-CSRF-TOKEN");
+
+        if (1 === count($headers)) {
+            return $headers[0]->value();
+        }
+
+        return null;
     }
 
     /**
@@ -55,11 +66,11 @@ class CheckCsrfToken implements RequestPreprocessor
      * Not all requests require CSRF verification. requestRequiresCsrf() is used to determine whether the request
      * requires it. The CSRF token is extracted from the request by csrfTokenFromRequest().
      *
-     * @param Request $request The incoming request.
+     * @param RequestContract $request The incoming request.
      *
      * @throws CsrfTokenVerificationException if the CSRF token in the request is not verified.
      */
-    protected function verifyCsrf(Request $request): void
+    protected function verifyCsrf(RequestContract $request): void
     {
         $requestCsrf = $this->retrieveCsrfToken($request);
 
@@ -76,7 +87,7 @@ class CheckCsrfToken implements RequestPreprocessor
      *
      * @throws CsrfTokenVerificationException
      */
-    public function preprocessRequest(Request $request): ?Response
+    public function preprocessRequest(RequestContract $request): ?Response
     {
         if ($this->requiresCsrf($request)) {
             $this->verifyCsrf($request);

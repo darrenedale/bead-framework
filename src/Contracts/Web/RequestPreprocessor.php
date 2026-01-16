@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Bead\Contracts\Web;
 
-use Bead\Web\Request;
-
 /** Interface for classes that can pre-process Requests. */
 interface RequestPreprocessor
 {

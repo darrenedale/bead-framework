@@ -134,6 +134,6 @@ class HeaderTest extends TestCase
     /** Ensure the header line is generated correctly. */
     public function testLine1(): void
     {
-        self::assertSame("content-type: application/json", $this->header->line());
+        self::assertSame("Content-Type: application/json", $this->header->line());
     }
 }
