@@ -193,7 +193,7 @@ class UploadedFileTest extends TestCase
         $file->contents();
     }
 
-    /** Ensure we get the expected exception when fetching the content a valid uploaded file fails. */
+    /** Ensure we get the expected exception when fetching the content of a valid uploaded file fails. */
     public function testContents3(): void
     {
         $this->mockFunction("file_get_contents", false);
