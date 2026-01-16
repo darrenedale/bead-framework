@@ -37,7 +37,7 @@ class UriAuthority implements UriAuthorityContract
      * Ensure the user info section is cloned (if set) when the authority is cloned, to avoid more than one UriAuthority
      * object sharing a UriUserInfo object.
      */
-    public function __clone(): void
+    public function __clone()
     {
         if (null !== $this->m_userInfo) {
             $this->m_userInfo = clone $this->m_userInfo;
