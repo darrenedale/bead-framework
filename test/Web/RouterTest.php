@@ -91,12 +91,12 @@ class RouterTest extends TestCase
                 $this->path = $path;
                 $this->method = $method;
             }
-            
+
             public function path(): string
             {
                 return $this->path;
             }
-            
+
             public function method(): HttpMethod
             {
                 return $this->method;

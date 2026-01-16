@@ -32,9 +32,9 @@ class RequestTest extends TestCase
             ["data" => "value", "more-data" => "another-value"],
             ["bead-session" => "BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", "foo" => "bar"],
             [
-                new Header("content-type","application/json"),
-                new Header("x-multi-header","value 1"),
-                new Header("X-Multi-Header","value 2"),
+                new Header("content-type", "application/json"),
+                new Header("x-multi-header", "value 1"),
+                new Header("X-Multi-Header", "value 2"),
             ],
             [
                 UploadedFile::create("the-file", "text/plain", __DIR__ . "/files/uploaded-file-1.txt", filesize(__DIR__ . "/files/uploaded-file-1.txt")),
@@ -443,7 +443,7 @@ class RequestTest extends TestCase
         $request = Request::create(
             HttpMethod::Get,
             (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
-            headers: [new Header("content-type","text/plain"),],
+            headers: [new Header("content-type", "text/plain"),],
         );
 
         $this->expectException(RequestException::class);
@@ -470,7 +470,7 @@ class RequestTest extends TestCase
         $request = Request::create(
             HttpMethod::Get,
             (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
-            headers: [new Header("content-type","application/json; charset=utf-16le"),],
+            headers: [new Header("content-type", "application/json; charset=utf-16le"),],
             body: "\x7B\x00\x22\x00\x66\x00\x72\x00\x61\x00\x6D\x00\x65\x00\x77\x00\x6F\x00\x72\x00\x6B\x00\x22\x00\x3A\x00\x22\x00\x62\x00\x65\x00\x61\x00\x64\x00\x22\x00\x7D\x00",
         );
 
@@ -483,11 +483,11 @@ class RequestTest extends TestCase
         $request = Request::create(
             HttpMethod::Get,
             (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
-            headers: [new Header("content-type","application/json; charset=utf-16le"),],
+            headers: [new Header("content-type", "application/json; charset=utf-16le"),],
             body: "{\"framework\":\"bead\"}",
         );
 
-        $this->mockFunction("mb_convert_encoding", static fn() => throw new ValueError("Test transcoding exception"));
+        $this->mockFunction("mb_convert_encoding", static fn () => throw new ValueError("Test transcoding exception"));
         $this->expectException(RequestException::class);
         $this->expectExceptionMessage("Unable to convert request body to UTF-8: Test transcoding exception");
         $request->json();
@@ -499,7 +499,7 @@ class RequestTest extends TestCase
         $request = Request::create(
             HttpMethod::Get,
             (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
-            headers: [new Header("content-type","application/json"),],
+            headers: [new Header("content-type", "application/json"),],
             body: "{\"framework\":\"bead\"",
         );
 
@@ -513,7 +513,7 @@ class RequestTest extends TestCase
         $request = Request::create(
             HttpMethod::Get,
             (new Uri(UriContract::SchemeHttps, "example.org", "/home/page")),
-            headers: [new Header("X-Requested-With","XMLHttpRequest"),],
+            headers: [new Header("X-Requested-With", "XMLHttpRequest"),],
         );
         self::assertTrue($request->isAjax());
     }

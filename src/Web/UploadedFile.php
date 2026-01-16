@@ -40,7 +40,8 @@ class UploadedFile implements UploadedFileContract
 
     /** UploadedFile instances can't be constructed directly, use one of the factory methods. */
     private function __construct()
-    {}
+    {
+    }
 
     /**
      * Create a new uploaded file using the content of an entry from $_FILES.

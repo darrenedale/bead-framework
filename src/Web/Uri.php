@@ -11,7 +11,6 @@ use Bead\Contracts\Web\UriUserInfo as UriUserInfoContract;
 /** Default implementation of the Uri contract. */
 class Uri implements UriContract
 {
-
     private string $m_scheme;
 
     private UriAuthorityContract $m_authority;

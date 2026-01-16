@@ -107,16 +107,15 @@ class Request implements RequestContract
         array $headers = [],
         array $uploadedFiles = [],
         string $body = ""
-    ): Request
-    {
-        assert(all($queryParameters, static fn(mixed $value): bool => self::isValidValue($value)), new LogicException("Request::create(): invalid query parameters"));
-        assert(all(array_keys($queryParameters), static fn(mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid query parameters"));
-        assert(all($formFields, static fn(mixed $value): bool => self::isValidValue($value)), new LogicException("Request::create(): invalid form fields"));
-        assert(all(array_keys($formFields), static fn(mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid form fields"));
-        assert(all($cookies, static fn(mixed $value): bool => is_string($value)), new LogicException("Request::create(): invalid cookies"));
-        assert(all(array_keys($cookies), static fn(mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid cookies"));
-        assert(all($headers, static fn(mixed $header): bool => $header instanceof HeaderContract), new LogicException("Request::create(): invalid headers"));
-        assert(all($uploadedFiles, static fn(mixed $uploadedFile): bool => $uploadedFile instanceof UploadedFileContract), new LogicException("Request::create(): invalid uploaded files"));
+    ): Request {
+        assert(all($queryParameters, static fn (mixed $value): bool => self::isValidValue($value)), new LogicException("Request::create(): invalid query parameters"));
+        assert(all(array_keys($queryParameters), static fn (mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid query parameters"));
+        assert(all($formFields, static fn (mixed $value): bool => self::isValidValue($value)), new LogicException("Request::create(): invalid form fields"));
+        assert(all(array_keys($formFields), static fn (mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid form fields"));
+        assert(all($cookies, static fn (mixed $value): bool => is_string($value)), new LogicException("Request::create(): invalid cookies"));
+        assert(all(array_keys($cookies), static fn (mixed $key): bool => is_string($key)), new LogicException("Request::create(): invalid cookies"));
+        assert(all($headers, static fn (mixed $header): bool => $header instanceof HeaderContract), new LogicException("Request::create(): invalid headers"));
+        assert(all($uploadedFiles, static fn (mixed $uploadedFile): bool => $uploadedFile instanceof UploadedFileContract), new LogicException("Request::create(): invalid uploaded files"));
 
         $request = new Request();
         $request->m_method = $method;
@@ -208,12 +207,11 @@ class Request implements RequestContract
         foreach ($_SERVER as $key => $value) {
             if (str_starts_with($key, "HTTP_")) {
                 $this->addHeader(str_replace("_", "-", substr($key, 5)), $value);
-            } else if (in_array($key, ["CONTENT_TYPE", "CONTENT_LENGTH", "CONTENT_MD5",])) {
+            } elseif (in_array($key, ["CONTENT_TYPE", "CONTENT_LENGTH", "CONTENT_MD5",])) {
                 // if we also have the header prefixed with HTTP_, prefer that one
                 if (!array_key_exists("HTTP_{$key}", $_SERVER)) {
                     $this->addHeader(str_replace("_", "-", $key), $value);
                 }
-
             }
         }
     }
