@@ -10,6 +10,7 @@ use Bead\Contracts\Web\UploadedFile as UploadedFileContract;
 use Bead\Contracts\Web\Uri as UriContract;
 use Bead\Exceptions\Web\RequestException;
 use LogicException;
+use phpDocumentor\Reflection\Exception\PcreException;
 use ValueError;
 
 use function Bead\Helpers\Iterable\all;
@@ -196,6 +197,7 @@ class Request implements RequestContract
             $this->m_headers[$key] = [];
         }
 
+        /** @psalm-suppress MissingThrowsDocblock All call sites are internal and guarantee a valid header name. */
         $this->m_headers[$key][] = new Header($name, $value);
     }
 
@@ -237,6 +239,7 @@ class Request implements RequestContract
             if (is_array($files["name"])) {
                 $this->m_uploadedFiles[$name] = [];
 
+                /** @psalm-suppress NoValue $files["name"] is an array that is possibly not empty. */
                 for ($idx = 0; $idx < count($files["name"]); $idx++) {
                     $this->m_uploadedFiles[$name][] = UploadedFile::create(
                         $files["name"][$idx],
@@ -448,7 +451,11 @@ class Request implements RequestContract
         return $this->m_cookies[$name] ?? null;
     }
 
-    /** @inheritDoc */
+    /**
+     * @inheritDoc
+     *
+     * @throws RequestException if the request body cannot be read.
+     */
     public function body(): string
     {
         if (null === $this->m_body) {
@@ -483,6 +490,9 @@ class Request implements RequestContract
      * If the request body is in a character encoding other than UTF-8, the body will be transcoded to UTF-8 before
      * being JSON-decoded. The decoded JSON is always returned as an associative array in UTF-8 encoding (regardless of
      * the encoding of the request body).
+     *
+     * @throws RequestException if the request content-type is not application/json or the body cannot be converted to
+     * UTF-8.
      */
     public function json(): array
     {

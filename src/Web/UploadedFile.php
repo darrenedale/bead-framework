@@ -81,7 +81,11 @@ class UploadedFile implements UploadedFileContract
         return $file;
     }
 
-    /** Helper to read the contents of the temporary file. */
+    /**
+     * Helper to read the contents of the temporary file.
+     *
+     * @throws UploadedFileException if the contents of the temporary file cannot be read.
+     */
     private function readTemporaryFile(): void
     {
         $contents = @file_get_contents($this->m_temporaryPath);
@@ -131,7 +135,11 @@ class UploadedFile implements UploadedFileContract
         return $this->m_mediaType;
     }
 
-    /** @inheritDoc */
+    /**
+     * @inheritDoc
+     *
+     * @throws LogicException if the uploaded file is not valid (see isValid()).
+     */
     public function path(): string
     {
         if (!$this->isValid()) {
