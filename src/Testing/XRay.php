@@ -89,7 +89,6 @@ class XRay
             return;
         }
 
-        $reflector->setAccessible(true);
         $this->m_xRayedMethods[$method] = $reflector;
     }
 
@@ -125,7 +124,6 @@ class XRay
             return;
         }
 
-        $propertyReflector->setAccessible(true);
         $this->m_xRayedProperties[$property] = $propertyReflector;
     }
 

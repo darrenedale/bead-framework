@@ -100,7 +100,6 @@ class StaticXRay
             return;
         }
 
-        $reflector->setAccessible(true);
         $this->m_xRayedMethods[$method] = $reflector;
     }
 
@@ -131,7 +130,6 @@ class StaticXRay
             return;
         }
 
-        $reflector->setAccessible(true);
         $this->m_xRayedProperties[$property] = $reflector;
     }
 

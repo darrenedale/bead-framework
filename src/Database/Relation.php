@@ -93,7 +93,6 @@ abstract class Relation
     protected function makeModelsFromQuery(PDOStatement $stmt): array
     {
         $method = new ReflectionMethod($this->relatedModel, "makeModelsFromQuery");
-        $method->setAccessible(true);
         return $method->invoke(null, $stmt);
     }
 
