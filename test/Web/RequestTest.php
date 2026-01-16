@@ -251,7 +251,7 @@ class RequestTest extends TestCase
         self::assertFalse($this->m_request->hasCookie("something-else"));
     }
 
-    /** Ensure form cookie are reported correctly. */
+    /** Ensure cookie values are reported correctly. */
     public function testCookie1(): void
     {
         self::assertSame("BvAd6yebhDZgcPODKn1Cll7KQ6m4fxjYmfZzSUgM-5MJsvQEEUnpW7ykEBzt5HrR", $this->m_request->cookie("bead-session"));
@@ -366,6 +366,7 @@ class RequestTest extends TestCase
         self::assertSame([], $this->m_request->uploadedFile("missing-file"));
     }
 
+    /** Ensure the request body is reported correctly. */
     public function testBody1(): void
     {
         self::assertSame("{\"framework\": \"bead\"}", $this->m_request->body());
@@ -524,6 +525,7 @@ class RequestTest extends TestCase
         self::assertFalse($this->m_request->isAjax());
     }
 
+    /** Ensure the captured request is as expected. */
     public function testCapture1(): void
     {
         $_SERVER["REQUEST_METHOD"] = "GET";
