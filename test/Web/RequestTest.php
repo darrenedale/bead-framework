@@ -366,7 +366,6 @@ class RequestTest extends TestCase
         self::assertSame([], $this->m_request->uploadedFile("missing-file"));
     }
 
-
     /** Ensure the request body is reported correctly. */
     public function testBody1(): void
     {
