@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Util;
 
-use Bead\Testing\XRay;
+use Equit\XRay\XRay;
 use InvalidArgumentException;
 use RuntimeException;
 use TypeError;

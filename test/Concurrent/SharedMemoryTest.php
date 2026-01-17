@@ -8,8 +8,8 @@ use Bead\Concurrent\SharedMemory;
 use Bead\Exceptions\Concurrent\SharedMemoryException;
 use Bead\Exceptions\Concurrent\SharedMemoryExtensionMissingException;
 use BeadTests\Framework\TestCase;
-use Bead\Testing\XRay;
 use Bead\Util\ScopeGuard;
+use Equit\XRay\XRay;
 use InvalidArgumentException;
 use JsonException;
 

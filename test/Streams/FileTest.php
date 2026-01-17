@@ -4,8 +4,8 @@ namespace BeadTests\Streams;
 
 use Bead\Exceptions\FileStreamException;
 use Bead\Streams\File;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use InvalidArgumentException;
 use SplFileInfo;
 

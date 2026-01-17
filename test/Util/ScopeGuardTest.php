@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BeadTests\Util;
 
-use Bead\Testing\XRay;
 use Bead\Util\ScopeGuard;
+use Equit\XRay\XRay;
 use TypeError;
 
 /**

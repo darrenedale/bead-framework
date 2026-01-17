@@ -10,8 +10,8 @@ use Bead\Core\Binders\Crypter as CrypterBinder;
 use Bead\Encryption\OpenSsl\Crypter as OpenSslCrypter;
 use Bead\Encryption\Sodium\Crypter as SodiumCrypter;
 use Bead\Exceptions\InvalidConfigurationException;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use Mockery;
 use Mockery\MockInterface;
 

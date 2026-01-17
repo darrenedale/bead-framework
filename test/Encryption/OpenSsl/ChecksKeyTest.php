@@ -6,8 +6,8 @@ namespace BeadTests\Encryption\OpenSsl;
 
 use Bead\Encryption\OpenSsl\ChecksKey;
 use Bead\Exceptions\EncryptionException;
-use Bead\Testing\StaticXRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
 
 class ChecksKeyTest extends TestCase
 {

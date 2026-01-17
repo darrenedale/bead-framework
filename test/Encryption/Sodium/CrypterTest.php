@@ -7,8 +7,8 @@ namespace BeadTests\Encryption\Sodium;
 use Bead\Encryption\SerializationMode;
 use Bead\Encryption\Sodium\Crypter;
 use Bead\Exceptions\EncryptionException;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use SodiumException;
 
 class CrypterTest extends TestCase

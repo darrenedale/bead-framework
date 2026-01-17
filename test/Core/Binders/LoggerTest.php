@@ -11,9 +11,9 @@ use Bead\Logging\FileLogger;
 use Bead\Logging\NullLogger;
 use Bead\Logging\StandardErrorLogger;
 use Bead\Logging\StandardOutputLogger;
-use Bead\Testing\StaticXRay;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
+use Equit\XRay\XRay;
 use Mockery;
 use Mockery\MockInterface;
 

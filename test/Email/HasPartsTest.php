@@ -7,8 +7,8 @@ namespace BeadTests\Email;
 use Bead\Email\HasParts;
 use Bead\Email\Mime;
 use Bead\Email\Part;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 
 class HasPartsTest extends TestCase
 {

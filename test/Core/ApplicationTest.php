@@ -6,7 +6,7 @@ use Bead\Contracts\FeatureFlag as FeatureFlagContract;
 use Bead\Core\Application;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
-use Bead\Testing\XRay;
+use Equit\XRay\XRay;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Stringable as Stringable;

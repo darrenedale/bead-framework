@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace BeadTests\Streams;
 
 use Bead\Streams\Buffer;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use RuntimeException;
 use Throwable;
 

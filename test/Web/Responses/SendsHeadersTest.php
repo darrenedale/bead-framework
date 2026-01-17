@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace BeadTests\Web\Responses;
 
-use Bead\Testing\XRay;
 use Bead\Web\Header;
 use Bead\Web\Responses\SendsHeaders;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 
 final class SendsHeadersTest extends TestCase
 {
