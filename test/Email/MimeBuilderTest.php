@@ -11,8 +11,8 @@ use Bead\Email\Mime;
 use Bead\Email\MimeBuilder;
 use Bead\Email\Part;
 use Bead\Exceptions\Email\MimeException;
-use Bead\Testing\StaticXRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
 use InvalidArgumentException;
 
 class MimeBuilderTest extends TestCase

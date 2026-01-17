@@ -6,9 +6,9 @@ namespace BeadTests\Encryption;
 
 use Bead\Encryption\HasKey;
 use Bead\Exceptions\EncryptionException;
-use Bead\Testing\StaticXRay;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
+use Equit\XRay\XRay;
 use LogicException;
 
 class HasKeyTest extends TestCase

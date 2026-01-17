@@ -12,11 +12,11 @@ use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Exceptions\Http\NotFoundException;
 use Bead\Exceptions\UnroutableRequestException;
 use Bead\Facades\Session;
-use Bead\Testing\StaticXRay;
-use Bead\Testing\XRay;
 use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
+use Equit\XRay\XRay;
 use Mockery;
 
 class ApplicationTest extends TestCase

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace BeadTests\Validation;
 
-use Bead\Testing\StaticXRay;
 use Bead\Validation\Rule;
 use Bead\Validation\Validator;
 use BeadTests\Framework\RuleTestCase;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;

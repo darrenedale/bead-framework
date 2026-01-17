@@ -5,8 +5,8 @@ namespace BeadTests\Logging;
 use Bead\Exceptions\Logging\LoggerException;
 use Bead\Logging\LogsToStream;
 use Bead\Contracts\Logger as LoggerContract;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use Psr\Log\AbstractLogger as PsrAbstractLogger;
 
 class LogsToStreamTest extends TestCase

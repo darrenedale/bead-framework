@@ -7,9 +7,9 @@ namespace BeadTests\Email;
 use Bead\Email\Header;
 use Bead\Email\Message;
 use Bead\Email\Part;
-use Bead\Testing\StaticXRay;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
+use Equit\XRay\XRay;
 use InvalidArgumentException;
 use RuntimeException;
 

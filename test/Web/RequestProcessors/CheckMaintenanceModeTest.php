@@ -8,9 +8,9 @@ use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
 use Bead\Exceptions\Http\ServiceUnavailableException;
-use Bead\Testing\XRay;
 use Bead\View;
 use Bead\Web\RequestProcessors\CheckMaintenanceMode;
+use Equit\XRay\XRay;
 use Mockery;
 use BeadTests\Framework\TestCase;
 

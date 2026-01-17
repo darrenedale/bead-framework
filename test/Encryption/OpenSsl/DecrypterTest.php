@@ -7,8 +7,8 @@ namespace BeadTests\Encryption\OpenSsl;
 use Bead\Encryption\SerializationMode;
 use Bead\Encryption\OpenSsl\Decrypter;
 use Bead\Exceptions\EncryptionException;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 
 class DecrypterTest extends TestCase
 {

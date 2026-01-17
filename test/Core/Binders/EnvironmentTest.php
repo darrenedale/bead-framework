@@ -13,8 +13,8 @@ use Bead\Environment\Sources\File as FileSource;
 use Bead\Environment\Sources\StaticArray as StaticArraySource;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Exceptions\ServiceNotFoundException;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use Mockery;
 use Mockery\MockInterface;
 

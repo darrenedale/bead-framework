@@ -6,8 +6,8 @@ namespace BeadTests\Encryption;
 
 use Bead\Encryption\GeneratesRandomBytes;
 use Bead\Exceptions\EncryptionException;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 
 class GeneratesRandomBytesTest extends TestCase
 {

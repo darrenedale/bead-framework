@@ -3,12 +3,12 @@
 namespace BeadTests\Database;
 
 use Bead\Database\Connection;
-use Bead\Testing\XRay;
 use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
 use DateTime;
 use Bead\Database\Model;
 use Bead\Exceptions\Database\ModelPropertyCastException;
+use Equit\XRay\XRay;
 use LogicException;
 use PDO;
 use PDOStatement;

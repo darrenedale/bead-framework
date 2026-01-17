@@ -4,9 +4,9 @@ namespace BeadTests\Email;
 
 use Bead\Email\HasHeaders;
 use Bead\Email\Header;
-use Bead\Testing\StaticXRay;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
+use Equit\XRay\XRay;
 use InvalidArgumentException;
 
 class HasHeadersTest extends TestCase

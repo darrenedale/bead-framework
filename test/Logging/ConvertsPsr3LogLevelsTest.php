@@ -5,8 +5,8 @@ namespace BeadTests\Logging;
 use Bead\Contracts\Logger as LoggerContract;
 use Bead\Exceptions\Logging\LoggerException;
 use Bead\Logging\ConvertsPsr3LogLevels;
-use Bead\Testing\StaticXRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\StaticXRay;
 use Psr\Log\LogLevel;
 use Stringable;
 

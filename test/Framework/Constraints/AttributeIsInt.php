@@ -2,7 +2,7 @@
 
 namespace BeadTests\Framework\Constraints;
 
-use Bead\Testing\XRay;
+use Equit\XRay\XRay;
 use InvalidArgumentException;
 use PHPUnit\Framework\Constraint\Constraint;
 

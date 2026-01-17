@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace BeadTests\Util;
 
-use Bead\Testing\XRay;
 use Bead\Util\Stopwatch;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use Generator;
 use LogicException;
 use TypeError;

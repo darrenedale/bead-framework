@@ -6,13 +6,13 @@ namespace BeadTests\Web\RequestProcessors;
 
 use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Exceptions\Http\CsrfTokenVerificationException;
-use Bead\Testing\XRay;
 use Bead\Core\Application as CoreApplication;
 use Bead\Web\Application as WebApplication;
 use Bead\Web\Header;
 use Bead\Web\HttpMethod;
 use Bead\Web\RequestProcessors\CheckCsrfToken;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use Mockery;
 use Mockery\MockInterface;
 

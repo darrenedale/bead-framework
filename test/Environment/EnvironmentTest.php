@@ -9,8 +9,8 @@ use Bead\Core\Application;
 use Bead\Environment\Environment;
 use Bead\Environment\Sources\StaticArray;
 use Bead\Exceptions\EnvironmentException;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use Mockery;
 
 use function array_keys;

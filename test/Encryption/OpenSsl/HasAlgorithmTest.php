@@ -6,8 +6,8 @@ namespace BeadTests\Encryption\OpenSsl;
 
 use Bead\Encryption\OpenSsl\HasAlgorithm;
 use Bead\Exceptions\EncryptionException;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use LogicException;
 
 class HasAlgorithmTest extends TestCase

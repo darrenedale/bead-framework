@@ -8,10 +8,10 @@ use Bead\Contracts\Logger as LoggerContract;
 use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\Response;
 use Bead\Core\Application;
-use Bead\Testing\XRay;
 use Bead\Web\RequestProcessors\LogRequestDuration;
 use Bead\Web\Uri;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use Mockery;
 
 class LogRequestDurationTest extends TestCase

@@ -10,8 +10,8 @@ use Bead\Core\Binders\MailTransport;
 use Bead\Email\Transport\Mailgun;
 use Bead\Email\Transport\Php;
 use Bead\Exceptions\InvalidConfigurationException;
-use Bead\Testing\XRay;
 use BeadTests\Framework\TestCase;
+use Equit\XRay\XRay;
 use Mockery;
 use Mockery\MockInterface;
 
