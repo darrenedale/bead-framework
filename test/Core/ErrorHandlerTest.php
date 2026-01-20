@@ -19,6 +19,8 @@ use Mockery;
 use Mockery\MockInterface;
 use RuntimeException;
 
+use const STDERR;
+
 class ErrorHandlerTest extends TestCase
 {
     private ErrorHandler $handler;
@@ -89,18 +91,18 @@ class ErrorHandlerTest extends TestCase
         self::assertEquals("errors.error", $handler->errorPageViewName());
     }
 
-    /** Ensure report() logs the expected message. */
+    /** Ensure report() logs the expected message when a Logger is bound. */
     public function testReport1(): void
     {
-        $error = new InvalidArgumentException("Mock exception.");
+        $error = new InvalidArgumentException("Mock exception");
 
         $log = Mockery::mock(Logger::class);
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
-            ->with("Exception in %1[%2]: Mock exception.", Mockery::on(function (mixed $args): bool {
+            ->with("Exception in %1[%2]: Mock exception", Mockery::on(function (mixed $args): bool {
                 TestCase::assertIsArray($args);
                 TestCase::assertIsString($args[0]);
                 TestCase::assertEquals(__FILE__, $args[0]);
@@ -110,13 +112,49 @@ class ErrorHandlerTest extends TestCase
             }));
 
         $app = $this->mockApplication();
-        $app->shouldReceive("get")
+
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
         $handler = new XRay($this->handler);
         $handler->report($error);
-        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure report() outputs the expected message to stderr when no Logger is bound. */
+    public function testReport2(): void
+    {
+        $error = new InvalidArgumentException("Mock exception");
+
+        $app = $this->mockApplication();
+
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(false);
+
+        $fprintfCalled = false;
+
+        $this->mockFunction("fprintf", static function ($stream, string $template, mixed ... $args) use (&$fprintfCalled) {
+            TestCase::assertFalse($fprintfCalled);
+            TestCase::assertSame(STDERR, $stream);
+            TestCase::assertSame("Exception in %s[%d]: %s", $template);
+            TestCase::assertCount(3, $args);
+            TestCase::assertIsString($args[0]);
+            TestCase::assertEquals(__FILE__, $args[0]);
+            TestCase::assertIsInt($args[1]);
+            TestCase::assertGreaterThanOrEqual(0, $args[1]);
+            TestCase::assertIsString($args[2]);
+            TestCase::assertEquals("Mock exception", $args[2]);
+            $fprintfCalled = true;
+        });
+
+        $handler = new XRay($this->handler);
+        $handler->report($error);
+        self::assertTrue($fprintfCalled);
     }
 
     /** Ensure errors get converted to the expected exceptions. */
