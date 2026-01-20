@@ -352,15 +352,16 @@ function fill(int $count, callable $createValue, ?callable $createKey = null): i
 }
 
 /**
+ * @template T
  * Partition the items in an iterable according to a predicate.
  *
  * The iterable is partitioned into those items that satisfy the predicate and those that do not.
  *
- * @param iterable $collection The items to partition.
+ * @param iterable<T> $collection The items to partition.
  * @param callable $predicate The function that identifies which partition each value belongs in.
  *
- * @return array A tuple of two arrays, the first containing the items that satisfy the predicate, the second those that
- * don't.
+ * @return array{array<T>,array<T>} A tuple of two arrays, the first containing the items that satisfy the predicate,
+ * the second those that don't.
  */
 function partition(iterable $collection, callable $predicate): array
 {
