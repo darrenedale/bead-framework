@@ -3,6 +3,7 @@
 namespace Bead\Core;
 
 use Bead\Contracts\ErrorHandler as ErrorHandlerContract;
+use Bead\Contracts\Logger;
 use Bead\Contracts\Web\Response;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Facades\Log;
@@ -11,6 +12,8 @@ use Bead\Web\Application as WebApplication;
 use Bead\Web\Responses\AbstractResponse;
 use Error;
 use Throwable;
+
+use const STDERR;
 
 /**
  * The default error handler for Applications.
@@ -235,7 +238,13 @@ HTML;
      */
     protected function report(Throwable $error): void
     {
-        Log::critical("Exception in %1[%2]: {$error->getMessage()}", [$error->getFile(), $error->getLine(),]);
+        $app = Application::instance();
+
+        if ($app->serviceIsBound(Logger::class)) {
+            Log::critical("Exception in %1[%2]: {$error->getMessage()}", [$error->getFile(), $error->getLine(),]);
+        } else {
+            fprintf(STDERR, "Exception in %s[%d]: %s", $error->getFile(), $error->getLine(), $error->getMessage());
+        }
     }
 
     /**
