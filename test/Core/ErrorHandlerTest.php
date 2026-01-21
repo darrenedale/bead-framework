@@ -56,7 +56,7 @@ class ErrorHandlerTest extends TestCase
     public function testShouldDisplay1(): void
     {
         $app = $this->mockApplication();
-        $app->shouldReceive("isInDebugMode")->andReturn(true);
+        $app->expects("isInDebugMode")->andReturn(true);
         $handler = new XRay($this->handler);
         self::assertTrue($handler->shouldDisplay(new InvalidArgumentException()));
     }
@@ -65,7 +65,7 @@ class ErrorHandlerTest extends TestCase
     public function testShouldDisplay2(): void
     {
         $app = $this->mockApplication();
-        $app->shouldReceive("isInDebugMode")->andReturn(false);
+        $app->expects("isInDebugMode")->andReturn(false);
         $handler = new XRay($this->handler);
         self::assertFalse($handler->shouldDisplay(new InvalidArgumentException()));
     }
@@ -173,7 +173,7 @@ class ErrorHandlerTest extends TestCase
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
             ->with("Exception in %1[%2]: Mock exception.", Mockery::on(function (mixed $args) use (&$called): bool {
                 TestCase::assertIsArray($args);
@@ -187,11 +187,15 @@ class ErrorHandlerTest extends TestCase
 
         $app = $this->mockApplication();
 
-        $app->shouldReceive("get")
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
-        $app->shouldReceive("isInDebugMode")
+        $app->expects("isInDebugMode")
             ->andReturn(false);
 
         $this->handler->handleException(new InvalidArgumentException("Mock exception."));
@@ -208,7 +212,7 @@ class ErrorHandlerTest extends TestCase
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
             ->with("Exception in %1[%2]: Mock exception", Mockery::on(function (mixed $args) use (&$called): bool {
                 TestCase::assertIsArray($args);
@@ -222,11 +226,15 @@ class ErrorHandlerTest extends TestCase
 
         $app = $this->mockApplication(WebApplication::class);
 
-        $app->shouldReceive("get")
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
-        $app->shouldReceive("sendResponse")->with($error);
+        $app->expects("sendResponse")->with($error);
         $app->shouldNotReceive("isInDebugMode");
 
         $this->handler->handleException($error);
@@ -243,7 +251,7 @@ class ErrorHandlerTest extends TestCase
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
             ->with("Exception in %1[%2]: Mock exception", Mockery::on(function (mixed $args) use (&$reportCalled): bool {
                 TestCase::assertIsArray($args);
@@ -257,15 +265,19 @@ class ErrorHandlerTest extends TestCase
 
         $app = $this->mockApplication(WebApplication::class);
 
-        $app->shouldReceive("get")
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
-        $app->shouldReceive("isInDebugMode")->andReturn(true);
-        $app->shouldReceive("rootDir")->andReturn(__DIR__ . "/files");
-        $app->shouldReceive("config")->with("view.directory", Mockery::any())->andReturn("views");
+        $app->expects("isInDebugMode")->andReturn(true);
+        $app->expects("rootDir")->andReturn(__DIR__ . "/files");
+        $app->expects("config")->with("view.directory", Mockery::any())->andReturn("views");
 
-        $app->shouldReceive("sendResponse")->with(Mockery::on(function (mixed $response) use (&$sendResponseCalled): bool {
+        $app->expects("sendResponse")->with(Mockery::on(function (mixed $response) use (&$sendResponseCalled): bool {
             TestCase::assertInstanceOf(View::class, $response);
             TestCase::assertEquals("errors.exception", $response->name());
             $sendResponseCalled = true;
@@ -287,7 +299,7 @@ class ErrorHandlerTest extends TestCase
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
             ->with("Exception in %1[%2]: Mock exception", Mockery::on(function (mixed $args) use (&$reportCalled): bool {
                 TestCase::assertIsArray($args);
@@ -301,15 +313,19 @@ class ErrorHandlerTest extends TestCase
 
         $app = $this->mockApplication(WebApplication::class);
 
-        $app->shouldReceive("get")
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
-        $app->shouldReceive("isInDebugMode")->andReturn(true);
-        $app->shouldReceive("rootDir")->andReturn(__DIR__ . "/files");
-        $app->shouldReceive("config")->with("view.directory", Mockery::any())->andReturn("no-views-here");
+        $app->expects("isInDebugMode")->andReturn(true);
+        $app->expects("rootDir")->andReturn(__DIR__ . "/files");
+        $app->expects("config")->with("view.directory", Mockery::any())->andReturn("no-views-here");
 
-        $app->shouldReceive("sendResponse")->with(Mockery::on(function (mixed $response) use (&$sendResponseCalled): bool {
+        $app->expects("sendResponse")->with(Mockery::on(function (mixed $response) use (&$sendResponseCalled): bool {
             TestCase::assertNotInstanceOf(View::class, $response);
             TestCase::assertInstanceOf(AbstractResponse::class, $response);
             TestCase::assertEquals(500, $response->statusCode());
@@ -338,7 +354,7 @@ class ErrorHandlerTest extends TestCase
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
             ->with("Exception in %1[%2]: Mock exception", Mockery::on(function (mixed $args) use (&$reportCalled): bool {
                 TestCase::assertIsArray($args);
@@ -352,15 +368,19 @@ class ErrorHandlerTest extends TestCase
 
         $app = $this->mockApplication(WebApplication::class);
 
-        $app->shouldReceive("get")
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
-        $app->shouldReceive("isInDebugMode")->andReturn(true);
-        $app->shouldReceive("rootDir")->andReturn(__DIR__ . "/files");
-        $app->shouldReceive("config")->with("view.directory", Mockery::any())->andReturn("no-views-here");
+        $app->expects("isInDebugMode")->andReturn(true);
+        $app->expects("rootDir")->andReturn(__DIR__ . "/files");
+        $app->expects("config")->with("view.directory", Mockery::any())->andReturn("no-views-here");
 
-        $app->shouldReceive("sendResponse")
+        $app->expects("sendResponse")
             ->once()
             ->with(Mockery::on(function (mixed $response) use (&$sendResponseCalled): bool {
                 TestCase::assertNotInstanceOf(View::class, $response);
@@ -395,7 +415,7 @@ class ErrorHandlerTest extends TestCase
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
             ->with("Exception in %1[%2]: Mock exception", Mockery::on(function (mixed $args) use (&$reportCalled): bool {
                 TestCase::assertIsArray($args);
@@ -409,15 +429,19 @@ class ErrorHandlerTest extends TestCase
 
         $app = $this->mockApplication(WebApplication::class);
 
-        $app->shouldReceive("get")
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
-        $app->shouldReceive("isInDebugMode")->andReturn(false);
-        $app->shouldReceive("rootDir")->andReturn(__DIR__ . "/files");
-        $app->shouldReceive("config")->with("view.directory", Mockery::any())->andReturn("views");
+        $app->expects("isInDebugMode")->andReturn(false);
+        $app->expects("rootDir")->andReturn(__DIR__ . "/files");
+        $app->expects("config")->with("view.directory", Mockery::any())->andReturn("views");
 
-        $app->shouldReceive("sendResponse")->with(Mockery::on(function (mixed $response) use (&$sendResponseCalled): bool {
+        $app->expects("sendResponse")->with(Mockery::on(function (mixed $response) use (&$sendResponseCalled): bool {
             TestCase::assertInstanceOf(View::class, $response);
             TestCase::assertEquals("errors.error", $response->name());
             $sendResponseCalled = true;
@@ -443,7 +467,7 @@ class ErrorHandlerTest extends TestCase
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
             ->with("Exception in %1[%2]: Mock exception", Mockery::on(function (mixed $args) use (&$reportCalled): bool {
                 TestCase::assertIsArray($args);
@@ -457,15 +481,19 @@ class ErrorHandlerTest extends TestCase
 
         $app = $this->mockApplication(WebApplication::class);
 
-        $app->shouldReceive("get")
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
-        $app->shouldReceive("isInDebugMode")->andReturn(false);
-        $app->shouldReceive("rootDir")->andReturn(__DIR__ . "/files");
-        $app->shouldReceive("config")->with("view.directory", Mockery::any())->andReturn("views");
+        $app->expects("isInDebugMode")->andReturn(false);
+        $app->expects("rootDir")->andReturn(__DIR__ . "/files");
+        $app->expects("config")->with("view.directory", Mockery::any())->andReturn("views");
 
-        $app->shouldReceive("sendResponse")
+        $app->expects("sendResponse")
             ->once()
             ->ordered()
             ->with(Mockery::on(function (mixed $response) use (&$sendFirstResponseCalled): bool {
@@ -476,7 +504,7 @@ class ErrorHandlerTest extends TestCase
             }))
             ->andThrow(new ViewNotFoundException("errors.error", "Exception sending error page."));
 
-        $app->shouldReceive("sendResponse")
+        $app->expects("sendResponse")
             ->once()
             ->ordered()
             ->with(Mockery::on(function (mixed $response) use (&$sendSecondResponseCalled): bool {
@@ -512,7 +540,7 @@ class ErrorHandlerTest extends TestCase
 
         // it would be foolhardy to set test expectations based on the exception line not changing, so we don't
         // assert to verify the line, just validate it
-        $log->shouldReceive("critical")
+        $log->expects("critical")
             ->once()
             ->with("Exception in %1[%2]: Mock exception", Mockery::on(function (mixed $args) use (&$reportCalled): bool {
                 TestCase::assertIsArray($args);
@@ -526,15 +554,19 @@ class ErrorHandlerTest extends TestCase
 
         $app = $this->mockApplication(WebApplication::class);
 
-        $app->shouldReceive("get")
+        $app->expects("serviceIsBound")
+            ->with(Logger::class)
+            ->andReturn(true);
+
+        $app->expects("get")
             ->with(Logger::class)
             ->andReturn($log);
 
-        $app->shouldReceive("isInDebugMode")->andReturn(false);
-        $app->shouldReceive("rootDir")->andReturn(__DIR__ . "/files");
-        $app->shouldReceive("config")->with("view.directory", Mockery::any())->andReturn("views");
+        $app->expects("isInDebugMode")->andReturn(false);
+        $app->expects("rootDir")->andReturn(__DIR__ . "/files");
+        $app->expects("config")->with("view.directory", Mockery::any())->andReturn("views");
 
-        $app->shouldReceive("sendResponse")
+        $app->expects("sendResponse")
             ->once()
             ->ordered()
             ->with(Mockery::on(function (mixed $response) use (&$sendFirstResponseCalled): bool {
@@ -545,7 +577,7 @@ class ErrorHandlerTest extends TestCase
             }))
             ->andThrow(new ViewNotFoundException("errors.error", "Exception sending error page."));
 
-        $app->shouldReceive("sendResponse")
+        $app->expects("sendResponse")
             ->once()
             ->ordered()
             ->with(Mockery::on(function (mixed $response) use (&$sendSecondResponseCalled): bool {
