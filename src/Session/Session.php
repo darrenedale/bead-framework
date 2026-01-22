@@ -490,7 +490,7 @@ class Session implements DataAccessor
         $arr = $this->get($key, []);
 
         if (!is_array($arr)) {
-            throw new RuntimeException("The session key '{$key}' does not contain an array.");
+            throw new RuntimeException("The session key '{$key}' does not contain an array");
         }
 
         $arr = array_merge($arr, $data);
@@ -513,7 +513,7 @@ class Session implements DataAccessor
         $arr = $this->get($key);
 
         if (!is_array($arr)) {
-            throw new RuntimeException("The session key '{$key}' does not contain an array.");
+            throw new RuntimeException("The session key '{$key}' does not contain an array");
         }
 
         if (0 === $n) {
@@ -528,5 +528,75 @@ class Session implements DataAccessor
         /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
         $this->set($key, $arr);
         return $value;
+    }
+
+    /**
+     * Shift a number of items from the start of an array stored in the session.
+     *
+     * @param string $key The session array to shift from.
+     * @param int $n The number of items to shift.
+     *
+     * @return array|mixed|null
+     *
+     * @throws RuntimeException if the data stored in the session for the identified session key is not an array.
+     */
+    public function shift(string $key, int $n = 1): mixed
+    {
+        $arr = $this->get($key);
+
+        if (!is_array($arr)) {
+            throw new RuntimeException("The session key '{$key}' does not contain an array");
+        }
+
+        if (0 === $n) {
+            return null;
+        } elseif (1 === $n) {
+            $value = array_shift($arr);
+        } else {
+            $value = array_splice($arr, 0, $n);
+        }
+
+        /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
+        $this->set($key, $arr);
+        return $value;
+    }
+
+    /**
+     * Unshift a value onto the beginning of an array stored in the session.
+     *
+     * @param string $key The session array to add to.
+     * @param mixed $data The data to add.
+     *
+     * @throws RuntimeException if the session data identified by $key is not an array.
+     */
+    public function unshift(string $key, mixed $data): void
+    {
+        $this->unshiftAll($key, [$data]);
+    }
+
+    /**
+     * Unshift a number of items onto the beginning of an array stored in the session.
+     *
+     * The data items are unshifted in the order they appear in the given array, meaning the order in which they appear
+     * at the beginning of the session data is the reverse of the order they appear in the provided array. In other
+     * words, this method behaves as if each item in the provided array were unshifted onto the front of the session
+     * data array in sequence.
+     *
+     * @param string $key The session array to add to.
+     * @param array $data The items to add.
+     *
+     * @throws RuntimeException if the data stored in the session for the identified session key is not an array.
+     */
+    public function unshiftAll(string $key, array $data): void
+    {
+        $arr = $this->get($key, []);
+
+        if (!is_array($arr)) {
+            throw new RuntimeException("The session key '{$key}' does not contain an array");
+        }
+
+        $arr = array_merge(array_reverse($data), $arr);
+        /** @psalm-suppress MissingThrowsDocblock $key is known to be valid, therefore set() won't throw. */
+        $this->set($key, $arr);
     }
 }

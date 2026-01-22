@@ -43,16 +43,36 @@ final class SessionTest extends TestCase
         $this->handler = Mockery::mock(SessionHandler::class);
         $this->app = Mockery::mock(Application::class);
 
-        $this->handler->shouldReceive("id")->andReturn(self::SessionId)->byDefault();
-        $this->handler->shouldReceive("idHasExpired")->andReturn(false)->byDefault();
-        $this->handler->shouldReceive("lastUsedAt")->andReturn(self::CurrentTimestamp - 10)->byDefault();
-        $this->handler->shouldReceive("idGeneratedAt")->andReturn(self::CurrentTimestamp - 120)->byDefault();
-        $this->handler->shouldReceive("get")->with("__bead_transient_keys")->andReturn([])->byDefault();
-        $this->handler->shouldReceive("set")->with(Mockery::on(fn (mixed $key): bool => is_string($key)), Mockery::any())->andReturn(null)->byDefault();
-        $this->handler->shouldReceive("commit")->byDefault();
+        $this->handler->expects("id")->andReturn(self::SessionId)->zeroOrMoreTimes()->byDefault();
+        $this->handler->expects("idHasExpired")->andReturn(false)->zeroOrMoreTimes()->byDefault();
 
-        $this->app->shouldReceive("config")
+        $this->handler->expects("lastUsedAt")
+            ->zeroOrMoreTimes()
+            ->andReturn(self::CurrentTimestamp - 10)
+            ->byDefault();
+
+        $this->handler->expects("idGeneratedAt")
+            ->zeroOrMoreTimes()
+            ->andReturn(self::CurrentTimestamp - 120)
+            ->byDefault();
+
+        $this->handler->expects("get")
+            ->with("__bead_transient_keys")
+            ->zeroOrMoreTimes()
+            ->andReturn([])
+            ->byDefault();
+
+        $this->handler->expects("set")
+            ->with(Mockery::on(fn (mixed $key): bool => is_string($key)), Mockery::any())
+            ->zeroOrMoreTimes()
+            ->andReturn(null)
+            ->byDefault();
+
+        $this->handler->expects("commit")->zeroOrMoreTimes()->byDefault();
+
+        $this->app->expects("config")
             ->with(Mockery::on(fn (mixed $arg): bool => is_string($arg)), Mockery::any())
+            ->zeroOrMoreTimes()
             ->andReturnUsing(fn (string $key, mixed $default = null): mixed => $default)
             ->byDefault();
 
@@ -92,9 +112,9 @@ final class SessionTest extends TestCase
     public function testConstructor2(): void
     {
         $this->mockFunction("setcookie", null);
-        $this->handler->shouldReceive("idHasExpired")->once()->andReturn(true);
-        $this->handler->shouldReceive("idExpiredAt")->once()->andReturn(self::CurrentTimestamp - 1);
-        $this->handler->shouldReceive("replacementId")->once()->andReturn(self::SessionId . "-replacement");
+        $this->handler->expects("idHasExpired")->once()->andReturn(true);
+        $this->handler->expects("idExpiredAt")->once()->andReturn(self::CurrentTimestamp - 1);
+        $this->handler->expects("replacementId")->once()->andReturn(self::SessionId . "-replacement");
         $session = new Session();
         self::markTestAsExternallyVerified();
     }
@@ -103,9 +123,9 @@ final class SessionTest extends TestCase
     public function testConstructor3(): void
     {
         $this->mockFunction("setcookie", null);
-        $this->handler->shouldReceive("idHasExpired")->once()->andReturn(true);
-        $this->handler->shouldReceive("idExpiredAt")->once()->andReturn(self::CurrentTimestamp - Session::expiredSessionGracePeriod() - 1);
-        $this->handler->shouldReceive("destroy")->once();
+        $this->handler->expects("idHasExpired")->once()->andReturn(true);
+        $this->handler->expects("idExpiredAt")->once()->andReturn(self::CurrentTimestamp - Session::expiredSessionGracePeriod() - 1);
+        $this->handler->expects("destroy")->once();
         self::expectException(ExpiredSessionIdUsedException::class);
         self::expectExceptionMessage("The provided session ID is not valid.");
         $session = new Session();
@@ -115,9 +135,9 @@ final class SessionTest extends TestCase
     public function testConstructor4(): void
     {
         $this->mockFunction("setcookie", null);
-        $this->handler->shouldReceive("idHasExpired")->once()->andReturn(false);
-        $this->handler->shouldReceive("lastUsedAt")->once()->andReturn(self::CurrentTimestamp - Session::sessionIdleTimeoutPeriod() - 1);
-        $this->handler->shouldReceive("destroy")->once();
+        $this->handler->expects("idHasExpired")->once()->andReturn(false);
+        $this->handler->expects("lastUsedAt")->once()->andReturn(self::CurrentTimestamp - Session::sessionIdleTimeoutPeriod() - 1);
+        $this->handler->expects("destroy")->once();
         self::expectException(SessionExpiredException::class);
         self::expectExceptionMessage("The session with the provided ID has been unused for more than " . Session::sessionIdleTimeoutPeriod() . " seconds.");
         $session = new Session();
@@ -127,10 +147,10 @@ final class SessionTest extends TestCase
     public function testConstructor5(): void
     {
         $this->mockFunction("setcookie", null);
-        $this->handler->shouldReceive("idHasExpired")->once()->andReturn(false);
-        $this->handler->shouldReceive("lastUsedAt")->once()->andReturn(self::CurrentTimestamp - Session::sessionIdleTimeoutPeriod() + 1);
-        $this->handler->shouldReceive("idGeneratedAt")->once()->andReturn(self::CurrentTimestamp - Session::sessionIdRegenerationPeriod() - 1);
-        $this->handler->shouldReceive("regenerateId")->once()->andReturn(self::SessionId . "-regenerated");
+        $this->handler->expects("idHasExpired")->once()->andReturn(false);
+        $this->handler->expects("lastUsedAt")->once()->andReturn(self::CurrentTimestamp - Session::sessionIdleTimeoutPeriod() + 1);
+        $this->handler->expects("idGeneratedAt")->once()->andReturn(self::CurrentTimestamp - Session::sessionIdRegenerationPeriod() - 1);
+        $this->handler->expects("regenerateId")->once()->andReturn(self::SessionId . "-regenerated");
         $session = new Session();
         self::markTestAsExternallyVerified();
     }
@@ -139,7 +159,7 @@ final class SessionTest extends TestCase
     public function testConstructor6(): void
     {
         $this->mockFunction("setcookie", null);
-        $this->handler->shouldReceive("get")->once()->with("__bead_transient_keys")->andReturn(null);
+        $this->handler->expects("get")->once()->with("__bead_transient_keys")->andReturn(null);
         $session = new XRay(new Session());
         self::assertEquals([], $session->m_transientKeys);
     }
@@ -148,7 +168,7 @@ final class SessionTest extends TestCase
     public function testConstructor7(): void
     {
         $this->mockFunction("setcookie", null);
-        $this->handler->shouldReceive("get")->once()->with("__bead_transient_keys")->andReturn(["bead" => 1, "framework" => 2,]);
+        $this->handler->expects("get")->once()->with("__bead_transient_keys")->andReturn(["bead" => 1, "framework" => 2,]);
         $session = new XRay(new Session());
         self::assertEquals(["bead" => 1, "framework" => 2,], $session->m_transientKeys);
     }
@@ -157,7 +177,7 @@ final class SessionTest extends TestCase
     public function testConstructor8(): void
     {
         $this->mockFunction("setcookie", null);
-        $this->handler->shouldReceive("get")->once()->with("__bead_transient_keys")->andReturn(["bead" => 1, 1 => 2,]);
+        $this->handler->expects("get")->once()->with("__bead_transient_keys")->andReturn(["bead" => 1, 1 => 2,]);
         self::expectException(SessionException::class);
         self::expectExceptionMessage("Session data is corrupt.");
         $session = new XRay(new Session());
@@ -167,7 +187,7 @@ final class SessionTest extends TestCase
     public function testConstructor9(): void
     {
         $this->mockFunction("setcookie", null);
-        $this->handler->shouldReceive("get")->once()->with("__bead_transient_keys")->andReturn(["bead" => 1, "framework" => "library",]);
+        $this->handler->expects("get")->once()->with("__bead_transient_keys")->andReturn(["bead" => 1, "framework" => "library",]);
         self::expectException(SessionException::class);
         self::expectExceptionMessage("Session data is corrupt.");
         $session = new XRay(new Session());
@@ -179,7 +199,7 @@ final class SessionTest extends TestCase
         $called = false;
 
         $this->handler
-            ->shouldReceive("commit")
+            ->expects("commit")
             ->once()
             ->andReturnUsing(function () use (&$called): void {
                 $called = true;
@@ -198,7 +218,7 @@ final class SessionTest extends TestCase
         $called = false;
 
         $this->handler
-            ->shouldReceive("remove")
+            ->expects("remove")
             ->with("bead")
             ->once()
             ->andReturnUsing(function () use (&$called): void {
@@ -250,7 +270,7 @@ final class SessionTest extends TestCase
     /** Ensure we get the idle timeout from the config. */
     public function testSessionIdleTimeoutPeriod1(): void
     {
-        $this->app->shouldReceive("config")
+        $this->app->expects("config")
             ->with("session.idle-timeout-period", Mockery::any())
             ->andReturn(450);
 
@@ -260,7 +280,7 @@ final class SessionTest extends TestCase
     /** Ensure we get the default timeout when no config value is set. */
     public function testSessionIdleTimeoutPeriod2(): void
     {
-        $this->app->shouldReceive("config")
+        $this->app->expects("config")
             ->with("session.idle-timeout-period", Session::DefaultSessionIdleTimeoutPeriod)
             ->andReturn(Session::DefaultSessionIdleTimeoutPeriod);
 
@@ -270,7 +290,7 @@ final class SessionTest extends TestCase
     /** Ensure we get the idle timeout from the config. */
     public function testSessionIdRegeneratonPeriod1(): void
     {
-        $this->app->shouldReceive("config")
+        $this->app->expects("config")
             ->with("session.id-regeneration-period", Mockery::any())
             ->andReturn(450);
 
@@ -280,7 +300,7 @@ final class SessionTest extends TestCase
     /** Ensure we get the default timeout when no config value is set. */
     public function testSessionIdRegeneratonPeriod2(): void
     {
-        $this->app->shouldReceive("config")
+        $this->app->expects("config")
             ->with("session.id-regeneration-period", Session::DefaultSessionRegenerationPeriod)
             ->andReturn(Session::DefaultSessionRegenerationPeriod);
 
@@ -290,7 +310,7 @@ final class SessionTest extends TestCase
     /** Ensure we get the idle timeout from the config. */
     public function testExpiredSessionGracePeriod1(): void
     {
-        $this->app->shouldReceive("config")
+        $this->app->expects("config")
             ->with("session.expired.grace-period", Mockery::any())
             ->andReturn(450);
 
@@ -300,7 +320,7 @@ final class SessionTest extends TestCase
     /** Ensure we get the default timeout when no config value is set. */
     public function testExpiredSessionGracePeriod2(): void
     {
-        $this->app->shouldReceive("config")
+        $this->app->expects("config")
             ->with("session.expired.grace-period", Session::DefaultExpiryGracePeriod)
             ->andReturn(Session::DefaultExpiryGracePeriod);
 
@@ -310,7 +330,7 @@ final class SessionTest extends TestCase
     /** Ensure id() returns the ID from the handler. */
     public function testId1(): void
     {
-        $this->handler->shouldReceive("id")->once()->andReturn(self::SessionId);
+        $this->handler->expects("id")->once()->andReturn(self::SessionId);
         self::assertSame(self::SessionId, $this->session->id());
     }
 
@@ -323,21 +343,21 @@ final class SessionTest extends TestCase
     /** Ensure createdAt() returns the created date from the handler. */
     public function testCreatedAt1(): void
     {
-        $this->handler->shouldReceive("createdAt")->once()->andReturn(self::CurrentTimestamp - 100);
+        $this->handler->expects("createdAt")->once()->andReturn(self::CurrentTimestamp - 100);
         self::assertEquals(self::CurrentTimestamp - 100, $this->session->createdAt());
     }
 
     /** Ensure lastUsedAt() returns the last used date from the handler. */
     public function testLastUsedAt1(): void
     {
-        $this->handler->shouldReceive("lastUsedAt")->once()->andReturn(self::CurrentTimestamp - 30);
+        $this->handler->expects("lastUsedAt")->once()->andReturn(self::CurrentTimestamp - 30);
         self::assertEquals(self::CurrentTimestamp - 30, $this->session->lastUsedAt());
     }
 
     /** Ensure get() gets the key from the handler. */
     public function testGet1(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn("framework");
+        $this->handler->expects("get")->once()->with("bead")->andReturn("framework");
         self::assertEquals("framework", $this->session->get("bead"));
     }
 
@@ -351,29 +371,29 @@ final class SessionTest extends TestCase
     /** Ensure get() returns null if the handler doesn't have the key and no default is provideed. */
     public function testGet3(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn(null);
+        $this->handler->expects("get")->once()->with("bead")->andReturn(null);
         self::assertNull($this->session->get("bead"));
     }
 
     /** Ensure has() can detect a key that is present in the session. */
     public function testHas1(): void
     {
-        $this->handler->shouldReceive("get")->with("bead")->once()->andReturn("framework");
+        $this->handler->expects("get")->with("bead")->once()->andReturn("framework");
         self::assertTrue($this->session->has("bead"));
     }
 
     /** Ensure has() can detect a key that is not present in the session. */
     public function testHas2(): void
     {
-        $this->handler->shouldReceive("get")->with("bead")->once()->andReturn(null);
+        $this->handler->expects("get")->with("bead")->once()->andReturn(null);
         self::assertFalse($this->session->has("bead"));
     }
 
     /** Ensure we can extract a single value from the session. */
     public function testExtract1(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn("framework");
-        $this->handler->shouldReceive("remove")->once()->with("bead");
+        $this->handler->expects("get")->once()->with("bead")->andReturn("framework");
+        $this->handler->expects("remove")->once()->with("bead");
         $actual = $this->session->extract("bead");
         self::assertEquals("framework", $actual);
     }
@@ -381,10 +401,10 @@ final class SessionTest extends TestCase
     /** Ensure we can extract multiple values from the session. */
     public function testExtract2(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn("framework");
-        $this->handler->shouldReceive("get")->once()->with("framework")->andReturn("bead");
-        $this->handler->shouldReceive("remove")->once()->with("bead");
-        $this->handler->shouldReceive("remove")->once()->with("framework");
+        $this->handler->expects("get")->once()->with("bead")->andReturn("framework");
+        $this->handler->expects("get")->once()->with("framework")->andReturn("bead");
+        $this->handler->expects("remove")->once()->with("bead");
+        $this->handler->expects("remove")->once()->with("framework");
         $actual = $this->session->extract(["bead", "framework",]);
         self::assertEqualsCanonicalizing(["framework", "bead",], $actual);
     }
@@ -400,11 +420,11 @@ final class SessionTest extends TestCase
     /** Ensure extract() ignores keys that aren't set. */
     public function testExtract4(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn("framework");
-        $this->handler->shouldReceive("get")->once()->with("framework")->andReturn("bead");
-        $this->handler->shouldReceive("get")->once()->with("library")->andReturn(null);
-        $this->handler->shouldReceive("remove")->once()->with("bead");
-        $this->handler->shouldReceive("remove")->once()->with("framework");
+        $this->handler->expects("get")->once()->with("bead")->andReturn("framework");
+        $this->handler->expects("get")->once()->with("framework")->andReturn("bead");
+        $this->handler->expects("get")->once()->with("library")->andReturn(null);
+        $this->handler->expects("remove")->once()->with("bead");
+        $this->handler->expects("remove")->once()->with("framework");
         $actual = $this->session->extract(["bead", "framework", "library",]);
         self::assertEqualsCanonicalizing(["framework", "bead",], $actual);
     }
@@ -412,14 +432,14 @@ final class SessionTest extends TestCase
     /** Ensure all() forwards to the handler. */
     public function testAll1(): void
     {
-        $this->handler->shouldReceive("all")->once()->andReturn(["bead", "framework",]);
+        $this->handler->expects("all")->once()->andReturn(["bead", "framework",]);
         self::assertEqualsCanonicalizing(["bead", "framework",], $this->session->all());
     }
 
     /** Ensure we can set a single key. */
     public function testSet1(): void
     {
-        $this->handler->shouldReceive("set")->once()->with("bead", "framework");
+        $this->handler->expects("set")->once()->with("bead", "framework");
         $this->session->set("bead", "framework");
         self::markTestAsExternallyVerified();
     }
@@ -427,8 +447,8 @@ final class SessionTest extends TestCase
     /** Ensure we can set a multiple keys. */
     public function testSet2(): void
     {
-        $this->handler->shouldReceive("set")->once()->with("bead", "framework");
-        $this->handler->shouldReceive("set")->once()->with("darren", "edale");
+        $this->handler->expects("set")->once()->with("bead", "framework");
+        $this->handler->expects("set")->once()->with("darren", "edale");
         $this->session->set(["bead" => "framework", "darren" => "edale",]);
         self::markTestAsExternallyVerified();
     }
@@ -444,7 +464,7 @@ final class SessionTest extends TestCase
     /** Ensure we can set a single key. */
     public function testTransientSet1(): void
     {
-        $this->handler->shouldReceive("set")->once()->with("bead", "framework");
+        $this->handler->expects("set")->once()->with("bead", "framework");
         $this->session->transientSet("bead", "framework");
         $session = new XRay($this->session);
         self::assertEquals(["bead" => 1,], $session->m_transientKeys);
@@ -453,8 +473,8 @@ final class SessionTest extends TestCase
     /** Ensure we can set a multiple keys. */
     public function testTransientSet2(): void
     {
-        $this->handler->shouldReceive("set")->once()->with("bead", "framework");
-        $this->handler->shouldReceive("set")->once()->with("darren", "edale");
+        $this->handler->expects("set")->once()->with("bead", "framework");
+        $this->handler->expects("set")->once()->with("darren", "edale");
         $this->session->transientSet(["bead" => "framework", "darren" => "edale",]);
         $session = new XRay($this->session);
         self::assertEqualsCanonicalizing(["darren" => 1, "bead" => 1], $session->m_transientKeys);
@@ -473,8 +493,8 @@ final class SessionTest extends TestCase
     {
         $session = new XRay($this->session);
         $session->m_transientKeys = ["bead" => 1, "framework" => 0];
-        $this->handler->shouldReceive("remove")->once()->with("framework");
-        $this->handler->shouldNotReceive("remove")->with("bead");
+        $this->handler->expects("remove")->once()->with("framework");
+        $this->handler->expects("remove")->with("bead")->never();
         $this->session->pruneTransientData();
         self::assertEquals(["bead" => 0,], $session->m_transientKeys);
     }
@@ -491,7 +511,7 @@ final class SessionTest extends TestCase
     /** Ensure calls to remove() for a single key are forwarded to the handler. */
     public function testRemove1(): void
     {
-        $this->handler->shouldReceive("remove")->once()->with("bead");
+        $this->handler->expects("remove")->once()->with("bead");
         $this->session->remove("bead");
         self::markTestAsExternallyVerified();
     }
@@ -499,8 +519,8 @@ final class SessionTest extends TestCase
     /** Ensure calls to remove() for a multiple keys are forwarded to the handler. */
     public function testRemove2(): void
     {
-        $this->handler->shouldReceive("remove")->once()->with("bead");
-        $this->handler->shouldReceive("remove")->once()->with("framework");
+        $this->handler->expects("remove")->once()->with("bead");
+        $this->handler->expects("remove")->once()->with("framework");
         $this->session->remove(["bead", "framework",]);
         self::markTestAsExternallyVerified();
     }
@@ -516,7 +536,7 @@ final class SessionTest extends TestCase
     /** Ensure calls to clear() are forwarded to the handler. */
     public function testClear1(): void
     {
-        $this->handler->shouldReceive("clear")->once();
+        $this->handler->expects("clear")->once();
         $this->session->clear();
         self::markTestAsExternallyVerified();
     }
@@ -526,7 +546,7 @@ final class SessionTest extends TestCase
     {
         $session = new XRay($this->session);
         $session->m_transientKeys = ["bead" => 1, "framework" => 1,];
-        $this->handler->shouldReceive("set")->once()->with("__bead_transient_keys", ["bead" => 1, "framework" => 1,]);
+        $this->handler->expects("set")->once()->with("__bead_transient_keys", ["bead" => 1, "framework" => 1,]);
         $this->session->commit();
         self::markTestAsExternallyVerified();
     }
@@ -546,9 +566,9 @@ final class SessionTest extends TestCase
             ++$called;
         });
 
-        $this->handler->shouldReceive("regenerateId")->once()->andReturn(self::SessionId);
-        $this->handler->shouldReceive("id")->ordered()->once()->andReturn("old-test-id");
-        $this->handler->shouldReceive("id")->ordered()->once()->andReturn(self::SessionId);
+        $this->handler->expects("regenerateId")->once()->andReturn(self::SessionId);
+        $this->handler->expects("id")->ordered()->once()->andReturn("old-test-id");
+        $this->handler->expects("id")->ordered()->once()->andReturn(self::SessionId);
         $this->session->regenerateId();
         self::assertEquals(2, $called);
     }
@@ -567,7 +587,7 @@ final class SessionTest extends TestCase
             $called = true;
         });
 
-        $this->handler->shouldReceive("destroy")->once();
+        $this->handler->expects("destroy")->once();
         $this->session->destroy();
         self::assertTrue($called);
     }
@@ -586,7 +606,7 @@ final class SessionTest extends TestCase
         })::class;
 
         $sessionClass->m_handlerClasses = ["test" => $testHandlerClass,];
-        $this->app->shouldReceive("config")->with("session.handler", "file")->andReturn("test");
+        $this->app->expects("config")->with("session.handler", "file")->andReturn("test");
         $handler = $sessionClass->createHandler("-test-" . self::SessionId . "-test");
         self::assertInstanceOf($testHandlerClass, $handler);
         self::assertEquals("-test-" . self::SessionId . "-test", $handler->id());
@@ -596,7 +616,7 @@ final class SessionTest extends TestCase
     public function testCreateHandler2(): void
     {
         $this->removeMethodMock(Session::class, "createHandler");
-        $this->app->shouldReceive("config")->with("session.handler", "file")->andReturn("test");
+        $this->app->expects("config")->with("session.handler", "file")->andReturn("test");
         self::expectException(InvalidSessionHandlerException::class);
         self::expectExceptionMessage("Session handler 'test' configured in session config file is not recognised.");
         $sessionClass = new StaticXRay(Session::class);
@@ -619,7 +639,7 @@ final class SessionTest extends TestCase
         })::class;
 
         $sessionClass->m_handlerClasses = ["test" => $testHandlerClass,];
-        $this->app->shouldReceive("config")->with("session.handler", "file")->andReturn("test");
+        $this->app->expects("config")->with("session.handler", "file")->andReturn("test");
         self::expectException(SessionNotFoundException::class);
         self::expectExceptionMessageMatches("/^Exception creating test session handler (.*)\\.\$/");
         $sessionClass->createHandler("-test-" . self::SessionId . "-test");
@@ -628,17 +648,17 @@ final class SessionTest extends TestCase
     /** Ensure we can push a single value to a session array. */
     public function testPush1(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn(["framework",]);
-        $this->handler->shouldReceive("set")->once()->with("bead", ["framework", "app",]);
+        $this->handler->expects("get")->once()->with("bead")->andReturn(["framework",]);
+        $this->handler->expects("set")->once()->with("bead", ["framework", "app",]);
         $this->session->push("bead", "app");
         self::markTestAsExternallyVerified();
     }
 
-    /** Ensure push() throws when the key is not set. */
+    /** Ensure push() creates the key when it is not set. */
     public function testPush2(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn(null);
-        $this->handler->shouldReceive("set")->once()->with("bead", ["framework",]);
+        $this->handler->expects("get")->once()->with("bead")->andReturn(null);
+        $this->handler->expects("set")->once()->with("bead", ["framework",]);
         $this->session->push("bead", "framework");
         self::markTestAsExternallyVerified();
     }
@@ -646,36 +666,36 @@ final class SessionTest extends TestCase
     /** Ensure push() throws when the key is not an array. */
     public function testPush3(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn("framework");
+        $this->handler->expects("get")->once()->with("bead")->andReturn("framework");
         self::expectException(RuntimeException::class);
-        self::expectExceptionMessage("The session key 'bead' does not contain an array.");
+        self::expectExceptionMessage("The session key 'bead' does not contain an array");
         $this->session->push("bead", "framework");
     }
 
-    /** Ensure push() throws when the key is not an array. */
+    /** Ensure pushAll() adds the provided items to the end of the array. */
     public function testPushAll1(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn(["framework",]);
-        $this->handler->shouldReceive("set")->once()->with("bead", ["framework", "app", "library",]);
+        $this->handler->expects("get")->once()->with("bead")->andReturn(["framework",]);
+        $this->handler->expects("set")->once()->with("bead", ["framework", "app", "library",]);
         $this->session->pushAll("bead", ["app", "library",]);
         self::markTestAsExternallyVerified();
     }
 
-    /** Ensure push() creates an array when the key is not set. */
+    /** Ensure pushAll() creates an array when the key is not set. */
     public function testPushAll2(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn(null);
-        $this->handler->shouldReceive("set")->once()->with("bead", ["framework", "app",]);
+        $this->handler->expects("get")->once()->with("bead")->andReturn(null);
+        $this->handler->expects("set")->once()->with("bead", ["framework", "app",]);
         $this->session->pushAll("bead", ["framework", "app",]);
         self::markTestAsExternallyVerified();
     }
 
-    /** Ensure push() throws when the key is not an array. */
+    /** Ensure pushAll() throws when the key is not an array. */
     public function testPushAll3(): void
     {
-        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn("framework");
+        $this->handler->expects("get")->once()->with("bead")->andReturn("framework");
         self::expectException(RuntimeException::class);
-        self::expectExceptionMessage("The session key 'bead' does not contain an array.");
+        self::expectExceptionMessage("The session key 'bead' does not contain an array");
         $this->session->pushAll("bead", ["framework", "app",]);
     }
 
@@ -717,7 +737,7 @@ final class SessionTest extends TestCase
     public function testPop5(): void
     {
         self::expectException(RuntimeException::class);
-        self::expectExceptionMessage("The session key 'bead' does not contain an array.");
+        self::expectExceptionMessage("The session key 'bead' does not contain an array");
         $this->handler->shouldReceive("get")->once()->with("bead")->andReturn(null);
         $this->session->pop("bead");
     }
@@ -726,8 +746,114 @@ final class SessionTest extends TestCase
     public function testPop6(): void
     {
         self::expectException(RuntimeException::class);
-        self::expectExceptionMessage("The session key 'bead' does not contain an array.");
+        self::expectExceptionMessage("The session key 'bead' does not contain an array");
         $this->handler->shouldReceive("get")->once()->with("bead")->andReturn("framework");
         $this->session->pop("bead");
+    }
+
+    /** Ensure we can unshift a single value to a session array. */
+    public function testUnshift1(): void
+    {
+        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn(["framework",]);
+        $this->handler->shouldReceive("set")->once()->with("bead", ["app", "framework",]);
+        $this->session->unshift("bead", "app");
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure unshift() creates the key when it's not set. */
+    public function testUnshift2(): void
+    {
+        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn(null);
+        $this->handler->shouldReceive("set")->once()->with("bead", ["framework",]);
+        $this->session->unshift("bead", "framework");
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure unshift() throws when the key is not an array. */
+    public function testUnshift3(): void
+    {
+        $this->handler->shouldReceive("get")->once()->with("bead")->andReturn("framework");
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("The session key 'bead' does not contain an array");
+        $this->session->unshift("bead", "framework");
+    }
+
+    /** Ensure unshiftAll() adds the provided items to the beginning of the array. */
+    public function testUnshiftAll1(): void
+    {
+        $this->handler->expects("get")->once()->with("bead")->andReturn(["framework",]);
+        $this->handler->expects("set")->once()->with("bead", ["library", "app", "framework",]);
+        $this->session->unshiftAll("bead", ["app", "library",]);
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure unshiftAll() creates an array when the key is not set. */
+    public function testUnshiftAll2(): void
+    {
+        $this->handler->expects("get")->once()->with("bead")->andReturn(null);
+        $this->handler->expects("set")->once()->with("bead", ["app", "framework",]);
+        $this->session->unshiftAll("bead", ["framework", "app",]);
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure unshiftAll() throws when the key is not an array. */
+    public function testUnshiftAll3(): void
+    {
+        $this->handler->expects("get")->once()->with("bead")->andReturn("framework");
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("The session key 'bead' does not contain an array");
+        $this->session->unshiftAll("bead", ["framework", "app",]);
+    }
+
+    /** Ensure shift() gets one item by default. */
+    public function testShift1(): void
+    {
+        $this->handler->expects("get")->once()->with("bead")->andReturn(["framework", "app",]);
+        $actual = $this->session->shift("bead");
+        self::assertEquals("framework", $actual);
+    }
+
+    /** Ensure shift() can get multiple items. */
+    public function testShift2(): void
+    {
+        $this->handler->expects("get")->once()->with("bead")->andReturn(["framework", "app", "library",]);
+        $actual = $this->session->shift("bead", 2);
+        self::assertEquals(["framework", "app",], $actual);
+    }
+
+    /** Ensure shift() returns null if 0 items are shifted. */
+    public function testShift3(): void
+    {
+        $this->handler->expects("get")->once()->with("bead")->andReturn(["framework", "app", "library",]);
+        $this->handler->shouldNotReceive("set");
+        $actual = $this->session->shift("bead", 0);
+        self::assertNull($actual);
+    }
+
+    /** Ensure shift() gets and sets on the handler. */
+    public function testShift4(): void
+    {
+        $this->handler->expects("get")->once()->with("bead")->andReturn(["framework", "app",]);
+        $this->handler->expects("set")->once()->with("bead", ["app",]);
+        $this->session->shift("bead");
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure shift() throws when the key is not set. */
+    public function testShift5(): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("The session key 'bead' does not contain an array");
+        $this->handler->expects("get")->once()->with("bead")->andReturn(null);
+        $this->session->shift("bead");
+    }
+
+    /** Ensure shift() throws when the key is not an array. */
+    public function testShift6(): void
+    {
+        self::expectException(RuntimeException::class);
+        self::expectExceptionMessage("The session key 'bead' does not contain an array");
+        $this->handler->expects("get")->once()->with("bead")->andReturn("framework");
+        $this->session->shift("bead");
     }
 }
