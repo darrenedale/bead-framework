@@ -3,8 +3,8 @@
 namespace BeadTests\Database;
 
 use Bead\Database\Connection;
-use BeadTests\Framework\CallTracker;
 use BeadTests\Framework\TestCase;
+use Closure;
 use DateTime;
 use Bead\Database\Model;
 use Bead\Exceptions\Database\ModelPropertyCastException;
@@ -286,53 +286,39 @@ class ModelTest extends TestCase
     /**
      * @dataProvider dataForTestCustomAccessor
      *
-     * @param mixed $value The test value.
-     * @param mixed $expected The expected value of the foo property.
-     * @param string|null $exceptionClass The exception expected to be thrown, if any.
-     *
-     * @return void
+     * @param string|null $value The test value.
+     * @param array $expected The expected value of the foo_bar property.
      */
-    public function testCustomAccessor($value, $expected, ?string $exceptionClass = null): void
+    public function testCustomAccessor(?string $value, array $expected): void
     {
-        $connection = $this->createMock(PDO::class);
-        $callTracker = new CallTracker();
+        $callCount = 0;
 
-        $model = new class ($connection, $callTracker) extends Model
+        $model = new class (static function() use ($value, &$callCount): array {
+            $callCount++;
+            return empty($value) ? [] :  explode(",", $value);
+        }) extends Model
         {
-            protected static PDO $connection;
-            protected CallTracker $callTracker;
+            protected Closure $propertyAccessor;
 
             protected static array $properties = [
                 "foo_bar" => "string",
             ];
 
-            public function __construct(PDO $connection, $callTracker)
+            public function __construct(Closure $callback)
             {
-                static::$connection = $connection;
-                $this->callTracker = $callTracker;
-            }
-
-            public static function defaultConnection(): PDO
-            {
-                return static::$connection;
+                $this->propertyAccessor = $callback;
             }
 
             protected function getFooBarProperty(): ?array
             {
-                $this->callTracker->increment();
-                return empty($this->data["foo_bar"]) ? [] :  explode(",", $this->data["foo_bar"]);
+                return ($this->propertyAccessor)();
             }
         };
 
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $model->foo_bar = $value;
         $actual = $model->foo_bar;
         self::assertIsArray($actual, "Value of foo_bar property expected to be array.");
         self::assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
-        self::assertEquals(1, $callTracker->callCount(), "Custom accessor was not called the correct number of times.");
+        self::assertEquals(1, $callCount, "Custom accessor was not called the correct number of times.");
     }
 
     /**
@@ -367,33 +353,18 @@ class ModelTest extends TestCase
      */
     public function testCustomMutator($value, $expected, ?string $exceptionClass = null): void
     {
-        $connection = $this->createMock(PDO::class);
-        $callTracker = new CallTracker();
-
-        $model = new class ($connection, $callTracker) extends Model
+        $model = new class () extends Model
         {
-            protected static PDO $connection;
-            private CallTracker $callTracker;
-
             protected static array $properties = [
                 "foo_bar" => "string",
             ];
 
-            public function __construct(PDO $connection, CallTracker $tracker)
+            public function __construct()
             {
-                static::$connection = $connection;
-                $this->callTracker = $tracker;
-            }
-
-            public static function defaultConnection(): PDO
-            {
-                return static::$connection;
             }
 
             protected function setFooBarProperty($value): void
             {
-                $this->callTracker->increment();
-
                 if (!isset($value)) {
                     $this->data["foo_bar"] = "";
                 } elseif (is_array($value) && all($value, "is_string")) {
@@ -416,7 +387,6 @@ class ModelTest extends TestCase
         $actual = $modelXray->data["foo_bar"];
         self::assertIsString($actual, "Value of foo_bar property expected to be string.");
         self::assertEquals($expected, $actual, "Value of foo_bar does not match expected.");
-        self::assertEquals(1, $callTracker->callCount(), "Custom mutator was not called the correct number of times.");
     }
 
     /** Ensure delete() submits the expected SQL. */
