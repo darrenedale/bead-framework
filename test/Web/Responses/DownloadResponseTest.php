@@ -70,20 +70,18 @@ class DownloadResponseTest extends TestCase
     public function testHeaders1(): void
     {
         $actual = (new DownloadResponse(""))->headers();
-        self::assertCount(2, $actual);
+        self::assertCount(1, $actual);
         self::assertContainsOnlyInstancesOf(HeaderContract::class, $actual);
         usort($actual, static fn (HeaderContract $a, HeaderContract $b): int => $a->name() <=> $b->name());
         self::assertSame("content-disposition", strtolower($actual[0]->name()));
         self::assertSame("attachment; filename=\"download\"", strtolower($actual[0]->value()));
-        self::assertSame("content-type", strtolower($actual[1]->name()));
-        self::assertSame("application/octet-stream", strtolower($actual[1]->value()));
     }
 
     /** Ensure the response headers can be set. */
     public function testSetHeaders1(): void
     {
         $response = new DownloadResponse("");
-        self::assertCount(2, $response->headers());
+        self::assertCount(1, $response->headers());
 
         $response->setHeaders([
             new Header("content-length", "42"),
@@ -91,23 +89,21 @@ class DownloadResponseTest extends TestCase
         ]);
 
         $actual = $response->headers();
-        self::assertCount(4, $actual);
+        self::assertCount(3, $actual);
         usort($actual, static fn (HeaderContract $a, HeaderContract $b): int => $a->name() <=> $b->name());
         self::assertSame("content-disposition", strtolower($actual[0]->name()));
         self::assertSame("attachment; filename=\"download\"", strtolower($actual[0]->value()));
         self::assertSame("content-length", strtolower($actual[1]->name()));
         self::assertSame("42", strtolower($actual[1]->value()));
-        self::assertSame("content-type", strtolower($actual[2]->name()));
-        self::assertSame("application/octet-stream", strtolower($actual[2]->value()));
-        self::assertSame("x-framework", strtolower($actual[3]->name()));
-        self::assertSame("bead", strtolower($actual[3]->value()));
+        self::assertSame("x-framework", strtolower($actual[2]->name()));
+        self::assertSame("bead", strtolower($actual[2]->value()));
     }
 
     /** Ensure the response headers can be set fluently. */
     public function testWithHeaders1(): void
     {
         $response = new DownloadResponse("");
-        self::assertCount(2, $response->headers());
+        self::assertCount(1, $response->headers());
 
         $response = $response->withHeaders([
             new Header("content-length", "42"),
@@ -116,15 +112,13 @@ class DownloadResponseTest extends TestCase
 
         self::assertInstanceOf(DownloadResponse::class, $response);
         $actual = $response->headers();
-        self::assertCount(4, $actual);
+        self::assertCount(3, $actual);
         usort($actual, static fn (HeaderContract $a, HeaderContract $b): int => $a->name() <=> $b->name());
         self::assertSame("content-disposition", strtolower($actual[0]->name()));
         self::assertSame("attachment; filename=\"download\"", strtolower($actual[0]->value()));
         self::assertSame("content-length", strtolower($actual[1]->name()));
         self::assertSame("42", strtolower($actual[1]->value()));
-        self::assertSame("content-type", strtolower($actual[2]->name()));
-        self::assertSame("application/octet-stream", strtolower($actual[2]->value()));
-        self::assertSame("x-framework", strtolower($actual[3]->name()));
-        self::assertSame("bead", strtolower($actual[3]->value()));
+        self::assertSame("x-framework", strtolower($actual[2]->name()));
+        self::assertSame("bead", strtolower($actual[2]->value()));
     }
 }

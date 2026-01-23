@@ -124,7 +124,6 @@ class DownloadResponse extends AbstractResponse
         return [
             ...$this->m_headers,
             new Header("content-disposition", "attachment; filename=\"{$fileName}\""),
-            new Header("content-type", $this->contentType()),
         ];
     }
 
