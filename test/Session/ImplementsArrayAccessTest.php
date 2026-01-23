@@ -11,7 +11,7 @@ class ImplementsArrayAccessTest extends TestCase
 {
     private static function createArrayAccessor(array $data = []): object
     {
-        return new class($data)
+        return new class ($data)
         {
             use ImplementsArrayAccess;
 
