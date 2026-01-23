@@ -118,8 +118,7 @@ class DownloadResponse extends AbstractResponse
         }
 
         /**
-         * @psalm-suppress MissingThrowsDocblock - "content-disposition" and "content-type" are known to be valid header
-         * names.
+         * @psalm-suppress MissingThrowsDocblock - "content-disposition" is known to be a valid header name.
          */
         return [
             ...$this->m_headers,
