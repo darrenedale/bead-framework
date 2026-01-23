@@ -15,7 +15,7 @@ class DownloadResponse extends AbstractResponse
     private string $m_fileName = "";
 
     /** @var string The content for the download. */
-    private string $m_data = "";
+    private string $m_data;
 
     /** @var HeaderContract[] The headers. */
     private array $m_headers = [];
@@ -117,8 +117,13 @@ class DownloadResponse extends AbstractResponse
             $fileName = "download";
         }
 
-        /** @psalm-suppress MissingThrowsDocblock - "content-disposition" is known to be a valid header name. */
-        return [...$this->m_headers, new Header("content-disposition", "attachment; filename=\"{$fileName}\"")];
+        /**
+         * @psalm-suppress MissingThrowsDocblock - "content-disposition" is known to be a valid header name.
+         */
+        return [
+            ...$this->m_headers,
+            new Header("content-disposition", "attachment; filename=\"{$fileName}\""),
+        ];
     }
 
     /**
