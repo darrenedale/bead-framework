@@ -293,7 +293,7 @@ class ModelTest extends TestCase
     {
         $callCount = 0;
 
-        $model = new class (static function() use ($value, &$callCount): array {
+        $model = new class (static function () use ($value, &$callCount): array {
             $callCount++;
             return empty($value) ? [] :  explode(",", $value);
         }) extends Model
