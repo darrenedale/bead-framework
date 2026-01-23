@@ -40,6 +40,13 @@ class DownloadResponseTest extends TestCase
         self::assertSame("bead-framework", $actual->content());
     }
 
+    /** Ensure the content type can be set through the constructor. */
+    public function testConstructor5(): void
+    {
+        $actual = new DownloadResponse("", "text/plain");
+        self::assertSame("text/plain", $actual->contentType());
+    }
+
     /** Ensure the filename can be set. */
     public function testFilename1(): void
     {
