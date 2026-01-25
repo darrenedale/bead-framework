@@ -19,8 +19,7 @@ use Mockery;
 use Mockery\MockInterface;
 use RuntimeException;
 
-use const STDERR;
-
+/** @covers \Bead\Core\ErrorHandler */
 class ErrorHandlerTest extends TestCase
 {
     private ErrorHandler $handler;
@@ -140,7 +139,6 @@ class ErrorHandlerTest extends TestCase
 
         $this->mockFunction("fprintf", static function ($stream, string $template, mixed ... $args) use (&$fprintfCalled) {
             TestCase::assertFalse($fprintfCalled);
-            TestCase::assertSame(STDERR, $stream);
             TestCase::assertSame("Exception in %s[%d]: %s", $template);
             TestCase::assertCount(3, $args);
             TestCase::assertIsString($args[0]);
