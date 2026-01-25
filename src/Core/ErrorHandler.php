@@ -13,8 +13,6 @@ use Bead\Web\Responses\AbstractResponse;
 use Error;
 use Throwable;
 
-use const STDERR;
-
 /**
  * The default error handler for Applications.
  */
@@ -61,7 +59,9 @@ class ErrorHandler implements ErrorHandlerContract
         if ($app instanceof WebApplication) {
             $this->displayExceptionInView($error);
         } else {
-            $this->outputToStream($error, STDERR);
+            $stderr = fopen("php://stderr", "a");
+            $this->outputToStream($error, $stderr);
+            fclose($stderr);
         }
     }
 
@@ -243,7 +243,9 @@ HTML;
         if ($app->serviceIsBound(Logger::class)) {
             Log::critical("Exception in %1[%2]: {$error->getMessage()}", [$error->getFile(), $error->getLine(),]);
         } else {
-            fprintf(STDERR, "Exception in %s[%d]: %s", $error->getFile(), $error->getLine(), $error->getMessage());
+            $stderr = fopen("php://stderr", "a");
+            fprintf($stderr, "Exception in %s[%d]: %s", $error->getFile(), $error->getLine(), $error->getMessage());
+            fclose($stderr);
         }
     }
 
