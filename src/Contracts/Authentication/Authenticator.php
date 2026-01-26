@@ -2,10 +2,10 @@
 
 namespace Bead\Contracts\Authentication;
 
-use Bead\Web\Request;
 use Bead\Authentication\AuthenticationResult;
 use Bead\Contracts\Authentication\Credentials as CredentialsContract;
 use Bead\Contracts\Models\Authenticatable as AuthenticatableContract;
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Exceptions\Authentication\AuthenticationException;
 
 /** Contract to be implemented by classes providing authentication services for an application. */
@@ -22,12 +22,12 @@ interface Authenticator
     /**
      * Extract the credentials for an authentication attempt from a Request.
      *
-     * @param Request $request The incoming authentication requrest.
+     * @param RequestContract $request The incoming authentication requrest.
      *
      * @return CredentialsContract A set of credentials.
      * @throws AuthenticationException if suitable credentials can't be found in the request.
      */
-    public function extractCredentials(Request $request): CredentialsContract;
+    public function extractCredentials(RequestContract $request): CredentialsContract;
 
     /**
      * Identify the Authenticatable that the credentials refer to.
@@ -53,13 +53,13 @@ interface Authenticator
     /**
      * Attempt to authenticate with the app using credentials contained in a Request.
      *
-     * @param Request $request The Request with the credentials.
+     * @param RequestContract $request The Request with the credentials.
      *
      * @return AuthenticationResult If the authentication succeeds, or could succeed with further credentials (e.g. MFA)
      * @throws AuthenticationException If no usable credentials can be found, no Authenticatable is identified by the
      * credentails, or authentication fails.
      */
-    public function authenticate(Request $request): AuthenticationResult;
+    public function authenticate(RequestContract $request): AuthenticationResult;
 
     /** Fetch the currently authenticated Authenticatable, if there is one. */
     public function currentlyAuthenticated(): ?AuthenticatableContract;
