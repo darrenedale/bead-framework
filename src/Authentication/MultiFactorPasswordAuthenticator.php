@@ -5,11 +5,11 @@ namespace Bead\Authentication;
 use Bead\Contracts\Authentication\Credentials as CredentialsContract;
 use Bead\Contracts\Models\Authenticatable as AuthenticatableContract;
 use Bead\Contracts\Models\MultiFactorAuthenticatable as MultiFactorAuthenticatableContract;
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Exceptions\Authentication\AuthenticationException;
 use Bead\Exceptions\Authentication\MultiFactorAuthenticationException;
 use Bead\Facades\Application;
 use Bead\Validation\Validator;
-use Bead\Contracts\Web\Request as RequestContract;
 
 use function Bead\Helpers\I18n\tr;
 

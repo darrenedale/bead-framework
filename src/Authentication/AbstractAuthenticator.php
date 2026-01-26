@@ -5,10 +5,10 @@ namespace Bead\Authentication;
 use Bead\Contracts\Authentication\Authenticator as AuthenticatorContract;
 use Bead\Contracts\Authentication\Credentials as CredentialsContract;
 use Bead\Contracts\Models\Authenticatable as AuthenticatableContract;
+use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Exceptions\InvalidConfigurationException;
 use Bead\Facades\Application;
 use Bead\Facades\Session;
-use Bead\Web\Request;
 use LogicException;
 
 /**
@@ -38,7 +38,7 @@ abstract class AbstractAuthenticator implements AuthenticatorContract
     private ?AuthenticatableContract $authenticatable = null;
 
     /** @inheritDoc */
-    abstract public function extractCredentials(Request $request): CredentialsContract;
+    abstract public function extractCredentials(RequestContract $request): CredentialsContract;
 
     /** @inheritDoc */
     abstract public function findAuthenticatable(CredentialsContract $credentials): AuthenticatableContract;
@@ -88,10 +88,10 @@ abstract class AbstractAuthenticator implements AuthenticatorContract
     /**
      * Extracts the credentials, identifies the user and verifies the credentials.
      *
-     * @param Request $request
+     * @param RequestContract $request
      * @return AuthenticationResult
      */
-    public function authenticate(Request $request): AuthenticationResult
+    public function authenticate(RequestContract $request): AuthenticationResult
     {
         $credentials = $this->extractCredentials($request);
         $authenticatable = $this->findAuthenticatable($credentials);
