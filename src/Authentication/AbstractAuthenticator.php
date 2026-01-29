@@ -27,7 +27,7 @@ use LogicException;
 abstract class AbstractAuthenticator implements AuthenticatorContract
 {
     /** @var int Default sign-in inactivity timeout in seconds. */
-    public const int DefaultTimeout = 1800;
+    public const DefaultTimeout = 1800;
 
     /** @var class-string<AuthenticatableContract> The model class the authenticator works with. */
     protected string $authenticatableClass;
