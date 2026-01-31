@@ -89,7 +89,7 @@ trait SoftDeletes
      *
      * @return string[]
      */
-    protected static function fixedWhereExpressions(string $tableAlias = null): array
+    protected static function fixedWhereExpressions(?string $tableAlias = null): array
     {
         if (static::deletedModelsIncluded()) {
             return [];
