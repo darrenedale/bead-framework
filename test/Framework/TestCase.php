@@ -29,6 +29,8 @@ use function uopz_unset_return;
  */
 abstract class TestCase extends PhpUnitTestCase
 {
+    protected const ZendAssertionsActive = 1;
+
     /** @var array<string,mixed> Functions mocked using mockFunction() */
     private array $functionMocks = [];
 
@@ -361,6 +363,14 @@ abstract class TestCase extends PhpUnitTestCase
     public static function assertStreamContentEquals(string $content, mixed $value, string $msg = ""): void
     {
         self::assertThat($value, new StreamContentEquals($content), $msg);
+    }
+
+    /** Skip the current test if assertions are not being executed. */
+    protected static function skipIfAssertionsDisabled(): void
+    {
+        if (self::ZendAssertionsActive !== (int) ini_get("zend.assertions")) {
+            self::markTestSkipped("This test requires assertions to be enabled.");
+        }
     }
 
     /**
