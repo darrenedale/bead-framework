@@ -539,7 +539,7 @@ abstract class ConsoleApplication extends Application
      * @throws LogicException if the name is not valid or is already in use, the data type is not valid, the description
      *  is empty when trimmed, or the argument is mandatory and optional arguments have already been defined.
      */
-    final protected function addArgument(string $name, string $description, int $type = self::TypeAny, bool $optional = false, string|float|int|array $default = null): void
+    final protected function addArgument(string $name, string $description, int $type = self::TypeAny, bool $optional = false, string|float|int|array|null $default = null): void
     {
         if ("" === trim($description)) {
             throw new LogicException("Expected non-empty argument description, found \"{$description}\"");
