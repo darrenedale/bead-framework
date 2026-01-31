@@ -4,6 +4,8 @@ namespace Bead\Authentication;
 
 use Bead\Contracts\Authentication\Credentials as CredentialsContract;
 
+use function Bead\Helpers\Str\scrub;
+
 /** Classic username-password credentials. */
 class PasswordCredentials implements CredentialsContract
 {
@@ -16,6 +18,12 @@ class PasswordCredentials implements CredentialsContract
     {
         $this->username = $username;
         $this->password = $password;
+    }
+
+    /** Securely wipe the password on destruction. */
+    public function __destruct()
+    {
+        scrub($this->password);
     }
 
     /** Fetch the username from the credentials. */
