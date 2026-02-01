@@ -124,7 +124,7 @@ abstract class TestCase extends PhpUnitTestCase
             throw new LogicException("Attempt to remove mock for function '{$function}' that isn't mocked.");
         }
 
-        if ($this->functionMocks[$function] !== uopz_get_return($function)) {
+        if ($this->functionMocks[$function] !== uopz_get_return(strtolower($function))) {
             throw new LogicException("Mock for function '{$function}' has been removed externally.");
         }
 
