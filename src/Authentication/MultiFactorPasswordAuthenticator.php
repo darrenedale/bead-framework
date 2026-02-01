@@ -44,7 +44,7 @@ class MultiFactorPasswordAuthenticator extends AbstractAuthenticator
         if (!$validator->passes()) {
             // delay before responding to make brute-force attacks less effective
             usleep(Application::config("app.auth-delay", 2) * 1000000);
-            throw new AuthenticationException(tr("Invalid authentication data provided."));
+            throw new AuthenticationException(tr("Invalid authentication data provided"));
         }
 
         $validatedInput = $validator->validated();
@@ -73,7 +73,7 @@ class MultiFactorPasswordAuthenticator extends AbstractAuthenticator
     public function verifyCredentials(CredentialsContract $credentials, AuthenticatableContract $authenticatable): AuthenticationResult
     {
         if (!$authenticatable->verify($credentials)) {
-            throw new AuthenticationException(tr("The email and/or password is not valid."));
+            throw new AuthenticationException(tr("The email and/or password is not valid"));
         }
 
         if (!($authenticatable instanceof MultiFactorAuthenticatableContract) || !$authenticatable->hasMultiFactorEnabled()) {
@@ -88,7 +88,7 @@ class MultiFactorPasswordAuthenticator extends AbstractAuthenticator
             }
 
             // incorrect MFA credentials
-            throw new MultiFactorAuthenticationException(tr("The code is not valid, please try again with the next code."));
+            throw new MultiFactorAuthenticationException(tr("The code is not valid, please try again with the next code"));
         }
 
         // no MFA credentials, so ask for them
