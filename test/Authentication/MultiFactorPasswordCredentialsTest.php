@@ -8,7 +8,7 @@ use Bead\Authentication\MultiFactorPasswordCredentials;
 use BeadTests\Framework\TestCase;
 
 /** @covers \Bead\Authentication\MultiFactorPasswordCredentials */
-class TestMultiFactorPasswordCredentials extends TestCase
+class MultiFactorPasswordCredentialsTest extends TestCase
 {
     /** Provides second factor arguments that result in the credentials reporting that there is no second factor. */
     public static function providerNoSecondFactor(): iterable

@@ -8,7 +8,7 @@ use Bead\Authentication\PasswordCredentials;
 use BeadTests\Framework\TestCase;
 
 /** @covers \Bead\Authentication\PasswordCredentials */
-class TestPasswordCredentials extends TestCase
+class PasswordCredentialsTest extends TestCase
 {
     /** Ensure the constructor sets the username and password correctly. */
     public function testConstructor1(): void
