@@ -17,5 +17,8 @@
 >
     <projectFiles>
         <directory name="../test" />
+        <ignoreFiles>
+            <file name="../test/Exceptions/Http/views/errors/404.php" />
+        </ignoreFiles>
     </projectFiles>
 </psalm>
