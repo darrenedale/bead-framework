@@ -23,8 +23,10 @@ class HttpExceptionTest extends TestCase
 
     public function tearDown(): void
     {
-        unset($this->request);
         parent::tearDown();
+        $xray = new StaticXRay(Application::class);
+        $xray->s_instance = null;
+        unset($this->request);
     }
 
     /** Ensure the default message is an empty string. */
@@ -145,7 +147,8 @@ class HttpExceptionTest extends TestCase
     public function testContent1(): void
     {
         $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $xray = new StaticXRay(Application::class);
+        $xray->s_instance = $app;
 
         $app->expects("config")
             ->once()
@@ -192,7 +195,8 @@ class HttpExceptionTest extends TestCase
     public function testContent2(): void
     {
         $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $xray = new StaticXRay(Application::class);
+        $xray->s_instance = $app;
 
         $app->expects("config")
             ->once()
@@ -243,7 +247,8 @@ class HttpExceptionTest extends TestCase
     public function testContent3(): void
     {
         $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $xray = new StaticXRay(Application::class);
+        $xray->s_instance = $app;
 
         $app->expects("config")
             ->once()
@@ -284,7 +289,8 @@ class HttpExceptionTest extends TestCase
     public function testContent4(): void
     {
         $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $xray = new StaticXRay(Application::class);
+        $xray->s_instance = $app;
 
         $app->expects("config")
             ->once()
@@ -335,7 +341,8 @@ class HttpExceptionTest extends TestCase
     public function testContent5(): void
     {
         $app = Mockery::mock(Application::class);
-        $this->mockMethod(Application::class, "instance", $app);
+        $xray = new StaticXRay(Application::class);
+        $xray->s_instance = $app;
 
         $app->expects("config")
             ->once()
