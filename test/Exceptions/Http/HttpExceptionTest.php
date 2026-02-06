@@ -162,7 +162,7 @@ class HttpExceptionTest extends TestCase
             ->withNoArgs()
             ->andReturn(__DIR__);
 
-        $exception = new class ($this->request) extends HttpException
+        $exception = new class ($this->request, "Test exception") extends HttpException
         {
             public function statusCode(): int
             {
@@ -170,7 +170,22 @@ class HttpExceptionTest extends TestCase
             }
         };
 
-        self::assertSame(file_get_contents(__DIR__ . "/views/errors/404.php"), $exception->content());
+        self::assertSame(
+            <<<HTML
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Not found</title>
+            </head>
+            <body>
+            <h1>404 Not Found</h1>
+            <p>Exception message: Test exception</p>
+            </body>
+            </html>
+            HTML
+            ,
+            $exception->content(),
+        );
     }
 
     /** Ensure the exception falls back on the built-in content when the view doesn't exist. */
@@ -209,17 +224,17 @@ class HttpExceptionTest extends TestCase
 
         self::assertSame(
             <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<title>HTTP Error 500</title>
-</head>
-<body>
-<h2>HTTP Error 500 <em>Internal Server Error</em></h2>
-<p>Error message</p>
-</body>
-</html>
-HTML,
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+            <title>HTTP Error 500</title>
+            </head>
+            <body>
+            <h2>HTTP Error 500 <em>Internal Server Error</em></h2>
+            <p>Error message</p>
+            </body>
+            </html>
+            HTML,
             $exception->content(),
         );
     }
@@ -250,17 +265,17 @@ HTML,
 
         self::assertSame(
             <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<title>HTTP Error 500</title>
-</head>
-<body>
-<h2>HTTP Error 500 <em>Internal Server Error</em></h2>
-<p>Error message</p>
-</body>
-</html>
-HTML,
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+            <title>HTTP Error 500</title>
+            </head>
+            <body>
+            <h2>HTTP Error 500 <em>Internal Server Error</em></h2>
+            <p>Error message</p>
+            </body>
+            </html>
+            HTML,
             $exception->content(),
         );
     }
@@ -301,17 +316,17 @@ HTML,
 
         self::assertSame(
             <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<title>HTTP Error 500</title>
-</head>
-<body>
-<h2>HTTP Error 500 <em>Internal Server Error</em></h2>
-
-</body>
-</html>
-HTML,
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+            <title>HTTP Error 500</title>
+            </head>
+            <body>
+            <h2>HTTP Error 500 <em>Internal Server Error</em></h2>
+            
+            </body>
+            </html>
+            HTML,
             $exception->content(),
         );
     }
@@ -352,17 +367,17 @@ HTML,
 
         self::assertSame(
             <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<title>HTTP Error 500</title>
-</head>
-<body>
-<h2>HTTP Error 500 <em>Internal Server Error</em></h2>
-
-</body>
-</html>
-HTML,
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+            <title>HTTP Error 500</title>
+            </head>
+            <body>
+            <h2>HTTP Error 500 <em>Internal Server Error</em></h2>
+            
+            </body>
+            </html>
+            HTML,
             $exception->content(),
         );
     }
