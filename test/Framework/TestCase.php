@@ -7,6 +7,9 @@ namespace BeadTests\Framework;
 use ArrayAccess;
 use Bead\Contracts\Email\Header as HeaderContract;
 use Bead\Contracts\Email\Part as PartContract;
+use Bead\Core\Application;
+use Bead\Facades\Session;
+use Bead\View;
 use BeadTests\Framework\Constraints\ArrayHasEntry;
 use BeadTests\Framework\Constraints\AttributeIsInt;
 use BeadTests\Framework\Constraints\Email\HasEquivalentHeader;
@@ -16,6 +19,7 @@ use BeadTests\Framework\Constraints\Email\HasPart;
 use BeadTests\Framework\Constraints\StreamContentEquals;
 use Closure;
 use DirectoryIterator;
+use Equit\XRay\StaticXRay;
 use LogicException;
 use PHPUnit\Framework\Constraint\LogicalNot;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
@@ -63,6 +67,25 @@ abstract class TestCase extends PhpUnitTestCase
         self::clearDir(self::tempDir());
     }
 
+    protected static function resetState(): void
+    {
+        if (Application::instance()) {
+            restore_error_handler();
+            restore_exception_handler();
+        }
+
+        $xray = new StaticXRay(Application::class);
+        $xray->s_instance = null;
+
+        $xray = new StaticXRay(Session::class);
+        $xray->session = null;
+
+        $xray = new StaticXRay(View::class);
+        $xray->m_renderStack = [];
+        $xray->m_layoutStack = [];
+        $xray->m_injectedData = [];
+    }
+
     /** Subclasses that reimplement tearDown() must call the parent implementation. */
     public function tearDown(): void
     {
@@ -78,6 +101,7 @@ abstract class TestCase extends PhpUnitTestCase
             unset($this->methodMocks[$class]);
         }
 
+        self::resetState();
         parent::tearDown();
     }
 
