@@ -129,7 +129,6 @@ final class ConsoleApplicationTest extends TestCase
         $app = new class (__DIR__ . "/console-application-root", ["/path/to/test-command.php", "--test-option", "option-value",]) extends ConsoleApplication {
             protected function run(): int
             {
-                echo "testConstructor1::ConsoleApplication::run()\n";
                 return self::ExitOk;
             }
         };
