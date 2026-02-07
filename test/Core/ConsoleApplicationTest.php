@@ -117,13 +117,7 @@ final class ConsoleApplicationTest extends TestCase
         };
     }
 
-    /**
-     * Ensure the constructor sets the script and raw arguments.
-     *
-     * NOTE Since this test is run in a separate process, and PHPUnit 9 on PHP 8.1 uses standard input to pipe the code
-     * to the PHP process, as per https://www.php.net/manual/en/features.commandline.io-streams.php the STDIN, STDOUT
-     * and STDERR constants are not available. This is why the base class constrcutor explicitly opens the streams.
-     */
+    /** Ensure the constructor sets the script and raw arguments. */
     public function testConstructor1(): void
     {
         $app = new class (__DIR__ . "/console-application-root", ["/path/to/test-command.php", "--test-option", "option-value",]) extends ConsoleApplication {
@@ -137,9 +131,7 @@ final class ConsoleApplicationTest extends TestCase
         self::assertEquals(["--test-option", "option-value",], $app->commandLineArguments());
     }
 
-    /**
-     * Ensure the constructor defines the help and debug flags.
-     */
+    /** Ensure the constructor defines the help and debug flags. */
     public function testConstructor2(): void
     {
         $app = new class (__DIR__ . "/console-application-root", ["/path/to/test-command.php",]) extends ConsoleApplication {
