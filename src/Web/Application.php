@@ -8,11 +8,8 @@ use Bead\Contracts\Web\RequestPreprocessor;
 use Bead\Contracts\Web\Response;
 use Bead\Contracts\Web\Router as RouterContract;
 use Bead\Core\Application as CoreApplication;
-use Bead\Core\Plugin;
 use Bead\Exceptions\Http\NotFoundException;
 use Bead\Exceptions\InvalidConfigurationException;
-use Bead\Exceptions\InvalidPluginException;
-use Bead\Exceptions\InvalidPluginsDirectoryException;
 use Bead\Exceptions\InvalidRoutesDirectoryException;
 use Bead\Exceptions\InvalidRoutesFileException;
 use Bead\Exceptions\ServiceAlreadyBoundException;
@@ -67,38 +64,24 @@ use function Bead\Helpers\Str\random;
  * The running `WebApplication` instance can be retrieved using the `instance()` static method. This instance provides
  * access to all the services that the application provides.
  *
- * ## Plugins
- * Plugins are loaded automatically by the `exec()` method and are sourced from the `app/plugins/` subdirectory by
- * default. This can be customised in the app config file, by providing a path (relative to the application's root
- * directory) in the `plugins.path` item. Any plugin found in this directory is loaded. Plugin classes should be in the
- * `App\Plugins` namespace. This too can be customised in the app config file, by providing a valid namespace in the
- * `plugins.namespace` item. All plugins must be in the same namespace.
- *
- * Subdirectories within the plugins directory are not scanned. It is therefore sufficient to install a plugin's PHP
- * file in the plugins subdirectory for it to be loaded and enabled by the application.
- *
- * The primary use-case for plugins is to monitor for events and augment the functionality of the application while not
- * actually handling requests themselves.
- *
  * ## Requests
  * The request being handled can always be retrieved using the `request()` method. This retrieves the original HTTP
  * request that was submitted by the user agent (in other words the request `exec()` provided to `handleRequest()`).
  *
  * ## Inter-module communication
  * A simple inter-object communication mechanism is implemented by the Application class. This mechanism is based
- * on the concept of named events being emitted and objects subscribing to those events. Emitted events can
- * provide additional arguments that provide more details of the event (for example an event that fires when a
- * particular type of search has been executed might provide the search terms and result set as additional
- * arguments).
+ * on the concept of named events being emitted and objects subscribing to those events. Emitted events can provide
+ * additional arguments that provide more details of the event (for example an event that fires when a particular type
+ * of search has been executed might provide the search terms and result set as additional arguments).
  *
  * Events are emitted by calling the `emitEvent()` method. Subscriptions to events are achieved by calling the
- * `connect()` method. Subscriptions can be unsubscribed by calling `disconnect()`. Events do not need to be
- * registered or defined before they are emitted - it is sufficient just to call `emitEvent()` in order to emit an
- * event. Any code -- plugin, class or even the main application script or `WebApplication` object -- can emit events.
+ * `connect()` method. Subscriptions can be unsubscribed by calling `disconnect()`. Events do not need to be registered
+ * or defined before they are emitted - it is sufficient just to call `emitEvent()` in order to emit an event. Any code
+ * can emit events.
  *
- * Emitters of events should take care to document the events they emit and the arguments that are provided with
- * them, and should strive to keep the signatures of their events stable (API stability) and the names of their
- * events distinct to avoid event naming clashes between different emitters.
+ * Emitters of events should take care to document the events they emit and the arguments that are provided with them,
+ * and should strive to keep the signatures of their events stable (API stability) and the names of their events
+ * distinct to avoid event naming clashes between different emitters.
  *
  * ## Session management
  * The `WebApplication` class can be used to manage session data in a way that all-but guarantees clashes between the
@@ -107,10 +90,7 @@ use function Bead\Helpers\Str\random;
  * `sessionData()` method for details of how this works.
  *
  * ### Events
- * This module emits the following events.
- *
- * - `application.pluginsloaded`
- *   Emitted when the `exec()` method has finished loading all the plugins.
+ * Web application emit the following events.
  *
  * - `application.executionstarted`
  *   Emitted when `exec()` starts actual execution (just before it calls `handleRequest()`).
@@ -120,12 +100,36 @@ use function Bead\Helpers\Str\random;
  *
  *   `$request` `Request` The request that was received.
  *
+ * - `application.handlerequest.preprocessing($request)`
+ *   Emitted when `handleRequest()` is about to begin passing the request through the configured pre-processors.
+ *
+ *   `$request` `Request` The request that is about to be pre-processed.
+ *
+ * - `application.handlerequest.preprocessed($request)`
+ *   Emitted when `handleRequest()` has completed pre-processing the request.
+ *
+ *   `$request` `Request` The request that was pre-processed.
+ *
  * - `application.handlerequest.routing(Request $request)`
  *   Emitted when `handleRequest()` is about to match the incoming Request to a route using the application's router.
+ *
+ *   `$request` `Request` The request that is about to be routed.
  *
  * - `application.handlerequest.routed(Request $request)`
  *   Emitted when `handleRequest()` has successfully matched and routed the incoming `Request` to a route using the
  *   application's router.
+ *
+ *   `$request` `Request` The request that was routed.
+ *
+ * - `application.handlerequest.postprocessing($request)`
+ *   Emitted when `handleRequest()` is about to begin passing the request through the configured post-processors.
+ *
+ *   `$request` `Request` The request that is about to be pre-processed.
+ *
+ * - `application.handlerequest.postprocessed($request)`
+ *   Emitted when `handleRequest()` has completed post-processing the request.
+ *
+ *   `$request` `Request` The request that was pre-processed.
  *
  * - `application.executionfinished`
  *   Emitted by `exec()` when `handleRequest()` returns from processing the original HTTP request.
@@ -138,39 +142,17 @@ use function Bead\Helpers\Str\random;
  *
  * ### Session Data
  * The Application class creates a session context with the identifier **application**.
- *
- * @events application.pluginsloaded application.executionstarted application.handlerequest.requestreceived
- *     application.handlerequest.routing application.handlerequest.routed
- *     application.executionfinished application.sendingresponse application.responsesent
- * @session application
- *
- * @method static self instance()
  */
 class Application extends CoreApplication
 {
     /** @var string The context name for this class's session data. */
     public const SessionDataContext = "application";
 
-    /** @var string Where plugins are loaded from by default. Relative to the app root directory. */
-    protected const DefaultPluginsPath = "app/Plugins";
-
-    /** @var string The default namespace for plugin classes. */
-    protected const DefaultPluginsNamespace = "App\\Plugins";
-
     /** @var RequestPreprocessor|RequestPostprocessor[] The request pre-processors that have been added. */
     private array $m_requestProcessors = [];
 
-    /** @var string Where plugins are loaded from. */
-    private string $m_pluginsDirectory = self::DefaultPluginsPath;
-
-    /** @var string The namespace where plugins are located. */
-    private string $m_pluginsNamespace = self::DefaultPluginsNamespace;
-
     /** Application class's session data array. */
     protected ?SessionDataAccessor $m_session = null;
-
-    /** Loaded plugin storage.*/
-    private array $m_pluginsByName = [];
 
     /** @var bool True when exec() is in progress, false otherwise. */
     private bool $m_isRunning = false;
@@ -189,7 +171,6 @@ class Application extends CoreApplication
      * @throws ServiceAlreadyBoundException if an a service binder attempts to bind an implementation to a service that
      * is already bound.
      * @throws SessionException if the session can't be initialised
-     * @throws InvalidPluginsDirectoryException plugins are enabled and the plugins directory is not valid
      * @throws LogicException if you've already initialised the session outside the Application
      */
     public function __construct(string $appRoot)
@@ -200,15 +181,6 @@ class Application extends CoreApplication
         /** @psalm-suppress MissingThrowsDocblock $context is not empty */
         $this->m_session = $this->sessionData(self::SessionDataContext);
         $this->setRouter(new Router());
-
-        if (!empty($this->config("app.plugins.path"))) {
-            /** @psalm-suppress MissingThrowsDocblock LogicException can't be thrown as the Appl can't be running. */
-            $this->setPluginsDirectory($this->config("app.plugins.path"));
-        }
-
-        if (!empty($this->config("app.plugins.namespace"))) {
-            $this->setPluginsNamespace($this->config("app.plugins.namespace"));
-        }
     }
 
     /**
@@ -224,42 +196,6 @@ class Application extends CoreApplication
     }
 
     /**
-     * Set the plugins directory.
-     *
-     * The plugins directory can only be set before `exec()` is called. If `exec()` has been called, calling
-     * `setPluginsDirectory()` will fail.
-     *
-     * @param string $dir The directory to load plugins from.
-     *
-     * @throws LogicException if the app is already running
-     * @throws InvalidPluginsDirectoryException if the provided directory is not valid.
-     */
-    public function setPluginsDirectory(string $dir): void
-    {
-        if ($this->isRunning()) {
-            throw new LogicException("Can't set plugins path while application is running");
-        }
-
-        if (!preg_match("|[a-zA-Z0-9_-][/a-zA-Z0-9_-]*|", $dir)) {
-            throw new InvalidPluginsDirectoryException($dir, "Plugin directories must be composed entirely of path segments that are alphanumeric plus _ and -.");
-        }
-
-        $this->m_pluginsDirectory = $dir;
-    }
-
-    /**
-     * Fetch the plugins path.
-     *
-     * This is the path from which plugins will be/were loaded.
-     *
-     * @return string The plugins path.
-     */
-    public function pluginsDirectory(): string
-    {
-        return $this->m_pluginsDirectory;
-    }
-
-    /**
      * Fetch the routes directory.
      *
      * The directory is relative to the application's root directory. The default is "routes".
@@ -269,26 +205,6 @@ class Application extends CoreApplication
     public function routesDirectory(): string
     {
         return $this->config("app.routes.directory", "routes");
-    }
-
-    /**
-     * Set the namespace for plugins.
-     *
-     * @param string $namespace The namespace.
-     */
-    public function setPluginsNamespace(string $namespace): void
-    {
-        $this->m_pluginsNamespace = $namespace;
-    }
-
-    /**
-     * Fetch the namespace for plugins.
-     *
-     * @return string The namespace.
-     */
-    public function pluginsNamespace(): string
-    {
-        return $this->m_pluginsNamespace;
     }
 
     /**
@@ -355,165 +271,6 @@ class Application extends CoreApplication
     }
 
     /**
-     * Fetch the expected fully-qualified name for a plugin loaded from a given path.
-     *
-     * The default is to take the basename of the path and append it to the plugins namespace to construct the FQ name.
-     *
-     * @param string $path The path from which the plugin is being loaded.
-     *
-     * @return string The expected fully-qualified class name.
-     */
-    protected function pluginClassNameForPath(string $path): string
-    {
-        $className = basename($path, ".php");
-        return "{$this->pluginsNamespace()}\\{$className}";
-    }
-
-    /**
-     * Load a plugin.
-     *
-     * Various checks are performed to ensure that the path represents a genuine plugin for the application. If it does,
-     * it is loaded and added to the application's set of available plugins. Each plugin is guaranteed to be loaded just
-     * once.
-     *
-     * Plugins are required to meet the following conditions:
-     * - defined in a file named exactly as the plugin class is named, with the extension ".php"
-     * - define a class that inherits the `Bead\Plugin` base class
-     * - provide a valid instance of the appropriate class from the `instance()` method of the main plugin class
-     *   defined in the file
-     *
-     * @param $path string The path to the plugin to load.
-     *
-     * @throws InvalidPluginException
-     */
-    private function loadPlugin(string $path): void
-    {
-        if (!is_file($path) || !is_readable($path)) {
-            throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a file or is not readable.");
-        }
-
-        if (!str_ends_with($path, ".php")) {
-            throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" is not a PHP file.");
-        }
-
-        // NOTE this currently requires plugins to be in the global namespace
-        $className    = $this->pluginClassNameForPath($path);
-        $classNameKey = mb_convert_case($className, MB_CASE_LOWER, "UTF-8");
-
-        if (isset($this->m_pluginsByName[$classNameKey])) {
-            return;
-        }
-
-        include_once($path);
-
-        if (!class_exists($className)) {
-            throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" does not define the expected \"{$className}\" class.");
-        }
-
-        $pluginClassInfo = new ReflectionClass($className);
-
-        if (!$pluginClassInfo->isSubclassOf(Plugin::class)) {
-            throw new InvalidPluginException($path, null, "Plugin file \"{$path}\" contains the class \"{$className}\" which does not implement " . Plugin::class);
-        }
-
-        try {
-            $instanceFn = $pluginClassInfo->getMethod("instance");
-        } catch (ReflectionException $err) {
-            throw new InvalidPluginException($path, null, "Exception introspecting {$className}::instance() method: [{$err->getCode()}] {$err->getMessage()}", 0, $err);
-        }
-
-        if (!$instanceFn->isPublic() || !$instanceFn->isStatic()) {
-            throw new InvalidPluginException($path, null, "{$className}::instance() method must be public static");
-        }
-
-        if (0 != $instanceFn->getNumberOfRequiredParameters()) {
-            throw new InvalidPluginException($path, null, "{$className}::instance() method must be callable with no arguments");
-        }
-
-        $instanceFnReturnType = $instanceFn->getReturnType();
-
-        if (!$instanceFnReturnType) {
-            throw new InvalidPluginException($path, null, "{$className}::instance() has no return type");
-        }
-
-        if ($instanceFnReturnType->isBuiltin() || ("self" != $instanceFnReturnType->getName() && !is_a($instanceFnReturnType->getName(), Plugin::class, true))) {
-            throw new InvalidPluginException($path, null, "{$className}::instance() must return an instance of {$className}");
-        }
-
-        try {
-            $plugin = $instanceFn->invoke(null);
-        } catch (ReflectionException $err) {
-            throw new InvalidPluginException($path, null, "Exception invoking {$className}::instance(): [{$err->getCode()}] {$err->getMessage()}", 0, $err);
-        }
-
-        if (!$plugin instanceof $className) {
-            throw new InvalidPluginException($path, null, "{$className}::instance() did not provide an object of the {$className}.");
-        }
-
-        $this->m_pluginsByName[$classNameKey] = $plugin;
-    }
-
-    /**
-     * Load all the available plugins.
-     *
-     * Plugins are loaded from the default plugins path. All valid plugins found are loaded and instantiated. The
-     * error log will contain details of any plugins that failed to load.
-     *
-     * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
-     * @throws InvalidPluginException if the plugins path can't be read for some reason.
-     */
-    protected function loadPlugins(): void
-    {
-        static $s_done = false;
-
-        if (!$this->config("app.plugins.enabled", false)) {
-            return;
-        }
-
-        if (!$s_done) {
-            $info = new SplFileInfo("{$this->rootDir()}/{$this->pluginsDirectory()}");
-
-            if (!$info->isDir()) {
-                throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" is not a directory.");
-            }
-
-            if (!$info->isReadable() || !$info->isExecutable()) {
-                throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.");
-            }
-
-            /* load the ordered plugins, then the rest after */
-            $pluginLoadOrder = $this->config("app.plugins.loadorder", []);
-
-            foreach ($pluginLoadOrder as $pluginName) {
-                $pluginFile = new SplFileInfo("{$info->getRealPath()}/{$pluginName}.php");
-                $pluginFilePath = $pluginFile->getRealPath();
-
-                if (false !== $pluginFilePath) {
-                    $this->loadPlugin($pluginFilePath);
-                }
-            }
-
-            try {
-                $directory = new DirectoryIterator("{$info->getRealPath()}");
-            } catch (UnexpectedValueException $err) {
-                throw new InvalidPluginsDirectoryException($this->pluginsDirectory(), "Plugin directory \"{$this->pluginsDirectory()}\" cannot be scanned for plugins to load.", 0, $err);
-            }
-
-            foreach ($directory as $pluginFile) {
-                // ignore ., .. and "hidden" files (e.g. .gitignore)
-                if (str_starts_with($pluginFile->getBasename(), ".")) {
-                    continue;
-                }
-
-                $this->loadPlugin($pluginFile->getRealPath());
-            }
-
-            $s_done = true;
-            $this->emitEvent("application.pluginsloaded");
-        }
-    }
-
-    /**
      * Load all the routes files in the routes directory.
      *
      * @throws InvalidRoutesDirectoryException
@@ -559,36 +316,6 @@ class Application extends CoreApplication
                 }
             }
         }
-    }
-
-    /**
-     * Fetch the list of loaded plugins.
-     *
-     * @api
-     * @return array<string> The names of the loaded plugins.
-     */
-    public function loadedPlugins(): array
-    {
-        return array_keys($this->m_pluginsByName);
-    }
-
-    /**
-     * Fetch a plugin by its name.
-     *
-     * If the plugin has been loaded, the created instance of that plugin will be returned. The provided class name must
-     * be fully-qualified with its namespace.
-     *
-     * @api
-     * @param $name string The class name of the plugin.
-     *
-     * @return Plugin|null The loaded plugin instance if the named plugin was loaded, `null` otherwise.
-     * @throws InvalidPluginsDirectoryException if the plugins path can't be read for some reason.
-     * @throws InvalidPluginException if the plugins path can't be read for some reason.
-     */
-    public function pluginByName(string $name): ?Plugin
-    {
-        $this->loadPlugins();
-        return $this->m_pluginsByName[mb_strtolower($name, "UTF-8")] ?? null;
     }
 
     /**
@@ -806,14 +533,9 @@ class Application extends CoreApplication
      * `handleRequest()` and return when processing of that request completes. This method should never be called,
      * except from the script that is in use as the application bootstrap.
      *
-     * This method is responsible for setting up the execution context for the request, including initialising the
-     * page. It emits some events that may be of interest to plugins.
-     *
      * Once this method returns, the application is considered to have exited.
      *
      * @return int `self::ErrOk` on success, some other value on failure.
-     * @throws InvalidPluginException
-     * @throws InvalidPluginsDirectoryException
      * @throws InvalidRoutesDirectoryException
      * @throws InvalidRoutesFileException
      * @throws RuntimeException
@@ -833,7 +555,6 @@ class Application extends CoreApplication
 
         $this->m_isRunning = true;
         $this->loadRequestProcessors();
-        $this->loadPlugins();
         $this->loadRoutes();
 
         $this->emitEvent("application.executionstarted");
