@@ -76,7 +76,7 @@ class PrefixedAccessor implements DataAccessor
         $data = [];
 
         foreach ($this->m_parent->extract($keys) as $key => $value) {
-            assert (str_starts_with($key, $this->m_prefix), new LogicException("Parent accessor " . get_class($this->m_parent) . " does not correctly extract keyed items"));
+            assert(str_starts_with($key, $this->m_prefix), new LogicException("Parent accessor " . get_class($this->m_parent) . " does not correctly extract keyed items"));
             $data[substr($key, strlen($this->m_prefix))] = $value;
         }
 
@@ -110,6 +110,7 @@ class PrefixedAccessor implements DataAccessor
         return $this->m_parent->pop($this->prefixedKey($key), $n);
     }
 
+    /** @throws InvalidArgumentException if $keyOrData is an array with one or more non-string keys. */
     public function transientSet(string|array $keyOrData, mixed $data = null): void
     {
         if (is_string($keyOrData)) {
