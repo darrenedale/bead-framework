@@ -3,6 +3,7 @@
 namespace Bead\Session;
 
 use InvalidArgumentException;
+use LogicException;
 use TypeError;
 
 use function Bead\Helpers\Iterable\all;
@@ -45,17 +46,13 @@ class PrefixedAccessor implements DataAccessor
         return "{$this->m_prefix}{$key}";
     }
 
-    /**
-     * @inheritDoc
-     */
+    /** @inheritDoc */
     public function has(string $key): bool
     {
         return $this->m_parent->has($this->prefixedKey($key));
     }
 
-    /**
-     * @inheritDoc
-     */
+    /** @inheritDoc */
     public function get(string $key, mixed $default = null): mixed
     {
         return $this->m_parent->get($this->prefixedKey($key), $default);
@@ -69,14 +66,21 @@ class PrefixedAccessor implements DataAccessor
         }
 
         if (!all($keys, "is_string")) {
-            throw new InvalidArgumentException("Keys for session data must be strings.");
+            throw new InvalidArgumentException("Keys for session data must be strings");
         }
 
         array_walk($keys, function (string & $key): void {
             $key = $this->prefixedKey($key);
         });
 
-        return $this->m_parent->extract($keys);
+        $data = [];
+
+        foreach ($this->m_parent->extract($keys) as $key => $value) {
+            assert (str_starts_with($key, $this->m_prefix), new LogicException("Parent accessor " . get_class($this->m_parent) . " does not correctly extract keyed items"));
+            $data[substr($key, strlen($this->m_prefix))] = $value;
+        }
+
+        return $data;
     }
 
     public function set(string|array $keyOrData, mixed $data = null): void
@@ -113,6 +117,10 @@ class PrefixedAccessor implements DataAccessor
             return;
         }
 
+        if (!all(array_keys($keyOrData), "is_string")) {
+            throw new InvalidArgumentException("Keys for session data must be strings");
+        }
+
         foreach ($keyOrData as $key => $data) {
             $this->m_parent->transientSet($this->prefixedKey($key), $data);
         }
@@ -127,7 +135,7 @@ class PrefixedAccessor implements DataAccessor
         }
 
         if (!all($keys, "is_string")) {
-            throw new InvalidArgumentException("Parameter \$keys expects a string or an array of strings.");
+            throw new InvalidArgumentException("Keys for session data must be strings");
         }
 
         foreach ($keys as $key) {
@@ -135,13 +143,19 @@ class PrefixedAccessor implements DataAccessor
         }
     }
 
-    /**
-     * Fetches all session data in the underlying Session whose key starts with the prefix.
-     */
+    /** Fetches all session data in the underlying Session whose key starts with the prefix. */
     public function all(): array
     {
-        return array_filter($this->m_parent->all(), function (string $key): bool {
-            return str_starts_with($key, $this->m_prefix);
-        }, ARRAY_FILTER_USE_KEY);
+        $data = [];
+
+        foreach ($this->m_parent->all() as $key => $value) {
+            if (!str_starts_with($key, $this->m_prefix)) {
+                continue;
+            }
+
+            $data[substr($key, strlen($this->m_prefix))] = $value;
+        }
+
+        return $data;
     }
 }
