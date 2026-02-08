@@ -293,6 +293,20 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
+     * Set the minimum PHP version the application requires.
+     *
+     * The version string should be of the form _x.y.z_ where _x_, _y_ and _z_ are integers >= 0.
+     *
+     * @param string $version The minimum required PHP version.
+     *
+     * @return void
+     */
+    public function setMinimumPhpVersion(string $version): void
+    {
+        $this->m_minimumPhpVersion = $version;
+    }
+
+    /**
      * Bind an instance to an identified service.
      *
      * @param string $service The service identifier to bind to.
@@ -537,23 +551,18 @@ abstract class Application implements ServiceContainer, ContainerInterface
     {
         $this->m_errorHandler = $handler;
 
-        $errorHandler = function (int $type, string $message, string $file = "", int $line = 0) use ($handler): void {
+        set_error_handler(function (int $type, string $message, string $file = "", int $line = 0) use ($handler): void {
             $handler->handleError($type, $message, $file, $line);
-        };
-
-        set_error_handler($errorHandler);
+        });
 
         set_exception_handler(function (Throwable $err) use ($handler): void {
             $handler->handleException($err);
         });
     }
 
-    /** Fetch the application's data controller.
+    /** Fetch the application's database.
      *
-     * The returned data controller should be used by all classes and plugins whenever access to the database is
-     * required.
-     *
-     * @return Connection|null The data controller.
+     * @return Connection|null The database.
      */
     public function database(): ?Connection
     {
@@ -606,20 +615,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
         }
 
         return true;
-    }
-
-    /**
-     * Set the minimum PHP version the application requires.
-     *
-     * The version string should be of the form _x.y.z_ where _x_, _y_ and _z_ are integers >= 0.
-     *
-     * @param string $version The minimum required PHP version.
-     *
-     * @return void
-     */
-    public function setMinimumPhpVersion(string $version): void
-    {
-        $this->m_minimumPhpVersion = $version;
     }
 
     /**
