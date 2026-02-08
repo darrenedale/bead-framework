@@ -19,6 +19,7 @@ use Equit\XRay\StaticXRay;
 use Equit\XRay\XRay;
 use Mockery;
 
+/** @covers \Bead\Web\Application */
 class ApplicationTest extends TestCase
 {
     public function setUp(): void
@@ -46,36 +47,6 @@ class ApplicationTest extends TestCase
             {
             }
         };
-    }
-
-    /** Ensure plugins are not loaded when the config has disabled them. */
-    public function testLoadPlugins1(): void
-    {
-        $loadPluginCalled = false;
-
-        $this->mockMethod(WebApplication::class, "loadPlugin", function () use (&$loadPluginCalled): void {
-            $loadPluginCalled = true;
-            TestCase::fail("loadPlugin() should not be called.");
-        });
-
-        $app = new XRay($this->makeTestWebApplication());
-        $app->loadPlugins();
-        self::assertFalse($loadPluginCalled);
-    }
-
-    /** Ensure plugins are not loaded by default. */
-    public function testLoadPlugins2(): void
-    {
-        $loadPluginCalled = false;
-
-        $this->mockMethod(WebApplication::class, "loadPlugin", function () use (&$loadPluginCalled): void {
-            $loadPluginCalled = true;
-            TestCase::fail("loadPlugin() should not be called.");
-        });
-
-        $app = new XRay($this->makeTestWebApplication());
-        $app->loadPlugins();
-        self::assertFalse($loadPluginCalled);
     }
 
     /** Ensure handleRequest() emits the expected events. */

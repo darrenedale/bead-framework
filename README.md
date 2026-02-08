@@ -8,28 +8,28 @@ A basic MVC application framework for PHP.
 
 Bead is a simple MVC framework for PHP 8.1 and later.
 
-## WebApplication
+## Web\Application
 
 Every web application that uses bead must create an instance of this singleton class. It is the core of your app,
-providing a bunch of useful features such as access to configuration details, plugin loading, routing of requests,
-event registration and dispatch, error handling and sending the response. In most cases you'll probably want to create a
-subclass and reimplement the constructor and/or `exec()` methods to perform your application-specific initialisation.
-The application is executed by calling the `exec()` method from your main `index.php` script.
+providing a bunch of useful features such as access to configuration details, routing of requests, event registration
+and dispatch, error handling and sending the response. In most cases you'll probably want to create a subclass and
+reimplement the constructor and/or `exec()` methods to perform your application-specific initialisation. The application
+is executed by calling the `exec()` method from your main `index.php` script.
 
-During initialisation in `exec()` the `WebApplication` loads your app's configuration, plugins and routes. Routes are
-registered with your app's router, which by default is an instance of `\Bead\Router`. You can provide your own router
-by calling `WebApplication::setRouter()` with an object that implements the `\Bead\Contracts\Router` contract either 
-from your custom WebApplication subclass's constructor, or from within your `index.php` file after you have created your
-`WebApplication` instance (and before you call `exec()`, obviously).
+During initialisation in `exec()` the `Bead\Web\Application` loads your app's configuration and routes. Routes are
+registered with your app's router, which by default is an instance of `Bead\Router`. You can provide your own router by
+calling `Bead\Web\Application::setRouter()` with an object that implements the `Bead\Contracts\Router` contract either
+from your custom `Bead\Web\Application` subclass's constructor, or from within your `index.php` file after you have
+created your `Bead\Web\Application` instance (and before you call `exec()`, obviously).
 
-The WebApplication singleton is always available from the `WebApplication::instance()` static method.
+The singleton is always available from the `Bead\Web\Application::instance()` static method.
 
 ## Routes
 
 Routes are loaded from route files stored in a subdirectory of your app's source, `/routes` by default. Each route
 file is a standard PHP file whose purpose is to register routes with the router. Route files are loaded sandboxed by an
-anonymous function - the only variables available to the route files are `$app`, the WebApplication instance (for
-convenience); `$router`, the Router instance; and the PHP superglobals.
+anonymous function - the only variables available to the route files are `$app`, the Bead`\Web\WebApplication` instance
+(for convenience); `$router`, the `Router` instance; and the PHP superglobals.
 
 The default router uses HTTP methods and request path info to route requests. For example, you would call
 `$router->registerGet()` to register a route for the GET HTTP method, or `$router->registerPost()` to register a route
@@ -78,16 +78,6 @@ and (int) 200 as `$authorId` as its arguments.
 
 In any route handler, you can also type-hint a parameter (of any name) with the `\Bead\Request` type and the handler
 will receive the incoming Request as the argument for that parameter.
-
-## Plugin
-
-This is a base class for components that augment the functionality of the application. Typically, plugins will register
-event handlers with the `WebApplication` singleton to respond to events in your app. For example, you could use a plugin
-to listen for the "application.handlerequest.requestreceived" event and throw a `NotAuthorisedException` if it detects 
-the request is from a banned IP address.
-
-All plugins located in your plugins directory (`/app/plugins` by default) are loaded and instantiated for every request
-to your application. You should therefore keep your plugin constructors relatively simple to avoid performance hits.
 
 ## Request
 

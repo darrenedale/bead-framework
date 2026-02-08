@@ -5,7 +5,6 @@ namespace Bead\Facades;
 use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\Response as ResponseContract;
 use Bead\Contracts\Web\Router as RouterContract;
-use Bead\Core\Plugin;
 use Bead\Web\Application as BeadWebApplication;
 use LogicException;
 
@@ -18,10 +17,6 @@ use function assert;
  * @psalm-seal-methods
  * @method static bool isRunning()
  * @method static string routesDirectory()
- * @method static string pluginsDirectory()
- * @method static string pluginsNamespace()
- * @method static string[] loadedPlugins()
- * @method static Plugin|null pluginByName(string $name)
  * @method static void setRouter(RouterContract $router)
  * @method static RouterContract router()
  * @method static void sendResponse(ResponseContract $response)

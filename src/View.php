@@ -262,9 +262,9 @@ class View implements Response
     /**
      * Inject some data into all views.
      *
-     * Use this somewhere in your app's initialisation code (e.g. App::exec(), a plugin's constructor, your bootstrap
-     * script) to ensure all views rendered are given a piece of data. Where injected data and the data for the specific
-     * view have the same key, the data for the specific view takes precedence.
+     * Use this somewhere in your app's initialisation code to ensure all views rendered are given a piece of data.
+     * Where injected data and the data for the specific view have the same key, the data for the specific view takes
+     * precedence.
      *
      * @param array|string $keyOrData The array of data to add, or the key if a single value is being provided.
      * @param mixed|null $value The value if a single item of data is being added, `null` otherwise.
