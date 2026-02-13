@@ -291,8 +291,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
@@ -418,16 +417,14 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
 
         $this->mockFunction(
             "time",
-            static function () use (&$testTimestamps): int
-            {
+            static function () use (&$testTimestamps): int {
                 if (1 === count($testTimestamps)) {
                     return $testTimestamps[0];
                 }
@@ -466,8 +463,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "time",
-            static function () use (&$testTimestamps): int
-            {
+            static function () use (&$testTimestamps): int {
                 return array_shift($testTimestamps);
             },
         );
@@ -635,8 +631,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
@@ -656,8 +651,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
@@ -691,16 +685,14 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
 
         $this->mockFunction(
             "time",
-            static function () use (&$testTimestamps): int
-            {
+            static function () use (&$testTimestamps): int {
                 return array_shift($testTimestamps);
             },
         );
@@ -720,8 +712,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
@@ -754,16 +745,14 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
 
         $this->mockFunction(
             "time",
-            static function () use (&$testTimestamps): int
-            {
+            static function () use (&$testTimestamps): int {
                 return array_shift($testTimestamps);
             },
         );
@@ -783,8 +772,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
@@ -820,8 +808,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
@@ -857,8 +844,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
@@ -877,8 +863,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "Bead\\Helpers\\Str\\random",
-            static function (int $length) use (&$testIds): string
-            {
+            static function (int $length) use (&$testIds): string {
                 return array_shift($testIds);
             },
         );
@@ -916,8 +901,7 @@ class FileTest extends TestCase
 
         $this->mockFunction(
             "time",
-            static function () use (&$testTimestamps): int
-            {
+            static function () use (&$testTimestamps): int {
                 return array_shift($testTimestamps);
             },
         );
@@ -1007,7 +991,7 @@ class FileTest extends TestCase
         );
 
         $this->expectException(InvalidSessionFileException::class);
-        $this->expectExceptionMessageMatches("/The session file \".*". self::TestId . "\" contains an invalid created-at timestamp/");
+        $this->expectExceptionMessageMatches("/The session file \".*" . self::TestId . "\" contains an invalid created-at timestamp/");
         $handler->reload();
     }
 
@@ -1032,7 +1016,7 @@ class FileTest extends TestCase
         );
 
         $this->expectException(InvalidSessionFileException::class);
-        $this->expectExceptionMessageMatches("/The session file \".*". self::TestId . "\" contains an invalid last-used-at timestamp/");
+        $this->expectExceptionMessageMatches("/The session file \".*" . self::TestId . "\" contains an invalid last-used-at timestamp/");
         $handler->reload();
     }
 
@@ -1057,7 +1041,7 @@ class FileTest extends TestCase
         );
 
         $this->expectException(InvalidSessionFileException::class);
-        $this->expectExceptionMessageMatches("/The session file \".*". self::TestId . "\" contains an invalid id-created-at timestamp/");
+        $this->expectExceptionMessageMatches("/The session file \".*" . self::TestId . "\" contains an invalid id-created-at timestamp/");
         $handler->reload();
     }
 
@@ -1082,7 +1066,7 @@ class FileTest extends TestCase
         );
 
         $this->expectException(InvalidSessionFileException::class);
-        $this->expectExceptionMessageMatches("/The session file \".*". self::TestId . "\" contains an invalid expired-at timestamp/");
+        $this->expectExceptionMessageMatches("/The session file \".*" . self::TestId . "\" contains an invalid expired-at timestamp/");
         $handler->reload();
     }
 
@@ -1107,7 +1091,7 @@ class FileTest extends TestCase
         );
 
         $this->expectException(InvalidSessionFileException::class);
-        $this->expectExceptionMessageMatches("/The session file \".*". self::TestId . "\" contains an invalid replacement ID/");
+        $this->expectExceptionMessageMatches("/The session file \".*" . self::TestId . "\" contains an invalid replacement ID/");
         $handler->reload();
     }
 
@@ -1132,7 +1116,7 @@ class FileTest extends TestCase
         );
 
         $this->expectException(InvalidSessionFileException::class);
-        $this->expectExceptionMessageMatches("/The session file \".*". self::TestId . "\" contains an invalid data array/");
+        $this->expectExceptionMessageMatches("/The session file \".*" . self::TestId . "\" contains an invalid data array/");
         $handler->reload();
     }
 
