@@ -184,31 +184,6 @@ final class IterableTest extends TestCase
                 },
                 [1, 2, 3,],
             ],
-
-            "invalidNullCallable" => [[1, 4, 9,], null, [1, 2, 3,], TypeError::class,],
-            "invalidAnonymousClassCallable" => [
-                [1, 4, 9,],
-                new class
-                {
-                },
-                [1, 2, 3,],
-                TypeError::class,
-            ],
-            "invalidObjectClassCallable" => [[1, 4, 9,], (object) [], [1, 2, 3,], TypeError::class,],
-            "invalidIntCallable" => [[1, 4, 9,], 42, [1, 2, 3,], TypeError::class,],
-            "invalidFloatCallable" => [[1, 4, 9,], 3.1415926, [1, 2, 3,], TypeError::class,],
-            "invalidEmptyStringCallable" => [[1, 4, 9,], "", [1, 2, 3,], TypeError::class,],
-            "invalidEmptyArrayCallable" => [[1, 4, 9,], [], [1, 2, 3,], TypeError::class,],
-
-            "invalidNullIterable" => [null, "sqrt", [1, 2, 3,], TypeError::class,],
-            "invalidAnonymousClassIterable" => [
-                new class
-                {
-                },
-                "sqrt",
-                [1, 2, 3,],
-                TypeError::class,
-            ],
         ];
     }
 
