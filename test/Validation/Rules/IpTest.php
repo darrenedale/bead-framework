@@ -27,7 +27,7 @@ class IpTest extends RuleTestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestPasses(): iterable
+    public static function dataForTestPasses(): iterable
     {
         yield from [
             "typicalLocalhost" => ["field", "127.0.0.1", true,],

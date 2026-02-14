@@ -18,7 +18,7 @@ use Stringable;
 class ProcessTest extends TestCase
 {
     /** Test data for testSetCleanupTimeout1 */
-    public function dataForTestSetCleanupTimeout1(): iterable
+    public static function dataForTestSetCleanupTimeout1(): iterable
     {
         for ($timeout = 10; $timeout <= 60; ++$timeout) {
             yield "typical{$timeout}" => [$timeout,];
@@ -51,7 +51,7 @@ class ProcessTest extends TestCase
     }
 
     /** Test data for testSetCleanupTimeout3 */
-    public function dataForTestSetCleanupTimeout3(): iterable
+    public static function dataForTestSetCleanupTimeout3(): iterable
     {
         yield "invalidNegative" => [-1,];
         yield "invalidIntMin" => [PHP_INT_MIN,];
@@ -76,7 +76,7 @@ class ProcessTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestConstructor(): array
+    public static function dataForTestConstructor(): array
     {
         return [
             "typicalRootPwd" => ["/usr/bin/echo", [],  "/",],
@@ -333,7 +333,7 @@ class ProcessTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestSetCommand(): array
+    public static function dataForTestSetCommand(): array
     {
         return [
             "typical" => ["/usr/bin/echo",],
@@ -404,7 +404,7 @@ class ProcessTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestSetArguments(): array
+    public static function dataForTestSetArguments(): array
     {
         return [
             "typicalEmpty" => [[],],
@@ -484,7 +484,7 @@ class ProcessTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestSetWorkingDirectory(): array
+    public static function dataForTestSetWorkingDirectory(): array
     {
         return [
             "typicalRoot" => ["/",],
@@ -552,7 +552,7 @@ class ProcessTest extends TestCase
         $process->setWorkingDirectory("/");
     }
 
-    public function dataForTestSetEnvironment1(): array
+    public static function dataForTestSetEnvironment1(): array
     {
         return [
             "typicalString" => [["foo" => "bar",],],
@@ -587,7 +587,7 @@ class ProcessTest extends TestCase
         self::assertNull($process->environment(), "Process environment was not reset successfully.");
     }
 
-    public function dataForTestSetEnvironment3(): iterable
+    public static function dataForTestSetEnvironment3(): iterable
     {
         yield "invalidArrayValue" => [["foo" => ["bar"],],];
         yield "invalidNullValue" => [["foo" => null,],];
@@ -642,7 +642,7 @@ class ProcessTest extends TestCase
         $process->setEnvironment($env);
     }
 
-    public function dataForTestSetEnvironment4(): iterable
+    public static function dataForTestSetEnvironment4(): iterable
     {
         yield "invalid-int-last" => [["foo" => "bar", 2 => "baz",],];
         yield "invalid-int-first" => [[2 => "foo", "foo" => "bar",],];
@@ -662,7 +662,7 @@ class ProcessTest extends TestCase
         $process->setEnvironment($env);
     }
 
-    public function dataForTestSetEnvironment5(): iterable
+    public static function dataForTestSetEnvironment5(): iterable
     {
         yield "null" => [null,];
         yield "environment" => [["foo" => "bar",],];

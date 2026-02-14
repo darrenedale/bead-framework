@@ -175,7 +175,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestMode(): array
+    public static function dataForTestMode(): array
     {
         return [
             "allowlist_mode" => [HtmlCleaner::AllowListMode, (object)[
@@ -257,7 +257,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestTags(): iterable
+    public static function dataForTestTags(): iterable
     {
         yield "empty_Tag_list" => [[], [],];
         yield "single_string" => ["some-tag", ["some-tag"],];
@@ -271,7 +271,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestTagsThrows(): iterable
+    public static function dataForTestTagsThrows(): iterable
     {
         yield "containsWhitespaceArray" => [["some tag"]];
         yield "containsWhitespaceString" => ["some tag"];
@@ -376,7 +376,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestIds(): iterable
+    public static function dataForTestIds(): iterable
     {
         yield "empty_Id_list" => [[], [],];
         yield "single_string" => ["some-id", ["some-id"],];
@@ -390,7 +390,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestIdsThrows(): iterable
+    public static function dataForTestIdsThrows(): iterable
     {
         yield "containsWhitespaceArray" => [["some string"]];
         yield "containsWhitespaceString" => ["some string"];
@@ -495,7 +495,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestClassList(): iterable
+    public static function dataForTestClassList(): iterable
     {
         yield "empty_class_list" => [[], [],];
         yield "single_string" => ["dangerous", ["dangerous"],];
@@ -504,7 +504,7 @@ class HtmlCleanerTest extends TestCase
         yield "array_same_string_extreme_number_of_times" => [["dangerous", "dangerous", "dangerous", "dangerous", "dangerous", "dangerous"], ["dangerous"],];
     }
 
-    public function dataForTestClassesThrows(): iterable
+    public static function dataForTestClassesThrows(): iterable
     {
         yield "containsWhitespaceArray" => [["some string"]];
         yield "containsWhitespaceString" => ["some string"];
@@ -605,7 +605,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestIsAllowedTag(): iterable
+    public static function dataForTestIsAllowedTag(): iterable
     {
         yield "typicalSpan-CombinedMode-NoDenyList-Allowed" => ["span", ["span",], [], HtmlCleaner::CombinedMode, true,];
         yield "typicalSpan-CombinedMode-NoDenyList-NotAllowed" => ["span", ["div",], [], HtmlCleaner::CombinedMode, false,];
@@ -660,7 +660,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestIsAllowedId(): iterable
+    public static function dataForTestIsAllowedId(): iterable
     {
         yield "allowedCombinedWithNoDenyList" => ["some-id", ["some-id",], [], HtmlCleaner::CombinedMode, true,];
         yield "forbiddenCombinedWithNoDenyList" => ["forbidden-id", ["some-id",], [], HtmlCleaner::CombinedMode, false,];
@@ -689,7 +689,7 @@ class HtmlCleanerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestIsAllowedClass(): iterable
+    public static function dataForTestIsAllowedClass(): iterable
     {
         yield "allowedCombinedWithNoDenyList" => ["some-class", ["some-class",], [], HtmlCleaner::CombinedMode, true,];
         yield "forbiddenCombinedWithNoDenyList" => ["forbidden-class", ["some-class",], [], HtmlCleaner::CombinedMode, false,];
@@ -723,7 +723,7 @@ class HtmlCleanerTest extends TestCase
         self::assertSame($expected, $this->testCleaner->isAllowedClassAttribute($class));
     }
 
-    public function dataForTestClean(): array
+    public static function dataForTestClean(): array
     {
         /** @noinspection BadExpressionStatementJS */
         return [

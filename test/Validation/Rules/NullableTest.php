@@ -56,7 +56,7 @@ class NullableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForAllTests(): iterable
+    public static function dataForAllTests(): iterable
     {
         yield from [
             "typicalFalse" => [false, false,],

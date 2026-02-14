@@ -40,34 +40,25 @@ use function is_string;
  */
 class RouterTest extends TestCase
 {
-    /**
-     * @var int The number of times the nullStaticRouteHandler was called during a test.
-     *
-     * This is useful for asserting that the handler was called when a request was routed.
-     */
-    private static int $nullStaticRouteHandlerCallCount = 0;
+    private static object $routeHandler;
 
-    /**
-     * @var int The number of times the nullRouteHandler was called during a test.
-     *
-     * This is useful for asserting that the handler was called when a request was routed.
-     */
-    private int $nullRouteHandlerCallCount = 0;
+    public static function setUpBeforeClass(): void
+    {
+        parent::setUpBeforeClass();
+
+        self::$routeHandler = new class
+        {
+            public function nullRouteHandler(): void
+            {
+            }
+        };
+    }
 
     /**
      * Route handler that does nothing except increment a call counter.
      */
     public static function nullStaticRouteHandler(): void
     {
-        ++self::$nullStaticRouteHandlerCallCount;
-    }
-
-    /**
-     * Route handler that does nothing except increment a call counter.
-     */
-    public function nullRouteHandler(): void
-    {
-        ++$this->nullRouteHandlerCallCount;
     }
 
     /**
@@ -109,11 +100,18 @@ class RouterTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestRegisterSingleMethod(): array
+    public static function dataForTestRegisterSingleMethod(): array
     {
+        $routeHandler = new class
+        {
+            public function nullRouteHandler(): void
+            {
+            }
+        };
+
         return [
             "typicalRootStaticMethod" => ["/", [self::class, "nullStaticRouteHandler"],],
-            "typicalRootMethod" => ["/", [$this, "nullRouteHandler"],],
+            "typicalRootMethod" => ["/", [$routeHandler, "nullRouteHandler"],],
             "typicalRootClosure" => ["/", function () {
             },],
             "typicalRootFunctionName" => ["/", "phpinfo",],
@@ -274,8 +272,15 @@ class RouterTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestRegister(): iterable
+    public static function dataForTestRegister(): iterable
     {
+        $routeHandler = new class
+        {
+            public function nullRouteHandler(): void
+            {
+            }
+        };
+
         // tests for a single HTTP method, as string and as single array element
         yield "typicalRootStaticMethodGetMethodString" => ["/", RouterContract::GetMethod, [self::class, "nullStaticRouteHandler"],];
         yield "typicalRootStaticMethodPostMethodString" => ["/", RouterContract::PostMethod, [self::class, "nullStaticRouteHandler"],];
@@ -295,24 +300,24 @@ class RouterTest extends TestCase
         yield "typicalRootStaticMethodOptionsMethodArray" => ["/", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalRootStaticMethodConnectMethodArray" => ["/", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalRootStaticMethodAnyMethodArray" => ["/", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"],];
-        yield "typicalRootMethodGetMethodString" => ["/", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodPostMethodString" => ["/", RouterContract::PostMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodPutMethodString" => ["/", RouterContract::PutMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodPatchMethodString" => ["/", RouterContract::PatchMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodHeadMethodString" => ["/", RouterContract::HeadMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodDeleteMethodString" => ["/", RouterContract::DeleteMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodOptionsMethodString" => ["/", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodConnectMethodString" => ["/", RouterContract::ConnectMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodAnyMethodString" => ["/", RouterContract::AnyMethod, [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodGetMethodArray" => ["/", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodPostMethodArray" => ["/", [RouterContract::PostMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodPutMethodArray" => ["/", [RouterContract::PutMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodPatchMethodArray" => ["/", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodHeadMethodArray" => ["/", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodDeleteMethodArray" => ["/", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodOptionsMethodArray" => ["/", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodConnectMethodArray" => ["/", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalRootMethodAnyMethodArray" => ["/", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"],];
+        yield "typicalRootMethodGetMethodString" => ["/", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodPostMethodString" => ["/", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodPutMethodString" => ["/", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodPatchMethodString" => ["/", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodHeadMethodString" => ["/", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodDeleteMethodString" => ["/", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodOptionsMethodString" => ["/", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodConnectMethodString" => ["/", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodAnyMethodString" => ["/", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodGetMethodArray" => ["/", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodPostMethodArray" => ["/", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodPutMethodArray" => ["/", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodPatchMethodArray" => ["/", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodHeadMethodArray" => ["/", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodDeleteMethodArray" => ["/", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodOptionsMethodArray" => ["/", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodConnectMethodArray" => ["/", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalRootMethodAnyMethodArray" => ["/", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"],];
 
         yield "typicalRootClosureGetMethodString" => [
             "/",
@@ -588,7 +593,7 @@ class RouterTest extends TestCase
         // tests for multiple HTTP methods at once
         yield "typicalRootGetAndPostStaticMethodArray" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, ], [self::class, "nullRouteHandler"],];
         yield "typicalRootGetAndPostStaticMethodString" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, ], "self::nullStaticRouteHandler",];
-        yield "typicalRootGetAndPostMethodArray" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, ], [$this, "nullRouteHandler"],];
+        yield "typicalRootGetAndPostMethodArray" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, ], [$routeHandler, "nullRouteHandler"],];
         yield "typicalRootGetAndPostClosure" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, ], function () {
         },];
         yield "typicalRootGetAndPostFunctionName" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, ], "phpinfo",];
@@ -597,7 +602,7 @@ class RouterTest extends TestCase
         // route - the router should array_unique() the methods to avoid throwing ConflictingRouteException
         yield "extremeRootDuplicatedMethodStaticMethodArray" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, RouterContract::GetMethod, ], [self::class, "nullRouteHandler"],];
         yield "extremeRootDuplicatedMethodStaticMethodString" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, RouterContract::GetMethod, ], "self::nullStaticRouteHandler",];
-        yield "extremeRootDuplicatedMethodMethodArray" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, RouterContract::GetMethod, ], [$this, "nullRouteHandler"],];
+        yield "extremeRootDuplicatedMethodMethodArray" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, RouterContract::GetMethod, ], [$routeHandler, "nullRouteHandler"],];
         yield "extremeRootDuplicatedMethodClosure" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, RouterContract::GetMethod, ], function () {
         },];
         yield "extremeRootDuplicatedMethodFunctionName" => ["/", [RouterContract::GetMethod, RouterContract::PostMethod, RouterContract::GetMethod, ], "phpinfo",];
@@ -625,24 +630,24 @@ class RouterTest extends TestCase
         yield "typicalHomeStaticMethodOptionsMethodArray" => ["/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalHomeStaticMethodConnectMethodArray" => ["/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalHomeStaticMethodAnyMethodArray" => ["/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"],];
-        yield "typicalHomeMethodGetMethodString" => ["/home", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodPostMethodString" => ["/home", RouterContract::PostMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodPutMethodString" => ["/home", RouterContract::PutMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodPatchMethodString" => ["/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodHeadMethodString" => ["/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodDeleteMethodString" => ["/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodOptionsMethodString" => ["/home", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodConnectMethodString" => ["/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodAnyMethodString" => ["/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodGetMethodArray" => ["/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodPostMethodArray" => ["/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodPutMethodArray" => ["/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodPatchMethodArray" => ["/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodHeadMethodArray" => ["/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodDeleteMethodArray" => ["/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodOptionsMethodArray" => ["/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodConnectMethodArray" => ["/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalHomeMethodAnyMethodArray" => ["/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"],];
+        yield "typicalHomeMethodGetMethodString" => ["/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodPostMethodString" => ["/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodPutMethodString" => ["/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodPatchMethodString" => ["/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodHeadMethodString" => ["/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodDeleteMethodString" => ["/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodOptionsMethodString" => ["/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodConnectMethodString" => ["/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodAnyMethodString" => ["/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodGetMethodArray" => ["/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodPostMethodArray" => ["/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodPutMethodArray" => ["/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodPatchMethodArray" => ["/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodHeadMethodArray" => ["/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodDeleteMethodArray" => ["/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodOptionsMethodArray" => ["/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodConnectMethodArray" => ["/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalHomeMethodAnyMethodArray" => ["/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"],];
 
         yield "typicalHomeClosureGetMethodString" => [
             "/home",
@@ -829,24 +834,24 @@ class RouterTest extends TestCase
         yield "typicalMultiSegmentRouteStaticMethodOptionsMethodArray" => ["/account/user/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalMultiSegmentRouteStaticMethodConnectMethodArray" => ["/account/user/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalMultiSegmentRouteStaticMethodAnyMethodArray" => ["/account/user/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodGetMethodString" => ["/account/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodPostMethodString" => ["/account/user/home", RouterContract::PostMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodPutMethodString" => ["/account/user/home", RouterContract::PutMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodPatchMethodString" => ["/account/user/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodHeadMethodString" => ["/account/user/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodDeleteMethodString" => ["/account/user/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodOptionsMethodString" => ["/account/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodConnectMethodString" => ["/account/user/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodAnyMethodString" => ["/account/user/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodGetMethodArray" => ["/account/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodPostMethodArray" => ["/account/user/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodPutMethodArray" => ["/account/user/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodPatchMethodArray" => ["/account/user/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodHeadMethodArray" => ["/account/user/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodDeleteMethodArray" => ["/account/user/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodOptionsMethodArray" => ["/account/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodConnectMethodArray" => ["/account/user/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiSegmentRouteMethodAnyMethodArray" => ["/account/user/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodGetMethodString" => ["/account/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodPostMethodString" => ["/account/user/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodPutMethodString" => ["/account/user/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodPatchMethodString" => ["/account/user/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodHeadMethodString" => ["/account/user/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodDeleteMethodString" => ["/account/user/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodOptionsMethodString" => ["/account/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodConnectMethodString" => ["/account/user/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodAnyMethodString" => ["/account/user/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodGetMethodArray" => ["/account/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodPostMethodArray" => ["/account/user/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodPutMethodArray" => ["/account/user/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodPatchMethodArray" => ["/account/user/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodHeadMethodArray" => ["/account/user/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodDeleteMethodArray" => ["/account/user/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodOptionsMethodArray" => ["/account/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodConnectMethodArray" => ["/account/user/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiSegmentRouteMethodAnyMethodArray" => ["/account/user/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"],];
 
         yield "typicalMultiSegmentRouteClosureGetMethodString" => [
             "/account/user/home",
@@ -1034,24 +1039,24 @@ class RouterTest extends TestCase
         yield "typicalParameterisedRouteStaticMethodOptionsMethodArray" => ["/user/{id}/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalParameterisedRouteStaticMethodConnectMethodArray" => ["/user/{id}/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalParameterisedRouteStaticMethodAnyMethodArray" => ["/user/{id}/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"],];
-        yield "typicalParameterisedRouteMethodGetMethodString" => ["/user/{id}/home", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodPostMethodString" => ["/user/{id}/home", RouterContract::PostMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodPutMethodString" => ["/user/{id}/home", RouterContract::PutMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodPatchMethodString" => ["/user/{id}/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodHeadMethodString" => ["/user/{id}/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodDeleteMethodString" => ["/user/{id}/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodOptionsMethodString" => ["/user/{id}/home", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodConnectMethodString" => ["/user/{id}/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodAnyMethodString" => ["/user/{id}/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodGetMethodArray" => ["/user/{id}/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodPostMethodArray" => ["/user/{id}/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodPutMethodArray" => ["/user/{id}/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodPatchMethodArray" => ["/user/{id}/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodHeadMethodArray" => ["/user/{id}/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodDeleteMethodArray" => ["/user/{id}/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodOptionsMethodArray" => ["/user/{id}/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodConnectMethodArray" => ["/user/{id}/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalParameterisedRouteMethodAnyMethodArray" => ["/user/{id}/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodGetMethodString" => ["/user/{id}/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodPostMethodString" => ["/user/{id}/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodPutMethodString" => ["/user/{id}/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodPatchMethodString" => ["/user/{id}/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodHeadMethodString" => ["/user/{id}/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodDeleteMethodString" => ["/user/{id}/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodOptionsMethodString" => ["/user/{id}/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodConnectMethodString" => ["/user/{id}/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodAnyMethodString" => ["/user/{id}/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodGetMethodArray" => ["/user/{id}/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodPostMethodArray" => ["/user/{id}/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodPutMethodArray" => ["/user/{id}/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodPatchMethodArray" => ["/user/{id}/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodHeadMethodArray" => ["/user/{id}/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodDeleteMethodArray" => ["/user/{id}/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodOptionsMethodArray" => ["/user/{id}/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodConnectMethodArray" => ["/user/{id}/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalParameterisedRouteMethodAnyMethodArray" => ["/user/{id}/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"],];
 
         yield "typicalParameterisedRouteClosureGetMethodString" => [
             "/user/{id}/home",
@@ -1237,24 +1242,24 @@ class RouterTest extends TestCase
         yield "typicalMultiParameterRouteStaticMethodOptionsMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalMultiParameterRouteStaticMethodConnectMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"],];
         yield "typicalMultiParameterRouteStaticMethodAnyMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodGetMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodPostMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::PostMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodPutMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::PutMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodPatchMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodHeadMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodDeleteMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodOptionsMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::GetMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodConnectMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodAnyMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodGetMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodPostMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodPutMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodPatchMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodHeadMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodDeleteMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodOptionsMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodConnectMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"],];
-        yield "typicalMultiParameterRouteMethodAnyMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodGetMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodPostMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodPutMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodPatchMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodHeadMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodDeleteMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodOptionsMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodConnectMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodAnyMethodString" => ["/account/{account_id}/user/{user_id}/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodGetMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodPostMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodPutMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodPatchMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodHeadMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodDeleteMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodOptionsMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodConnectMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"],];
+        yield "typicalMultiParameterRouteMethodAnyMethodArray" => ["/account/{account_id}/user/{user_id}/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"],];
 
         yield "typicalMultiParameterRouteClosureGetMethodString" => [
             "/account/{account_id}/user/{user_id}/home",
@@ -1441,24 +1446,24 @@ class RouterTest extends TestCase
         yield "invalidDuplicateParameterRouteStaticMethodOptionsMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"], DuplicateRouteParameterNameException::class,];
         yield "invalidDuplicateParameterRouteStaticMethodConnectMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"], DuplicateRouteParameterNameException::class,];
         yield "invalidDuplicateParameterRouteStaticMethodAnyMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodGetMethodString" => ["/account/{id}/user/{id}/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodPostMethodString" => ["/account/{id}/user/{id}/home", RouterContract::PostMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodPutMethodString" => ["/account/{id}/user/{id}/home", RouterContract::PutMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodPatchMethodString" => ["/account/{id}/user/{id}/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodHeadMethodString" => ["/account/{id}/user/{id}/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodDeleteMethodString" => ["/account/{id}/user/{id}/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodOptionsMethodString" => ["/account/{id}/user/{id}/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodConnectMethodString" => ["/account/{id}/user/{id}/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodAnyMethodString" => ["/account/{id}/user/{id}/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodGetMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodPostMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodPutMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodPatchMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodHeadMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodDeleteMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodOptionsMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodConnectMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
-        yield "invalidDuplicateParameterRouteMethodAnyMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodGetMethodString" => ["/account/{id}/user/{id}/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodPostMethodString" => ["/account/{id}/user/{id}/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodPutMethodString" => ["/account/{id}/user/{id}/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodPatchMethodString" => ["/account/{id}/user/{id}/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodHeadMethodString" => ["/account/{id}/user/{id}/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodDeleteMethodString" => ["/account/{id}/user/{id}/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodOptionsMethodString" => ["/account/{id}/user/{id}/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodConnectMethodString" => ["/account/{id}/user/{id}/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodAnyMethodString" => ["/account/{id}/user/{id}/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodGetMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodPostMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodPutMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodPatchMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodHeadMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodDeleteMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodOptionsMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodConnectMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
+        yield "invalidDuplicateParameterRouteMethodAnyMethodArray" => ["/account/{id}/user/{id}/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"], DuplicateRouteParameterNameException::class,];
 
         yield "invalidDuplicateParameterRouteClosureGetMethodString" => [
             "/account/{id}/user/{id}/home",
@@ -1658,24 +1663,24 @@ class RouterTest extends TestCase
         yield "invalidBadParameterNameEmptyRouteStaticMethodOptionsMethodArray" => ["/account/{}/user/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameEmptyRouteStaticMethodConnectMethodArray" => ["/account/{}/user/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameEmptyRouteStaticMethodAnyMethodArray" => ["/account/{}/user/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodGetMethodString" => ["/account/{}/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodPostMethodString" => ["/account/{}/user/home", RouterContract::PostMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodPutMethodString" => ["/account/{}/user/home", RouterContract::PutMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodPatchMethodString" => ["/account/{}/user/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodHeadMethodString" => ["/account/{}/user/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodDeleteMethodString" => ["/account/{}/user/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodOptionsMethodString" => ["/account/{}/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodConnectMethodString" => ["/account/{}/user/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodAnyMethodString" => ["/account/{}/user/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodGetMethodArray" => ["/account/{}/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodPostMethodArray" => ["/account/{}/user/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodPutMethodArray" => ["/account/{}/user/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodPatchMethodArray" => ["/account/{}/user/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodHeadMethodArray" => ["/account/{}/user/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodDeleteMethodArray" => ["/account/{}/user/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodOptionsMethodArray" => ["/account/{}/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodConnectMethodArray" => ["/account/{}/user/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameEmptyRouteMethodAnyMethodArray" => ["/account/{}/user/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodGetMethodString" => ["/account/{}/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodPostMethodString" => ["/account/{}/user/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodPutMethodString" => ["/account/{}/user/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodPatchMethodString" => ["/account/{}/user/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodHeadMethodString" => ["/account/{}/user/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodDeleteMethodString" => ["/account/{}/user/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodOptionsMethodString" => ["/account/{}/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodConnectMethodString" => ["/account/{}/user/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodAnyMethodString" => ["/account/{}/user/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodGetMethodArray" => ["/account/{}/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodPostMethodArray" => ["/account/{}/user/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodPutMethodArray" => ["/account/{}/user/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodPatchMethodArray" => ["/account/{}/user/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodHeadMethodArray" => ["/account/{}/user/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodDeleteMethodArray" => ["/account/{}/user/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodOptionsMethodArray" => ["/account/{}/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodConnectMethodArray" => ["/account/{}/user/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameEmptyRouteMethodAnyMethodArray" => ["/account/{}/user/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
 
         yield "invalidBadParameterNameEmptyRouteClosureGetMethodString" => ["/account/{}/user/home",
             RouterContract::GetMethod,
@@ -1857,24 +1862,24 @@ class RouterTest extends TestCase
         yield "invalidBadParameterNameInvalidCharacterRouteStaticMethodOptionsMethodArray" => ["/account/{account-id}/user/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameInvalidCharacterRouteStaticMethodConnectMethodArray" => ["/account/{account-id}/user/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameInvalidCharacterRouteStaticMethodAnyMethodArray" => ["/account/{account-id}/user/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodGetMethodString" => ["/account/{account-id}/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodPostMethodString" => ["/account/{account-id}/user/home", RouterContract::PostMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodPutMethodString" => ["/account/{account-id}/user/home", RouterContract::PutMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodPatchMethodString" => ["/account/{account-id}/user/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodHeadMethodString" => ["/account/{account-id}/user/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodDeleteMethodString" => ["/account/{account-id}/user/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodOptionsMethodString" => ["/account/{account-id}/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodConnectMethodString" => ["/account/{account-id}/user/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodAnyMethodString" => ["/account/{account-id}/user/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodGetMethodArray" => ["/account/{account-id}/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodPostMethodArray" => ["/account/{account-id}/user/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodPutMethodArray" => ["/account/{account-id}/user/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodPatchMethodArray" => ["/account/{account-id}/user/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodHeadMethodArray" => ["/account/{account-id}/user/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodDeleteMethodArray" => ["/account/{account-id}/user/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodOptionsMethodArray" => ["/account/{account-id}/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodConnectMethodArray" => ["/account/{account-id}/user/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidCharacterRouteMethodAnyMethodArray" => ["/account/{account-id}/user/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodGetMethodString" => ["/account/{account-id}/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodPostMethodString" => ["/account/{account-id}/user/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodPutMethodString" => ["/account/{account-id}/user/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodPatchMethodString" => ["/account/{account-id}/user/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodHeadMethodString" => ["/account/{account-id}/user/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodDeleteMethodString" => ["/account/{account-id}/user/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodOptionsMethodString" => ["/account/{account-id}/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodConnectMethodString" => ["/account/{account-id}/user/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodAnyMethodString" => ["/account/{account-id}/user/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodGetMethodArray" => ["/account/{account-id}/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodPostMethodArray" => ["/account/{account-id}/user/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodPutMethodArray" => ["/account/{account-id}/user/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodPatchMethodArray" => ["/account/{account-id}/user/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodHeadMethodArray" => ["/account/{account-id}/user/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodDeleteMethodArray" => ["/account/{account-id}/user/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodOptionsMethodArray" => ["/account/{account-id}/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodConnectMethodArray" => ["/account/{account-id}/user/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidCharacterRouteMethodAnyMethodArray" => ["/account/{account-id}/user/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
 
         yield "invalidBadParameterNameInvalidCharacterRouteClosureGetMethodString" => [
             "/account/{account-id}/user/home",
@@ -2074,24 +2079,24 @@ class RouterTest extends TestCase
         yield "invalidBadParameterNameInvalidFirstCharacterRouteStaticMethodOptionsMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameInvalidFirstCharacterRouteStaticMethodConnectMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameInvalidFirstCharacterRouteStaticMethodAnyMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodGetMethodString" => ["/account/{-account_id}/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPostMethodString" => ["/account/{-account_id}/user/home", RouterContract::PostMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPutMethodString" => ["/account/{-account_id}/user/home", RouterContract::PutMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPatchMethodString" => ["/account/{-account_id}/user/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodHeadMethodString" => ["/account/{-account_id}/user/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodDeleteMethodString" => ["/account/{-account_id}/user/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodOptionsMethodString" => ["/account/{-account_id}/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodConnectMethodString" => ["/account/{-account_id}/user/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodAnyMethodString" => ["/account/{-account_id}/user/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodGetMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPostMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPutMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPatchMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodHeadMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodDeleteMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodOptionsMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodConnectMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodAnyMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodGetMethodString" => ["/account/{-account_id}/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPostMethodString" => ["/account/{-account_id}/user/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPutMethodString" => ["/account/{-account_id}/user/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPatchMethodString" => ["/account/{-account_id}/user/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodHeadMethodString" => ["/account/{-account_id}/user/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodDeleteMethodString" => ["/account/{-account_id}/user/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodOptionsMethodString" => ["/account/{-account_id}/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodConnectMethodString" => ["/account/{-account_id}/user/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodAnyMethodString" => ["/account/{-account_id}/user/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodGetMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPostMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPutMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodPatchMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodHeadMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodDeleteMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodOptionsMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodConnectMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameInvalidFirstCharacterRouteMethodAnyMethodArray" => ["/account/{-account_id}/user/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
 
         yield "invalidBadParameterNameInvalidFirstCharacterRouteClosureGetMethodString" => [
             "/account/{-account_id}/user/home",
@@ -2278,24 +2283,24 @@ class RouterTest extends TestCase
         yield "invalidBadParameterNameNumericFirstCharacterRouteStaticMethodOptionsMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::GetMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameNumericFirstCharacterRouteStaticMethodConnectMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::ConnectMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
         yield "invalidBadParameterNameNumericFirstCharacterRouteStaticMethodAnyMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::AnyMethod,], [self::class, "nullStaticRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodGetMethodString" => ["/account/{1account_id}/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPostMethodString" => ["/account/{1account_id}/user/home", RouterContract::PostMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPutMethodString" => ["/account/{1account_id}/user/home", RouterContract::PutMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPatchMethodString" => ["/account/{1account_id}/user/home", RouterContract::PatchMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodHeadMethodString" => ["/account/{1account_id}/user/home", RouterContract::HeadMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodDeleteMethodString" => ["/account/{1account_id}/user/home", RouterContract::DeleteMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodOptionsMethodString" => ["/account/{1account_id}/user/home", RouterContract::GetMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodConnectMethodString" => ["/account/{1account_id}/user/home", RouterContract::ConnectMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodAnyMethodString" => ["/account/{1account_id}/user/home", RouterContract::AnyMethod, [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodGetMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPostMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::PostMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPutMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::PutMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPatchMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::PatchMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodHeadMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::HeadMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodDeleteMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::DeleteMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodOptionsMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::GetMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodConnectMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::ConnectMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
-        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodAnyMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::AnyMethod,], [$this, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodGetMethodString" => ["/account/{1account_id}/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPostMethodString" => ["/account/{1account_id}/user/home", RouterContract::PostMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPutMethodString" => ["/account/{1account_id}/user/home", RouterContract::PutMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPatchMethodString" => ["/account/{1account_id}/user/home", RouterContract::PatchMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodHeadMethodString" => ["/account/{1account_id}/user/home", RouterContract::HeadMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodDeleteMethodString" => ["/account/{1account_id}/user/home", RouterContract::DeleteMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodOptionsMethodString" => ["/account/{1account_id}/user/home", RouterContract::GetMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodConnectMethodString" => ["/account/{1account_id}/user/home", RouterContract::ConnectMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodAnyMethodString" => ["/account/{1account_id}/user/home", RouterContract::AnyMethod, [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodGetMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPostMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::PostMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPutMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::PutMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodPatchMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::PatchMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodHeadMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::HeadMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodDeleteMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::DeleteMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodOptionsMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::GetMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodConnectMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::ConnectMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
+        yield "invalidBadParameterNameNumericFirstCharacterRouteMethodAnyMethodArray" => ["/account/{1account_id}/user/home", [RouterContract::AnyMethod,], [$routeHandler, "nullRouteHandler"], InvalidRouteParameterNameException::class,];
 
         yield "invalidBadParameterNameNumericFirstCharacterRouteClosureGetMethodString" => [
             "/account/{1account_id}/user/home",
@@ -2520,7 +2525,7 @@ class RouterTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestRoute1(): array
+    public static function dataForTestRoute1(): array
     {
         return [
             "typicalGetWithNoParameters" => [RouterContract::GetMethod, "/home", HttpMethod::Get, "/home", function (RequestContract $request): Response {
@@ -3631,7 +3636,7 @@ class RouterTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestRouteConflicts(): array
+    public static function dataForTestRouteConflicts(): array
     {
         return [
             "rootPathWithGetNoParameters" => [RouterContract::GetMethod, "/", RouterContract::GetMethod, "/",],

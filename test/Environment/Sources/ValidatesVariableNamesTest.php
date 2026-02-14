@@ -32,7 +32,7 @@ final class ValidatesVariableNamesTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestValidateVariableName1(): iterable
+    public static function dataForTestValidateVariableName1(): iterable
     {
         yield ["KEY_1", "KEY_1",];
         yield ["_KEY_1", "_KEY_1",];
@@ -65,7 +65,7 @@ final class ValidatesVariableNamesTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestValidateVariableName2(): iterable
+    public static function dataForTestValidateVariableName2(): iterable
     {
         yield ["1",];
         yield ["",];

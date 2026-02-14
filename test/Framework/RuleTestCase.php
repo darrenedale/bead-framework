@@ -28,7 +28,7 @@ abstract class RuleTestCase extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestMessage(): array
+    public static function dataForTestMessage(): array
     {
         return [
             "typicalStringField" => ["field",],

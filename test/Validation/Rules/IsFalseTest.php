@@ -27,7 +27,7 @@ class IsFalseTest extends RuleTestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestPasses(): iterable
+    public static function dataForTestPasses(): iterable
     {
         yield from [
             "typicalFalse" => ["field", false, true,],

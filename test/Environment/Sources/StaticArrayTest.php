@@ -62,7 +62,7 @@ final class StaticArrayTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestConstructor1(): iterable
+    public static function dataForTestConstructor1(): iterable
     {
         yield "bool" => [["key_1" => "value_1", "key_2" => true, "key_3" => "value_3",]];
         yield "array" => [["key_1" => "value_1", "key_2" => ["key_2" => "value_2",], "key_3" => "value_3",]];
@@ -88,7 +88,7 @@ final class StaticArrayTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestConstructor2(): iterable
+    public static function dataForTestConstructor2(): iterable
     {
         yield "empty" => [["" => "value_1", "key_2" => "value_2", "key_3" => "value_3",]];
         yield "whitespace" => [["   " => "value_1", "key_2" => "value_2", "key_3" => "value_3",]];

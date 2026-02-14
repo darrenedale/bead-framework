@@ -15,7 +15,7 @@ class DaysTest extends TestCase
      *
      *@return iterable The test data.
      */
-    public function dataForTestConstructor(): iterable
+    public static function dataForTestConstructor(): iterable
     {
         for ($days = -100; $days <= 100; ++$days) {
             yield "typical{$days}Days" => [$days,];
@@ -66,7 +66,7 @@ class DaysTest extends TestCase
      *
      *@return iterable The test data.
      */
-    public function dataForTestDays(): iterable
+    public static function dataForTestDays(): iterable
     {
         for ($days = -100; $days <= 100; ++$days) {
             yield "typical{$days}Days" => [$days,];
@@ -94,7 +94,7 @@ class DaysTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestPlus(): iterable
+    public static function dataForTestPlus(): iterable
     {
         yield from [
             "typical0Positive" => [0, 42, 42,],
@@ -157,7 +157,7 @@ class DaysTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestMinus(): iterable
+    public static function dataForTestMinus(): iterable
     {
         yield from [
             "typical0Negative" => [0, 42, -42,],
@@ -220,7 +220,7 @@ class DaysTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestInSeconds(): iterable
+    public static function dataForTestInSeconds(): iterable
     {
         for ($days = -100; $days <= 100; ++$days) {
             yield "typical{$days}Days" => [$days, Days::SecondsPerDay * $days,];

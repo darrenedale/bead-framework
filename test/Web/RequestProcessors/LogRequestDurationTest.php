@@ -47,7 +47,11 @@ class LogRequestDurationTest extends TestCase
     /** Ensure preprocessRequest() stores the correct start time. */
     public function testPreprocessRequest1(): void
     {
-        $this->mockFunction("hrtime", 1023498675);
+        $this->mockFunction(
+            "hrtime",
+            static fn (bool $asNumber = false): array | int | float => $asNumber ? 1023498675 : [1023498675, 0],
+        );
+
         $processor = new XRay($this->processor);
         $actual = $this->processor->preprocessRequest(Mockery::mock(RequestContract::class));
         self::assertNull($actual);
@@ -57,7 +61,10 @@ class LogRequestDurationTest extends TestCase
     /** Ensure postprocessRequest() logs the correct message. */
     public function testPostprocessRequest1(): void
     {
-        $this->mockFunction("hrtime", 10234759086);
+        $this->mockFunction(
+            "hrtime",
+            static fn (bool $asNumber = false): int | float | array => $asNumber ? 10234759086 : [10234759086, 0],
+        );
 
         $request = Mockery::mock(RequestContract::class);
         $request->shouldReceive("uri")->once()->andReturn(new Uri("https", "example.org", "/bead/framework"));

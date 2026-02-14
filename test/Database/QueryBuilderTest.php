@@ -141,7 +141,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestSelect(): array
+    public static function dataForTestSelect(): array
     {
         return [
             "typicalSingleColumn" => [null, "foo", "bar", "SELECT `foo` FROM `bar`"],
@@ -175,7 +175,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestAddSelect(): array
+    public static function dataForTestAddSelect(): array
     {
         return [
             "typicalEmptyAddSingleColumn" => [[], "foo", "bar", "SELECT `foo` FROM `bar`"],
@@ -223,7 +223,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestAddRawSelect(): array
+    public static function dataForTestAddRawSelect(): array
     {
         return [
             "typicalEmptyAdditionExpression" => [[], "`a` + `b`", "sum", "bar", "SELECT `a` + `b` AS `sum` FROM `bar`"],
@@ -298,7 +298,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestFrom(): array
+    public static function dataForTestFrom(): array
     {
         return [
             "typicalSingleTableNoAlias" => ["fizz", null, "`fizz`"],
@@ -356,7 +356,7 @@ class QueryBuilderTest extends TestCase
      * Data provider for `testFromWithDuplicates()`
      * @return array[] The test data.
      */
-    public function dataForTestFromWithDuplicates(): array
+    public static function dataForTestFromWithDuplicates(): array
     {
         return [
             ["foo", null, "foo", null, DuplicateTableNameException::class,],
@@ -404,7 +404,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestRawFrom(): array
+    public static function dataForTestRawFrom(): array
     {
         return [
             "typicalSingleExpression" => ["(SELECT `foo`, `bar` FROM `foobar` WHERE `deleted` <> 1)", "foobar_alias", "(SELECT `foo`, `bar` FROM `foobar` WHERE `deleted` <> 1) AS `foobar_alias`"],
@@ -471,7 +471,7 @@ class QueryBuilderTest extends TestCase
      * Data provider for `testRawFromWithDuplicates()`
      * @return iterable The test data.
      */
-    public function dataForTestRawFromWithDuplicates(): iterable
+    public static function dataForTestRawFromWithDuplicates(): iterable
     {
         yield from [
             "duplicateAlias" => ["(SELECT foo, bar FROM foo)", "foo", "foo", "foo", DuplicateTableNameException::class,],
@@ -519,7 +519,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestLeftJoin(): array
+    public static function dataForTestLeftJoin(): array
     {
         return [
             "typical" => ["fizz", "foobar", "id", "fizz_id", null, "LEFT JOIN `fizz` ON `fizz`.`id`=`foobar`.`fizz_id`"],
@@ -598,7 +598,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestInnerJoin(): array
+    public static function dataForTestInnerJoin(): array
     {
         return [
             "typical" => ["fizz", "foobar", "id", "fizz_id", null, "INNER JOIN `fizz` ON `fizz`.`id`=`foobar`.`fizz_id`"],
@@ -677,7 +677,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestRightJoin(): array
+    public static function dataForTestRightJoin(): array
     {
         return [
             "typical" => ["fizz", "foobar", "id", "fizz_id", null, "RIGHT JOIN `fizz` ON `fizz`.`id`=`foobar`.`fizz_id`"],
@@ -756,7 +756,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestLeftJoinAs(): array
+    public static function dataForTestLeftJoinAs(): array
     {
         return [
             "typical" => ["fizz", "f", "foobar", "id", "fizz_id", null, "LEFT JOIN `fizz` AS `f` ON `f`.`id`=`foobar`.`fizz_id`"],
@@ -857,7 +857,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestInnerJoinAs(): array
+    public static function dataForTestInnerJoinAs(): array
     {
         return [
             "typical" => ["fizz", "f", "foobar", "id", "fizz_id", null, "INNER JOIN `fizz` AS `f` ON `f`.`id`=`foobar`.`fizz_id`"],
@@ -958,7 +958,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestRightJoinAs(): array
+    public static function dataForTestRightJoinAs(): array
     {
         return [
             "typical" => ["fizz", "f", "foobar", "id", "fizz_id", null, "RIGHT JOIN `fizz` AS `f` ON `f`.`id`=`foobar`.`fizz_id`"],
@@ -1058,7 +1058,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestRawLeftJoin(): array
+    public static function dataForTestRawLeftJoin(): array
     {
         return [
             "typical" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", "f", "foobar", "id", "fizz_id", null, "LEFT JOIN (SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`) AS `f` ON `f`.`id`=`foobar`.`fizz_id`"],
@@ -1169,7 +1169,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestRawRightJoin(): array
+    public static function dataForTestRawRightJoin(): array
     {
         return [
             "typical" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", "f", "foobar", "id", "fizz_id", null, "RIGHT JOIN (SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`) AS `f` ON `f`.`id`=`foobar`.`fizz_id`"],
@@ -1280,7 +1280,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestRawInnerJoin(): array
+    public static function dataForTestRawInnerJoin(): array
     {
         return [
             "typical" => ["(SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`)", "f", "foobar", "id", "fizz_id", null, "INNER JOIN (SELECT `flux`, `box` FROM `fluxbox` WHERE `flux` > `box`) AS `f` ON `f`.`id`=`foobar`.`fizz_id`"],
@@ -1391,7 +1391,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array
      */
-    public function dataForTestWhereWithFields(): array
+    public static function dataForTestWhereWithFields(): array
     {
         return [
             "typicalSingleField" => ["foo", "value", null, "WHERE (`foo` = 'value')"],
@@ -1516,7 +1516,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestWhereWithClosure(): array
+    public static function dataForTestWhereWithClosure(): array
     {
         return [
             "typicalMultipleOr" => [
@@ -1596,7 +1596,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestWhereNull(): array
+    public static function dataForTestWhereNull(): array
     {
         return [
             "typicalSingleField" => ["foo", "`foo` IS NULL",],
@@ -1642,7 +1642,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestWhereNotNull(): array
+    public static function dataForTestWhereNotNull(): array
     {
         return [
             "typicalSingleField" => ["foo", "`foo` IS NOT NULL",],
@@ -1703,7 +1703,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestWhereContains(): array
+    public static function dataForTestWhereContains(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` LIKE '%bar%'",],
@@ -1777,7 +1777,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestWhereNotContains(): array
+    public static function dataForTestWhereNotContains(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE '%bar%'",],
@@ -1851,7 +1851,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestWhereStartsWith(): array
+    public static function dataForTestWhereStartsWith(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` LIKE 'bar%'",],
@@ -1925,7 +1925,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestWhereNotStartsWith(): array
+    public static function dataForTestWhereNotStartsWith(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE 'bar%'",],
@@ -1999,7 +1999,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestWhereEndsWith(): array
+    public static function dataForTestWhereEndsWith(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` LIKE '%bar'",],
@@ -2073,7 +2073,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestWhereNotEndsWith(): array
+    public static function dataForTestWhereNotEndsWith(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE '%bar'",],
@@ -2147,7 +2147,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestWhereIn(): array
+    public static function dataForTestWhereIn(): array
     {
         return [
             "typicalSingleFieldSingleValue" => ["foo", ["foo",], "`foo` IN ('foo')",],
@@ -2234,7 +2234,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestWhereNotIn(): array
+    public static function dataForTestWhereNotIn(): array
     {
         return [
             "typicalSingleFieldSingleValue" => ["foo", ["foo",], "`foo` NOT IN ('foo')",],
@@ -2318,7 +2318,7 @@ class QueryBuilderTest extends TestCase
      * Test data provider for testWhereLength.
      * @return array[] The test data.
      */
-    public function dataForTestWhereLength(): array
+    public static function dataForTestWhereLength(): array
     {
         return  [
             "typicalSingleField" => ["foo", 7, "LENGTH(`foo`) = 7",],
@@ -2445,7 +2445,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestOrWhereNull(): array
+    public static function dataForTestOrWhereNull(): array
     {
         return [
             "typicalSingleField" => ["foo", "`foo` IS NULL",],
@@ -2490,7 +2490,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestOrWhereNotNull(): array
+    public static function dataForTestOrWhereNotNull(): array
     {
         return [
             "typicalSingleField" => ["foo", "`foo` IS NOT NULL",],
@@ -2550,7 +2550,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestOrWhereContains(): array
+    public static function dataForTestOrWhereContains(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` LIKE '%bar%'",],
@@ -2625,7 +2625,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestOrWhereNotContains(): array
+    public static function dataForTestOrWhereNotContains(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE '%bar%'",],
@@ -2699,7 +2699,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestOrWhereStartsWith(): array
+    public static function dataForTestOrWhereStartsWith(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` LIKE 'bar%'",],
@@ -2773,7 +2773,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestOrWhereNotStartsWith(): array
+    public static function dataForTestOrWhereNotStartsWith(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE 'bar%'",],
@@ -2847,7 +2847,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestOrWhereEndsWith(): array
+    public static function dataForTestOrWhereEndsWith(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` LIKE '%bar'",],
@@ -2921,7 +2921,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestOrWhereNotEndsWith(): array
+    public static function dataForTestOrWhereNotEndsWith(): array
     {
         return  [
             "typicalSingleField" => ["foo", "bar", "`foo` NOT LIKE '%bar'",],
@@ -2995,7 +2995,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestOrWhereIn(): array
+    public static function dataForTestOrWhereIn(): array
     {
         return [
             "typicalSingleFieldSingleValue" => ["foo", ["foo",], "`foo` IN ('foo')",],
@@ -3083,7 +3083,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestOrWhereNotIn(): array
+    public static function dataForTestOrWhereNotIn(): array
     {
         return [
             "typicalSingleFieldSingleValue" => ["foo", ["foo",], "`foo` NOT IN ('foo')",],
@@ -3170,7 +3170,7 @@ class QueryBuilderTest extends TestCase
      * Test data provider for testOrWhereLength.
      * @return array[] The test data.
      */
-    public function dataForTestOrWhereLength(): array
+    public static function dataForTestOrWhereLength(): array
     {
         return  [
             "typicalSingleField" => ["foo", 7, "LENGTH(`foo`) = 7",],
@@ -3238,7 +3238,7 @@ class QueryBuilderTest extends TestCase
         self::assertEquals("SELECT `foo`,`bar`,`fizz`,`buzz` FROM `foobar` WHERE ({$sqlWhere})", $builder->sql(), "The QueryBuilder did not generate the expected SQL.");
     }
 
-    public function dataForTestOrderBy(): iterable
+    public static function dataForTestOrderBy(): iterable
     {
         yield from [
             "typicalSingleColumnDefaultDirection" => ["foo", null, "`foo` ASC"],
@@ -3330,7 +3330,7 @@ class QueryBuilderTest extends TestCase
         self::assertEquals($expectedSql, $builder->sql());
     }
 
-    public function dataForTestRawOrderBy(): iterable
+    public static function dataForTestRawOrderBy(): iterable
     {
         yield from [
             "typicalExpressionDefaultDirection" => ["`foo` IS NOT NULL", null, "`foo` IS NOT NULL ASC",],
@@ -3421,7 +3421,7 @@ class QueryBuilderTest extends TestCase
      *
      * @return array[] The test data.
      */
-    public function dataForTestLimit(): array
+    public static function dataForTestLimit(): array
     {
         return [
             [["foo", "bar",], "baz", 50, null, "SELECT `foo`,`bar` FROM `baz` LIMIT 50",],

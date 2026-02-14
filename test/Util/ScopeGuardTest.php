@@ -18,8 +18,15 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
      *
      * @return array The test data.
      */
-    public function closureTestData(): array
+    public static function closureTestData(): array
     {
+        $object = new class
+        {
+            public function testMethod(): void
+            {
+            }
+        };
+
         return [
             "valid" => [
                 function () {
@@ -46,7 +53,7 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
                 },
                 TypeError::class,
             ],
-            "invalidCallableTuple" => [[$this, "testConstructor"] , TypeError::class,],
+            "invalidCallableTuple" => [[$object, "testMethod"] , TypeError::class,],
         ];
     }
 
