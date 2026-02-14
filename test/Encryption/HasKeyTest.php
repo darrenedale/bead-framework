@@ -23,7 +23,7 @@ class HasKeyTest extends TestCase
                 scrubString as traitScrubString;
             }
 
-            static array $listeners = [];
+            private static array $listeners = [];
 
             public static function addListener(callable $listener): void
             {
