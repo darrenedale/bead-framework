@@ -207,7 +207,7 @@ final class CompositeLoggerTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestOffsetGetThrows(): iterable
+    public static function dataForTestOffsetGetThrows(): iterable
     {
         yield [-1];
         yield [2];

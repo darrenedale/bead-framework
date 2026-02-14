@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class ConnectionTest extends TestCase
 {
-    public function dataForTestSqlToDefactoWildcards(): iterable
+    public static function dataForTestSqlToDefactoWildcards(): iterable
     {
         yield from [
             "typicalUnderscore" => ["foo_", "foo?",],
@@ -32,7 +32,7 @@ class ConnectionTest extends TestCase
         self::assertEquals($expected, Connection::sqlToDefactoWildcards($sql));
     }
 
-    public function dataForTestDefactoToSqlWildcards(): iterable
+    public static function dataForTestDefactoToSqlWildcards(): iterable
     {
         yield from [
             "typicalQuestionMark" => ["foo?", "foo_",],
@@ -55,7 +55,7 @@ class ConnectionTest extends TestCase
         self::assertEquals($expected, Connection::defactoToSqlWildcards($defacto));
     }
 
-    public function dataForTestEscapeSqlWildcards(): iterable
+    public static function dataForTestEscapeSqlWildcards(): iterable
     {
         yield from [
             "typicalUnderscore" => ["foo_", "foo\\_",],
@@ -76,7 +76,7 @@ class ConnectionTest extends TestCase
         self::assertEquals($expected, Connection::escapeSqlWildcards($sql));
     }
 
-    public function dataForTestDefactoToRegExpWildcards(): iterable
+    public static function dataForTestDefactoToRegExpWildcards(): iterable
     {
         yield from [
             "typicalQuestionMark" => ["foo?", "foo.",],

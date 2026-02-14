@@ -7,6 +7,7 @@ namespace BeadTests\Validation\Rules;
 use Bead\Validation\Rule;
 use Bead\Validation\Rules\IsTypedArray;
 use BeadTests\Framework\RuleTestCase;
+use StdClass;
 use TypeError;
 
 /**
@@ -24,7 +25,7 @@ class IsTypedArrayTest extends RuleTestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestPasses1(): iterable
+    public static function dataForTestPasses1(): iterable
     {
         yield "short-string-array" => ["string", ["first", "second", "third",],];
         yield "empty-string-array" => ["string", [],];
@@ -238,12 +239,12 @@ class IsTypedArrayTest extends RuleTestCase
             ],
         ];
 
-        $object = new self();
+        $object = new StdClass();
 
-        yield "short-class-array" => [self::class, [$object, $object, $object,],];
-        yield "empty-class-array" => [self::class, [],];
+        yield "short-class-array" => [$object::class, [$object, $object, $object,],];
+        yield "empty-class-array" => [$object::class, [],];
         yield "large-class-array" => [
-            self::class,
+            $object::class,
             [
                 $object, $object, $object, $object, $object, $object,
                 $object, $object, $object, $object, $object, $object,
@@ -357,7 +358,7 @@ class IsTypedArrayTest extends RuleTestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestPasses2(): iterable
+    public static function dataForTestPasses2(): iterable
     {
         // non-array values
         foreach (["int", "integer", "float", "double", "bool", "boolean", "string", self::class, "object"] as $type) {
@@ -365,10 +366,10 @@ class IsTypedArrayTest extends RuleTestCase
             yield "{$type}-float" => [$type, 1.1,];
             yield "{$type}-bool" => [$type, true,];
             yield "{$type}-string" => [$type, "string",];
-            yield "{$type}-class" => [$type, new self(),];
+            yield "{$type}-class" => [$type, new StdClass(),];
         }
 
-        $object = new self();
+        $object = new StdClass();
 
         yield "int-array-float" => ["int", [1, 2, 1.1, 3,],];
         yield "int-array-string" => ["int", [1, 2, "string", 3,],];

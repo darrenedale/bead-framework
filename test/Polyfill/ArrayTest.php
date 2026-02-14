@@ -10,7 +10,7 @@ use function Bead\Polyfill\array_is_list;
 
 final class ArrayTest extends TestCase
 {
-    public function dataForTestArrayIsList(): iterable
+    public static function dataForTestArrayIsList(): iterable
     {
         yield "empty" => [[], true];
         yield "singleElement" => [[42], true];

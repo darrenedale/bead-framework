@@ -59,7 +59,7 @@ final class ConvertsPsr3LogLevelsTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestConvertLogLevel(): iterable
+    public static function dataForTestConvertLogLevel(): iterable
     {
         yield "psr3EmergencyString" => [LogLevel::EMERGENCY, LoggerContract::EmergencyLevel,];
         yield "psr3AlertString" => [LogLevel::ALERT, LoggerContract::AlertLevel,];

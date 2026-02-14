@@ -62,7 +62,7 @@ class ModelTest extends TestCase
      *
      * @noinspection PhpDocMissingThrowsInspection DateTime constructor won't throw with our test data.
      */
-    public function dataForTestProperties(): iterable
+    public static function dataForTestProperties(): iterable
     {
         yield "typicalStringProperty" => [
             [
@@ -272,7 +272,7 @@ class ModelTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestCustomAccessor(): array
+    public static function dataForTestCustomAccessor(): array
     {
         return [
             ["bar,baz", ["bar", "baz",],],
@@ -326,7 +326,7 @@ class ModelTest extends TestCase
      *
      * @return array The test data.
      */
-    public function dataForTestCustomMutator(): array
+    public static function dataForTestCustomMutator(): array
     {
         return [
             ["bar,baz", "bar,baz",],
