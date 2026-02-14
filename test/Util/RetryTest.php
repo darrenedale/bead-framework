@@ -417,7 +417,7 @@ class RetryTest extends TestCase
     {
         $object = new class
         {
-            public function callableToRetry(): null
+            public function callableToRetry()
             {
                 return null;
             }
@@ -482,7 +482,7 @@ class RetryTest extends TestCase
     {
         $object = new class
         {
-            public function callableToRetry(): null
+            public function callableToRetry()
             {
                 return null;
             }
