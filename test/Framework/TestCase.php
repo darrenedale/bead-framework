@@ -47,16 +47,20 @@ abstract class TestCase extends PhpUnitTestCase
     /** Helper to clear out a directory */
     private static function clearDir(string $path): void
     {
+        if (!file_exists($path)) {
+            return;
+        }
+
         foreach (new DirectoryIterator($path) as $entry) {
             if ($entry->isDot()) {
                 continue;
             }
 
             if ($entry->isDir()) {
-                self::clearDir($entry->getRealPath());
-                rmdir($entry->getRealPath());
+                self::clearDir($entry->getPathname());
+                rmdir($entry->getPathname());
             } else {
-                unlink($entry->getRealPath());
+                unlink($entry->getPathname());
             }
         }
     }
@@ -86,8 +90,19 @@ abstract class TestCase extends PhpUnitTestCase
         $xray->m_injectedData = [];
     }
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (!file_exists(self::tempDir())) {
+            mkdir(self::tempDir(), 0777, true);
+        }
+
+        self::clearTempDir();
+    }
+
     /** Subclasses that reimplement tearDown() must call the parent implementation. */
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         foreach (array_keys($this->functionMocks) as $function) {
             $this->removeFunctionMock($function);
@@ -101,6 +116,7 @@ abstract class TestCase extends PhpUnitTestCase
             unset($this->methodMocks[$class]);
         }
 
+        self::clearTempDir();
         self::resetState();
         parent::tearDown();
     }
@@ -146,7 +162,7 @@ abstract class TestCase extends PhpUnitTestCase
             throw new LogicException("Attempt to remove mock for function '{$function}' that isn't mocked.");
         }
 
-        if ($this->functionMocks[$function] !== uopz_get_return($function)) {
+        if ($this->functionMocks[$function] !== uopz_get_return(strtolower($function))) {
             throw new LogicException("Mock for function '{$function}' has been removed externally.");
         }
 

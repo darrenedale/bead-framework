@@ -24,7 +24,7 @@ use function Bead\Helpers\Str\random;
 class File implements SessionHandler
 {
     /** @var string Default session storage location, relative to application root directory. */
-    private const DefaultSessionDirectory = "data/session";
+    private const DefaultSessionDirectory = "data" . DIRECTORY_SEPARATOR . "session";
 
     /** @var string The ID of the session. */
     private string $m_id;
@@ -70,18 +70,18 @@ class File implements SessionHandler
             /** @psalm-suppress MissingThrowsDocblock Can't throw SessionDestroyedException. */
             $this->commit();
         } else {
-            $info = new SplFileInfo(self::sessionDirectory() . "/{$id}");
+            $info = new SplFileInfo(self::sessionDirectory() . DIRECTORY_SEPARATOR . $id);
 
             if (!$info->isFile()) {
-                throw new SessionNotFoundException($id, "The session file for {$id} does not exist or is not a file.");
+                throw new SessionNotFoundException($id, "The session file for {$id} does not exist or is not a file");
             }
 
             if ($info->isLink()) {
-                throw new SessionNotFoundException($id, "The session file for {$id} is a link - links are not supported for security.");
+                throw new SessionNotFoundException($id, "The session file for {$id} is a link - links are not supported for security");
             }
 
             if (!$info->isReadable()) {
-                throw new SessionNotFoundException($id, "The session file for {$id} is not readable.");
+                throw new SessionNotFoundException($id, "The session file for {$id} is not readable");
             }
 
             $this->m_id = $id;
@@ -150,9 +150,9 @@ class File implements SessionHandler
 
         do {
             $id = random(64);
-        } while (file_exists("{$dir}/{$id}"));
+        } while (file_exists($dir . DIRECTORY_SEPARATOR . $id));
 
-        touch("{$dir}/{$id}");
+        touch($dir . DIRECTORY_SEPARATOR . $id);
         return $id;
     }
 
@@ -175,7 +175,7 @@ class File implements SessionHandler
     protected function throwIfDestroyed(): void
     {
         if ($this->m_destroyed) {
-            throw new SessionDestroyedException($this->m_id, "The session {$this->m_id} has been destroyed and cannot be used.");
+            throw new SessionDestroyedException($this->m_id, "The session {$this->m_id} has been destroyed and cannot be used");
         }
     }
 
@@ -326,7 +326,7 @@ class File implements SessionHandler
 
         if (
             false === file_put_contents(
-                self::sessionDirectory() . "/{$this->id()}",
+                self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id(),
                 serialize([
                     "created_at" => $this->m_createdAt,
                     "last_used_at" => $this->m_lastUsedAt,
@@ -337,7 +337,7 @@ class File implements SessionHandler
                 ])
             )
         ) {
-            throw new SessionFileSaveException(self::sessionDirectory() . "/{$this->id()}", "Failed to commit the session to the file '" . self::sessionDirectory() . "/{$this->id()}'");
+            throw new SessionFileSaveException(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id(), "Failed to commit the session to the file \"" . self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id() . "\"");
         }
     }
 
@@ -350,30 +350,30 @@ class File implements SessionHandler
     public function reload(): void
     {
         $this->throwIfDestroyed();
-        $session = unserialize(file_get_contents(self::sessionDirectory() . "/{$this->id()}"));
+        $session = unserialize(file_get_contents(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id()));
 
         if (!is_int($session["created_at"] ?? null)) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid created-at timestamp.");
+            throw new InvalidSessionFileException(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id(), "The session file \"" . self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id() . "\" contains an invalid created-at timestamp");
         }
 
         if (!is_int($session["last_used_at"] ?? null)) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid last-used-at timestamp.");
+            throw new InvalidSessionFileException(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id(), "The session file \"" . self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id() . "\" contains an invalid last-used-at timestamp");
         }
 
         if (!is_int($session["id_created_at"] ?? null)) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid id-created-at timestamp.");
+            throw new InvalidSessionFileException(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id(), "The session file \"" . self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id() . "\" contains an invalid id-created-at timestamp");
         }
 
         if (isset($session["id_expired_at"]) && !is_int($session["id_expired_at"])) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid expired-at timestamp.");
+            throw new InvalidSessionFileException(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id(), "The session file \"" . self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id() . "\" contains an invalid expired-at timestamp");
         }
 
-        if (isset($session["replacement_id"]) && !self::isValidId($session["replacement_id"])) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid replacement ID.");
+        if (isset($session["replacement_id"]) && (!is_string($session["replacement_id"]) || !self::isValidId($session["replacement_id"]))) {
+            throw new InvalidSessionFileException(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id(), "The session file \"" . self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id() . "\" contains an invalid replacement ID");
         }
 
         if (!is_array($session["data"] ?? null)) {
-            throw new InvalidSessionFileException(self::sessionDirectory() . "/{$this->id()}", "The session file '" . self::sessionDirectory() . "/{$this->id()}' contains an invalid data array.");
+            throw new InvalidSessionFileException(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id(), "The session file \"" . self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id() . "\" contains an invalid data array");
         }
 
         $this->m_createdAt = $session["created_at"];
@@ -393,7 +393,7 @@ class File implements SessionHandler
     public function destroy(): void
     {
         $this->throwIfDestroyed();
-        unlink(self::sessionDirectory() . "/{$this->id()}");
+        unlink(self::sessionDirectory() . DIRECTORY_SEPARATOR . $this->id());
         $this->m_destroyed = true;
         $this->m_data = [];
         $this->m_createdAt = 0;
@@ -410,8 +410,9 @@ class File implements SessionHandler
     protected function canBePurged(): bool
     {
         $now = time();
+
         return $this->m_lastUsedAt < ($now - Session::sessionIdleTimeoutPeriod()) ||
-            (isset($this->m_idExpiredAt) && $this->m_idExpiredAt < $now - Session::expiredSessionGracePeriod());
+            (isset($this->m_idExpiredAt) && $this->m_idExpiredAt < ($now - Session::expiredSessionGracePeriod()));
     }
 
     /**
@@ -427,7 +428,7 @@ class File implements SessionHandler
             }
 
             if (!$file->isFile() || !$file->isReadable()) {
-                Log::warning("Session directory entry {$file->getRealPath()} is not a file or is not readable when purging session directory.");
+                Log::warning("Session directory entry {$file->getRealPath()} is not a file or is not readable when purging session directory");
                 continue;
             }
 
