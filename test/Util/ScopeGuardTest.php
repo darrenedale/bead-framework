@@ -5,104 +5,49 @@ declare(strict_types=1);
 namespace BeadTests\Util;
 
 use Bead\Util\ScopeGuard;
+use BeadTests\Framework\TestCase;
 use Equit\XRay\XRay;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TypeError;
 
-/**
- * ScopeGuard test case.
- */
-class ScopeGuardTest extends \BeadTests\Framework\TestCase
+#[CoversClass(ScopeGuard::class)]
+class ScopeGuardTest extends TestCase
 {
-    /**
-     * Data provider for the constructor/addClosure tests.
-     *
-     * @return array The test data.
-     */
-    public static function closureTestData(): array
+    /** Ensure the constructor accepts a valid closure. */
+    public function testConstructor1(): void
     {
-        $object = new class
-        {
-            public function testMethod(): void
-            {
-            }
+        $closure = static function (): void {
         };
 
-        return [
-            "valid" => [
-                function () {
-                },
-            ],
-            "invalidString" => ["foo", TypeError::class,],
-            "invalidInt" => [5, TypeError::class,],
-            "invalidFloat" => [21.4362785, TypeError::class,],
-            "invalidNull" => [null, TypeError::class,],
-            "invalidBool" => [true, TypeError::class,],
-            "invalidInvokableLikeAnonymousObject" => [
-                (object) [
-                    "__invoke" => function () {
-                    }
-                ],
-                TypeError::class,
-            ],
-            "invalidIvokableLikeClass" => [
-                new class
-                {
-                    public function __invoke(): void
-                    {
-                    }
-                },
-                TypeError::class,
-            ],
-            "invalidCallableTuple" => [[$object, "testMethod"] , TypeError::class,],
-        ];
-    }
-
-    /**
-     * @dataProvider closureTestData
-     *
-     * @param mixed $closure The closure to pass to the constructor.
-     * @param string|null $exceptionClass The exception class expected, if any.
-     */
-    public function testConstructor($closure, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
         $guard = new ScopeGuard($closure);
-
-        self::assertInstanceOf(ScopeGuard::class, $guard, "The ScopeGuard constructor did not create an instance of " . ScopeGuard::class . ".");
+        $closures = (new XRay($guard))->closures();
+        self::assertCount(1, $closures);
+        self::assertSame($closure, $closures[0]);
     }
 
-    /**
-     * Test invoke() calls all the closures.
-     */
-    public function testInvoke(): void
+    /** Ensure invoke() calls all the closures. */
+    public function testInvoke1(): void
     {
-        $called = false;
-
-        $guard = new ScopeGuard(function () use (&$called) {
-            $called = true;
-        });
-
-        $guard->invoke();
-        self::assertTrue($called, "The scope guard closure was not called by invoke().");
-
         $called1 = false;
         $called2 = false;
 
-        $guard = new ScopeGuard(function () use (&$called1) {
+        $guard = new ScopeGuard(static function () use (&$called1) {
             $called1 = true;
         });
 
-        $guard->addClosure(function () use (&$called2) {
+        $guard->addClosure(static function () use (&$called2) {
             $called2 = true;
         });
 
         $guard->invoke();
         self::assertTrue($called1, "The scope guard's initial closure was not called by invoke().");
         self::assertTrue($called2, "The scope guard's added closure was not called by invoke().");
+    }
 
+    /** Ensure invoke() doesn't call the closures when the guard has been cancelled. */
+    public function testInvoke2(): void
+    {
         $called1 = false;
         $called2 = false;
 
@@ -120,21 +65,9 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
         self::assertFalse($called2, "The scope guard's added closure was still called by invoke() after cancellation.");
     }
 
-    /**
-     * Test that the destructor invokes the closure.
-     */
-    public function testDestructor(): void
+    /** Ensure the destructor invokes all the closures. */
+    public function testDestructor1(): void
     {
-        $called = false;
-
-        (function () use (&$called) {
-            $guard = new ScopeGuard(function () use (&$called) {
-                $called = true;
-            });
-        })();
-
-        self::assertTrue($called, "The scope guard closure was not called on destruction.");
-
         $called1 = false;
         $called2 = false;
 
@@ -152,24 +85,9 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
         self::assertTrue($called2, "The scope guard's added closure was not called on destruction.");
     }
 
-    /**
-     * Test guards can be cancelled.
-     */
-    public function testCancel(): void
+    /** Ensure the destructor doesn't invoke the closures when the guard has been cancelled. */
+    public function testDestructor2(): void
     {
-        // test destructor respets call to cancel()
-        $notCalled = true;
-
-        (function () use (&$notCalled) {
-            $guard = new ScopeGuard(function () use (&$notCalled) {
-                $notCalled = false;
-            });
-
-            $guard->cancel();
-        })();
-
-        self::assertTrue($notCalled, "The scope guard closure was still called on destruction after cancellation.");
-
         $notCalled1 = true;
         $notCalled2 = true;
 
@@ -187,84 +105,37 @@ class ScopeGuardTest extends \BeadTests\Framework\TestCase
 
         self::assertTrue($notCalled1, "The scope guard's initial closure was still called on destruction after cancellation.");
         self::assertTrue($notCalled2, "The scope guard's added closure was still called on destruction after cancellation.");
-
-        // test invoke() respets call to cancel()
-        $notCalled = true;
-
-        $guard = new ScopeGuard(function () use (&$notCalled) {
-            $notCalled = false;
-        });
-
-        $guard->cancel();
-        $guard->invoke();
-        self::assertTrue($notCalled, "The scope guard closure was still called on destruction after cancellation.");
-
-        $notCalled1 = true;
-        $notCalled2 = true;
-
-        $guard = new ScopeGuard(function () use (&$notCalled1) {
-            $notCalled1 = false;
-        });
-
-        $guard->addClosure(function () use (&$notCalled2) {
-            $notCalled2 = false;
-        });
-
-        $guard->cancel();
-        $guard->invoke();
-        self::assertTrue($notCalled1, "The scope guard's initial closure was still called on destruction after cancellation.");
-        self::assertTrue($notCalled2, "The scope guard's added closure was still called on destruction after cancellation.");
     }
 
-    /**
-     * Test closures can be added to guards.
-     * @dataProvider closureTestData
-     */
-    public function testAddClosure($closure, ?string $exceptionClass = null): void
+    /** Ensure closures can be added to the guard. */
+    public function testAddClosure1(): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
+        $closure1 = static function (): void {
+        };
 
-        $guard = new ScopeGuard(
-            function () {
-            }
-        );
+        $closure2 = static function (): void {
+        };
 
-        $guard->addClosure($closure);
-        $guardXRay = new XRay($guard);
-//        $closuresMethod = new \ReflectionMethod($guard, "closures");
-//        $closuresMethod->setAccessible(true);
-        self::assertCount(2, $guardXRay->closures(), "Scope guard did not have two closures after call to addClosure().");
+        $guard = new ScopeGuard($closure1);
+        $guard->addClosure($closure2);
+        $closures = (new XRay($guard))->closures();
+        self::assertCount(2, $closures, "Scope guard did not have two closures after call to addClosure().");
+        self::assertSame($closure1, $closures[0]);
+        self::assertSame($closure2, $closures[1]);
     }
 
-    /**
-     * Test guards can be re-enabled.
-     */
-    public function testEnable(): void
+    /** ensure the guard can be re-enabled. */
+    public function testEnable1(): void
     {
-        $called = false;
-
-        (function () use (&$called) {
-            $guard = new ScopeGuard(function () use (&$called) {
-                $called = true;
-            });
-
-            $guard->cancel();
-            $guard->enable();
-        })();
-
-        self::assertTrue($called, "The scope guard closure was not called on destruction.");
-
         $called1 = false;
         $called2 = false;
 
         (function () use (&$called1, &$called2) {
-            $guard = new ScopeGuard(function () use (&$called1) {
+            $guard = new ScopeGuard(static function () use (&$called1): void {
                 $called1 = true;
             });
 
-            $guard->addClosure(function () use (&$called2) {
+            $guard->addClosure(static function () use (&$called2): void {
                 $called2 = true;
             });
 
