@@ -17,7 +17,7 @@ class ScopeGuardTest extends TestCase
     /** Ensure the constructor accepts a valid closure. */
     public function testConstructor1(): void
     {
-        $closure = static function () use (&$called): void {
+        $closure = static function (): void {
         };
 
         $guard = new ScopeGuard($closure);
