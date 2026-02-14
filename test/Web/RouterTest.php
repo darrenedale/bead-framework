@@ -3562,13 +3562,13 @@ class RouterTest extends TestCase
                 };
             }],
             "typicalUnroutableIncorrectMethodOneRegisteredMethod" => [RouterContract::GetMethod, "/", HttpMethod::Post, "/", function (RequestContract $request, bool $confirmed): Response {
-                $this->fail("Handler should not be called: Request method '{$request->method()}' should not match registered method '" . RouterContract::GetMethod . "'.");
+                TestCase::fail("Handler should not be called: Request method '{$request->method()}' should not match registered method '" . RouterContract::GetMethod . "'.");
             }, UnroutableRequestException::class,],
             "typicalUnroutableIncorrectMethodManyRegisteredMethods" => [[RouterContract::GetMethod, RouterContract::PostMethod,], "/", HttpMethod::Put, "/", function (RequestContract $request, bool $confirmed): Response {
-                $this->fail("Handler should not be called: Request method '{$request->method()}' should not match registered methods '" . implode("', '", [RouterContract::GetMethod, RouterContract::PostMethod,]) . "'.");
+                TestCase::fail("Handler should not be called: Request method '{$request->method()}' should not match registered methods '" . implode("', '", [RouterContract::GetMethod, RouterContract::PostMethod,]) . "'.");
             }, UnroutableRequestException::class,],
             "typicalUnroutableNoMatchedRoute" => [RouterContract::GetMethod, "/", HttpMethod::Post, "/home", function (RequestContract $request, bool $confirmed): Response {
-                $this->fail("Handler should not be called: Request path '{$request->path()}' should not match registered route '/'.");
+                TestCase::fail("Handler should not be called: Request path '{$request->path()}' should not match registered route '/'.");
             }, UnroutableRequestException::class,],
         ];
     }
