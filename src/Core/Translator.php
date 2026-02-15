@@ -346,7 +346,7 @@ class Translator implements TranslatorContract
                 $f = fopen($filePath, "r");
                 $this->m_cache[$language] = [];
 
-                while (false !== ($line = fgetcsv($f))) {
+                while (false !== ($line = fgetcsv($f, escape: ""))) {
                     $myFile = empty($line[self::FileColumnIndex]) ? null : $line[self::FileColumnIndex];
                     $myLine = empty($line[self::LineColumnIndex]) ? null : (intval($line[self::LineColumnIndex]) ?: null);
                     $myOrig = $line[self::TokenColumnIndex];
