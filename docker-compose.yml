@@ -1,13 +1,88 @@
 services:
-  bead:
-    container_name: bead
-    build: .
+  bead-8.1:
+    container_name: "bead-8.1"
+    build:
+      dockerfile: "./Dockerfile"
+      args:
+        PHP_VERSION: "8.1"
     tty: true
     stdin_open: true
     volumes:
-      - ./:/bead-framework
-    working_dir: /bead-framework
-    user: bead
+      - "./:/bead-framework"
+    working_dir: "/bead-framework"
+    user: "bead"
+    environment:
+      PHP_IDE_CONFIG: "serverName=BeadFramework"
+      XDEBUG_CONFIG: "client_host=xdebug-client"
+    extra_hosts:
+      - "xdebug-client:host-gateway"
+
+  bead-8.2:
+    container_name: "bead-8.2"
+    build:
+      dockerfile: "./Dockerfile"
+      args:
+        PHP_VERSION: "8.2"
+    tty: true
+    stdin_open: true
+    volumes:
+      - "./:/bead-framework"
+    working_dir: "/bead-framework"
+    user: "bead"
+    environment:
+      PHP_IDE_CONFIG: "serverName=BeadFramework"
+      XDEBUG_CONFIG: "client_host=xdebug-client"
+    extra_hosts:
+      - "xdebug-client:host-gateway"
+
+  bead-8.3:
+    container_name: "bead-8.3"
+    build:
+      dockerfile: "./Dockerfile"
+      args:
+        PHP_VERSION: "8.3"
+    tty: true
+    stdin_open: true
+    volumes:
+      - "./:/bead-framework"
+    working_dir: "/bead-framework"
+    user: "bead"
+    environment:
+      PHP_IDE_CONFIG: "serverName=BeadFramework"
+      XDEBUG_CONFIG: "client_host=xdebug-client"
+    extra_hosts:
+      - "xdebug-client:host-gateway"
+
+  bead-8.4:
+    container_name: "bead-8.4"
+    build:
+      dockerfile: "./Dockerfile"
+      args:
+        PHP_VERSION: "8.4"
+    tty: true
+    stdin_open: true
+    volumes:
+      - "./:/bead-framework"
+    working_dir: "/bead-framework"
+    user: "bead"
+    environment:
+      PHP_IDE_CONFIG: "serverName=BeadFramework"
+      XDEBUG_CONFIG: "client_host=xdebug-client"
+    extra_hosts:
+      - "xdebug-client:host-gateway"
+
+  bead-8.5:
+    container_name: "bead-8.5"
+    build:
+      dockerfile: "./Dockerfile"
+      args:
+        PHP_VERSION: "8.5"
+    tty: true
+    stdin_open: true
+    volumes:
+      - "./:/bead-framework"
+    working_dir: "/bead-framework"
+    user: "bead"
     environment:
       PHP_IDE_CONFIG: "serverName=BeadFramework"
       XDEBUG_CONFIG: "client_host=xdebug-client"
