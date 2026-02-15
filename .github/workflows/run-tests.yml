@@ -31,7 +31,6 @@ jobs:
 
       - name: Install composer dependencies
         run: |
-          rm composer.lock
           rm -rf vendor
           docker exec bead-${{ matrix.php_version }} composer install
 
