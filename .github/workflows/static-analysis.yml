@@ -35,7 +35,6 @@ jobs:
 
       - name: Install composer dependencies
         run: |
-          rm composer.lock
           rm -rf vendor
           composer install
 
