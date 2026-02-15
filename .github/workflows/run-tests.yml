@@ -26,6 +26,7 @@ jobs:
 
       - name: Start PHP ${{ matrix.php_version }} docker container
         run: |
+          docker login -u ${{ secrets.DOCKERUSERNAME }} -p ${{ secrets.DOCKERTOKEN }}
           docker compose up -d bead-${{ matrix.php_version }}
 
       - name: Install composer dependencies
