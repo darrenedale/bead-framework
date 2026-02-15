@@ -36,4 +36,4 @@ jobs:
           docker exec bead-${{ matrix.php_version }} composer update
 
       - name: Run unit tests
-        run: docker exec bead-${{ matrix.php_version }} ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
+        run: docker exec --env XDEBUG_SESSION=0 bead-${{ matrix.php_version }} ./vendor/bin/phpunit --configuration ./test/phpunit.xml --testsuite 'bead-framework Full Test Suite' --do-not-cache-result ./test
