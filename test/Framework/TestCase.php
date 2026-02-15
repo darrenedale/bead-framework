@@ -257,7 +257,8 @@ abstract class TestCase extends PhpUnitTestCase
      */
     public static function randomFloat(float $min = 0.0, float $max = 100.0): float
     {
-        if (PHP_VERSION_ID >= 80300) {
+        if (class_exists(Randomizer::class) && class_exists(IntervalBoundary::class)) {
+            /** @psalm-suppress UndefinedClass */
             return (new Randomizer())->getFloat($min, $max, IntervalBoundary::OpenOpen);
         }
 
