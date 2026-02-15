@@ -23,6 +23,8 @@ use Equit\XRay\StaticXRay;
 use LogicException;
 use PHPUnit\Framework\Constraint\LogicalNot;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+use Random\IntervalBoundary;
+use Random\Randomizer;
 
 use function uopz_get_return;
 use function uopz_set_return;
@@ -255,6 +257,10 @@ abstract class TestCase extends PhpUnitTestCase
      */
     public static function randomFloat(float $min = 0.0, float $max = 100.0): float
     {
+        if (PHP_VERSION_ID >= 80300) {
+            return (new Randomizer())->getFloat($min, $max, IntervalBoundary::OpenOpen);
+        }
+
         return $min + (lcg_value() * ($max - $min));
     }
 
