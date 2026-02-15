@@ -6,6 +6,7 @@
     errorLevel="7"
     resolveFromConfigFile="true"
     checkForThrowsDocblock="false"
+    ensureOverrideAttribute="false"
     inferPropertyTypesFromConstructor="false"
     findUnusedBaselineEntry="true"
     findUnusedCode="false"
