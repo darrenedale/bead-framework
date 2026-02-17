@@ -27,9 +27,9 @@ use Closure;
 use Equit\XRay\XRay;
 use InvalidArgumentException;
 use Mockery;
-
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+
 use function Bead\Helpers\Iterable\accumulate;
 use function count;
 use function implode;
@@ -96,7 +96,7 @@ class RouterTest extends TestCase
         yield "extremeRootWithNonExistentFunctionName" => ["/", "foobar",];
 
         yield "typicalRootClosure" => ["/", function () {
-            },];
+        },];
     }
 
     /** Provides valid routes and invalid handlers for tests of single-HTTP-method convenience registration methods. */
@@ -116,7 +116,7 @@ class RouterTest extends TestCase
             }
         };
 
-        $handlerClosure = function() {
+        $handlerClosure = function () {
         };
 
         // single HTTP method, as string and as single array element
@@ -276,7 +276,7 @@ class RouterTest extends TestCase
             }
         };
 
-        $handlerClosure = function() {
+        $handlerClosure = function () {
         };
 
         foreach (HttpMethod::cases() as $httpMethod) {
@@ -314,7 +314,7 @@ class RouterTest extends TestCase
             }
         };
 
-        $handlerClosure = function() {
+        $handlerClosure = function () {
         };
 
         foreach (HttpMethod::cases() as $httpMethod) {
@@ -1487,7 +1487,7 @@ class RouterTest extends TestCase
             };
         }];
     }
-    
+
     /** Ensure registerGet() successfully registers valid route handlers. */
     #[DataProvider("providerRoutesAndHandlers")]
     public function testRegisterGet1(string $route, callable | array | string $handler): void
@@ -1780,7 +1780,7 @@ class RouterTest extends TestCase
     #[DataProvider("providerConflictingRoutes")]
     public function testRegister6(string | array $route1Methods, string $route1, string | array $route2Methods, string $route2): void
     {
-        $handler = static function(): void {
+        $handler = static function (): void {
         };
 
         $router = new Router();
@@ -1806,7 +1806,7 @@ class RouterTest extends TestCase
     {
         $accumulateRoutes = static fn (array $routes, int $accumulation): int => $accumulation + count($routes);
 
-        $handler = static function(): void {
+        $handler = static function (): void {
         };
 
         $router = new Router();
@@ -1841,7 +1841,7 @@ class RouterTest extends TestCase
         $router->register($route, $routeMethods, $handler);
         /** @noinspection PhpUnhandledExceptionInspection Should only throw expected test exceptions. */
         $router->route($request);
-        
+
         // all the handlers in the test data perform at least one assertion
         self::assertGreaterThan(0, $this->getCount());
     }
