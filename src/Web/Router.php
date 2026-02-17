@@ -56,7 +56,7 @@ class Router implements RouterContract
     /** @var string Regular expression to identify a route parameter in a route definition. */
     protected const RxParameter = "@\{([^/]*)}@";
 
-    /** @var array[] route storage */
+    /** @var array<string, array<callable | array | string>> route storage */
     private array $m_routes = [
         self::GetMethod => [],
         self::PostMethod => [],
@@ -89,6 +89,18 @@ class Router implements RouterContract
         }
 
         return null;
+    }
+
+    /**
+     * Fetch the handler for a method and route.
+     *
+     * @param string $method
+     * @param string $route
+     * @return callable|array|string|null The handler, or null if no handler can be located.
+     */
+    protected function routeHandler(HttpMethod $method, string $route): callable | array | string | null
+    {
+        return $this->m_routes[$method->value][$route] ?? null;
     }
 
     /**
@@ -309,11 +321,16 @@ class Router implements RouterContract
     {
         $route = $this->matchedRoute($request);
 
-        if (!isset($route)) {
+        if (null === $route) {
             throw new UnroutableRequestException($request, "No handler was found for the request.");
         }
 
-        $handler = $this->m_routes[$request->method()->value][$route];
+        $handler = $this->routeHandler($request->method(), $route);
+
+        if (null === $handler) {
+            throw new UnroutableRequestException($request, "No handler was found for the request.");
+        }
+
         $handlerArgs = self::buildHandlerArguments($handler, $route, $request);
 
         // NOTE reflectorForHandler is always a ReflectionMethod in this case
@@ -409,7 +426,7 @@ class Router implements RouterContract
         }
 
         if (!is_callable($handler, true)) {
-            throw new InvalidArgumentException("Argument for parameter \$handler must be a callable or a tuple of class and method name.");
+            throw new InvalidArgumentException("Argument for parameter \$handler must be a callable or a tuple of class and method name");
         }
 
         $this->checkRouteConflicts($route, $methods);
