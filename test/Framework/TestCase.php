@@ -108,7 +108,7 @@ abstract class TestCase extends PhpUnitTestCase
      */
     public function isFunctionMocked(string $function): bool
     {
-        return in_array($function, $this->functionMocks);
+        return array_key_exists($function, $this->functionMocks);
     }
 
     /**
