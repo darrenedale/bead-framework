@@ -30,5 +30,8 @@
         <testsuite name="bead-framework Utils">
             <directory>./Util</directory>
         </testsuite>
+        <testsuite name="authentication">
+            <directory>./Authentication</directory>
+        </testsuite>
     </testsuites>
 </phpunit>
