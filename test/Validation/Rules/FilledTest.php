@@ -27,7 +27,7 @@ class FilledTest extends RuleTestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestPasses(): iterable
+    public static function dataForTestPasses(): iterable
     {
         yield from [
             "typicalFilledString" => ["field", "string", true,],

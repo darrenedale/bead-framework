@@ -23,7 +23,7 @@ use function strspn;
 
 final class StrTest extends TestCase
 {
-    public function dataForTestCamelToSnake(): iterable
+    public static function dataForTestCamelToSnake(): iterable
     {
         yield from [
             "typicalNoChange" => ["foo", null, "foo",],
@@ -79,7 +79,7 @@ final class StrTest extends TestCase
         self::assertEquals($expected, $actual);
     }
 
-    public function dataForTestSnakeToCamel(): iterable
+    public static function dataForTestSnakeToCamel(): iterable
     {
         yield from [
             "typicalNoChange" => ["foo", null, "foo",],
@@ -141,7 +141,7 @@ final class StrTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestAttr(): iterable
+    public static function dataForTestAttr(): iterable
     {
         yield from [
             "typicalNoEscaping" => ["foo", "foo",],
@@ -172,7 +172,7 @@ final class StrTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestHtml(): iterable
+    public static function dataForTestHtml(): iterable
     {
         yield from [
             "typicalNoEscaping" => ["foo", "foo",],
@@ -210,7 +210,7 @@ final class StrTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestBuild(): iterable
+    public static function dataForTestBuild(): iterable
     {
         yield from [
             "typicalNoArgs" => ["foo", [], "foo",],
@@ -271,7 +271,7 @@ final class StrTest extends TestCase
         self::assertEquals($expected, $actual);
     }
 
-    public function dataForTestToCodePoints(): iterable
+    public static function dataForTestToCodePoints(): iterable
     {
         yield from [
             "typicalAscii" => ["ABCDEabcde", "UTF8", [65, 66, 67, 68, 69, 97, 98, 99, 100, 101],],
@@ -306,7 +306,7 @@ final class StrTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestRandom(): iterable
+    public static function dataForTestRandom(): iterable
     {
         foreach (range(1, 100) as $length) {
             yield [$length,];

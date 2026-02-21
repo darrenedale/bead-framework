@@ -4,11 +4,11 @@ namespace Bead\Exceptions\Http;
 
 use Bead\Contracts\Web\Request as RequestContract;
 use Bead\Contracts\Web\Response;
+use Bead\Core\Application;
 use Bead\Exceptions\ViewNotFoundException;
 use Bead\Exceptions\ViewRenderingException;
 use Bead\Facades\Application as App;
 use Bead\View;
-use Bead\Web\Application;
 use Bead\Web\Responses\DoesntHaveHeaders;
 use Bead\Web\Responses\HasDefaultReasonPhrase;
 use Bead\Web\Responses\NaivelySendsContent;

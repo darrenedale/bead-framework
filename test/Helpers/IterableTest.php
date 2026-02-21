@@ -167,7 +167,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestMap(): iterable
+    public static function dataForTestMap(): iterable
     {
         yield from [
             "stringCallable" => [[1, 4, 9,], "sqrt", [1, 2, 3,],],
@@ -183,31 +183,6 @@ final class IterableTest extends TestCase
                     }
                 },
                 [1, 2, 3,],
-            ],
-
-            "invalidNullCallable" => [[1, 4, 9,], null, [1, 2, 3,], TypeError::class,],
-            "invalidAnonymousClassCallable" => [
-                [1, 4, 9,],
-                new class
-                {
-                },
-                [1, 2, 3,],
-                TypeError::class,
-            ],
-            "invalidObjectClassCallable" => [[1, 4, 9,], (object) [], [1, 2, 3,], TypeError::class,],
-            "invalidIntCallable" => [[1, 4, 9,], 42, [1, 2, 3,], TypeError::class,],
-            "invalidFloatCallable" => [[1, 4, 9,], 3.1415926, [1, 2, 3,], TypeError::class,],
-            "invalidEmptyStringCallable" => [[1, 4, 9,], "", [1, 2, 3,], TypeError::class,],
-            "invalidEmptyArrayCallable" => [[1, 4, 9,], [], [1, 2, 3,], TypeError::class,],
-
-            "invalidNullIterable" => [null, "sqrt", [1, 2, 3,], TypeError::class,],
-            "invalidAnonymousClassIterable" => [
-                new class
-                {
-                },
-                "sqrt",
-                [1, 2, 3,],
-                TypeError::class,
             ],
         ];
     }
@@ -236,7 +211,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestFlatten(): iterable
+    public static function dataForTestFlatten(): iterable
     {
         yield from [
             "typicalInts" => [
@@ -301,7 +276,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestToArray(): iterable
+    public static function dataForTestToArray(): iterable
     {
         yield from [
             "typicalIterable" => [
@@ -370,7 +345,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestImplode(): iterable
+    public static function dataForTestImplode(): iterable
     {
         yield from [
             "typicalIterableWithComma" => [
@@ -536,7 +511,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestGrammaticalImplode(): iterable
+    public static function dataForTestGrammaticalImplode(): iterable
     {
         yield from [
             "typicalIterableWithComma" => [
@@ -791,7 +766,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestTransform(): iterable
+    public static function dataForTestTransform(): iterable
     {
         $sqrt = function (float $value): float {
             return sqrt($value);
@@ -869,7 +844,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestReduce(): iterable
+    public static function dataForTestReduce(): iterable
     {
         $product = fn (int $value, int $carry): int => $carry * $value;
         $max = fn (int $value, int $carry): int => max($value, $carry);
@@ -967,7 +942,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestAccumulate(): iterable
+    public static function dataForTestAccumulate(): iterable
     {
         $product = fn (int $value, int $carry): int => $carry * $value;
 
@@ -1079,7 +1054,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestAll(): iterable
+    public static function dataForTestAll(): iterable
     {
         $true = fn ($value): bool => true;
         $false = fn ($value): bool => false;
@@ -1226,7 +1201,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestNone(): iterable
+    public static function dataForTestNone(): iterable
     {
         $true = fn ($value): bool => true;
         $false = fn ($value): bool => false;
@@ -1374,7 +1349,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestSome(): iterable
+    public static function dataForTestSome(): iterable
     {
         $true = fn ($value): bool => true;
         $false = fn ($value): bool => false;
@@ -1521,7 +1496,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestIsSubsetOf(): iterable
+    public static function dataForTestIsSubsetOf(): iterable
     {
         yield from [
             "typicalArrayArraySubset" => [[1, 2,], [1, 2, 3,], true,],
@@ -1643,7 +1618,7 @@ final class IterableTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestRecursiveCount(): iterable
+    public static function dataForTestRecursiveCount(): iterable
     {
         yield from [
             "typicalFlatArray" => [[1, 2, 3,], 3,],

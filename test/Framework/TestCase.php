@@ -7,6 +7,9 @@ namespace BeadTests\Framework;
 use ArrayAccess;
 use Bead\Contracts\Email\Header as HeaderContract;
 use Bead\Contracts\Email\Part as PartContract;
+use Bead\Core\Application;
+use Bead\Facades\Session;
+use Bead\View;
 use BeadTests\Framework\Constraints\ArrayHasEntry;
 use BeadTests\Framework\Constraints\AttributeIsInt;
 use BeadTests\Framework\Constraints\Email\HasEquivalentHeader;
@@ -16,9 +19,12 @@ use BeadTests\Framework\Constraints\Email\HasPart;
 use BeadTests\Framework\Constraints\StreamContentEquals;
 use Closure;
 use DirectoryIterator;
+use Equit\XRay\StaticXRay;
 use LogicException;
 use PHPUnit\Framework\Constraint\LogicalNot;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+use Random\IntervalBoundary;
+use Random\Randomizer;
 
 use function uopz_get_return;
 use function uopz_set_return;
@@ -45,16 +51,20 @@ abstract class TestCase extends PhpUnitTestCase
     /** Helper to clear out a directory */
     private static function clearDir(string $path): void
     {
+        if (!file_exists($path)) {
+            return;
+        }
+
         foreach (new DirectoryIterator($path) as $entry) {
             if ($entry->isDot()) {
                 continue;
             }
 
             if ($entry->isDir()) {
-                self::clearDir($entry->getRealPath());
-                rmdir($entry->getRealPath());
+                self::clearDir($entry->getPathname());
+                rmdir($entry->getPathname());
             } else {
-                unlink($entry->getRealPath());
+                unlink($entry->getPathname());
             }
         }
     }
@@ -65,8 +75,38 @@ abstract class TestCase extends PhpUnitTestCase
         self::clearDir(self::tempDir());
     }
 
+    protected static function resetState(): void
+    {
+        if (Application::instance()) {
+            restore_error_handler();
+            restore_exception_handler();
+        }
+
+        $xray = new StaticXRay(Application::class);
+        $xray->s_instance = null;
+
+        $xray = new StaticXRay(Session::class);
+        $xray->session = null;
+
+        $xray = new StaticXRay(View::class);
+        $xray->m_renderStack = [];
+        $xray->m_layoutStack = [];
+        $xray->m_injectedData = [];
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (!file_exists(self::tempDir())) {
+            mkdir(self::tempDir(), 0777, true);
+        }
+
+        self::clearTempDir();
+    }
+
     /** Subclasses that reimplement tearDown() must call the parent implementation. */
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         foreach (array_keys($this->functionMocks) as $function) {
             $this->removeFunctionMock($function);
@@ -80,6 +120,8 @@ abstract class TestCase extends PhpUnitTestCase
             unset($this->methodMocks[$class]);
         }
 
+        self::clearTempDir();
+        self::resetState();
         parent::tearDown();
     }
 
@@ -217,6 +259,11 @@ abstract class TestCase extends PhpUnitTestCase
      */
     public static function randomFloat(float $min = 0.0, float $max = 100.0): float
     {
+        if (class_exists(Randomizer::class) && class_exists(IntervalBoundary::class)) {
+            /** @psalm-suppress UndefinedClass */
+            return (new Randomizer())->getFloat($min, $max, IntervalBoundary::OpenOpen);
+        }
+
         return $min + (lcg_value() * ($max - $min));
     }
 

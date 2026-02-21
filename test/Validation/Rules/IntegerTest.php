@@ -24,7 +24,7 @@ class IntegerTest extends RuleTestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestPasses(): iterable
+    public static function dataForTestPasses(): iterable
     {
         yield from [
             "typicalPositiveInt" => ["field", 123, true,],
@@ -109,7 +109,7 @@ class IntegerTest extends RuleTestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestConvert(): iterable
+    public static function dataForTestConvert(): iterable
     {
         yield from [
             "typicalPositiveInt" => [123, 123,],

@@ -6,6 +6,7 @@
     errorLevel="7"
     resolveFromConfigFile="true"
     checkForThrowsDocblock="false"
+    ensureOverrideAttribute="false"
     inferPropertyTypesFromConstructor="false"
     findUnusedBaselineEntry="true"
     findUnusedCode="false"
@@ -17,5 +18,8 @@
 >
     <projectFiles>
         <directory name="../test" />
+        <ignoreFiles>
+            <file name="../test/Exceptions/Http/views/errors/404.php" />
+        </ignoreFiles>
     </projectFiles>
 </psalm>

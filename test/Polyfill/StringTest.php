@@ -17,7 +17,7 @@ final class StringTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestStrStartsWith(): iterable
+    public static function dataForTestStrStartsWith(): iterable
     {
         yield "emptyStartsWithEmpty" => ["", "", true];
         yield "nonEmptyStartsWithEmpty" => ["hitch-hiker", "", true];
@@ -46,7 +46,7 @@ final class StringTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestStrEndsWith(): iterable
+    public static function dataForTestStrEndsWith(): iterable
     {
         yield "emptyEndsWithEmpty" => ["", "", true];
         yield "nonEmptyEndsWithEmpty" => ["hitch-hiker", "", true];
@@ -75,7 +75,7 @@ final class StringTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestStrContains(): iterable
+    public static function dataForTestStrContains(): iterable
     {
         yield "emptyContainsEmpty" => ["", "", true];
         yield "nonEmptyContainsEmpty" => ["hitch-hiker", "", true];

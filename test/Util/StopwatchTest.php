@@ -44,7 +44,7 @@ class StopwatchTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestProcessName(): iterable
+    public static function dataForTestProcessName(): iterable
     {
         yield "extremeEmpty" => [""];
         yield "typicalTest1" => ["test1"];
@@ -130,7 +130,7 @@ class StopwatchTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestDuration(): iterable
+    public static function dataForTestDuration(): iterable
     {
         yield "typical100" => [100];
         yield "typical300" => [300];
@@ -236,7 +236,7 @@ class StopwatchTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestAddListener(): iterable
+    public static function dataForTestAddListener(): iterable
     {
         yield "typicalStartClosure" => [
             Stopwatch::EventStart,

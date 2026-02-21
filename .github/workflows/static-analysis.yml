@@ -21,23 +21,18 @@ jobs:
       - name: Checkout branch
         uses: actions/checkout@v4
 
-      - name: Install PHP 8.1 and extensions
+      - name: Start PHP 8.1 docker container
         run: |
-          sudo add-apt-repository -y ppa:ondrej/php
-          sudo apt-get update
-          sudo apt-get -y install php8.1-cli php8.1-curl php8.1-dom php8.1-mbstring php8.1-uopz
-
-      - name: Select PHP 8.1
-        run: sudo update-alternatives --set php /usr/bin/php8.1
-
-      - name: Configure PHP 8.1 for development environment
-        run: sudo cp /usr/lib/php/8.1/php.ini-development /etc/php/8.1/cli/php.ini
+          docker login -u ${{ secrets.DOCKERUSERNAME }} -p ${{ secrets.DOCKERTOKEN }}
+          docker compose up -d bead-8.1
 
       - name: Install composer dependencies
         run: |
-          rm composer.lock
           rm -rf vendor
-          composer install
+          chmod ugo+rw .
+          docker exec bead-8.1 composer update
 
       - name: Run psalm
-        run: ./vendor/bin/psalm --long-progress --no-diff --no-cache --no-file-cache --config=./analysis/psalm-"${{ matrix.directory }}".xml
+        run: |
+          docker exec -u root bead-8.1 rm -f /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+          docker exec bead-8.1 ./vendor/bin/psalm --long-progress --no-diff --no-cache --no-file-cache --config=./analysis/psalm-"${{ matrix.directory }}".xml

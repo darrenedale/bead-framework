@@ -57,16 +57,6 @@ class RetryTest extends TestCase
     }
 
     /**
-     * Function to use as a callable in tests.
-     *
-     * @return bool Always `null`.
-     */
-    public function callableToRetry()
-    {
-        return null;
-    }
-
-    /**
      * Ensure the constructor sets up the Retry object in the expected state.
      */
     public function testConstructor(): void
@@ -83,7 +73,7 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestTimes(): iterable
+    public static function dataForTestTimes(): iterable
     {
         yield from [
             "typical5" => [5,],
@@ -137,12 +127,20 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestUntil(): iterable
+    public static function dataForTestUntil(): iterable
     {
+        $object = new class
+        {
+            public function exitFunction(): bool
+            {
+                return true;
+            }
+        };
+
         yield from [
             "typicalLambda" => [5, fn (): bool => true,],
             "typicalStaticMethod" => [5, [self::class, "staticExitFunction"],],
-            "typicalMethod" => [5, [$this, "exitFunction"],],
+            "typicalMethod" => [5, [$object, "exitFunction"],],
             "typicalInvokable" => [
                 5,
                 new class
@@ -194,7 +192,7 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestInvokeFixedTimes(): iterable
+    public static function dataForTestInvokeFixedTimes(): iterable
     {
         for ($times = 1; $times < 30; ++$times) {
             yield [$times,];
@@ -229,7 +227,7 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestInvokeWithExitCondition(): iterable
+    public static function dataForTestInvokeWithExitCondition(): iterable
     {
         yield from [
             "typicalPassesFirstTime" => [
@@ -331,9 +329,9 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestSetMaxRetries(): iterable
+    public static function dataForTestSetMaxRetries(): iterable
     {
-        yield from $this->dataForTestMaxRetries();
+        yield from self::dataForTestMaxRetries();
 
         yield "invalidZero" => [0, InvalidArgumentException::class,];
 
@@ -388,7 +386,7 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestMaxRetries(): iterable
+    public static function dataForTestMaxRetries(): iterable
     {
         for ($retries = 1; $retries < 30; ++$retries) {
             yield "typical{$retries}" => [$retries,];
@@ -415,12 +413,20 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestSetRetry(): iterable
+    public static function dataForTestSetRetry(): iterable
     {
+        $object = new class
+        {
+            public function callableToRetry()
+            {
+                return null;
+            }
+        };
+
         yield from [
             "typicalClosure" => [self::createCallable(),],
             "typicalStaticMethod" => [[self::class, "staticCallableToRetry",],],
-            "typicalMethod" => [[$this, "callableToRetry",],],
+            "typicalMethod" => [[$object, "callableToRetry",],],
             "typicalInvokable" => [
                 new class {
                     public function __invoke()
@@ -472,12 +478,20 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestRetry(): iterable
+    public static function dataForTestRetry(): iterable
     {
+        $object = new class
+        {
+            public function callableToRetry()
+            {
+                return null;
+            }
+        };
+
         yield from [
             "typicalClosure" => [self::createCallable(),],
             "typicalStaticMethod" => [[self::class, "staticCallableToRetry",],],
-            "typicalMethod" => [[$this, "callableToRetry",],],
+            "typicalMethod" => [[$object, "callableToRetry",],],
             "typicalInvokable" => [
                 new class {
                     public function __invoke()
@@ -505,12 +519,20 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestSetExitCondition(): iterable
+    public static function dataForTestSetExitCondition(): iterable
     {
+        $object = new class
+        {
+            public function exitFunction(): bool
+            {
+                return true;
+            }
+        };
+
         yield from [
             "typicalClosure" => [self::createCallable(),],
             "typicalStaticMethod" => [[self::class, "staticExitFunction",],],
-            "typicalMethod" => [[$this, "exitFunction",],],
+            "typicalMethod" => [[$object, "exitFunction",],],
             "typicalInvokable" => [
                 new class {
                     public function __invoke()
@@ -559,12 +581,20 @@ class RetryTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestExitCondition(): iterable
+    public static function dataForTestExitCondition(): iterable
     {
+        $object = new class
+        {
+            public function exitFunction(): bool
+            {
+                return true;
+            }
+        };
+
         yield from [
             "typicalClosure" => [self::createCallable(),],
             "typicalStaticMethod" => [[self::class, "staticExitFunction",],],
-            "typicalMethod" => [[$this, "exitFunction",],],
+            "typicalMethod" => [[$object, "exitFunction",],],
             "typicalInvokable" => [
                 new class {
                     public function __invoke()

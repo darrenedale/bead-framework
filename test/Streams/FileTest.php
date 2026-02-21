@@ -87,7 +87,7 @@ class FileTest extends TestCase
     }
 
     /** Provides open modes for testing in testConstructorBadFile() */
-    public function dataForTestConstructorBadFile(): iterable
+    public static function dataForTestConstructorBadFile(): iterable
     {
         yield "read" => [File::ModeRead];
         yield "read-write" => [File::ModeReadWrite];

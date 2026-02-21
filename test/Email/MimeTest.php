@@ -2115,7 +2115,7 @@ final class MimeTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public function dataForTestIsValidHeaderName1(): iterable
+    public static function dataForTestIsValidHeaderName1(): iterable
     {
         yield "valid" => ["header-name", true,];
         yield "invalid" => ["(header-name)", false,];

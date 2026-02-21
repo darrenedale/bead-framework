@@ -293,6 +293,20 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
+     * Set the minimum PHP version the application requires.
+     *
+     * The version string should be of the form _x.y.z_ where _x_, _y_ and _z_ are integers >= 0.
+     *
+     * @param string $version The minimum required PHP version.
+     *
+     * @return void
+     */
+    public function setMinimumPhpVersion(string $version): void
+    {
+        $this->m_minimumPhpVersion = $version;
+    }
+
+    /**
      * Bind an instance to an identified service.
      *
      * @param string $service The service identifier to bind to.
@@ -537,23 +551,18 @@ abstract class Application implements ServiceContainer, ContainerInterface
     {
         $this->m_errorHandler = $handler;
 
-        $errorHandler = function (int $type, string $message, string $file = "", int $line = 0) use ($handler): void {
+        set_error_handler(function (int $type, string $message, string $file = "", int $line = 0) use ($handler): void {
             $handler->handleError($type, $message, $file, $line);
-        };
-
-        set_error_handler($errorHandler);
+        });
 
         set_exception_handler(function (Throwable $err) use ($handler): void {
             $handler->handleException($err);
         });
     }
 
-    /** Fetch the application's data controller.
+    /** Fetch the application's database.
      *
-     * The returned data controller should be used by all classes and plugins whenever access to the database is
-     * required.
-     *
-     * @return Connection|null The data controller.
+     * @return Connection|null The database.
      */
     public function database(): ?Connection
     {
@@ -562,33 +571,24 @@ abstract class Application implements ServiceContainer, ContainerInterface
 
     /** Emit an event.
      *
-     * Any plugin can emit an event, and plugins do not need to (indeed cannot) register their events in advance.
-     * Plugins should, however, document the events they emit so that they can be used by other plugins, and are
-     * encouraged to name their events clearly and carefully to avoid clashes with events from other plugins,
-     * classes, or the application. It is recommended that plugin events are prefixed with the lower-case name of
-     * the action that they usually relate to, or if there is no specific action then the text "plugin." followed
-     * by the name of the plugin class in lower-case, in order to achieve sufficient disambiguation (e.g.
-     * "editpublication.addingpublicationform", "plugin.helloworld.somethinghappened"). This can make for long
-     * event
-     * names but ensures more compatible plugins.
+     * Any code can emit an event. Event emitters should document the events they emit, and name tme clearly and
+     * carefully to avoid clashes with events from other code.
      *
      * When an event is emitted, all callbacks connected to that event are called. They are currently called in the
-     * order in which they are added, but this behaviour should not be relied upon and plugins should expect the
-     * order in which callbacks are called to be arbitrary.
+     * order in which they are added, but this behaviour should not be relied upon and code should expect the order in
+     * which callbacks are called to be arbitrary.
      *
-     * Events can provide parameters with the event, which will be passed on to all connected callbacks. Plugins
-     * must ensure that the quantity, types and meanings of event parameters are used consistently. Any given event
+     * Events can provide parameters with the event, which will be passed on to all connected callbacks. Any given event
      * must always have the same signature every time it is emitted to keep callbacks as simple to implement as
-     * possible. If your plugin needs to emit events with different parameter signatures, use events with different
-     * names.
+     * possible.
      *
      * @see-also connect(), disconnect()
      *
      * @param $event string The name of the event.
      * @param ...$eventArgs mixed Zero or more arguments to provide to the event callbacks.
      *
-     * @return bool _true_ if the event was emitted successfully, _false_ otherwise. An event that is valid but
-     * happens to have no connected callbacks returns _true_.
+     * @return bool true if the event was emitted successfully, false otherwise. An event that is valid but happens to
+     * have no connected callbacks returns true.
      */
     public function emitEvent(string $event, mixed ... $eventArgs): bool
     {
@@ -609,20 +609,6 @@ abstract class Application implements ServiceContainer, ContainerInterface
     }
 
     /**
-     * Set the minimum PHP version the application requires.
-     *
-     * The version string should be of the form _x.y.z_ where _x_, _y_ and _z_ are integers >= 0.
-     *
-     * @param string $version The minimum required PHP version.
-     *
-     * @return void
-     */
-    public function setMinimumPhpVersion(string $version): void
-    {
-        $this->m_minimumPhpVersion = $version;
-    }
-
-    /**
      * Connect a callback to an event.
      *
      * ### Warning
@@ -634,19 +620,17 @@ abstract class Application implements ServiceContainer, ContainerInterface
      *   function names passed to connect() and disconnect(); or
      * - use references to closures.
      *
-     * The callback's syntactic validity is checked when it is connected but not its availability - availability is
-     * only checked when the event actually occurs. If the callback is found not to be available when the event
-     * occurs, it will silently be ignored.
+     * The callback's syntactic validity is checked when it is connected but not its availability - availability is only
+     * checked when the event actually occurs. If the callback is found not to be available when the event occurs, it
+     * will silently be ignored.
      *
-     * All callbacks are given two parameters before any parameters that are defined by the event provider. The
-     * first is the event that occurred (a `string`) and the second is the request that gave rise to the event (a
-     * Bead\Request object). In the case of some application events and possibly some plugin events, the
-     * Bead\Request can be _null_ (it is up to the plugin to provide the appropriate request when it emits the
-     * event, it is not automatically provided by emitEvent()). Plugins that emit events are very strongly
-     * recommended to provide a Bead\Request object wherever possible.
+     * All callbacks are given two parameters before any parameters that are defined by the event provider. The first is
+     * the event that occurred (a `string`) and the second is the request that gave rise to the event (a `Bead\Request`
+     * object). In the case of some application events, the Bead\Request can be `null` (it is up to the emitter to
+     * provide the appropriate request when it emits the event, it is not automatically provided by `emitEvent()`).
      *
-     * Callbacks stack up, so if you add the same callback more than once, it will be called more than once every
-     * time the event occurs.
+     * Callbacks stack up, so if you add the same callback more than once, it will be called more than once every time
+     * the event occurs.
      *
      * @param string $event is the event to connect to.
      * @param callable $callback is the function or method to call when the event occurs.

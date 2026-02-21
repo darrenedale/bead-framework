@@ -56,7 +56,7 @@ final class I18nTest extends TestCase
         Mockery::close();
     }
 
-    public function dataForTestTr(): iterable
+    public static function dataForTestTr(): iterable
     {
         yield from [
             "typicalWindow" => ["window", "fenetre",],

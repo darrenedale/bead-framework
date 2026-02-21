@@ -16,21 +16,44 @@ class HasKeyTest extends TestCase
     /** @var object $instance Instance of an anonymous class that utilises the HasKey trait. */
     private object $instance;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->instance = new class {
             use HasKey {
                 scrubString as traitScrubString;
             }
 
-            public static bool $scrubStringCalled = false;
+            private static array $listeners = [];
+
+            public static function addListener(callable $listener): void
+            {
+                self::$listeners[] = $listener;
+            }
+
+            public static function clearListeners(): void
+            {
+                self::$listeners = [];
+            }
 
             private static function scrubString(string & $str): void
             {
-                self::$scrubStringCalled = true;
+                foreach (self::$listeners as $listener) {
+                    $listener($str);
+                }
+
                 self::traitScrubString($str);
             }
         };
+    }
+
+    protected function tearDown(): void
+    {
+        if (isset($this->instance)) {
+            $this->instance->clearListeners();
+        }
+
+        unset($this->instance);
+        parent::tearDown();
     }
 
     /** Ensure we get the expected key. */
@@ -54,11 +77,16 @@ class HasKeyTest extends TestCase
     public function testDestructor1(): void
     {
         /** @var class-string $instanceClass */
-        $instanceClass = $this->instance::class;
-        self::assertFalse($instanceClass::$scrubStringCalled);
         $instance = new XRay($this->instance);
         $instance->key = "something";
+        $scrubCalled = false;
+
+        $this->instance->addListener(static function (string $str) use (&$scrubCalled): void {
+            TestCase::assertSame("something", $str);
+            $scrubCalled = true;
+        });
+
         unset($instance, $this->instance);
-        self::assertTrue($instanceClass::$scrubStringCalled);
+        self::assertTrue($scrubCalled);
     }
 }
