@@ -8,6 +8,7 @@ use Bead\Authentication\AuthenticationResult;
 use Bead\Authentication\AuthenticationResultCode;
 use Bead\Contracts\Models\Authenticatable;
 use BeadTests\Framework\TestCase;
+use LogicException;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -91,5 +92,44 @@ class AuthenticationResultTest extends TestCase
     {
         $actual = AuthenticationResult::multiFactorRequired(self::TestAdditionalFactors);
         self::assertSame(self::TestAdditionalFactors, $actual->supportedAdditionalFactors());
+    }
+
+    /** Ensure the authenticated() factory method constructs the expected authentication result. */
+    public function testAuthenticated1(): void
+    {
+        $expectedAuthenticatable = Mockery::mock(Authenticatable::class);
+        $actual = AuthenticationResult::authenticated($expectedAuthenticatable);
+        self::assertFalse($actual->additionalFactorRequired());
+        self::assertTrue($actual->isSuccess());
+        self::assertSame($expectedAuthenticatable, $actual->authenticatable());
+        self::assertSame([], $actual->supportedAdditionalFactors());
+    }
+
+    /** Ensure the multiFactorRequired() factory method constructs the expected authentication result. */
+    public function testMultiFactorRequired1(): void
+    {
+        $actual = AuthenticationResult::multiFactorRequired(self::TestAdditionalFactors);
+        self::assertTrue($actual->additionalFactorRequired());
+        self::assertFalse($actual->isSuccess());
+        self::assertNull($actual->authenticatable());
+        self::assertSame(self::TestAdditionalFactors, $actual->supportedAdditionalFactors());
+    }
+
+    /** Ensure the multiFactorRequired() factory method throws when no additional factors are supplied. */
+    public function testMultiFactorRequired2(): void
+    {
+        $this->skipIfAssertionsDisabled();
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage("Expected non-empty array of strings identifying supported additional authentication factors");
+        AuthenticationResult::multiFactorRequired([]);
+    }
+
+    /** Ensure the multiFactorRequired() factory method throws when no additional factors are supplied. */
+    public function testMultiFactorRequired3(): void
+    {
+        $this->skipIfAssertionsDisabled();
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage("Expected an array of strings identifying supported additional authentication factors");
+        AuthenticationResult::multiFactorRequired([...self::TestAdditionalFactors, 42]);
     }
 }

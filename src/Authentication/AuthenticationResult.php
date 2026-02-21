@@ -40,6 +40,7 @@ final class AuthenticationResult
     /** Factory method to create a multifactor-required authentication result. */
     public static function multiFactorRequired(array $additionalFactors): self
     {
+        assert(0 < count($additionalFactors), new LogicException("Expected non-empty array of strings identifying supported additional authentication factors"));
         assert(all($additionalFactors, "is_string"), new LogicException("Expected an array of strings identifying supported additional authentication factors"));
         return new self(AuthenticationResultCode::AdditionalFactorRequired, null, $additionalFactors);
     }
