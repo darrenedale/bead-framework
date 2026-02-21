@@ -17,9 +17,10 @@ use Bead\Exceptions\Authentication\MultiFactorAuthenticationException;
 use BeadTests\Framework\TestCase;
 use LogicException;
 use Mockery;
+use PHPUnit\Framework\Attributes\CoversClass;
 use StdClass;
 
-/** @covers \Bead\Authentication\PasswordAuthenticator */
+#[CoversClass(MultiFactorPasswordAuthenticator::class)]
 class MultiFactorPasswordAuthenticatorTest extends TestCase
 {
     private MultiFactorPasswordAuthenticator $m_authenticator;

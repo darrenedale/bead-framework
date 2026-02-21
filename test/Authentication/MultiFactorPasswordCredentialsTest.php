@@ -6,8 +6,9 @@ namespace BeadTests\Authentication;
 
 use Bead\Authentication\MultiFactorPasswordCredentials;
 use BeadTests\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \Bead\Authentication\MultiFactorPasswordCredentials */
+#[CoversClass(MultiFactorPasswordCredentials::class)]
 class MultiFactorPasswordCredentialsTest extends TestCase
 {
     /** Provides second factor arguments that result in the credentials reporting that there is no second factor. */

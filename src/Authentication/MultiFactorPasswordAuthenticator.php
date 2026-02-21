@@ -80,13 +80,13 @@ class MultiFactorPasswordAuthenticator extends AbstractAuthenticator
 
         if (!($authenticatable instanceof MultiFactorAuthenticatableContract) || !$authenticatable->hasMultiFactorEnabled()) {
             // verified and no MFA, so all good
-            return new AuthenticationResult(AuthenticationResultCode::Authenticated, $authenticatable);
+            return AuthenticationResult::authenticated($authenticatable);
         }
 
         if ($credentials instanceof MultiFactorPasswordCredentials && $credentials->hasMultiFactorCredentials()) {
             if ($authenticatable->verifyMultiFactor($credentials)) {
                 // correct MFA credentials
-                return new AuthenticationResult(AuthenticationResultCode::Authenticated, $authenticatable);
+                return AuthenticationResult::authenticated($authenticatable);
             }
 
             // incorrect MFA credentials
@@ -94,10 +94,6 @@ class MultiFactorPasswordAuthenticator extends AbstractAuthenticator
         }
 
         // no MFA credentials, so ask for them
-        return new AuthenticationResult(
-            AuthenticationResultCode::AdditionalFactorRequired,
-            null,
-            $authenticatable->multiFactorMethods(),
-        );
+        return AuthenticationResult::multiFactorRequired($authenticatable->multiFactorMethods());
     }
 }

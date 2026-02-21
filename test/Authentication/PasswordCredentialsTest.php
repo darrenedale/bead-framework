@@ -6,8 +6,9 @@ namespace BeadTests\Authentication;
 
 use Bead\Authentication\PasswordCredentials;
 use BeadTests\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \Bead\Authentication\PasswordCredentials */
+#[CoversClass(PasswordCredentials::class)]
 class PasswordCredentialsTest extends TestCase
 {
     /** Ensure the constructor sets the username and password correctly. */

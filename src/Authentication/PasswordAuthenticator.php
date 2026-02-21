@@ -66,6 +66,6 @@ class PasswordAuthenticator extends AbstractAuthenticator
             throw new AuthenticationException(tr("The email and/or password is not valid."));
         }
 
-        return new AuthenticationResult(AuthenticationResultCode::Authenticated, $authenticatable);
+        return AuthenticationResult::authenticated($authenticatable);
     }
 }

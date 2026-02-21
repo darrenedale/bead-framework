@@ -20,8 +20,10 @@ use Equit\XRay\StaticXRay;
 use Equit\XRay\XRay;
 use LogicException;
 use Mockery;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers \Bead\Authentication\AbstractAuthenticator */
+#[CoversClass(AbstractAuthenticator::class)]
+
 class AbstractAuthenticatorTest extends TestCase
 {
     public function tearDown(): void
@@ -249,7 +251,7 @@ class AbstractAuthenticatorTest extends TestCase
             verifyCredentials: static function (CredentialsContract $credentialsArg, AuthenticatableContract $authenticatableArg) use ($credentials, $authenticatable): AuthenticationResult {
                 TestCase::assertSame($credentials, $credentialsArg);
                 TestCase::assertSame($authenticatable, $authenticatableArg);
-                return new AuthenticationResult(AuthenticationResultCode::Authenticated, $authenticatableArg);
+                return AuthenticationResult::authenticated($authenticatableArg);
             },
         );
 
@@ -310,7 +312,7 @@ class AbstractAuthenticatorTest extends TestCase
             verifyCredentials: static function (CredentialsContract $credentialsArg, AuthenticatableContract $authenticatableArg) use ($credentials, $authenticatable): AuthenticationResult {
                 TestCase::assertSame($credentials, $credentialsArg);
                 TestCase::assertSame($authenticatable, $authenticatableArg);
-                return new AuthenticationResult(AuthenticationResultCode::AdditionalFactorRequired, null, ["totp"]);
+                return AuthenticationResult::multiFactorRequired(["totp"]);
             },
         );
 

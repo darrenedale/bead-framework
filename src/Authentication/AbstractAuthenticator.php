@@ -35,6 +35,10 @@ abstract class AbstractAuthenticator implements AuthenticatorContract
     /** @var string Where in the session to store the authenticated user data. */
     protected static string $sessionKey = "current-user";
 
+    /**
+     * @var AuthenticatableContract|null The currently authenticated user, if there is one, lazy-initialised when first
+     * required.
+     */
     private ?AuthenticatableContract $authenticatable = null;
 
     /** @inheritDoc */
@@ -89,12 +93,7 @@ abstract class AbstractAuthenticator implements AuthenticatorContract
         $this->authenticatableClass = $modelClass;
     }
 
-    /**
-     * Extracts the credentials, identifies the user and verifies the credentials.
-     *
-     * @param RequestContract $request
-     * @return AuthenticationResult
-     */
+    /** Extracts the credentials, identifies the user and verifies the credentials. */
     public function authenticate(RequestContract $request): AuthenticationResult
     {
         $credentials = $this->extractCredentials($request);

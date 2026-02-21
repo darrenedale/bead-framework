@@ -8,7 +8,7 @@ use LogicException;
 use function Bead\Helpers\Iterable\all;
 
 /** Encapsulates the result of an authentication attempt that doesn't fail. */
-class AuthenticationResult
+final class AuthenticationResult
 {
     /** @var AuthenticationResultCode The outcome of the authentication attempt. */
     private AuthenticationResultCode $code;
@@ -22,20 +22,26 @@ class AuthenticationResult
     /**
      * Initialise a result.
      *
-     * If $code is AuthenticationResultCode::Authenticated $authenticatable must be non-null. If $code is
-     * AuthenticationResultCode::AdditionalFactorRequired, $authenticatable must be null and $additionalFactors must be
-     * non-empty.
-     *
      * @param string[] $additionalFactors
      */
-    public function __construct(AuthenticationResultCode $code, ?AuthenticatableContract $authenticatable = null, array $additionalFactors = [])
+    private function __construct(AuthenticationResultCode $code, ?AuthenticatableContract $authenticatable, array $additionalFactors)
     {
-        assert(all($additionalFactors, "is_string"), new LogicException("Expected an array of strings identifying supported additional authentication factors"));
-        assert((AuthenticationResultCode::Authenticated === $code && null !== $authenticatable) || (AuthenticationResultCode::AdditionalFactorRequired === $code && null === $authenticatable), new LogicException("Expected valid combination of result code and authenticatable, found {$code->name} and " . (null === $authenticatable ? "no" : "an") . " authenticatable"));
-        assert(!(AuthenticationResultCode::AdditionalFactorRequired === $code && 0 === count($additionalFactors)), new LogicException("Expected one or more additional supported factors for code = {$code->name}"));
         $this->code = $code;
         $this->authenticatable = $authenticatable;
         $this->additionalFactors = $additionalFactors;
+    }
+
+    /** Factory method to create a success authentication result. */
+    public static function authenticated(AuthenticatableContract $authenticatable): self
+    {
+        return new self(AuthenticationResultCode::Authenticated, $authenticatable, []);
+    }
+
+    /** Factory method to create a multifactor-required authentication result. */
+    public static function multiFactorRequired(array $additionalFactors): self
+    {
+        assert(all($additionalFactors, "is_string"), new LogicException("Expected an array of strings identifying supported additional authentication factors"));
+        return new self(AuthenticationResultCode::AdditionalFactorRequired, null, $additionalFactors);
     }
 
     /** Conveniently check whether the result was successful authentication. */

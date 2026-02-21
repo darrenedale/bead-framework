@@ -15,9 +15,10 @@ use Bead\Exceptions\Authentication\AuthenticationException;
 use BeadTests\Framework\TestCase;
 use LogicException;
 use Mockery;
+use PHPUnit\Framework\Attributes\CoversClass;
 use StdClass;
 
-/** @covers \Bead\Authentication\PasswordAuthenticator */
+#[CoversClass(PasswordAuthenticator::class)]
 class PasswordAuthenticatorTest extends TestCase
 {
     private PasswordAuthenticator $m_authenticator;
