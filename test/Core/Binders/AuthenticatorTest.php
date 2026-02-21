@@ -22,37 +22,37 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(AuthenticatorContract::class)]
 class AuthenticatorTest extends TestCase
 {
-    private AuthenticatorBinder $m_binder;
+    private AuthenticatorBinder $binder;
 
     // Can't think of a better way to make the anonymous model class visible in the Authenticator test instance in
     // testBindServices2()
-    public static ?string $m_testBindServices2ExpectedModelClass = null;
+    public static ?string $testBindServices2ExpectedModelClass = null;
 
     protected function setUp(): void
     {
         parent::setUp();
-        self::$m_testBindServices2ExpectedModelClass = null;
-        $this->m_binder = new AuthenticatorBinder();
+        self::$testBindServices2ExpectedModelClass = null;
+        $this->binder = new AuthenticatorBinder();
     }
 
     public function tearDown(): void
     {
         Mockery::close();
         parent::tearDown();
-        self::$m_testBindServices2ExpectedModelClass = null;
-        unset($this->m_binder);
+        self::$testBindServices2ExpectedModelClass = null;
+        unset($this->binder);
     }
 
     /** Ensure the service should be bound when the app is a Web\Application. */
     public function testShouldBindAuthenticator1(): void
     {
-        self::assertTrue((new XRay($this->m_binder))->shouldBindAuthenticator(Mockery::mock(WebApplication::class)));
+        self::assertTrue((new XRay($this->binder))->shouldBindAuthenticator(Mockery::mock(WebApplication::class)));
     }
 
     /** Ensure the service shouldn't be bound when the app is not a Web\Application. */
     public function testShouldBindAuthenticator2(): void
     {
-        self::assertFalse((new XRay($this->m_binder))->shouldBindAuthenticator(Mockery::mock(Application::class)));
+        self::assertFalse((new XRay($this->binder))->shouldBindAuthenticator(Mockery::mock(Application::class)));
     }
 
     /** Ensure an Authenticator of the requested class is intantiated. */
@@ -106,7 +106,7 @@ class AuthenticatorTest extends TestCase
             }
         };
 
-        $actual = (new XRay($this->m_binder))->createAuthenticator([
+        $actual = (new XRay($this->binder))->createAuthenticator([
             "authenticator-class" => $authenticator::class,
         ]);
 
@@ -119,7 +119,7 @@ class AuthenticatorTest extends TestCase
     {
         $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage("Expected class implementing " . AuthenticatorContract::class . " contract, found " . self::class);
-        (new XRay($this->m_binder))->createAuthenticator([
+        (new XRay($this->binder))->createAuthenticator([
             "authenticator-class" => self::class,
         ]);
     }
@@ -134,7 +134,7 @@ class AuthenticatorTest extends TestCase
             ->once()
             ->with($model::class);
 
-        (new XRay($this->m_binder))->setAuthenticatableModel($authenticator, [
+        (new XRay($this->binder))->setAuthenticatableModel($authenticator, [
             "model-class" => $model::class,
         ]);
 
@@ -148,7 +148,7 @@ class AuthenticatorTest extends TestCase
         $authenticator = Mockery::mock(AuthenticatorContract::class);
         $this->expectException(InvalidConfigurationException::class);
         $this->expectExceptionMessage("Expected class implementing " . AuthenticatableContract::class . " contract, found " . self::class);
-        (new XRay($this->m_binder))->setAuthenticatableModel($authenticator, [
+        (new XRay($this->binder))->setAuthenticatableModel($authenticator, [
             "model-class" => self::class,
         ]);
     }
@@ -161,7 +161,7 @@ class AuthenticatorTest extends TestCase
         $app->expects("bindService")
             ->never();
 
-        $this->m_binder->bindServices($app);
+        $this->binder->bindServices($app);
 
         // Mockery takes care of test expectations
         self::markTestAsExternallyVerified();
@@ -171,14 +171,14 @@ class AuthenticatorTest extends TestCase
     public function testBindServices2(): void
     {
         $model = Mockery::mock(AuthenticatableContract::class);
-        self::$m_testBindServices2ExpectedModelClass = $model::class;
+        self::$testBindServices2ExpectedModelClass = $model::class;
 
         $authenticator = new class () implements AuthenticatorContract
         {
             public function authenticateInstancesOf(string $modelClass): void
             {
-                TestCase::assertSame(AuthenticatorTest::$m_testBindServices2ExpectedModelClass, $modelClass);
-                AuthenticatorTest::$m_testBindServices2ExpectedModelClass = null;
+                TestCase::assertSame(AuthenticatorTest::$testBindServices2ExpectedModelClass, $modelClass);
+                AuthenticatorTest::$testBindServices2ExpectedModelClass = null;
             }
 
             public function extractCredentials(RequestContract $request): CredentialsContract
@@ -246,9 +246,9 @@ class AuthenticatorTest extends TestCase
             ->with("auth.authenticator")
             ->andReturn("test-authenticator");
 
-        $this->m_binder->bindServices($app);
+        $this->binder->bindServices($app);
 
         // if the Authenticator sets this back to null, the test passes
-        self::assertNull(AuthenticatorTest::$m_testBindServices2ExpectedModelClass);
+        self::assertNull(AuthenticatorTest::$testBindServices2ExpectedModelClass);
     }
 }

@@ -16,25 +16,27 @@ use BeadTests\Framework\TestCase;
 use LogicException;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use StdClass;
 
 #[CoversClass(PasswordAuthenticator::class)]
 class PasswordAuthenticatorTest extends TestCase
 {
-    private PasswordAuthenticator $m_authenticator;
+    private PasswordAuthenticator $authenticator;
 
     protected function setUp(): void
     {
-        $this->m_authenticator = new PasswordAuthenticator();
+        $this->authenticator = new PasswordAuthenticator();
     }
 
     public function tearDown(): void
     {
-        unset($this->m_authenticator);
+        unset($this->authenticator);
         parent::tearDown();
         Mockery::close();
     }
 
+    /** Provides values that are not valid usernames. */
     public static function providerInvalidUsernames(): iterable
     {
         yield "int" => [42];
@@ -47,6 +49,7 @@ class PasswordAuthenticatorTest extends TestCase
         yield "empty string" => [""];
     }
 
+    /** Provides values that are not valid passwords. */
     public static function providerInvalidPasswords(): iterable
     {
         yield "int" => [42];
@@ -72,16 +75,14 @@ class PasswordAuthenticatorTest extends TestCase
                 "password" => "secret",
             ]);
 
-        $actual = $this->m_authenticator->extractCredentials($request);
+        $actual = $this->authenticator->extractCredentials($request);
         self::assertInstanceOf(PasswordCredentials::class, $actual);
         self::assertSame("darren@example.org", $actual->username());
         self::assertSame("secret", $actual->password());
     }
 
-    /**
-     * Ensure an invalid username triggers the expected exception.
-     * @dataProvider providerInvalidUsernames
-     */
+    /** Ensure an invalid username triggers the expected exception. */
+    #[DataProvider("providerInvalidUsernames")]
     public function testExtractCredentials2(mixed $invalidUsername): void
     {
         $app = Mockery::mock(Application::class);
@@ -117,13 +118,11 @@ class PasswordAuthenticatorTest extends TestCase
 
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("Invalid authentication data provided");
-        $this->m_authenticator->extractCredentials($request);
+        $this->authenticator->extractCredentials($request);
     }
 
-    /**
-     * Ensure an invalid password triggers the expected exception.
-     * @dataProvider providerInvalidPasswords
-     */
+    /** Ensure an invalid password triggers the expected exception. */
+    #[DataProvider("providerInvalidPasswords")]
     public function testExtractCredentials3(mixed $invalidPassword): void
     {
         $app = Mockery::mock(Application::class);
@@ -159,7 +158,7 @@ class PasswordAuthenticatorTest extends TestCase
 
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("Invalid authentication data provided");
-        $this->m_authenticator->extractCredentials($request);
+        $this->authenticator->extractCredentials($request);
     }
 
     /** Ensure the matching authenticatable is looked up and returned. */
@@ -196,8 +195,8 @@ class PasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
-        $actual = $this->m_authenticator->findAuthenticatable($credentials);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
+        $actual = $this->authenticator->findAuthenticatable($credentials);
         self::assertSame($authenticatable, $actual);
     }
 
@@ -224,10 +223,10 @@ class PasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("The email and/or password is not valid");
-        $this->m_authenticator->findAuthenticatable($credentials);
+        $this->authenticator->findAuthenticatable($credentials);
     }
 
     /**
@@ -264,8 +263,8 @@ class PasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
-        $actual = $this->m_authenticator->verifyCredentials($credentials, $authenticatable);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
+        $actual = $this->authenticator->verifyCredentials($credentials, $authenticatable);
         self::assertSame(AuthenticationResultCode::Authenticated, $actual->code());
         self::assertSame($authenticatable, $actual->authenticatable());
     }
@@ -293,9 +292,9 @@ class PasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("The email and/or password is not valid");
-        $this->m_authenticator->verifyCredentials($credentials, $authenticatable);
+        $this->authenticator->verifyCredentials($credentials, $authenticatable);
     }
 }

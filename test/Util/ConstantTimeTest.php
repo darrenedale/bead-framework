@@ -5,9 +5,10 @@ namespace BeadTests\Util;
 use Bead\Util\ConstantTime;
 use Bead\Util\ScopeGuard;
 use BeadTests\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use RuntimeException;
 
-/** @covers ConstantTime */
+#[CoversClass(ConstantTime::class)]
 class ConstantTimeTest extends TestCase
 {
     /** Ensure the constructor throws if high-resolution time is not available. */

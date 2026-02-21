@@ -28,7 +28,7 @@ class MultiFactorPasswordAuthenticator extends AbstractAuthenticator
     /** The POST data key for the credentials' second-factor password. */
     protected static string $secondFactorPasswordKey = "second-factor-password";
 
-    /** * Fetch the username and password, and optional second factor method and password, from a Request. */
+    /** Fetch the username and password, and optional second factor method and password, from a Request. */
     public function extractCredentials(RequestContract $request): CredentialsContract
     {
         $validator = new Validator(

@@ -7,6 +7,7 @@ namespace BeadTests\Authentication;
 use Bead\Authentication\MultiFactorPasswordCredentials;
 use BeadTests\Framework\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(MultiFactorPasswordCredentials::class)]
 class MultiFactorPasswordCredentialsTest extends TestCase
@@ -29,17 +30,15 @@ class MultiFactorPasswordCredentialsTest extends TestCase
         self::assertSame("123456", $actual->secondFactorPassword());
     }
 
-    /**
-     * Ensure hasMultiFactorCredentials correctly reports when a second factor is not present.
-     * @dataProvider providerNoSecondFactor
-     */
+    /** Ensure hasMultiFactorCredentials() correctly reports when a second factor is not present. */
+    #[DataProvider("providerNoSecondFactor")]
     public function testHasMultiFactorCredentials1(?string $method, ?string $password): void
     {
         $actual = new MultiFactorPasswordCredentials("darren@example.net", "secret", $method, $password);
         self::assertFalse($actual->hasMultiFactorCredentials());
     }
 
-    /** Ensure hasMultiFactorCredentials correctly reports when a second factor is present. */
+    /** Ensure hasMultiFactorCredentials() correctly reports when a second factor is present. */
     public function testHasMultiFactorCredentials2(): void
     {
         $actual = new MultiFactorPasswordCredentials("darren@example.net", "secret", "totp", "123456");

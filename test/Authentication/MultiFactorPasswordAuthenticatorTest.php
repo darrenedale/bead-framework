@@ -18,25 +18,27 @@ use BeadTests\Framework\TestCase;
 use LogicException;
 use Mockery;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use StdClass;
 
 #[CoversClass(MultiFactorPasswordAuthenticator::class)]
 class MultiFactorPasswordAuthenticatorTest extends TestCase
 {
-    private MultiFactorPasswordAuthenticator $m_authenticator;
+    private MultiFactorPasswordAuthenticator $authenticator;
 
     protected function setUp(): void
     {
-        $this->m_authenticator = new MultiFactorPasswordAuthenticator();
+        $this->authenticator = new MultiFactorPasswordAuthenticator();
     }
 
     public function tearDown(): void
     {
-        unset($this->m_authenticator);
+        unset($this->authenticator);
         parent::tearDown();
         Mockery::close();
     }
 
+    /** Provides values that are not valid user names. */
     public static function providerInvalidUsernames(): iterable
     {
         yield "int" => [42];
@@ -49,6 +51,7 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
         yield "empty string" => [""];
     }
 
+    /** Provides values that are not valid passwords. */
     public static function providerInvalidPasswords(): iterable
     {
         yield "int" => [42];
@@ -61,6 +64,7 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
         yield "empty string" => [""];
     }
 
+    /** Provides values that are not valid second-factor methods. */
     public static function providerInvalidSecondFactorMethods(): iterable
     {
         yield "int" => [42];
@@ -72,6 +76,7 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
         yield "unrecognised method" => ["fido2"];
     }
 
+    /** Provides values that are not valid second factor passwords. */
     public static function providerInvalidSecondFactorPasswords(): iterable
     {
         yield "int" => [42];
@@ -99,7 +104,7 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
                 "second-factor-password" => "123456",
             ]);
 
-        $actual = $this->m_authenticator->extractCredentials($request);
+        $actual = $this->authenticator->extractCredentials($request);
         self::assertInstanceOf(MultiFactorPasswordCredentials::class, $actual);
         self::assertSame("darren@example.org", $actual->username());
         self::assertSame("secret", $actual->password());
@@ -107,10 +112,8 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
         self::assertSame("123456", $actual->secondFactorPassword());
     }
 
-    /**
-     * Ensure an invalid username triggers the expected exception.
-     * @dataProvider providerInvalidUsernames
-     */
+    /** Ensure an invalid username triggers the expected exception. */
+    #[DataProvider("providerInvalidUsernames")]
     public function testExtractCredentials2(mixed $invalidUsername): void
     {
         $app = Mockery::mock(Application::class);
@@ -148,13 +151,11 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
 
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("Invalid authentication data provided");
-        $this->m_authenticator->extractCredentials($request);
+        $this->authenticator->extractCredentials($request);
     }
 
-    /**
-     * Ensure an invalid password triggers the expected exception.
-     * @dataProvider providerInvalidPasswords
-     */
+    /** Ensure an invalid password triggers the expected exception. */
+    #[DataProvider("providerInvalidPasswords")]
     public function testExtractCredentials3(mixed $invalidPassword): void
     {
         $app = Mockery::mock(Application::class);
@@ -192,13 +193,11 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
 
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("Invalid authentication data provided");
-        $this->m_authenticator->extractCredentials($request);
+        $this->authenticator->extractCredentials($request);
     }
 
-    /**
-     * Ensure an invalid second factor method triggers the expected exception.
-     * @dataProvider providerInvalidSecondFactorMethods
-     */
+    /** Ensure an invalid second factor method triggers the expected exception. */
+    #[DataProvider("providerInvalidSecondFactorMethods")]
     public function testExtractCredentials4(mixed $invalidMethod): void
     {
         $app = Mockery::mock(Application::class);
@@ -236,13 +235,11 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
 
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("Invalid authentication data provided");
-        $this->m_authenticator->extractCredentials($request);
+        $this->authenticator->extractCredentials($request);
     }
 
-    /**
-     * Ensure an invalid second factor method triggers the expected exception.
-     * @dataProvider providerInvalidSecondFactorPasswords
-     */
+    /** Ensure an invalid second factor method triggers the expected exception. */
+    #[DataProvider("providerInvalidSecondFactorPasswords")]
     public function testExtractCredentials5(mixed $invalidPassword): void
     {
         $app = Mockery::mock(Application::class);
@@ -280,7 +277,7 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
 
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("Invalid authentication data provided");
-        $this->m_authenticator->extractCredentials($request);
+        $this->authenticator->extractCredentials($request);
     }
 
     /** Ensure the matching authenticatable is looked up and returned. */
@@ -317,8 +314,8 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
-        $actual = $this->m_authenticator->findAuthenticatable($credentials);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
+        $actual = $this->authenticator->findAuthenticatable($credentials);
         self::assertSame($authenticatable, $actual);
     }
 
@@ -345,15 +342,15 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("The email and/or password is not valid");
-        $this->m_authenticator->findAuthenticatable($credentials);
+        $this->authenticator->findAuthenticatable($credentials);
     }
 
     /**
      * Ensure valid credentials are verified by the Authenticatable model and the expected AuthenticationResult is
-     * returned
+     * returned.
      */
     public function testVerifyCredentials1(): void
     {
@@ -406,13 +403,13 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
-        $actual = $this->m_authenticator->verifyCredentials($credentials, $authenticatable);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
+        $actual = $this->authenticator->verifyCredentials($credentials, $authenticatable);
         self::assertSame(AuthenticationResultCode::Authenticated, $actual->code());
         self::assertSame($authenticatable, $actual->authenticatable());
     }
 
-    /** Ensure Authenticatable without multi factor enabled verifies without second factor */
+    /** Ensure Authenticatable without multi-factor enabled verifies without second factor */
     public function testVerifyCredentials2(): void
     {
         $credentials = new MultiFactorPasswordCredentials(
@@ -463,13 +460,13 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
-        $actual = $this->m_authenticator->verifyCredentials($credentials, $authenticatable);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
+        $actual = $this->authenticator->verifyCredentials($credentials, $authenticatable);
         self::assertSame(AuthenticationResultCode::Authenticated, $actual->code());
         self::assertSame($authenticatable, $actual->authenticatable());
     }
 
-    /** Ensure Authenticatable with multi factor enabled verifies with second factor */
+    /** Ensure Authenticatable with multi-factor enabled verifies with second factor */
     public function testVerifyCredentials3(): void
     {
         $credentials = new MultiFactorPasswordCredentials(
@@ -521,8 +518,8 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
-        $actual = $this->m_authenticator->verifyCredentials($credentials, $authenticatable);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
+        $actual = $this->authenticator->verifyCredentials($credentials, $authenticatable);
         self::assertSame(AuthenticationResultCode::Authenticated, $actual->code());
         self::assertSame($authenticatable, $actual->authenticatable());
 
@@ -530,7 +527,7 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
         self::assertSame(4, $this->getCount());
     }
 
-    /** Ensure Authenticatable with multi factor enabled fails on second factor */
+    /** Ensure Authenticatable with multi-factor enabled fails on second factor */
     public function testVerifyCredentials4(): void
     {
         $credentials = new MultiFactorPasswordCredentials(
@@ -573,13 +570,13 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
         $this->expectException(MultiFactorAuthenticationException::class);
         $this->expectExceptionMessage("The code is not valid, please try again with the next code");
-        $this->m_authenticator->verifyCredentials($credentials, $authenticatable);
+        $this->authenticator->verifyCredentials($credentials, $authenticatable);
     }
 
-    /** Ensure Authenticatable with multi factor enabled requests second factor if not present in existing credentials. */
+    /** Ensure Authenticatable with multi-factor enabled requests second factor if not present in existing credentials. */
     public function testVerifyCredentials5(): void
     {
         $credentials = new MultiFactorPasswordCredentials(
@@ -622,8 +619,8 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
-        $actual = $this->m_authenticator->verifyCredentials($credentials, $authenticatable);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
+        $actual = $this->authenticator->verifyCredentials($credentials, $authenticatable);
         self::assertSame(AuthenticationResultCode::AdditionalFactorRequired, $actual->code());
         self::assertSame(["totp"], $actual->supportedAdditionalFactors());
     }
@@ -654,9 +651,9 @@ class MultiFactorPasswordAuthenticatorTest extends TestCase
             }
         };
 
-        $this->m_authenticator->authenticateInstancesOf($authenticatable::class);
+        $this->authenticator->authenticateInstancesOf($authenticatable::class);
         $this->expectException(AuthenticationException::class);
         $this->expectExceptionMessage("The email and/or password is not valid");
-        $this->m_authenticator->verifyCredentials($credentials, $authenticatable);
+        $this->authenticator->verifyCredentials($credentials, $authenticatable);
     }
 }

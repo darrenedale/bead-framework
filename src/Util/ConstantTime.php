@@ -8,9 +8,9 @@ use RuntimeException;
  * Ensure a process always takes at least a certain amount of time.
  *
  * Starts a timer, and when join() is called ensures that it doesn't return until at least the requested number of
- * microseconds has passed. Use this to ensure that processes which would ordinarily take variable amounts of time based
- * on the path through the code, take roughly constant time regardless of the path taken through the code. This helps to
- * mitigate timing attacks.
+ * microseconds has passed since the object was created. Use this to ensure that processes which would ordinarily take
+ * variable amounts of time based on the path through the code, take roughly constant time regardless of the path taken
+ * through the code. This helps to mitigate timing attacks.
  *
  * This is only usable on 64-bit platforms that provide a high-resolution timer.
  */
