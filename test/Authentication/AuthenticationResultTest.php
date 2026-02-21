@@ -33,7 +33,7 @@ class AuthenticationResultTest extends TestCase
 
     /**
      * Ensure additional factor required is reported when the result code is
-     * AuthenticationResultCode::AdditionalFactorRequired. 
+     * AuthenticationResultCode::AdditionalFactorRequired.
      */
     public function testAdditionalFactorRequired1(): void
     {
@@ -43,7 +43,7 @@ class AuthenticationResultTest extends TestCase
 
     /**
      * Ensure no additional factor required is reported when the result code is
-     * AuthenticationResultCode::Authenticated. 
+     * AuthenticationResultCode::Authenticated.
      */
     public function testAdditionalFactorRequired2(): void
     {
