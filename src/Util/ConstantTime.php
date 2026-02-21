@@ -22,7 +22,12 @@ class ConstantTime
     /** @var int The requested constant-time duration, in microseconds. */
     private int $requestedMicroseconds;
 
-    /** Start the process that's required to take a constant time of a given number of microseconds. */
+    /**
+     * Start the process that's required to take a constant time of a given number of microseconds.
+     *
+     * @throws RuntimeException if the PHP's int type on the current hardware platform is less than 64-bits wide or a
+     * high-resolution timer is not available.
+     */
     public function __construct(int $requestedMicroseconds)
     {
         if (8 > PHP_INT_SIZE) {

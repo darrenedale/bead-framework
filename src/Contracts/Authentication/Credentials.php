@@ -7,4 +7,5 @@ namespace Bead\Contracts\Authentication;
  * parameters and return values.
  */
 interface Credentials
-{}
+{
+}

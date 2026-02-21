@@ -46,7 +46,11 @@ abstract class AbstractAuthenticator implements AuthenticatorContract
     /** @inheritDoc */
     abstract public function verifyCredentials(CredentialsContract $credentials, AuthenticatableContract $authenticatable): AuthenticationResult;
 
-    /** Get the inactive timeout, in seconds. */
+    /**
+     * Get the inactive timeout, in seconds.
+     *
+     * @throws InvalidConfigurationException if the configured timeout is not an int in the valid range.
+     */
     protected static function inactiveSessionTimeout(): int
     {
         $timeout = Application::config("app.authentication.timeout", self::DefaultTimeout);
@@ -133,6 +137,8 @@ abstract class AbstractAuthenticator implements AuthenticatorContract
      *
      * If the session has timed out, the Authenticatable is de-authenticated. If not, the session is touched to keep it
      * active.
+     *
+     * @throws InvalidConfigurationException if the configured timeout is not an int in the valid range.
      */
     public function checkTimeout(): void
     {

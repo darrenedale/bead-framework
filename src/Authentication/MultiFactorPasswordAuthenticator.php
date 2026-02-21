@@ -41,12 +41,14 @@ class MultiFactorPasswordAuthenticator extends AbstractAuthenticator
             ]
         );
 
+        /** @psalm-suppress MissingThrowsDocblock LogicException won't be thrown here. */
         if (!$validator->passes()) {
             // delay before responding to make brute-force attacks less effective
             usleep(Application::config("app.auth-delay", 2) * 1000000);
             throw new AuthenticationException(tr("Invalid authentication data provided"));
         }
 
+        /** @psalm-suppress MissingThrowsDocblock LogicException won't be thrown here. */
         $validatedInput = $validator->validated();
 
         return new MultiFactorPasswordCredentials(

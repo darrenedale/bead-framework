@@ -7,6 +7,7 @@ use Bead\Contracts\Binder as BinderContract;
 use Bead\Contracts\Models\Authenticatable as AuthenticatableContract;
 use Bead\Core\Application;
 use Bead\Exceptions\InvalidConfigurationException;
+use Bead\Exceptions\ServiceAlreadyBoundException;
 use Bead\Web\Application as WebApplication;
 
 /**
@@ -36,6 +37,8 @@ class Authenticator implements BinderContract
      * Customisation point for apps to tweak how the authenticator is created.
      *
      * @param array $config The authenticator configuration specified in the auth config file.
+     * @throws InvalidConfigurationException if the configured authenticator class does not implement
+     * AuthenticatorContract.
      */
     protected function createAuthenticator(array $config): AuthenticatorContract
     {
@@ -54,6 +57,7 @@ class Authenticator implements BinderContract
      * Customisation point for apps to tweak how the authenticator's model class is set.
      *
      * @param array $config The authenticator configuration specified in the auth config file.
+     * @throws InvalidConfigurationException if the configured model class does not implement AuthenticatableContract.
      */
     protected function setAuthenticatableModel(AuthenticatorContract $authenticator, array $config): void
     {
@@ -66,7 +70,12 @@ class Authenticator implements BinderContract
         $authenticator->authenticateInstancesOf($modelClass);
     }
 
-    /** Bind the configured authenticator into the application. */
+    /**
+     * Bind the configured authenticator into the application.
+     * @throws InvalidConfigurationException if either the configured authenticator class or the configured model class
+     * don't implement the appropriate interfaces.
+     * @throws ServiceAlreadyBoundException if an authenticator service is already bound into the container.
+     */
     public function bindServices(Application $app): void
     {
         if (!$this->shouldBindAuthenticator($app)) {
