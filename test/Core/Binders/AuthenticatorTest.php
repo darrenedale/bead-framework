@@ -17,8 +17,9 @@ use BeadTests\Framework\TestCase;
 use Equit\XRay\XRay;
 use LogicException;
 use Mockery;
+use PHPUnit\Framework\Attributes\CoversClass;
 
-/** @covers AuthenticatorBinder */
+#[CoversClass(AuthenticatorContract::class)]
 class AuthenticatorTest extends TestCase
 {
     private AuthenticatorBinder $m_binder;
