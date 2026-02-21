@@ -173,7 +173,7 @@ class AuthenticatorTest extends TestCase
         $model = Mockery::mock(AuthenticatableContract::class);
         self::$m_testBindServices2ExpectedModelClass = $model::class;
 
-        $authenticator = new class() implements AuthenticatorContract
+        $authenticator = new class () implements AuthenticatorContract
         {
             public function authenticateInstancesOf(string $modelClass): void
             {

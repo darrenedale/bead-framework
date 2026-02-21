@@ -29,8 +29,7 @@ class ConstantTimeTest extends TestCase
     {
         $usleepCalled = false;
 
-        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void
-        {
+        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void {
             TestCase::assertGreaterThan(900, $duration);
             TestCase::assertLessThan(1000, $duration);
             $usleepCalled = true;
@@ -46,8 +45,7 @@ class ConstantTimeTest extends TestCase
     {
         $usleepCalled = 0;
 
-        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void
-        {
+        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void {
             if (0 === $usleepCalled) {
                 TestCase::assertGreaterThan(900, $duration);
                 TestCase::assertLessThan(1000, $duration);
@@ -67,8 +65,7 @@ class ConstantTimeTest extends TestCase
     {
         $usleepCalled = false;
 
-        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void
-        {
+        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void {
             // give join() a 0.25s window to run - should be ample to account for differences in test execution time
             TestCase::assertGreaterThanOrEqual(750, $duration);
             TestCase::assertLessThanOrEqual(1000, $duration);
@@ -85,8 +82,7 @@ class ConstantTimeTest extends TestCase
     {
         $usleepCalled = 0;
 
-        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void
-        {
+        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void {
             if (0 === $usleepCalled) {
                 TestCase::assertGreaterThan(900, $duration);
                 TestCase::assertLessThan(1000, $duration);
@@ -106,8 +102,7 @@ class ConstantTimeTest extends TestCase
     {
         $usleepCalled = false;
 
-        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void
-        {
+        $this->mockFunction("usleep", static function (int $duration) use (&$usleepCalled): void {
             $usleepCalled = true;
         });
 

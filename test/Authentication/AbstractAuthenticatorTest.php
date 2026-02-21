@@ -33,7 +33,7 @@ class AbstractAuthenticatorTest extends TestCase
     /** Create an instance of an anonymous class that extends AbstractAuthenticator. */
     protected static function authenticator(?Closure $extractCredentials = null, ?Closure $findAuthenticatable = null, ?Closure $verifyCredentials = null): AbstractAuthenticator
     {
-        return new class($extractCredentials, $findAuthenticatable, $verifyCredentials) extends AbstractAuthenticator
+        return new class ($extractCredentials, $findAuthenticatable, $verifyCredentials) extends AbstractAuthenticator
         {
             public ?Closure $extractCredentials;
 
@@ -238,18 +238,15 @@ class AbstractAuthenticatorTest extends TestCase
         };
 
         $authenticator = self::authenticator(
-            extractCredentials: static function (RequestContract $requestArg) use ($request, $credentials): CredentialsContract
-            {
+            extractCredentials: static function (RequestContract $requestArg) use ($request, $credentials): CredentialsContract {
                 TestCase::assertSame($request, $requestArg);
                 return $credentials;
             },
-            findAuthenticatable: static function (CredentialsContract $credentialsArg) use ($credentials, $authenticatable): AuthenticatableContract
-            {
+            findAuthenticatable: static function (CredentialsContract $credentialsArg) use ($credentials, $authenticatable): AuthenticatableContract {
                 TestCase::assertSame($credentials, $credentialsArg);
                 return $authenticatable;
             },
-            verifyCredentials: static function (CredentialsContract $credentialsArg, AuthenticatableContract $authenticatableArg) use ($credentials, $authenticatable): AuthenticationResult
-            {
+            verifyCredentials: static function (CredentialsContract $credentialsArg, AuthenticatableContract $authenticatableArg) use ($credentials, $authenticatable): AuthenticationResult {
                 TestCase::assertSame($credentials, $credentialsArg);
                 TestCase::assertSame($authenticatable, $authenticatableArg);
                 return new AuthenticationResult(AuthenticationResultCode::Authenticated, $authenticatableArg);
@@ -302,18 +299,15 @@ class AbstractAuthenticatorTest extends TestCase
         };
 
         $authenticator = self::authenticator(
-            extractCredentials: static function (RequestContract $requestArg) use ($request, $credentials): CredentialsContract
-            {
+            extractCredentials: static function (RequestContract $requestArg) use ($request, $credentials): CredentialsContract {
                 TestCase::assertSame($request, $requestArg);
                 return $credentials;
             },
-            findAuthenticatable: static function (CredentialsContract $credentialsArg) use ($credentials, $authenticatable): AuthenticatableContract
-            {
+            findAuthenticatable: static function (CredentialsContract $credentialsArg) use ($credentials, $authenticatable): AuthenticatableContract {
                 TestCase::assertSame($credentials, $credentialsArg);
                 return $authenticatable;
             },
-            verifyCredentials: static function (CredentialsContract $credentialsArg, AuthenticatableContract $authenticatableArg) use ($credentials, $authenticatable): AuthenticationResult
-            {
+            verifyCredentials: static function (CredentialsContract $credentialsArg, AuthenticatableContract $authenticatableArg) use ($credentials, $authenticatable): AuthenticationResult {
                 TestCase::assertSame($credentials, $credentialsArg);
                 TestCase::assertSame($authenticatable, $authenticatableArg);
                 return new AuthenticationResult(AuthenticationResultCode::AdditionalFactorRequired, null, ["totp"]);
@@ -366,8 +360,7 @@ class AbstractAuthenticatorTest extends TestCase
         $this->mockMethod(
             $model::class,
             "fetch",
-            static function (int $id) use ($model): ?AuthenticatableContract
-            {
+            static function (int $id) use ($model): ?AuthenticatableContract {
                 TestCase::assertSame(42, $id);
                 return $model;
             },
@@ -398,8 +391,7 @@ class AbstractAuthenticatorTest extends TestCase
         $this->mockMethod(
             $model::class,
             "fetch",
-            static function (int $id): ?AuthenticatableContract
-            {
+            static function (int $id): ?AuthenticatableContract {
                 TestCase::assertSame(42, $id);
                 return null;
             },
@@ -455,8 +447,7 @@ class AbstractAuthenticatorTest extends TestCase
         $this->mockMethod(
             $model::class,
             "fetch",
-            static function (int $id) use ($model)
-            {
+            static function (int $id) use ($model) {
                 TestCase::assertSame(42, $id);
                 return $model;
             },
@@ -516,8 +507,7 @@ class AbstractAuthenticatorTest extends TestCase
         $this->mockMethod(
             $model::class,
             "fetch",
-            static function (int $id) use ($model)
-            {
+            static function (int $id) use ($model) {
                 TestCase::assertSame(42, $id);
                 return $model;
             },
@@ -537,7 +527,7 @@ class AbstractAuthenticatorTest extends TestCase
         $xray = new StaticXRay(SessionFacade::class);
         $xray->session = $session;
 
-        # deauthenticate clears the session data
+        // deauthenticate clears the session data
         $session->expects("prefixed")
             ->once()
             ->with("authenticator.current-user")
@@ -551,7 +541,7 @@ class AbstractAuthenticatorTest extends TestCase
             ->once()
             ->with(".last-access");
 
-        # after deauthentication we call currentlyAuthenticated() which queries the ID from the session
+        // after deauthentication we call currentlyAuthenticated() which queries the ID from the session
         $session->expects("get")
             ->once()
             ->with("authenticator.current-user.id")

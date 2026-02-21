@@ -103,8 +103,7 @@ class PasswordAuthenticatorTest extends TestCase
 
         $this->mockFunction(
             "usleep",
-            static function (int $microseconds): void
-            {
+            static function (int $microseconds): void {
                 TestCase::assertSame(2000000, $microseconds);
             }
         );
@@ -146,8 +145,7 @@ class PasswordAuthenticatorTest extends TestCase
 
         $this->mockFunction(
             "usleep",
-            static function (int $microseconds): void
-            {
+            static function (int $microseconds): void {
                 TestCase::assertSame(2000000, $microseconds);
             }
         );
