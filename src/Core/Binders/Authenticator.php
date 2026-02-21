@@ -42,7 +42,7 @@ class Authenticator implements BinderContract
         $authenticatorClass = $config["authenticator-class"];
 
         if (!is_a($authenticatorClass, AuthenticatorContract::class, true)) {
-            throw new InvalidConfigurationException("Expected class implementing " . AuthenticatorContract::class . " contract, found {$authenticatorClass}");
+            throw new InvalidConfigurationException("auth.authenticators.[auth.authenticator].authenticator-class", "Expected class implementing " . AuthenticatorContract::class . " contract, found {$authenticatorClass}");
         }
 
         return new $authenticatorClass(...($config["authenticator-args"] ?? []));
@@ -60,7 +60,7 @@ class Authenticator implements BinderContract
         $modelClass = $config["model-class"];
 
         if (!is_a($modelClass, AuthenticatableContract::class, true)) {
-            throw new InvalidConfigurationException("Expected class implementing " . AuthenticatableContract::class . " contract, found {$modelClass}");
+            throw new InvalidConfigurationException("auth.authenticators.[auth.authenticator].model-class", "Expected class implementing " . AuthenticatableContract::class . " contract, found {$modelClass}");
         }
 
         $authenticator->authenticateInstancesOf($modelClass);
