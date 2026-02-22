@@ -6,6 +6,6 @@ namespace Bead\Exceptions;
 
 use RuntimeException;
 
-class InvalidCommandLinArgumentException extends RuntimeException
+class InvalidCommandLineArgumentException extends RuntimeException
 {
 }
