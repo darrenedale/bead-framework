@@ -89,6 +89,66 @@ function camelToSnake(string $str, ?string $encoding = null): string
 }
 
 /**
+ * Convert a camelCase string to kebab-case.
+ *
+ * The conversion is multibyte-safe. It is the caller's responsibility to be sure that the provided string is camel
+ * cased. If it isn't, GIGO.
+ *
+ * @param string $str The string to convert.
+ * @param string|null $encoding The encoding to use.
+ *
+ * @return string The converted string.
+ *
+ * @throws RuntimeException if the provided $encoding can't be used
+ */
+function camelToKebab(string $str, ?string $encoding = null): string
+{
+    if (empty($str)) {
+        return $str;
+    }
+
+    if (isset($encoding)) {
+        $oldEncoding = mb_regex_encoding();
+
+        if (!mb_regex_encoding($encoding)) {
+            throw new RuntimeException("Unable to use encoding {$encoding}");
+        }
+    }
+
+    $pattern = "([[:upper:]])";
+    $replacement = "-";
+
+    if (isset($encoding) && "UTF-8" !== $encoding) {
+        $pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
+        $replacement = mb_convert_encoding($replacement, $encoding, "UTF-8");
+    }
+
+    // use mb_substr to get first char as it could be multibyte
+    $ret =
+        mb_strtolower(
+            mb_substr($str, 0, 1, $encoding),
+            $encoding
+        ) .
+        mb_strtolower(mb_ereg_replace_callback(
+            $pattern,
+            function (array $matches) use ($replacement): string {
+                return "{$replacement}{$matches[1]}";
+            },
+            mb_substr($str, 1, null, $encoding),
+        ), $encoding);
+
+    if (isset($oldEncoding)) {
+        /**
+         * @psalm-suppress UnusedFunctionCall we don't check the return value: this should never fail as we're setting
+         * the encoding back to what it was before we changed it
+         */
+        mb_regex_encoding($oldEncoding);
+    }
+
+    return $ret;
+}
+
+/**
  * Convert a snake-case string to camel case.
  *
  * The string is expected to be lower-case and punctuated with single _ characters between words. If this is not the
