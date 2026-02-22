@@ -6,6 +6,7 @@ namespace Bead\Contracts\Database;
 
 use Bead\Database\Connection;
 
+/** Database migrations must all implement this interface. */
 interface Migration
 {
     /** A description of what the migration does. */
