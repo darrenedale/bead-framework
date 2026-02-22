@@ -200,6 +200,57 @@ function snakeToCamel(string $str, ?string $encoding = null): string
 }
 
 /**
+ * Convert a kebab-case string to camel case.
+ *
+ * The string is expected to be lower-case and punctuated with single - characters between words. If this is not the
+ * form of the string passed in, you may not get the expected results.
+ *
+ * @param string $str The kebab-case string to convert to camel case.
+ * @param string|null $encoding The encoding expected in the string. If not given, UTF-8 is used.
+ *
+ * @return string The `camelCase` version of the `kebab-case` string.
+ *
+ * @throws RuntimeException if the provided encoding can't be used.
+ */
+function kebabToCamel(string $str, ?string $encoding = null): string
+{
+    if (isset($encoding)) {
+        $oldEncoding = mb_regex_encoding();
+
+        if (!mb_regex_encoding($encoding)) {
+            throw new RuntimeException("Unable to use encoding {$encoding}");
+        }
+    }
+
+    // ignore all leading - chars (to avoid upper-casing the first non-underscore)
+    $trim = 0;
+
+    while ($trim < (strlen($str) - $trim) && "-" === $str[$trim]) {
+        ++$trim;
+    }
+
+    $pattern = "-+(.)";
+
+    if (isset($encoding) && "UTF-8" !== $encoding) {
+        $pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
+    }
+
+    $ret = mb_ereg_replace_callback($pattern, function (array $matches) use ($encoding): string {
+        return mb_strtoupper($matches[1], $encoding ?? "UTF-8");
+    }, mb_substr($str, $trim));
+
+    if (isset($oldEncoding)) {
+        /**
+         * @psalm-suppress UnusedFunctionCall we don't check the return value: this should never fail as we're setting
+         * the encoding back to what it was before we changed it
+         */
+        mb_regex_encoding($oldEncoding);
+    }
+
+    return $ret;
+}
+
+/**
  * Escape some content for inclusion as an attribute value in the page.
  * *
  * * Single ' and double " quotes are escaped to &amp;apos; and &amp;quot; respectively. The content provided must
