@@ -89,6 +89,66 @@ function camelToSnake(string $str, ?string $encoding = null): string
 }
 
 /**
+ * Convert a camelCase string to kebab-case.
+ *
+ * The conversion is multibyte-safe. It is the caller's responsibility to be sure that the provided string is camel
+ * cased. If it isn't, GIGO.
+ *
+ * @param string $str The string to convert.
+ * @param string|null $encoding The encoding to use.
+ *
+ * @return string The converted string.
+ *
+ * @throws RuntimeException if the provided $encoding can't be used
+ */
+function camelToKebab(string $str, ?string $encoding = null): string
+{
+    if (empty($str)) {
+        return $str;
+    }
+
+    if (isset($encoding)) {
+        $oldEncoding = mb_regex_encoding();
+
+        if (!mb_regex_encoding($encoding)) {
+            throw new RuntimeException("Unable to use encoding {$encoding}");
+        }
+    }
+
+    $pattern = "([[:upper:]])";
+    $replacement = "-";
+
+    if (isset($encoding) && "UTF-8" !== $encoding) {
+        $pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
+        $replacement = mb_convert_encoding($replacement, $encoding, "UTF-8");
+    }
+
+    // use mb_substr to get first char as it could be multibyte
+    $ret =
+        mb_strtolower(
+            mb_substr($str, 0, 1, $encoding),
+            $encoding
+        ) .
+        mb_strtolower(mb_ereg_replace_callback(
+            $pattern,
+            function (array $matches) use ($replacement): string {
+                return "{$replacement}{$matches[1]}";
+            },
+            mb_substr($str, 1, null, $encoding),
+        ), $encoding);
+
+    if (isset($oldEncoding)) {
+        /**
+         * @psalm-suppress UnusedFunctionCall we don't check the return value: this should never fail as we're setting
+         * the encoding back to what it was before we changed it
+         */
+        mb_regex_encoding($oldEncoding);
+    }
+
+    return $ret;
+}
+
+/**
  * Convert a snake-case string to camel case.
  *
  * The string is expected to be lower-case and punctuated with single _ characters between words. If this is not the
@@ -119,6 +179,57 @@ function snakeToCamel(string $str, ?string $encoding = null): string
     }
 
     $pattern = "_+(.)";
+
+    if (isset($encoding) && "UTF-8" !== $encoding) {
+        $pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");
+    }
+
+    $ret = mb_ereg_replace_callback($pattern, function (array $matches) use ($encoding): string {
+        return mb_strtoupper($matches[1], $encoding ?? "UTF-8");
+    }, mb_substr($str, $trim));
+
+    if (isset($oldEncoding)) {
+        /**
+         * @psalm-suppress UnusedFunctionCall we don't check the return value: this should never fail as we're setting
+         * the encoding back to what it was before we changed it
+         */
+        mb_regex_encoding($oldEncoding);
+    }
+
+    return $ret;
+}
+
+/**
+ * Convert a kebab-case string to camel case.
+ *
+ * The string is expected to be lower-case and punctuated with single - characters between words. If this is not the
+ * form of the string passed in, you may not get the expected results.
+ *
+ * @param string $str The kebab-case string to convert to camel case.
+ * @param string|null $encoding The encoding expected in the string. If not given, UTF-8 is used.
+ *
+ * @return string The `camelCase` version of the `kebab-case` string.
+ *
+ * @throws RuntimeException if the provided encoding can't be used.
+ */
+function kebabToCamel(string $str, ?string $encoding = null): string
+{
+    if (isset($encoding)) {
+        $oldEncoding = mb_regex_encoding();
+
+        if (!mb_regex_encoding($encoding)) {
+            throw new RuntimeException("Unable to use encoding {$encoding}");
+        }
+    }
+
+    // ignore all leading - chars (to avoid upper-casing the first non-underscore)
+    $trim = 0;
+
+    while ($trim < (strlen($str) - $trim) && "-" === $str[$trim]) {
+        ++$trim;
+    }
+
+    $pattern = "-+(.)";
 
     if (isset($encoding) && "UTF-8" !== $encoding) {
         $pattern = mb_convert_encoding($pattern, $encoding, "UTF-8");

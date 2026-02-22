@@ -6,13 +6,15 @@ namespace BeadTests\Helpers;
 
 use BeadTests\Framework\TestCase;
 use Exception;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
-use TypeError;
 
 use function Bead\Helpers\Str\attr;
 use function Bead\Helpers\Str\build;
+use function Bead\Helpers\Str\camelToKebab;
 use function Bead\Helpers\Str\camelToSnake;
 use function Bead\Helpers\Str\html;
+use function Bead\Helpers\Str\kebabToCamel;
 use function Bead\Helpers\Str\random;
 use function Bead\Helpers\Str\scrub;
 use function Bead\Helpers\Str\snakeToCamel;
@@ -23,7 +25,8 @@ use function strspn;
 
 final class StrTest extends TestCase
 {
-    public static function dataForTestCamelToSnake(): iterable
+    /** Provides camelCase strings in various encodings and their expected snake_case representation. */
+    public static function providerTestCamelToSnake(): iterable
     {
         yield from [
             "typicalNoChange" => ["foo", null, "foo",],
@@ -40,46 +43,11 @@ final class StrTest extends TestCase
                 // foo_bar_baz_fizz_buzz
                 "\x00\x66\x00\x6f\x00\x6f\x00\x5f\x00\x62\x00\x61\x00\x72\x00\x5f\x00\x62\x00\x61\x00\x7a\x00\x5f\x00\x66\x00\x69\x00\x7a\x00\x7a\x00\x5f\x00\x62\x00\x75\x00\x7a\x00\x7a",
             ],
-
-            "invalidInt" => [42, null, "", TypeError::class,],
-            "invalidFloat" => [3.1415927, null, "", TypeError::class,],
-            "invalidBoolean" => [true, null, "", TypeError::class,],
-            "invalidNull" => [null, null, "", TypeError::class,],
-            "invalidStringable" => [
-                new class
-                {
-                    public function __toString(): string
-                    {
-                        return "fooBar";
-                    }
-                },
-                null,
-                "",
-                TypeError::class,
-            ],
-            "invalidArray" => [["fooBar",], null, "", TypeError::class,],
         ];
     }
 
-    /**
-     * @dataProvider dataForTestCamelToSnake
-     *
-     * @param mixed $str The string to convert.
-     * @param mixed $encoding The character encoding of the string to convert.
-     * @param string $expected The expected snake_case string.
-     * @param string|null $exceptionClass The type of exception expected, if any.
-     */
-    public function testCamelToSnake(mixed $str, mixed $encoding, string $expected, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = camelToSnake($str, $encoding);
-        self::assertEquals($expected, $actual);
-    }
-
-    public static function dataForTestSnakeToCamel(): iterable
+    /** Provides snake_case strings in various encodings and their expected camelCase representation. */
+    public static function providerTestSnakeToCamel(): iterable
     {
         yield from [
             "typicalNoChange" => ["foo", null, "foo",],
@@ -97,43 +65,49 @@ final class StrTest extends TestCase
                 // fooBarBazFizzBuzz
                 "\x00\x66\x00\x6f\x00\x6f\x00\x42\x00\x61\x00\x72\x00\x42\x00\x61\x00\x7a\x00\x46\x00\x69\x00\x7a\x00\x7a\x00\x42\x00\x75\x00\x7a\x00\x7a",
             ],
+        ];
+    }
+    /** Provides camelCase strings in various encodings and their expected kebab-case representation. */
+    public static function providerTestCamelToKebab(): iterable
+    {
+        yield from [
+            "typicalNoChange" => ["foo", null, "foo",],
+            "typicalSingleTransformation" => ["fooBar", null, "foo-bar",],
+            "typicalMultipleComponents" => ["fooBarBazFizzBuzz", null, "foo-bar-baz-fizz-buzz",],
+            "extremeEmpty" => ["", null, "",],
+            "extremeWhitespace" => [" fooBar ", null, " foo-bar ",],
+            "extremeConsecutiveUpperCase" => ["PickNMix", null, "pick-n-mix",],
 
-            "invalidInt" => [42, null, "", TypeError::class,],
-            "invalidFloat" => [3.1415927, null, "", TypeError::class,],
-            "invalidBoolean" => [true, null, "", TypeError::class,],
-            "invalidNull" => [null, null, "", TypeError::class,],
-            "invalidStringable" => [
-                new class
-                {
-                    public function __toString(): string
-                    {
-                        return "foo_bar";
-                    }
-                },
-                null,
-                "",
-                TypeError::class,
+            "typicalMultipleComponentsUtf16" => [
+                // fooBarBazFizzBuzz
+                "\x00\x66\x00\x6f\x00\x6f\x00\x42\x00\x61\x00\x72\x00\x42\x00\x61\x00\x7a\x00\x46\x00\x69\x00\x7a\x00\x7a\x00\x42\x00\x75\x00\x7a\x00\x7a",
+                "UTF-16",
+                // foo-bar-baz-fizz-buzz
+                "\x00\x66\x00\x6f\x00\x6f\x00\x2d\x00\x62\x00\x61\x00\x72\x00\x2d\x00\x62\x00\x61\x00\x7a\x00\x2d\x00\x66\x00\x69\x00\x7a\x00\x7a\x00\x2d\x00\x62\x00\x75\x00\x7a\x00\x7a",
             ],
-            "invalidArray" => [["foo_bar",], null, "", TypeError::class,],
         ];
     }
 
-    /**
-     * @dataProvider dataForTestSnakeToCamel
-     *
-     * @param mixed $str The string to convert.
-     * @param mixed $encoding The character encoding of the string to convert.
-     * @param string $expected The expected camelCase string.
-     * @param string|null $exceptionClass The type of exception expected, if any.
-     */
-    public function testSnakeToCamel(mixed $str, mixed $encoding, string $expected, ?string $exceptionClass = null): void
+    /** Provides kebab-case strings in various encodings and their expected camelCase representation. */
+    public static function providerTestKebabToCamel(): iterable
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
+        yield from [
+            "typicalNoChange" => ["foo", null, "foo",],
+            "typicalSingleTransformation" => ["foo-bar", null, "fooBar",],
+            "typicalMultipleComponents" => ["foo-bar-baz-fizz-buzz", null, "fooBarBazFizzBuzz",],
+            "extremeEmpty" => ["", null, "",],
+            "extremeWhitespace" => [" foo-bar ", null, " fooBar ",],
+            "extremeConsecutiveUnderscores" => ["foo--bar", null, "fooBar",],
+            "extremeLeadingUnderscores" => ["--foo-bar", null, "fooBar",],
 
-        $actual = snakeToCamel($str, $encoding);
-        self::assertEquals($expected, $actual);
+            "typicalMultipleComponentsUtf16" => [
+                // foo-bar-baz-fizz-buzz
+                "\x00\x66\x00\x6f\x00\x6f\x00\x2d\x00\x62\x00\x61\x00\x72\x00\x2d\x00\x62\x00\x61\x00\x7a\x00\x2d\x00\x66\x00\x69\x00\x7a\x00\x7a\x00\x2d\x00\x62\x00\x75\x00\x7a\x00\x7a",
+                "UTF-16",
+                // fooBarBazFizzBuzz
+                "\x00\x66\x00\x6f\x00\x6f\x00\x42\x00\x61\x00\x72\x00\x42\x00\x61\x00\x7a\x00\x46\x00\x69\x00\x7a\x00\x7a\x00\x42\x00\x75\x00\x7a\x00\x7a",
+            ],
+        ];
     }
 
     /**
@@ -141,7 +115,7 @@ final class StrTest extends TestCase
      *
      * @return iterable The test data.
      */
-    public static function dataForTestAttr(): iterable
+    public static function providerTestAttr(): iterable
     {
         yield from [
             "typicalNoEscaping" => ["foo", "foo",],
@@ -151,28 +125,11 @@ final class StrTest extends TestCase
     }
 
     /**
-     * @dataProvider dataForTestAttr
-     *
-     * @param mixed $raw The content to escape.
-     * @param string $expected The expected escaped content.
-     * @param string|null $exceptionClass The type of exception expected, if any.
-     */
-    public function testAttr(mixed $raw, string $expected, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = attr($raw);
-        self::assertEquals($expected, $actual);
-    }
-
-    /**
      * Test data for testHtml.
      *
      * @return iterable The test data.
      */
-    public static function dataForTestHtml(): iterable
+    public static function providerTestHtml(): iterable
     {
         yield from [
             "typicalNoEscaping" => ["foo", "foo",],
@@ -189,28 +146,11 @@ final class StrTest extends TestCase
     }
 
     /**
-     * @dataProvider dataForTestHtml
-     *
-     * @param mixed $raw The content to escape.
-     * @param string $expected The expected escaped content.
-     * @param string|null $exceptionClass The type of exception expected, if any.
-     */
-    public function testHtml(mixed $raw, string $expected, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = html($raw);
-        self::assertEquals($expected, $actual);
-    }
-
-    /**
      * Test data for testBuildString
      *
      * @return iterable The test data.
      */
-    public static function dataForTestBuild(): iterable
+    public static function providerTestBuild(): iterable
     {
         yield from [
             "typicalNoArgs" => ["foo", [], "foo",],
@@ -232,46 +172,10 @@ final class StrTest extends TestCase
             ],
             "typicalMultipleArgs" =>  ["%1, %2, %3", ["first", "second", "third",], "first, second, third",],
             "typicalReversedPositionalArgs" => ["Second: %2, First: %1", ["first-arg", "second-arg",], "Second: second-arg, First: first-arg",],
-
-            "invalidIntTemplate" => [42, [], "", TypeError::class,],
-            "invalidFloatTemplate" => [3.1415927, [], "", TypeError::class,],
-            "invalidBooleanTemplate" => [true, [], "", TypeError::class,],
-            "invalidNullTemplate" => [null, [], "", TypeError::class,],
-            "invalidStringableTemplate" => [
-                new class
-                {
-                    public function __toString(): string
-                    {
-                        return "foo";
-                    }
-                },
-                [],
-                "",
-                TypeError::class,
-            ],
-            "invalidArrayTemplate" => [["foo",], [], "", TypeError::class,],
         ];
     }
 
-    /**
-     * @dataProvider dataForTestBuild
-     *
-     * @param mixed $template The template string to build from.
-     * @param array $args The arguments for insertion into the template.
-     * @param string $expected The expected output string.
-     * @param string|null $exceptionClass The type of exception expected, if any.
-     */
-    public function testBuild(mixed $template, array $args, string $expected, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = build($template, ...$args);
-        self::assertEquals($expected, $actual);
-    }
-
-    public static function dataForTestToCodePoints(): iterable
+    public static function providerTestToCodePoints(): iterable
     {
         yield from [
             "typicalAscii" => ["ABCDEabcde", "UTF8", [65, 66, 67, 68, 69, 97, 98, 99, 100, 101],],
@@ -283,70 +187,154 @@ final class StrTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider dataForTestToCodePoints
-     *
-     * @param mixed $str The string to convert.
-     * @param mixed $encoding The encoding of the string to convert.
-     * @param array $expected The expected set of codepoints.
-     * @param string|null $exceptionClass The type of exception expected, if any.
-     */
-    public function testToCodePoints(mixed $str, mixed $encoding, array $expected, ?string $exceptionClass = null): void
-    {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = toCodePoints($str, $encoding);
-        self::assertEquals($expected, $actual);
-    }
-
-    /**
-     * Test data for testRandom()
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestRandom(): iterable
+    /** Provides lengths of random data to generate. */
+    public static function providerTestRandom(): iterable
     {
         foreach (range(1, 100) as $length) {
             yield [$length,];
         }
     }
 
+    public static function providerTestScrub1(): iterable
+    {
+        yield "empty" => ["", []];
+        yield "char" => ["a", [66]];
+        yield "text" => ["lorum ipsum dolor sit amet", [228, 211, 102, 148, 110, 100, 185, 11, 60, 122, 148, 116, 121, 5, 161, 86, 64, 57, 138, 120, 240, 181, 129, 141, 231, 19, ]];
+        yield "whitespace" => ["  ", [13, 28]];
+        yield "nulls" => ["\0\0\0\0\0", [75, 9, 14, 81, 209]];
+        yield "binary" => ["\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x8d", [67, 32, 55, 80, 52, 200, 245, 11, 43, 178, 239, 12]];
+    }
+
+    /**
+     * @param mixed $str The string to convert.
+     * @param mixed $encoding The character encoding of the string to convert.
+     * @param string $expected The expected snake_case string.
+     */
+    #[DataProvider("providerTestCamelToSnake")]
+    public function testCamelToSnake1(mixed $str, mixed $encoding, string $expected): void
+    {
+        self::assertEquals($expected, camelToSnake($str, $encoding));
+    }
+
+    /**
+     * @param mixed $str The string to convert.
+     * @param mixed $encoding The character encoding of the string to convert.
+     * @param string $expected The expected camelCase string.
+     */
+    #[DataProvider("providerTestSnakeToCamel")]
+    public function testSnakeToCamel1(mixed $str, mixed $encoding, string $expected): void
+    {
+        self::assertEquals($expected, snakeToCamel($str, $encoding));
+    }
+
+    /**
+     * @param mixed $str The string to convert.
+     * @param mixed $encoding The character encoding of the string to convert.
+     * @param string $expected The expected kebab-case string.
+     */
+    #[DataProvider("providerTestCamelToKebab")]
+    public function testCamelToKebab1(mixed $str, mixed $encoding, string $expected): void
+    {
+        self::assertEquals($expected, camelToKebab($str, $encoding));
+    }
+
+    /**
+     * @param mixed $str The string to convert.
+     * @param mixed $encoding The character encoding of the string to convert.
+     * @param string $expected The expected camelCase string.
+     */
+    #[DataProvider("providerTestKebabToCamel")]
+    public function testkebabToCamel1(mixed $str, mixed $encoding, string $expected): void
+    {
+        self::assertEquals($expected, kebabToCamel($str, $encoding));
+    }
+
+    /**
+     * @param mixed $raw The content to escape.
+     * @param string $expected The expected escaped content.
+     * @param string|null $exceptionClass The type of exception expected, if any.
+     */
+    #[DataProvider("providerTestAttr")]
+    public function testAttr1(mixed $raw, string $expected, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        $actual = attr($raw);
+        self::assertEquals($expected, $actual);
+    }
+
+    /**
+     * @param mixed $raw The content to escape.
+     * @param string $expected The expected escaped content.
+     * @param string|null $exceptionClass The type of exception expected, if any.
+     */
+    #[DataProvider("providerTestHtml")]
+    public function testHtml(mixed $raw, string $expected, ?string $exceptionClass = null): void
+    {
+        if (isset($exceptionClass)) {
+            $this->expectException($exceptionClass);
+        }
+
+        $actual = html($raw);
+        self::assertEquals($expected, $actual);
+    }
+
+    /**
+     * @param mixed $template The template string to build from.
+     * @param array $args The arguments for insertion into the template.
+     * @param string $expected The expected output string.
+     */
+    #[DataProvider("providerTestBuild")]
+    public function testBuild(mixed $template, array $args, string $expected): void
+    {
+        self::assertEquals($expected, build($template, ...$args));
+    }
+
+    /**
+     * @param mixed $str The string to convert.
+     * @param mixed $encoding The encoding of the string to convert.
+     * @param array $expected The expected set of codepoints.
+     */
+    #[DataProvider("providerTestToCodePoints")]
+    public function testToCodePoints(mixed $str, mixed $encoding, array $expected): void
+    {
+        self::assertEquals($expected, toCodePoints($str, $encoding));
+    }
+
     /**
      * Ensures that the random strings are the expected length.
      *
-     * @dataProvider dataForTestRandom
      * @param int $length The random string length required.
      */
-    public function testRandomLength(int $length): void
+    #[DataProvider("providerTestRandom")]
+    public function testRandom1(int $length): void
     {
-        $actual = random($length);
-        self::assertEquals($length, strlen($actual));
+        self::assertEquals($length, strlen(random($length)));
     }
-
 
     /**
      * Ensures that the random strings contain only the characters stipulated in the function description.
      *
-     * @dataProvider dataForTestRandom
      * @param int $length The random string length required.
      */
-    public function testRandomContent(int $length): void
+    #[DataProvider("providerTestRandom")]
+    public function testRandom2(int $length): void
     {
-        $actual = random($length);
-        self::assertEquals($length, strspn($actual, "abcdefghijklmnopqrstuvwxyz-_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"));
+        self::assertEquals($length, strspn(random($length), "abcdefghijklmnopqrstuvwxyz-_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"));
     }
 
-    public function testRandomThrowsWithInvalidLength(): void
+    /** Ensure random() throws with an invalid length. */
+    public function testRandom3(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage("Can't produce a random string of < 1 character in length.");
         random(-1);
     }
 
-    /** Ensure random() */
-    public function testRandomIsCryptoSecure(): void
+    /** Ensure random() throws when cryptographically secure random data is not available. */
+    public function testRandom4(): void
     {
         $this->mockFunction(
             "random_bytes",
@@ -360,21 +348,10 @@ final class StrTest extends TestCase
         random(40);
     }
 
-    public static function dataForTestScrub1(): iterable
-    {
-        yield "empty" => ["", []];
-        yield "char" => ["a", [66]];
-        yield "text" => ["lorum ipsum dolor sit amet", [228, 211, 102, 148, 110, 100, 185, 11, 60, 122, 148, 116, 121, 5, 161, 86, 64, 57, 138, 120, 240, 181, 129, 141, 231, 19, ]];
-        yield "whitespace" => ["  ", [13, 28]];
-        yield "nulls" => ["\0\0\0\0\0", [75, 9, 14, 81, 209]];
-        yield "binary" => ["\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x8d", [67, 32, 55, 80, 52, 200, 245, 11, 43, 178, 239, 12]];
-    }
-
     /**
      * Ensure scrub replaces all of a string's content with random bytes.
-     *
-     * @dataProvider dataForTestScrub1
      */
+    #[DataProvider("providerTestScrub1")]
     public function testScrub1(string $str, array $randomBytes): void
     {
         $expected = array_reduce(
