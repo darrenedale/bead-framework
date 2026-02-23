@@ -285,6 +285,8 @@ class View implements Response
      * view it will be fine; however this should be considered an implementation detail and you should place your
      * layout() call at the start of your view. A view can only have one layout.
      *
+     * The layout for a view will have access to the view's data while it's being use on behalf of that view.
+     *
      * @param string $name The name of the layout view.
      * @throws ViewNotFoundException
      * @throws LogicException if layout() is called outside the context of rendering a view or the view already has a
@@ -302,7 +304,7 @@ class View implements Response
             throw new LogicException("View {$view->name()} already has the layout {$view->m_layout->name()}.");
         }
 
-        $view->m_layout = new Layout($name);
+        $view->m_layout = new Layout($name, $view->data());
         self::$m_layoutStack[] = $view->m_layout;
     }
 
