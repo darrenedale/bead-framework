@@ -9,10 +9,12 @@ use BeadTests\Framework\TestCase;
 use Error;
 use Generator;
 use Iterator;
+use PHPUnit\Framework\Attributes\DataProvider;
 use TypeError;
 
 use function Bead\Helpers\Iterable\accumulate;
 use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\Iterable\filter;
 use function Bead\Helpers\Iterable\flatten;
 use function Bead\Helpers\Iterable\grammaticalImplode;
 use function Bead\Helpers\Iterable\implode;
@@ -146,6 +148,62 @@ final class IterableTest extends TestCase
             public function key(): mixed
             {
                 return $this->valid() ? $this->index : null;
+            }
+        };
+    }
+
+    /**
+     * Helper to create a Iterable instance for testing that has non-sequential keys.
+     *
+     * @param array $data The data the Iterable will traverse.
+     *
+     * @return Iterator The test instance.
+     */
+    private static function createIteratorWithKeys(array $values, ?array $keys = null): Iterator
+    {
+        /** @psalm-suppress MissingTemplateParam */
+        return new class ($values, $keys) implements Iterator
+        {
+            private array $values;
+            private array $keys;
+            private int $index;
+
+            public function __construct(array $values, ?array $keys = null)
+            {
+                $this->values = array_values($values);
+
+                if (null === $keys) {
+                    $this->keys = array_keys($values);
+                } else {
+                    $this->keys = $keys;
+                }
+
+                $this->index = 0;
+            }
+
+            public function current(): mixed
+            {
+                return $this->values[$this->index] ?? null;
+            }
+
+            public function next(): void
+            {
+                ++$this->index;
+            }
+
+            public function rewind(): void
+            {
+                $this->index = 0;
+            }
+
+            public function valid(): bool
+            {
+                return count($this->values) > $this->index;
+            }
+
+            public function key(): mixed
+            {
+                return $this->valid() ? $this->keys[$this->index] : null;
             }
         };
     }
@@ -303,40 +361,42 @@ final class IterableTest extends TestCase
                 [],
                 [],
             ],
-            "invalidNull" => [null, [], TypeError::class,],
-            "invalidString" => ["string", [], TypeError::class,],
-            "invalidEmptyString" => ["", [], TypeError::class,],
-            "invalidInt" => [42, [], TypeError::class,],
-            "invalidFloat" => [3.1415926, [], TypeError::class,],
-            "invalidTrue" => [true, [], TypeError::class,],
-            "invalidFalse" => [false, [], TypeError::class,],
-            "invalidAnonymousClass" => [
-                new class
-                {
-                },
-                [],
-                TypeError::class,
+            "typicalPreservesKeysGenerator" => [
+                self::createGenerator([1, "two" => 42, "pi" => 3.14]),
+                [1, "two" => 42, "pi" => 3.14],
             ],
-            "invalidObject" => [(object) [], [], TypeError::class,],
+            "typicalPreservesKeysIterator" => [
+                self::createIteratorWithKeys([1, "two" => 42, "pi" => 3.14]),
+                [1, "two" => 42, "pi" => 3.14],
+            ],
+            "typicalPreservesKeysArray" => [
+                [1, "two" => 42, "pi" => 3.14],
+                [1, "two" => 42, "pi" => 3.14],
+            ],
+            "duplicate-keys-get-last-item-iterator" => [
+                self::createIteratorWithKeys([1, 2, 42, 3.14], [0, "two", "two", "pi"]),
+                [1, "two" => 42, "pi" => 3.14],
+            ],
+            "duplicate-keys-get-last-item-generator" => [
+                (static function (): Generator {
+                    yield 1;
+                    yield "two" => 2;
+                    yield "two" => 42;
+                    yield "pi" => 3.14;
+                })(),
+                [1, "two" => 42, "pi" => 3.14],
+            ],
         ];
     }
 
     /**
-     * @dataProvider dataForTestToArray
-     *
-     * @param mixed $data The test data.
+     * @param iterable $data The test data.
      * @param array $expected The expected array.
-     * @param string|null $exceptionClass The exception expected, if any.
      */
-    public function testToArray($data, array $expected, ?string $exceptionClass = null): void
+    #[DataProvider("dataForTestToArray")]
+    public function testToArray1(iterable $data, array $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = toArray($data);
-        self::assertIsArray($actual);
-        self::assertEquals($expected, $actual);
+        self::assertSame($expected, toArray($data));
     }
 
 
@@ -1656,13 +1716,49 @@ final class IterableTest extends TestCase
         ];
     }
 
+    public static function providerFilteredIterables(): iterable
+    {
+        $truePredicate = static fn (mixed $value, string | int $key): bool => true;
+        $falsePredicate = static fn (mixed $value, string | int $key): bool => false;
+        $isString = static fn (mixed $value, string | int $key): bool => is_string($value);
+        $matchKey = static fn (mixed $value, string | int $key): bool => "two" === $key;
+
+        yield "empty-generator" => [self::createGenerator([]), $truePredicate, []];
+        yield "empty-iterator" => [self::createIterator([]), $truePredicate, []];
+        yield "empty-array" => [self::createGenerator([]), $truePredicate, []];
+        yield "no-matches-generator" => [self::createGenerator([1, 2, 3]), $falsePredicate, []];
+        yield "no-matches-iterator" => [self::createIterator([1, 2, 3]), $falsePredicate, []];
+        yield "no-matches-array" => [[1, "two", 3.14], $falsePredicate, []];
+        yield "all-matches-generator" => [self::createGenerator([1, "two", 3.14]), $truePredicate, [1, "two", 3.14]];
+        yield "all-matches-iterator" => [self::createIterator([1, "two", 3.14]), $truePredicate, [1, "two", 3.14]];
+        yield "all-matches-array" => [[1, "two", 3.14], $truePredicate, [1, "two" , 3.14]];
+        yield "some-matches-generator" => [self::createGenerator([1, "two", 3.14]), $isString, [1 => "two"]];
+        yield "some-matches-iterator" => [self::createIterator([1, "two", 3.14]), $isString, [1 => "two"]];
+        yield "some-matches-array" => [[1, "two", 3.14], $isString, [1 => "two"]];
+        yield "some-key-matches-generator" => [self::createGenerator(["first", "two" => 42, "pi" => 3.14]), $matchKey, ["two" => 42]];
+        yield "some-key-matches-itarator" => [self::createIteratorWithKeys(["first", "two" => 42, "pi" => 3.14]), $matchKey, ["two" => 42]];
+        yield "some-key-matches-array" => [["first", "two" => 42, "pi" => 3.14], $matchKey, ["two" => 42]];
+    }
+
     /**
-     * @dataProvider dataForTestRecursiveCount
+     * Ensure filter() yields the correct results.
      *
+     * @param iterable $collection The iterable to filter.
+     * @param callable $predicate The filtering predicate.
+     * @param array $expected The expected filtered items.
+     */
+    #[DataProvider("providerFilteredIterables")]
+    public function testFilter1(iterable $collection, callable $predicate, array $expected): void
+    {
+        self::assertSame($expected, toArray(filter($collection, $predicate)));
+    }
+
+    /**
      * @param mixed $iterable The iterable to count.
      * @param int $expected The expected recursive count.
      * @param string|null $exceptionClass The type exception expected to be throw, if any.
      */
+    #[DataProvider("dataForTestRecursiveCount")]
     public function testRecursiveCount(mixed $iterable, int $expected, ?string $exceptionClass = null): void
     {
         if (isset($exceptionClass)) {
