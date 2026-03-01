@@ -45,7 +45,8 @@ function flatten(iterable $collection): array
  * Convert an iterable to an array.
  *
  * The iterable will be fully traversed and its items returned in the same sequence in an array. If the iterable is
- * already an array it is returned as-is, without traversal.
+ * already an array it is returned as-is, without traversal. Keys are preserved; for iterables that permit duplicate
+ * keys, the last of the set of items for any given key is the one that ends up in the array.
  *
  * @param iterable $collection The iterable to convert.
  *
@@ -59,8 +60,8 @@ function toArray(iterable $collection): array
 
     $ret = [];
 
-    foreach ($collection as $item) {
-        $ret[] = $item;
+    foreach ($collection as $key => $item) {
+        $ret[$key] = $item;
     }
 
     return $ret;
@@ -348,6 +349,29 @@ function fill(int $count, callable $createValue, ?callable $createKey = null): i
 {
     for ($idx = 0; $idx < $count; ++$idx) {
         yield ($createKey ? $createKey($idx) : $idx) => $createValue($idx);
+    }
+}
+
+/**
+ * @template T
+ * Filter the items in an iterable according to a predicate.
+ *
+ * Only those items for which the predicate returns `true` are yielded. The predicate is provided with two arguments,
+ * the first is the value, the second is the key. The signature of a predicate must therefore be compatible with:
+ *
+ *     function predicate(mixed $value, int | string $key): bool;
+ *
+ * @param iterable<T> $collection The items to filter.
+ * @param callable $predicate The function that identifies which items to include.
+ *
+ * @return iterable<T> An iterable that contains only those items that satisfy the predicate.
+ */
+function filter(iterable $collection, callable $predicate): iterable
+{
+    foreach ($collection as $key => $value) {
+        if (true === $predicate($value, $key)) {
+            yield $key => $value;
+        }
     }
 }
 

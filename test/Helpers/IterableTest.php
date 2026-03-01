@@ -9,10 +9,14 @@ use BeadTests\Framework\TestCase;
 use Error;
 use Generator;
 use Iterator;
+use PHPUnit\Framework\Attributes\CoversFunction;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Traversable;
 use TypeError;
 
 use function Bead\Helpers\Iterable\accumulate;
 use function Bead\Helpers\Iterable\all;
+use function Bead\Helpers\Iterable\filter;
 use function Bead\Helpers\Iterable\flatten;
 use function Bead\Helpers\Iterable\grammaticalImplode;
 use function Bead\Helpers\Iterable\implode;
@@ -26,6 +30,21 @@ use function Bead\Helpers\Iterable\some;
 use function Bead\Helpers\Iterable\toArray;
 use function Bead\Helpers\Iterable\transform;
 
+#[CoversFunction("Bead\\Helpers\\Iterable\\accumulate")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\all")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\filter")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\flatten")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\grammaticalImplode")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\implode")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\isSubsetOf")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\map")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\none")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\partition")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\recursiveCount")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\reduce")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\some")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\toArray")]
+#[CoversFunction("Bead\\Helpers\\Iterable\\transform")]
 final class IterableTest extends TestCase
 {
     /**
@@ -151,6 +170,62 @@ final class IterableTest extends TestCase
     }
 
     /**
+     * Helper to create a Iterable instance for testing that has non-sequential, potentially duplicated keys.
+     *
+     * @param array $data The data the Iterable will traverse.
+     *
+     * @return Iterator The test instance.
+     */
+    private static function createIteratorWithKeys(array $values, ?array $keys = null): Iterator
+    {
+        /** @psalm-suppress MissingTemplateParam */
+        return new class ($values, $keys) implements Iterator
+        {
+            private array $values;
+            private array $keys;
+            private int $index;
+
+            public function __construct(array $values, ?array $keys = null)
+            {
+                $this->values = array_values($values);
+
+                if (null === $keys) {
+                    $this->keys = array_keys($values);
+                } else {
+                    $this->keys = $keys;
+                }
+
+                $this->index = 0;
+            }
+
+            public function current(): mixed
+            {
+                return $this->values[$this->index] ?? null;
+            }
+
+            public function next(): void
+            {
+                ++$this->index;
+            }
+
+            public function rewind(): void
+            {
+                $this->index = 0;
+            }
+
+            public function valid(): bool
+            {
+                return count($this->values) > $this->index;
+            }
+
+            public function key(): mixed
+            {
+                return $this->valid() ? $this->keys[$this->index] : null;
+            }
+        };
+    }
+
+    /**
      * Helper to create a Generator instance for testing.
      *
      * @param array $data The data the generator will yield.
@@ -162,12 +237,8 @@ final class IterableTest extends TestCase
         yield from $data;
     }
 
-    /**
-     * Test data for testMap()
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestMap(): iterable
+    /** Test data for testMap1() */
+    public static function providerTestMap1(): iterable
     {
         yield from [
             "stringCallable" => [[1, 4, 9,], "sqrt", [1, 2, 3,],],
@@ -188,30 +259,18 @@ final class IterableTest extends TestCase
     }
 
     /**
-     * @dataProvider dataForTestMap
-     *
-     * @param mixed $data The test data.
-     * @param mixed $fn The test mapping function.
+     * @param iterable $data The test data.
+     * @param callable $fn The test mapping function.
      * @param iterable $expected The expected mapped data.
-     * @param string|null $exceptionClass The exception class expected, if any.
      */
-    public function testMap($data, $fn, iterable $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestMap1")]
+    public function testMap1(iterable $data, callable $fn, iterable $expected, ?string $exceptionClass = null): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = map($data, $fn);
-        self::assertIsIterable($actual);
-        self::assertEquals(toArray($expected), toArray($actual));
+        self::assertEquals(toArray($expected), toArray(map($data, $fn)));
     }
 
-    /**
-     * Test data for testFlatten()
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestFlatten(): iterable
+    /** Test data for testFlatten1() */
+    public static function providerTestFlatten1(): iterable
     {
         yield from [
             "typicalInts" => [
@@ -234,49 +293,22 @@ final class IterableTest extends TestCase
                 ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",],
                 ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",],
             ],
-
-            "invalidNull" => [null, [], TypeError::class,],
-            "invalidString" => ["string", [], TypeError::class,],
-            "invalidEmptyString" => ["", [], TypeError::class,],
-            "invalidInt" => [42, [], TypeError::class,],
-            "invalidFloat" => [3.1415926, [], TypeError::class,],
-            "invalidTrue" => [true, [], TypeError::class,],
-            "invalidFalse" => [false, [], TypeError::class,],
-            "invalidAnonymousClass" => [
-                new class
-                {
-                },
-                [],
-                TypeError::class,
-            ],
-            "invalidObject" => [(object) [], [], TypeError::class,],
         ];
     }
 
     /**
-     * @dataProvider dataForTestFlatten
-     *
-     * @param mixed $data The test data.
+     * @param iterable $data The test data.
      * @param iterable $expected The expected flattened iterable.
      * @param string|null $exceptionClass The exception expected, if any.
      */
-    public function testFlatten($data, iterable $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestFlatten1")]
+    public function testFlatten1(iterable $data, iterable $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = flatten($data);
-        self::assertIsIterable($actual);
-        self::assertEquals(toArray($expected), toArray($actual));
+        self::assertEquals(toArray($expected), toArray(flatten($data)));
     }
 
-    /**
-     * Test data for testToArray()
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestToArray(): iterable
+    /** Test data for testToArray1() */
+    public static function providerTestToArray1(): iterable
     {
         yield from [
             "typicalIterable" => [
@@ -303,49 +335,47 @@ final class IterableTest extends TestCase
                 [],
                 [],
             ],
-            "invalidNull" => [null, [], TypeError::class,],
-            "invalidString" => ["string", [], TypeError::class,],
-            "invalidEmptyString" => ["", [], TypeError::class,],
-            "invalidInt" => [42, [], TypeError::class,],
-            "invalidFloat" => [3.1415926, [], TypeError::class,],
-            "invalidTrue" => [true, [], TypeError::class,],
-            "invalidFalse" => [false, [], TypeError::class,],
-            "invalidAnonymousClass" => [
-                new class
-                {
-                },
-                [],
-                TypeError::class,
+            "typicalPreservesKeysGenerator" => [
+                self::createGenerator([1, "two" => 42, "pi" => 3.14]),
+                [1, "two" => 42, "pi" => 3.14],
             ],
-            "invalidObject" => [(object) [], [], TypeError::class,],
+            "typicalPreservesKeysIterator" => [
+                self::createIteratorWithKeys([1, "two" => 42, "pi" => 3.14]),
+                [1, "two" => 42, "pi" => 3.14],
+            ],
+            "typicalPreservesKeysArray" => [
+                [1, "two" => 42, "pi" => 3.14],
+                [1, "two" => 42, "pi" => 3.14],
+            ],
+            "duplicate-keys-get-last-item-iterator" => [
+                self::createIteratorWithKeys([1, 2, 42, 3.14], [0, "two", "two", "pi"]),
+                [1, "two" => 42, "pi" => 3.14],
+            ],
+            "duplicate-keys-get-last-item-generator" => [
+                (static function (): Generator {
+                    yield 1;
+                    yield "two" => 2;
+                    yield "two" => 42;
+                    yield "pi" => 3.14;
+                })(),
+                [1, "two" => 42, "pi" => 3.14],
+            ],
         ];
     }
 
     /**
-     * @dataProvider dataForTestToArray
-     *
-     * @param mixed $data The test data.
+     * @param iterable $data The test data.
      * @param array $expected The expected array.
-     * @param string|null $exceptionClass The exception expected, if any.
      */
-    public function testToArray($data, array $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestToArray1")]
+    public function testToArray1(iterable $data, array $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = toArray($data);
-        self::assertIsArray($actual);
-        self::assertEquals($expected, $actual);
+        self::assertSame($expected, toArray($data));
     }
 
 
-    /**
-     * Test data for testImplode()
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestImplode(): iterable
+    /** Test data for testImplode1() */
+    public static function providerTestImplode1(): iterable
     {
         yield from [
             "typicalIterableWithComma" => [
@@ -453,65 +483,22 @@ final class IterableTest extends TestCase
                 ", ",
                 "",
             ],
-            "invalidIterableNull" => [null, ",", "", TypeError::class,],
-            "invalidIterableString" => ["string", ",", "", TypeError::class,],
-            "invalidIterableEmptyString" => ["", ",", "", TypeError::class,],
-            "invalidIterableInt" => [42, ",", "", TypeError::class,],
-            "invalidIterableFloat" => [3.1415926, ",", "", TypeError::class,],
-            "invalidIterableTrue" => [true, ",", "", TypeError::class,],
-            "invalidIterableFalse" => [false, ",", "", TypeError::class,],
-            "invalidIterableAnonymousClass" => [
-                new class
-                {
-                },
-                ",",
-                "",
-                TypeError::class,
-            ],
-            "invalidIterableObject" => [(object) [], ",", "", TypeError::class,],
-
-            "invalidGlueNull" => [[], null, "", TypeError::class,],
-            "invalidGlueInt" => [[], 42, "", TypeError::class,],
-            "invalidGlueFloat" => [[], 3.1415926, "", TypeError::class,],
-            "invalidGlueTrue" => [[], true, "", TypeError::class,],
-            "invalidGlueFalse" => [[], false, "", TypeError::class,],
-            "invalidGlueAnonymousClass" => [
-                [],
-                new class
-                {
-                },
-                "",
-                TypeError::class,
-            ],
-            "invalidGlueObject" => [[], (object) [], "", TypeError::class,],
         ];
     }
 
     /**
-     * @dataProvider dataForTestImplode
-     *
-     * @param mixed $iterable The iterable to test with.
-     * @param mixed $glue The glue to test with.
-     * @param string|null $exceptionClass The exception expected, if any.
+     * @param iterable $iterable The iterable to test with.
+     * @param string $glue The glue to test with.
      */
-    public function testImplode($iterable, $glue, string $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestImplode1")]
+    public function testImplode1(iterable $iterable, string $glue, string $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = implode($glue, $iterable);
-        self::assertIsString($actual);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, implode($glue, $iterable));
     }
 
 
-    /**
-     * Test data for testGrammaticalImplode()
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestGrammaticalImplode(): iterable
+    /** Test data for testGrammaticalImplode1() */
+    public static function providerTestGrammaticalImplode1(): iterable
     {
         yield from [
             "typicalIterableWithComma" => [
@@ -670,103 +657,37 @@ final class IterableTest extends TestCase
                 " and ",
                 "",
             ],
-
-            "invalidIterableNull" => [null, ", ", " and ", "", TypeError::class,],
-            "invalidIterableString" => ["string", ", ", " and ", "", TypeError::class,],
-            "invalidIterableEmptyString" => ["", ", ", " and ", "", TypeError::class,],
-            "invalidIterableInt" => [42, ", ", " and ", "", TypeError::class,],
-            "invalidIterableFloat" => [3.1415926, ", ", " and ", "", TypeError::class,],
-            "invalidIterableTrue" => [true, ", ", " and ", "", TypeError::class,],
-            "invalidIterableFalse" => [false, ", ", " and ", "", TypeError::class,],
-            "invalidIterableAnonymousClass" => [
-                new class
-                {
-                },
-                ", ",
-                " and ",
-                "",
-                TypeError::class,
-            ],
-            "invalidIterableObject" => [(object) [], ", ", " and ", "", TypeError::class,],
-
-            "invalidGlueNull" => [[], null, " and ", "", TypeError::class,],
-            "invalidGlueInt" => [[], 42, " and ", "", TypeError::class,],
-            "invalidGlueFloat" => [[], 3.1415926, " and ", "", TypeError::class,],
-            "invalidGlueTrue" => [[], true, " and ", "", TypeError::class,],
-            "invalidGlueFalse" => [[], false, " and ", "", TypeError::class,],
-            "invalidGlueAnonymousClass" => [
-                [],
-                new class
-                {
-                },
-                " and ",
-                "",
-                TypeError::class,
-            ],
-            "invalidGlueObject" => [[], (object) [], " and ", "", TypeError::class,],
-
-            "invalidLastGlueNull" => [[], ", ", null, "", TypeError::class,],
-            "invalidLastGlueInt" => [[], ", ", 42, "", TypeError::class,],
-            "invalidLastGlueFloat" => [[], ", ", 3.1415926, "", TypeError::class,],
-            "invalidLastGlueTrue" => [[], ", ", true, "", TypeError::class,],
-            "invalidLastGlueFalse" => [[], ", ", false, "", TypeError::class,],
-            "invalidLastGlueAnonymousClass" => [
-                [],
-                ", ",
-                new class
-                {
-                },
-                "",
-                TypeError::class,
-            ],
-            "invalidLastGlueObject" => [[], ", ", (object) [], "", TypeError::class,],
         ];
     }
 
     /**
-     * @dataProvider dataForTestGrammaticalImplode
-     *
-     * @param mixed $iterable The iterable to test with.
-     * @param mixed $glue The glue to test with.
-     * @param string|null $exceptionClass The exception expected, if any.
+     * @param iterable $iterable The iterable to test with.
+     * @param string $glue The glue to test with.
+     * @param string $lastGlue The glue for the last pair of items.
+     * @param string $expected The expected output.
      */
-    public function testGrammaticalImplode($iterable, $glue, $lastGlue, string $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestGrammaticalImplode1")]
+    public function testGrammaticalImplode1(iterable $iterable, string $glue, string $lastGlue, string $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = grammaticalImplode($iterable, $glue, $lastGlue);
-        self::assertIsString($actual);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, grammaticalImplode($iterable, $glue, $lastGlue));
     }
 
-    /**
-     * Ensure grammaticalImplode uses the correct default glues.
-     */
-    public function testGrammaticalImplodeWithDefaultGlue(): void
+    /** Ensure grammaticalImplode uses the correct default glues. */
+    public function testGrammaticalImplode2(): void
     {
         $actual = grammaticalImplode(["red", "green", "blue"]);
         self::assertIsString($actual);
         self::assertEquals("red, green and blue", $actual);
     }
 
-    /**
-     * Ensure grammaticalImplode uses the correct default last glue when a glue is given but no last glue.
-     */
+    /** Ensure grammaticalImplode uses the correct default last glue when a glue is given but no last glue. */
     public function testGrammaticalImplodeWithDefaultLastGlue(): void
     {
-        $actual = grammaticalImplode(["red", "green", "blue"], "; ");
-        self::assertIsString($actual);
-        self::assertEquals("red; green and blue", $actual);
+        self::assertEquals("red; green and blue", grammaticalImplode(["red", "green", "blue"], "; "));
     }
 
-    /**
-     * The test data for testTransform().
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestTransform(): iterable
+    /** The test data for testTransform1(). */
+    public static function providerTestTransform1(): iterable
     {
         $sqrt = function (float $value): float {
             return sqrt($value);
@@ -778,39 +699,27 @@ final class IterableTest extends TestCase
         yield from [
             "typicalArrayAndClosure" => [[1, 4, 9,], $sqrt, [1, 2, 3,],],
             "typicalArrayIteratorAndClosure" => [new ArrayIterator([1, 4, 9,]), $sqrt, [1, 2, 3,],],
-            "typicalIterableAndClosure" => [self::createIterator([1, 4, 9,]), $sqrt, [1, 2, 3,], Error::class,],
             "extremeEmptyArrayAndClosure" => [[], $sqrt, [],],
             "extremeEmptyArrayIteratorAndClosure" => [new ArrayIterator([]), $sqrt, [],],
-            "extremeEmptyIterableAndClosure" => [self::createIterator([]), $sqrt, [], Error::class,],
             "typicalArrayAndStaticMethod" => [[1, 4, 9,], $staticSqrt, [1, 2, 3,],],
             "typicalArrayIteratorAndStaticMethod" => [new ArrayIterator([1, 4, 9,]), $staticSqrt, [1, 2, 3,],],
-            "typicalIterableAndStaticMethod" => [self::createIterator([1, 4, 9,]), $staticSqrt, [1, 2, 3,], Error::class,],
             "extremeEmptyArrayAndStaticMethod" => [[], $staticSqrt, [],],
             "extremeEmptyArrayIteratorAndStaticMethod" => [new ArrayIterator([]), $staticSqrt, [],],
-            "extremeEmptyIterableAndStaticMethod" => [self::createIterator([]), $staticSqrt, [], Error::class,],
             "typicalArrayAndFunctionName" => [[1, 4, 9,], "sqrt", [1, 2, 3,],],
             "typicalArrayIteratorAndFunctionName" => [new ArrayIterator([1, 4, 9,]), "sqrt", [1, 2, 3,],],
-            "typicalIterableAndFunctionName" => [self::createIterator([1, 4, 9,]), "sqrt", [1, 2, 3,], Error::class,],
             "extremeEmptyArrayAndFunctionName" => [[], "sqrt", [],],
             "extremeEmptyArrayIteratorAndFunctionName" => [new ArrayIterator([]), "sqrt", [],],
-            "extremeEmptyIterableAndFunctionName" => [self::createIterator([]), "sqrt", [], Error::class,],
         ];
     }
 
     /**
-     * @dataProvider dataForTestTransform
-     *
-     * @param mixed $data The test data to transform.
-     * @param mixed $fn The callable to test with.
+     * @param iterable $data The test data to transform.
+     * @param callable $fn The callable to test with.
      * @param iterable $expected The expected transformed values.
-     * @param string|null $exceptionClass The exception expected, if any.
      */
-    public function testTransform($data, $fn, iterable $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestTransform1")]
+    public function testTransform1(iterable $data, callable $fn, iterable $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
         $actual = transform($data, $fn);
         self::assertSame($data, $actual);
 
@@ -822,10 +731,41 @@ final class IterableTest extends TestCase
         }
     }
 
+    /** The test data for testTransform2(). */
+    public static function providerTestTransform2(): iterable
+    {
+        $sqrt = function (float $value): float {
+            return sqrt($value);
+        };
+
+        $staticSqrt = [self::class, "sqrt"];
+
+        // note Iterator implementations can't be traversed by reference
+        yield from [
+            "typicalIterableAndClosure" => [self::createIterator([1, 4, 9,]), $sqrt, Error::class,],
+            "extremeEmptyIterableAndClosure" => [self::createIterator([]), $sqrt, Error::class,],
+            "typicalIterableAndStaticMethod" => [self::createIterator([1, 4, 9,]), $staticSqrt, Error::class,],
+            "extremeEmptyIterableAndStaticMethod" => [self::createIterator([]), $staticSqrt, Error::class,],
+            "typicalIterableAndFunctionName" => [self::createIterator([1, 4, 9,]), "sqrt", Error::class,],
+            "extremeEmptyIterableAndFunctionName" => [self::createIterator([]), "sqrt", Error::class,],
+        ];
+    }
+
     /**
-     * Ensure that transform() works with generators, even though doing so renders the generator useless.
+     * Ensure transform() thorws the expected error with Iterators that can't be traversed by reference.
+     * @param iterable $data The test data to transform.
+     * @param callable $fn The callable to test with.
+     * @param iterable $expected The expected transformed values.
      */
-    public function testTransformWithGenerator(): void
+    #[DataProvider("providerTestTransform2")]
+    public function testTransform2(Traversable $data, callable $fn): void
+    {
+        $this->expectException(Error::class);
+        transform($data, $fn);
+    }
+
+    /** Ensure that transform() works with generators, even though doing so renders the generator useless. */
+    public function testTransform3(): void
     {
         $data = (function & (): Generator {
             $data = [1, 2, 3,];
@@ -839,12 +779,8 @@ final class IterableTest extends TestCase
         self::assertSame($data, $actual);
     }
 
-    /**
-     * Test data for testReduce().
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestReduce(): iterable
+    /** Test data for testReduce1(). */
+    public static function providerTestReduce1(): iterable
     {
         $product = fn (int $value, int $carry): int => $carry * $value;
         $max = fn (int $value, int $carry): int => max($value, $carry);
@@ -875,51 +811,11 @@ final class IterableTest extends TestCase
             "extremeEmptyArray" => [[], $max, PHP_INT_MIN, PHP_INT_MIN,],
             "extremeEmptyIterator" => [self::createIterator([]), $max, PHP_INT_MIN, PHP_INT_MIN,],
             "extremeEmptyGenerator" => [self::createGenerator([]), $max, PHP_INT_MIN, PHP_INT_MIN,],
-
-            // ensure invalid args are rejected
-            "invalidIterableNull" => [null, $max, 1, 1, TypeError::class,],
-            "invalidIterableString" => ["string", $max, 1, 1, TypeError::class,],
-            "invalidIterableEmptyString" => ["", $max, 1, 1, TypeError::class,],
-            "invalidIterableInt" => [42, $max, 1, 1, TypeError::class,],
-            "invalidIterableFloat" => [3.1415926, $max, 1, 1, TypeError::class,],
-            "invalidIterableTrue" => [true, $max, 1, 1, TypeError::class,],
-            "invalidIterableFalse" => [false, $max, 1, 1, TypeError::class,],
-            "invalidIterableAnonymousClass" => [
-                new class
-                {
-                },
-                $max,
-                1,
-                1,
-                TypeError::class,
-            ],
-            "invalidIterableObject" => [(object) [], $max, 1, 1, TypeError::class,],
-
-            "invalidCallableNull" => [[1, 2, 3,], null, 1, 1, TypeError::class,],
-            "invalidCallableString" => [[1, 2, 3,], "this_function_does_not_exist", 1, 1, TypeError::class,],
-            "invalidCallableEmptyString" => [[1, 2, 3,], "", 1, 1, TypeError::class,],
-            "invalidCallableInt" => [[1, 2, 3,], 42, 1, 1, TypeError::class,],
-            "invalidCallableFloat" => [[1, 2, 3,], 3.1415926, 1, 1, TypeError::class,],
-            "invalidCallableTrue" => [[1, 2, 3,], true, 1, 1, TypeError::class,],
-            "invalidCallableFalse" => [[1, 2, 3,], false, 1, 1, TypeError::class,],
-            "invalidCallableArray" => [[1, 2, 3,], [fn (): int => 0], 1, 1, TypeError::class,],
-            "invalidCallableAnonymousClass" => [
-                [1, 2, 3,],
-                new class
-                {
-                },
-                1,
-                1,
-                TypeError::class,
-            ],
-            "invalidCallableObject" => [[1, 2, 3,], (object) [], 1, 1, TypeError::class,],
         ];
     }
 
     /**
      * Test reduce() function.
-     *
-     * @dataProvider dataForTestReduce
      *
      * @param mixed $data The test data to reduce.
      * @param mixed $fn The function to do the reduction.
@@ -927,22 +823,14 @@ final class IterableTest extends TestCase
      * @param mixed $expected The expected outcome.
      * @param string|null $exceptionClass The exception expected, if any.
      */
-    public function testReduce($data, $fn, $init, $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestReduce1")]
+    public function testReduce1(iterable $data, callable $fn, mixed $init, mixed $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = reduce($data, $fn, $init);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, reduce($data, $fn, $init));
     }
 
-    /**
-     * Test data for testAccumulate().
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestAccumulate(): iterable
+    /** Test data for testAccumulate1(). */
+    public static function providerTestAccumulate1(): iterable
     {
         $product = fn (int $value, int $carry): int => $carry * $value;
 
@@ -982,79 +870,31 @@ final class IterableTest extends TestCase
             "extremeEmptyArrayDefaultInit" => [[], $product, null, 0,],
             "extremeEmptyIteratorDefaultInit" => [self::createIterator([]), $product, null, 0,],
             "extremeEmptyGeneratorDefaultInit" => [self::createGenerator([]), $product, null, 0,],
-
-            // ensure invalid args are rejected
-            "invalidIterableNull" => [null, $product, 1, 1, TypeError::class,],
-            "invalidIterableString" => ["string", $product, 1, 1, TypeError::class,],
-            "invalidIterableEmptyString" => ["", $product, 1, 1, TypeError::class,],
-            "invalidIterableInt" => [42, $product, 1, 1, TypeError::class,],
-            "invalidIterableFloat" => [3.1415926, $product, 1, 1, TypeError::class,],
-            "invalidIterableTrue" => [true, $product, 1, 1, TypeError::class,],
-            "invalidIterableFalse" => [false, $product, 1, 1, TypeError::class,],
-            "invalidIterableAnonymousClass" => [
-                new class
-                {
-                },
-                $product,
-                1,
-                1,
-                TypeError::class,
-            ],
-            "invalidIterableObject" => [(object) [], $product, 1, 1, TypeError::class,],
-
-            "invalidCallableString" => [[1, 2, 3,], "this_function_does_not_exist", 1, 1, TypeError::class,],
-            "invalidCallableEmptyString" => [[1, 2, 3,], "", 1, 1, TypeError::class,],
-            "invalidCallableInt" => [[1, 2, 3,], 42, 1, 1, TypeError::class,],
-            "invalidCallableFloat" => [[1, 2, 3,], 3.1415926, 1, 1, TypeError::class,],
-            "invalidCallableTrue" => [[1, 2, 3,], true, 1, 1, TypeError::class,],
-            "invalidCallableFalse" => [[1, 2, 3,], false, 1, 1, TypeError::class,],
-            "invalidCallableArray" => [[1, 2, 3,], [fn (): int => 0], 1, 1, TypeError::class,],
-            "invalidCallableAnonymousClass" => [
-                [1, 2, 3,],
-                new class
-                {
-                },
-                1,
-                1,
-                TypeError::class,
-            ],
-            "invalidCallableObject" => [[1, 2, 3,], (object) [], 1, 1, TypeError::class,],
         ];
     }
 
     /**
      * Test reduce() function.
      *
-     * @dataProvider dataForTestAccumulate
-     *
-     * @param mixed $data The test data to reduce.
-     * @param mixed $fn The function to do the reduction.
+     * @param iterable $data The test data to reduce.
+     * @param callable | null $fn The function to do the reduction.
      * @param mixed $init The starting value for the reduction to test with. `null` indicates the default arg.
      * @param mixed $expected The expected outcome.
-     * @param string|null $exceptionClass The exception expected, if any.
      */
-    public function testAccumulate($data, $fn, $init, $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestAccumulate1")]
+    public function testAccumulate1(iterable $data, ?callable $fn, mixed $init, mixed $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
         $args = [$data, $fn,];
 
         if (isset($init)) {
             $args[] = $init;
         }
 
-        $actual = accumulate(...$args);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, accumulate(...$args));
     }
 
-    /**
-     * Test data for the all() function.
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestAll(): iterable
+    /** Test data for the all() function. */
+    public static function providerTestAll1(): iterable
     {
         $true = fn ($value): bool => true;
         $false = fn ($value): bool => false;
@@ -1138,70 +978,24 @@ final class IterableTest extends TestCase
 
             "extremeEmptyGeneratorClosureTruePredicate" => [self::createGenerator([]), $true, true,],
             "extremeEmptyGeneratorStaticMethodTupleTruePredicate" => [self::createGenerator([]), [self::class, "alwaysTrue"], true,],
-
-            // ensure invalid args are rejected
-            "invalidIterableNull" => [null, $true, true, TypeError::class,],
-            "invalidIterableString" => ["string", $true, true, TypeError::class,],
-            "invalidIterableEmptyString" => ["", $true, true, TypeError::class,],
-            "invalidIterableInt" => [42, $true, true, TypeError::class,],
-            "invalidIterableFloat" => [3.1415926, $true, true, TypeError::class,],
-            "invalidIterableTrue" => [true, $true, true, TypeError::class,],
-            "invalidIterableFalse" => [false, $true, true, TypeError::class,],
-            "invalidIterableAnonymousClass" => [
-                new class
-                {
-                },
-                $true,
-                true,
-                TypeError::class,
-            ],
-            "invalidIterableObject" => [(object) [], $true, true, TypeError::class,],
-
-            "invalidCallableString" => [[1, 2, 3,], "this_function_does_not_exist", true, TypeError::class,],
-            "invalidCallableEmptyString" => [[1, 2, 3,], "", true, TypeError::class,],
-            "invalidCallableInt" => [[1, 2, 3,], 42, true, TypeError::class,],
-            "invalidCallableFloat" => [[1, 2, 3,], 3.1415926, true, TypeError::class,],
-            "invalidCallableTrue" => [[1, 2, 3,], true, true, TypeError::class,],
-            "invalidCallableFalse" => [[1, 2, 3,], false, true, TypeError::class,],
-            "invalidCallableArray" => [[1, 2, 3,], [fn (): int => 0], true, TypeError::class,],
-            "invalidCallableAnonymousClass" => [
-                [1, 2, 3,],
-                new class
-                {
-                },
-                true,
-                TypeError::class,
-            ],
-            "invalidCallableObject" => [[1, 2, 3,], (object) [], true, TypeError::class,],
         ];
     }
 
     /**
      * Test all().
      *
-     * @dataProvider dataForTestAll
-     *
-     * @param mixed $collection The data to test with.
-     * @param mixed $predicate The predicate to test with.
+     * @param iterable $collection The data to test with.
+     * @param callable $predicate The predicate to test with.
      * @param bool $expected The expected return value from all()
-     * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testAll($collection, $predicate, bool $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestAll1")]
+    public function testAll1(iterable $collection, callable $predicate, bool $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = all($collection, $predicate);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, all($collection, $predicate));
     }
 
-    /**
-     * Test data for the none() function.
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestNone(): iterable
+    /** Test data for the none() function. */
+    public static function providerTestNone1(): iterable
     {
         $true = fn ($value): bool => true;
         $false = fn ($value): bool => false;
@@ -1285,71 +1079,25 @@ final class IterableTest extends TestCase
 
             "extremeEmptyGeneratorClosureTruePredicate" => [self::createGenerator([]), $true, true,],
             "extremeEmptyGeneratorStaticMethodTupleTruePredicate" => [self::createGenerator([]), [self::class, "alwaysTrue"], true,],
-
-            // ensure invalid args are rejected
-            "invalidIterableNull" => [null, $true, true, TypeError::class,],
-            "invalidIterableString" => ["string", $true, true, TypeError::class,],
-            "invalidIterableEmptyString" => ["", $true, true, TypeError::class,],
-            "invalidIterableInt" => [42, $true, true, TypeError::class,],
-            "invalidIterableFloat" => [3.1415926, $true, true, TypeError::class,],
-            "invalidIterableTrue" => [true, $true, true, TypeError::class,],
-            "invalidIterableFalse" => [false, $true, true, TypeError::class,],
-            "invalidIterableAnonymousClass" => [
-                new class
-                {
-                },
-                $true,
-                true,
-                TypeError::class,
-            ],
-            "invalidIterableObject" => [(object) [], $true, true, TypeError::class,],
-
-            "invalidCallableString" => [[1, 2, 3,], "this_function_does_not_exist", true, TypeError::class,],
-            "invalidCallableEmptyString" => [[1, 2, 3,], "", true, TypeError::class,],
-            "invalidCallableInt" => [[1, 2, 3,], 42, true, TypeError::class,],
-            "invalidCallableFloat" => [[1, 2, 3,], 3.1415926, true, TypeError::class,],
-            "invalidCallableTrue" => [[1, 2, 3,], true, true, TypeError::class,],
-            "invalidCallableFalse" => [[1, 2, 3,], false, true, TypeError::class,],
-            "invalidCallableArray" => [[1, 2, 3,], [fn (): int => 0], true, TypeError::class,],
-            "invalidCallableAnonymousClass" => [
-                [1, 2, 3,],
-                new class
-                {
-                },
-                true,
-                TypeError::class,
-            ],
-            "invalidCallableObject" => [[1, 2, 3,], (object) [], true, TypeError::class,],
         ];
     }
 
     /**
      * Test none().
      *
-     * @dataProvider dataForTestNone
-     *
-     * @param mixed $collection The data to test with.
-     * @param mixed $predicate The predicate to test with.
+     * @param iterable $collection The data to test with.
+     * @param callable $predicate The predicate to test with.
      * @param bool $expected The expected return value from none()
-     * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testNone($collection, $predicate, bool $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestNone1")]
+    public function testNone1(iterable $collection, callable $predicate, bool $expected, ?string $exceptionClass = null): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = none($collection, $predicate);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, none($collection, $predicate));
     }
 
 
-    /**
-     * Test data for the some() function.
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestSome(): iterable
+    /** Test data for the some() function. */
+    public static function providerTestSome1(): iterable
     {
         $true = fn ($value): bool => true;
         $false = fn ($value): bool => false;
@@ -1433,70 +1181,24 @@ final class IterableTest extends TestCase
 
             "extremeEmptyGeneratorClosureTruePredicate" => [self::createGenerator([]), $true, false,],
             "extremeEmptyGeneratorStaticMethodTupleTruePredicate" => [self::createGenerator([]), [self::class, "alwaysTrue"], false,],
-
-            // ensure invalid args are rejected
-            "invalidIterableNull" => [null, $true, true, TypeError::class,],
-            "invalidIterableString" => ["string", $true, true, TypeError::class,],
-            "invalidIterableEmptyString" => ["", $true, true, TypeError::class,],
-            "invalidIterableInt" => [42, $true, true, TypeError::class,],
-            "invalidIterableFloat" => [3.1415926, $true, true, TypeError::class,],
-            "invalidIterableTrue" => [true, $true, true, TypeError::class,],
-            "invalidIterableFalse" => [false, $true, true, TypeError::class,],
-            "invalidIterableAnonymousClass" => [
-                new class
-                {
-                },
-                $true,
-                true,
-                TypeError::class,
-            ],
-            "invalidIterableObject" => [(object) [], $true, true, TypeError::class,],
-
-            "invalidCallableString" => [[1, 2, 3,], "this_function_does_not_exist", true, TypeError::class,],
-            "invalidCallableEmptyString" => [[1, 2, 3,], "", true, TypeError::class,],
-            "invalidCallableInt" => [[1, 2, 3,], 42, true, TypeError::class,],
-            "invalidCallableFloat" => [[1, 2, 3,], 3.1415926, true, TypeError::class,],
-            "invalidCallableTrue" => [[1, 2, 3,], true, true, TypeError::class,],
-            "invalidCallableFalse" => [[1, 2, 3,], false, true, TypeError::class,],
-            "invalidCallableArray" => [[1, 2, 3,], [fn (): int => 0], true, TypeError::class,],
-            "invalidCallableAnonymousClass" => [
-                [1, 2, 3,],
-                new class
-                {
-                },
-                true,
-                TypeError::class,
-            ],
-            "invalidCallableObject" => [[1, 2, 3,], (object) [], true, TypeError::class,],
         ];
     }
 
     /**
      * Test some().
      *
-     * @dataProvider dataForTestSome
-     *
      * @param mixed $collection The data to test with.
      * @param mixed $predicate The predicate to test with.
      * @param bool $expected The expected return value from some()
-     * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testSome($collection, $predicate, bool $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestSome1")]
+    public function testSome1(iterable $collection, callable $predicate, bool $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = some($collection, $predicate);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, some($collection, $predicate));
     }
 
-    /**
-     * Test data for testIsSubsetOf()
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestIsSubsetOf(): iterable
+    /** Test data for testIsSubsetOf1() */
+    public static function providerTestIsSubsetOf1(): iterable
     {
         yield from [
             "typicalArrayArraySubset" => [[1, 2,], [1, 2, 3,], true,],
@@ -1558,67 +1260,22 @@ final class IterableTest extends TestCase
             "extremeGeneratorArrayEmptySubsetEmtpySuperset" => [self::createGenerator([]), [], true,],
             "extremeGeneratorIteratorEmptySubsetEmtpySuperset" => [self::createGenerator([]), self::createIterator([]), true,],
             "extremeGeneratorGeneratorEmptySubsetEmtpySuperset" => [self::createGenerator([]), self::createGenerator([]), true,],
-
-            "invalidSupersetString" => [[1, 2, 3,], "[]", false, TypeError::class,],
-            "invalidSupersetEmptyString" => [[1, 2, 3,], "", false, TypeError::class,],
-            "invalidSupersetInt" => [[1, 2, 3,], 42, false, TypeError::class,],
-            "invalidSupersetFloat" => [[1, 2, 3,], 3.1415926, false, TypeError::class,],
-            "invalidSupersetTrue" => [[1, 2, 3,], true, false, TypeError::class,],
-            "invalidSupersetFalse" => [[1, 2, 3,], false, false, TypeError::class,],
-            "invalidSupersetAnonymousClass" => [
-                [1, 2, 3,],
-                new class
-                {
-                },
-                false,
-                TypeError::class,
-            ],
-            "invalidSupersetObject" => [[1, 2, 3,], (object) [], false, TypeError::class,],
-            "invalidSupersetClosure" => [[1, 2, 3,], fn () => [], false, TypeError::class,],
-
-            "invalidSubsetString" => ["[1, 2]", [1, 2, 3,], false, TypeError::class,],
-            "invalidSubsetEmptyString" => ["", [1, 2, 3,], false, TypeError::class,],
-            "invalidSubsetInt" => [42, [1, 2, 3,], false, TypeError::class,],
-            "invalidSubsetFloat" => [3.1415926, [1, 2, 3,], false, TypeError::class,],
-            "invalidSubsetTrue" => [true, [1, 2, 3,], false, TypeError::class,],
-            "invalidSubsetFalse" => [false, [1, 2, 3,], false, TypeError::class,],
-            "invalidSubsetAnonymousClass" => [
-                new class
-                {
-                },
-                [1, 2, 3,],
-                false,
-                TypeError::class,
-            ],
-            "invalidSubsetObject" => [(object) [], [1, 2, 3,], false, TypeError::class,],
-            "invalidSubsetClosure" => [fn () => [], [1, 2, 3,], false, TypeError::class,],
         ];
     }
 
     /**
-     * @dataProvider dataForTestIsSubsetOf
-     *
-     * @param mixed $subset The dataset to test as a potential subset.
-     * @param mixed $set The dataaset that the subset should be contained within.
+     * @param iterable $subset The dataset to test as a potential subset.
+     * @param iterable $set The dataaset that the subset should be contained within.
      * @param bool $expected The expected return value from isSubsetOf
-     * @param string|null $exceptionClass The expected exception, if any.
      */
-    public function testIsSubsetOf($subset, $set, bool $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestIsSubsetOf1")]
+    public function testIsSubsetOf1(iterable $subset, iterable $set, bool $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = isSubsetOf($subset, $set);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, isSubsetOf($subset, $set));
     }
 
-    /**
-     * Test data for testRecursiveCount.
-     *
-     * @return iterable The test data.
-     */
-    public static function dataForTestRecursiveCount(): iterable
+    /** Test data for testRecursiveCount1. */
+    public static function providerTestRecursiveCount1(): iterable
     {
         yield from [
             "typicalFlatArray" => [[1, 2, 3,], 3,],
@@ -1635,45 +1292,58 @@ final class IterableTest extends TestCase
             "extremeEmpty" => [[], 0,],
             "extremeNestedEmptyArrays" => [[[], [], [],], 0,],
             "extremeDeeplyNestedEmptyArrays" => [[[[[[],],],[[[],],],],[],], 0,],
-
-            "invalidString" => ["foo", 0, TypeError::class,],
-            "invalidInt" => [42, 0, TypeError::class,],
-            "invalidFloat" => [3.1415927, 0, TypeError::class,],
-            "invalidBoolean" => [true, 0, TypeError::class,],
-            "invalidClosure" => [fn (): int  => 0, 0, TypeError::class,],
-            "invalidObject" => [(object) [1, 2, 3,], 0, TypeError::class,],
-            "invalidCountable" => [
-                new class
-                {
-                    public function count(): int
-                    {
-                        return 0;
-                    }
-                },
-                0,
-                TypeError::class,
-            ],
         ];
     }
 
     /**
-     * @dataProvider dataForTestRecursiveCount
-     *
-     * @param mixed $iterable The iterable to count.
+     * @param iterable $iterable The iterable to count.
      * @param int $expected The expected recursive count.
-     * @param string|null $exceptionClass The type exception expected to be throw, if any.
      */
-    public function testRecursiveCount(mixed $iterable, int $expected, ?string $exceptionClass = null): void
+    #[DataProvider("providerTestRecursiveCount1")]
+    public function testRecursiveCount1(mixed $iterable, int $expected): void
     {
-        if (isset($exceptionClass)) {
-            $this->expectException($exceptionClass);
-        }
-
-        $actual = recursiveCount($iterable);
-        self::assertEquals($expected, $actual);
+        self::assertEquals($expected, recursiveCount($iterable));
     }
 
-    public static function dataForTestPartition1(): iterable
+    /** Provides iterables and predicates with the expected set of filtered items. */
+    public static function providerFilteredIterables(): iterable
+    {
+        $truePredicate = static fn (mixed $value, string | int $key): bool => true;
+        $falsePredicate = static fn (mixed $value, string | int $key): bool => false;
+        $isString = static fn (mixed $value, string | int $key): bool => is_string($value);
+        $matchKey = static fn (mixed $value, string | int $key): bool => "two" === $key;
+
+        yield "empty-generator" => [self::createGenerator([]), $truePredicate, []];
+        yield "empty-iterator" => [self::createIterator([]), $truePredicate, []];
+        yield "empty-array" => [self::createGenerator([]), $truePredicate, []];
+        yield "no-matches-generator" => [self::createGenerator([1, 2, 3]), $falsePredicate, []];
+        yield "no-matches-iterator" => [self::createIterator([1, 2, 3]), $falsePredicate, []];
+        yield "no-matches-array" => [[1, "two", 3.14], $falsePredicate, []];
+        yield "all-matches-generator" => [self::createGenerator([1, "two", 3.14]), $truePredicate, [1, "two", 3.14]];
+        yield "all-matches-iterator" => [self::createIterator([1, "two", 3.14]), $truePredicate, [1, "two", 3.14]];
+        yield "all-matches-array" => [[1, "two", 3.14], $truePredicate, [1, "two" , 3.14]];
+        yield "some-matches-generator" => [self::createGenerator([1, "two", 3.14]), $isString, [1 => "two"]];
+        yield "some-matches-iterator" => [self::createIterator([1, "two", 3.14]), $isString, [1 => "two"]];
+        yield "some-matches-array" => [[1, "two", 3.14], $isString, [1 => "two"]];
+        yield "some-key-matches-generator" => [self::createGenerator(["first", "two" => 42, "pi" => 3.14]), $matchKey, ["two" => 42]];
+        yield "some-key-matches-itarator" => [self::createIteratorWithKeys(["first", "two" => 42, "pi" => 3.14]), $matchKey, ["two" => 42]];
+        yield "some-key-matches-array" => [["first", "two" => 42, "pi" => 3.14], $matchKey, ["two" => 42]];
+    }
+
+    /**
+     * Ensure filter() yields the correct results.
+     *
+     * @param iterable $collection The iterable to filter.
+     * @param callable $predicate The filtering predicate.
+     * @param array $expected The expected filtered items.
+     */
+    #[DataProvider("providerFilteredIterables")]
+    public function testFilter1(iterable $collection, callable $predicate, array $expected): void
+    {
+        self::assertSame($expected, toArray(filter($collection, $predicate)));
+    }
+
+    public static function providerTestPartition1(): iterable
     {
         $data = [1, 2, 3, 4, 5, 6, 7, 8, 9,];
         yield "array" => [$data,];
@@ -1682,11 +1352,8 @@ final class IterableTest extends TestCase
     }
 
 
-    /**
-     * Ensure we can partition all types of iterable.
-     *
-     * @dataProvider dataForTestPartition1
-     */
+    /** Ensure all types of iterable can be partitioned. */
+    #[DataProvider("providerTestPartition1")]
     public function testPartition1(iterable $data): void
     {
         $predicate = static fn (int $value): bool => $value < 5;
