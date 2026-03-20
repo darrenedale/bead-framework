@@ -2,6 +2,7 @@
 
 namespace Bead\Core;
 
+use Bead\Contracts\Logger as LoggerContract;
 use Bead\Exceptions\ServiceAlreadyBoundException;
 use InvalidArgumentException;
 use LogicException;
@@ -732,12 +733,12 @@ abstract class ConsoleApplication extends Application
     }
 
     /**
-     * Fetch the value given for a command-line argument.
+     * Fetch the value given for a command-line option.
      *
-     * @param string $name The argument name.
+     * @param string $name The option name.
      *
      * @return string|float|int|array|bool|null The argument value.
-     * @throws LogicException if no option with the given name is not defined.
+     * @throws LogicException if no option with the given name is defined.
      */
     public function optionValue(string $name): string|float|int|array|bool|null
     {
@@ -755,7 +756,7 @@ abstract class ConsoleApplication extends Application
      * @param string $name The argument name.
      *
      * @return string|float|int|array|bool|null The argument value.
-     * @throws LogicException if no argument with the given name is not defined.
+     * @throws LogicException if no argument with the given name is defined.
      */
     public function argumentValue(string $name): string|float|int|array|bool|null
     {
@@ -768,12 +769,12 @@ abstract class ConsoleApplication extends Application
     }
 
     /**
-     * Fetch the value given for a command-line argument.
+     * Fetch the value given for a command-line flag.
      *
-     * @param string $name The argument name.
+     * @param string $name The flag name.
      *
-     * @return string|float|int|array|bool|null The argument value.
-     * @throws LogicException if no flag with the given name is not defined.
+     * @return bool The flag value.
+     * @throws LogicException if no flag with the given name is defined.
      */
     public function flagValue(string $name): bool
     {
@@ -1201,9 +1202,14 @@ abstract class ConsoleApplication extends Application
         $this->validateCommandLineArguments();
 
         /** @psalm-suppress MissingThrowsDocblock help flag is guaranteed to be valid and defined. */
-        if ((bool) $this->flagValue("help")) {
+        if ($this->flagValue("help")) {
             $this->showHelp();
             return 0;
+        }
+
+        if ($this->flagValue("debug") && $this->has(LoggerContract::class)) {
+            /** @psalm-suppress MissingThrowsDocblock service binding has been checked. */
+            $this->get(LoggerContract::class)->setLevel(LoggerContract::DebugLevel);
         }
 
         return $this->run();
