@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace BeadTests\Core;
 
-use Bead\Core\Application;
+use Bead\Contracts\Logger as LoggerContract;
 use Bead\Core\Application as CoreApplication;
 use Bead\Core\ConsoleApplication;
 use BeadTests\Framework\TestCase;
@@ -13,10 +13,14 @@ use Equit\XRay\StaticXRay;
 use Equit\XRay\XRay;
 use InvalidArgumentException;
 use LogicException;
+use Mockery;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionClassConstant;
 use RuntimeException;
 use StdClass;
 
+#[CoversClass(ConsoleApplication::class)]
 final class ConsoleApplicationTest extends TestCase
 {
     private $stdin;
@@ -35,6 +39,7 @@ final class ConsoleApplicationTest extends TestCase
 
     public function tearDown(): void
     {
+        Mockery::close();
         parent::tearDown();
         fclose($this->stdin);
         fclose($this->stdout);
@@ -117,6 +122,382 @@ final class ConsoleApplicationTest extends TestCase
         };
     }
 
+    /** Provides command-line arguments for testing the command help. */
+    public static function providerHelpTests(): iterable
+    {
+        yield "help-only" => [["command.php", "--help",],];
+        yield "help-first" => [["command.php", "--help", "foo", "bar",],];
+        yield "help-last" => [["command.php", "foo", "bar", "--help",],];
+        yield "help-surrounded" => [["command.php", "foo", "--help", "bar",],];
+    }
+
+    /** Provides descriptions for testing configured description strings. */
+    public static function providerDescriptions(): iterable
+    {
+        yield "typical" => ["A console app", "A console app",];
+        yield "really-long" => [
+            str_repeat("A really long description of a console application.", 100),
+            str_repeat("A really long description of a console application.", 100),
+        ];
+        yield "really-short" => [".", ".",];
+        yield "leading-whitespace-trimmed" => ["  Description", "Description",];
+        yield "trailing-whitespace-trimmed" => ["The description  ", "The description",];
+        yield "surrounding-whitespace-trimmed" => ["   A description. ", "A description.",];
+    }
+
+    /** Provides empty descriptions. */
+    public static function providerEmptyDescriptions(): iterable
+    {
+        yield "empty" => ["",];
+        yield "single-whitespace" => [" ",];
+        yield "extra-whitespace" => ["  ",];
+    }
+
+    /** Provides strings that are valid parameter names. */
+    public static function providerValidParameterNames(): iterable
+    {
+        yield "typical1" => ["foo"];
+        yield "typical2" => ["bar"];
+        yield "typical3" => ["ex"];
+        yield "typical-upper-1" => ["FOO1"];
+        yield "typical-upper-2" => ["BAR2"];
+        yield "typical-upper-3" => ["FooBar12"];
+        yield "includes-numeric" => ["life42"];
+        yield "includes-hyphen" => ["life-42"];
+        yield "includes-underscore" => ["life_42"];
+        yield "includes-underscore-and-hyphen" => ["life_-42"];
+        yield "extreme-numeric" => ["a1"];
+        yield "extreme-hyphen" => ["a-"];
+        yield "extreme-underscore" => ["a_"];
+        yield "extreme-long" => [str_repeat("foobarbaz-_42-", 100)];
+    }
+
+    /** Provides strings that are invalid for use as parameter names. */
+    public static function providerInvalidParameterNames(): iterable
+    {
+        yield "empty" => [""];
+        yield "single-whitespace" => [" "];
+        yield "more-whitespace" => ["   "];
+        yield "single-hyphen" => ["-"];
+        yield "more-hyphen" => ["---"];
+        yield "single-underscore" => ["_"];
+        yield "more-underscore" => ["___"];
+        yield "all-invalid" => ["4-2_"];
+        yield "leading-whitespace" => [" foo"];
+        yield "trailing-whitespace" => ["foo "];
+        yield "inline-whitespace" => ["foo bar"];
+        yield "digit" => ["4"];
+        yield "numeric" => ["42"];
+        yield "leading-numeric" => ["42-life"];
+        yield "leading-hyphen" => ["-life42"];
+        yield "leading-underscore" => ["_life42"];
+    }
+
+    /** Provides strings that are valid parameter short names. */
+    public static function providerValidParameterShortNames(): iterable
+    {
+        foreach (range("a", "z") as $ch) {
+            yield $ch => [$ch];
+        }
+
+        foreach (range("A", "Z") as $ch) {
+            yield $ch => [$ch];
+        }
+    }
+
+    /** Provides strings that are invalid for use as parameter short names. */
+    public static function providerInvalidParameterShortNames(): iterable
+    {
+        yield "empty" => [""];
+        yield "whitespace" => [" "];
+        yield "punctuation" => ["-"];
+        yield "leading-whitespace" => [" f"];
+        yield "trailing-whitespace" => ["f "];
+        yield "surrounding-whitespace" => [" f "];
+        yield "digit" => ["4"];
+        yield "too-long" => ["ab"];
+    }
+
+    /** Provides valid flag and option names for testing parameter extraction. */
+    public static function providerValidFlagAndOptionArguments(): iterable
+    {
+        yield "typical" => ["--flag", "flag"];
+        yield "typical-short" => ["-f", "f"];
+        yield "typical-hyphenated" => ["--option-name", "option-name"];
+        yield "extreme-extra-leading-hyphens" => ["---the-option", "-the-option"];
+    }
+
+    /** Provides invalid flag and option names. */
+    public static function providerInvalidFlagAndOptionArguments(): iterable
+    {
+        yield "empty" => [""];
+        yield "whitespace" => ["   "];
+        yield "no-leading-hyphens" => ["option-name",];
+        yield "whitespace-before-leading-hyphens" => [" --the-option",];
+    }
+
+    /** Provides strings that are valid condensed flag short names. */
+    public static function providerValidCondensedFlagArguments(): iterable
+    {
+        yield "single-flag" => [["-f",], ["-f",],];
+        yield "multiple-flags" => [["-bf",], ["-b", "-f",],];
+        yield "multiple-flags-and-other-args" => [["--option", "-bf", "argument"], ["--option", "-b", "-f", "argument",],];
+    }
+
+    /** Provides invalid short names. */
+    public static function providerInvalidShortParameterNames(): iterable
+    {
+        yield "empty" => [""];
+        yield "leading-whitespace" => [" h"];
+        yield "trailing-whitespace" => ["h "];
+        yield "surrounding-whitespace" => [" h "];
+        yield "regular-name" => ["help"];
+    }
+
+    /** Provides valid sets of compressed flags. */
+    public static function providerCompressedFlags(): iterable
+    {
+        yield "two-flags" => ["-ac",];
+        yield "many-flags" => ["-flagtext",];
+    }
+
+    /** Provides strings that should not be considered compressed flags. */
+    public static function providerNotCompressedFlags(): iterable
+    {
+        yield "single-flag" => ["-a",];
+        yield "long-name" => ["--flag",];
+        yield "argument" => ["flag",];
+        yield "hyphen-only" => ["-",];
+        yield "contains-digits" => ["-abc1def",];
+        yield "empty" => ["",];
+        yield "whitespace" => [" ",];
+        yield "leading-whitespace" => [" -abc",];
+        yield "trailing-whitespace" => ["-abc ",];
+        yield "surrounding-whitespace" => [" -abc ",];
+        yield "multiple-whitespace" => ["   ",];
+    }
+
+    /** Provides compressed flag sets and the corresponding expected expanded flag sets. */
+    public static function providerCompressedFlagsAndExpansion(): iterable
+    {
+        yield "single-flag" => ["-a", ["-a",],];
+        yield "two-flags" => ["-ac", ["-a", "-c",],];
+        yield "many-flags" => ["-acfbhnjCKgm", ["-a", "-c", "-f", "-b", "-h", "-n", "-j", "-C", "-K", "-g", "-m",],];
+    }
+
+    /** Provides valid command-line arguments. */
+    public static function providerValidCommandLineArguments(): iterable
+    {
+        yield "all-long-flag-option-arg" => [["--bead", "--framework", "bead", "input-value",], true,];
+        yield "all-long-flag-arg-option" => [["--bead", "input-value", "--framework", "bead",], true,];
+        yield "all-long-option-flag-arg" => [["--framework", "bead", "--bead", "input-value",], true,];
+        yield "all-long-option-arg-flag" => [["--framework", "bead", "input-value", "--bead",], true,];
+        yield "all-long-arg-flag-option" => [["input-value", "--bead", "--framework", "bead",], true,];
+        yield "all-long-arg-option-flag" => [["input-value", "--framework", "bead", "--bead",], true,];
+    }
+
+    /** Provides command-line arguments that contain duplicates. */
+    public static function providerDuplicateCommandLineArguments(): iterable
+    {
+        yield "duplicate-flag" => [["--bead", "--bead",], "--bead",];
+        yield "duplicate-option" => [["--framework", "bead", "--framework", "another-bead",], "--framework",];
+        yield "duplicate-option-amongst-others" => [["--framework", "bead", "--bead", "--framework", "another-bead", "input-value",], "--framework",];
+        yield "duplicate-field-amongst-others" => [["--framework", "bead", "--bead", "input-value", "--bead",], "--bead",];
+    }
+
+    /** Provides single command-line arguments and their validated values. */
+    public static function providerValidatedCommandLineArguments(): iterable
+    {
+        yield "int-42" => [ConsoleApplication::TypeInt, "42", 42,];
+        yield "int-0" => [ConsoleApplication::TypeInt, "0", 0,];
+        yield "int-minus-3" => [ConsoleApplication::TypeInt, "-3", -3,];
+        yield "int-plus-42" => [ConsoleApplication::TypeInt, "+42", 42,];
+        yield "int-leading-whitespace" => [ConsoleApplication::TypeInt, " +42", 42,];
+        yield "int-trailing-whitespace" => [ConsoleApplication::TypeInt, "-42 ", -42,];
+        yield "int-surrounding-whitespace" => [ConsoleApplication::TypeInt, " -42 ", -42,];
+        yield "float-3.14" => [ConsoleApplication::TypeFloat, "3.14", 3.14,];
+        yield "float-0.0" => [ConsoleApplication::TypeFloat, "0.0", 0.0,];
+        yield "float-minus-7.853" => [ConsoleApplication::TypeFloat, "-7.853", -7.853,];
+        yield "float-plus-3.14" => [ConsoleApplication::TypeFloat, "+3.14", 3.14,];
+        yield "float-leading-whitespace" => [ConsoleApplication::TypeFloat, " +3.14", 3.14,];
+        yield "float-trailing-whitespace" => [ConsoleApplication::TypeFloat, "-3.14 ", -3.14,];
+        yield "float-surrounding-whitespace" => [ConsoleApplication::TypeFloat, " -3.14 ", -3.14,];
+        yield "string-empty" => [ConsoleApplication::TypeString, "", "",];
+        yield "string-whitespace" => [ConsoleApplication::TypeString, "   ", "   ",];
+        yield "string-bead framework" => [ConsoleApplication::TypeString, "bead framework", "bead framework",];
+        yield "string-leading-whitespace" => [ConsoleApplication::TypeString, " bead", " bead",];
+        yield "string-trailing-whitespace" => [ConsoleApplication::TypeString, "framework ", "framework ",];
+        yield "string-surrounding-whitespace" => [ConsoleApplication::TypeString, " bead-framework ", " bead-framework ",];
+        yield "any-empty-string" => [ConsoleApplication::TypeAny, "", "",];
+        yield "any-whitespace-string" => [ConsoleApplication::TypeAny, "   ", "   ",];
+        yield "any-bead framework-string" => [ConsoleApplication::TypeAny, "bead framework", "bead framework",];
+        yield "any-leading-whitespace-string" => [ConsoleApplication::TypeAny, " bead", " bead",];
+        yield "any-trailing-whitespace-string" => [ConsoleApplication::TypeAny, "framework ", "framework ",];
+        yield "any-surrounding-whitespace-string" => [ConsoleApplication::TypeAny, " bead-framework ", " bead-framework ",];
+        yield "any-int-42" => [ConsoleApplication::TypeAny, "42", "42",];
+        yield "any-int-0" => [ConsoleApplication::TypeAny, "0", "0",];
+        yield "any-int-minus-3" => [ConsoleApplication::TypeAny, "-3", "-3",];
+        yield "any-int-plus-42" => [ConsoleApplication::TypeAny, "+42", "+42",];
+        yield "any-float-3.14" => [ConsoleApplication::TypeAny, "3.14", "3.14",];
+        yield "any-float-0.0" => [ConsoleApplication::TypeAny, "0.0", "0.0",];
+        yield "any-float-minus-7.853" => [ConsoleApplication::TypeAny, "-7.853", "-7.853",];
+        yield "any-float-plus-3.14" => [ConsoleApplication::TypeAny, "+3.14", "+3.14",];
+    }
+
+    /** Provides argument strings that are not valid int values. */
+    public static function providerInvalidIntValues(): iterable
+    {
+        yield "empty" => [""];
+        yield "whitespace" => [" "];
+        yield "multiple-whitespace" => ["   "];
+        yield "alpha" => ["abc"];
+        yield "extra-sign-negative" => ["--42"];
+        yield "extra-sign-positive" => ["++42"];
+        yield "both-signs-1" => ["+-42"];
+        yield "both-signs-2" => ["-+42"];
+        yield "internal-whitespace" => ["42 7"];
+        yield "float" => ["3.14"];
+    }
+
+    /** Provides argument strings that are not valid float values. */
+    public static function providerInvalidFloatValues(): iterable
+    {
+        yield "empty" => [""];
+        yield "whitespace" => [" "];
+        yield "multiple-whitespace" => ["   "];
+        yield "alpha" => ["abc"];
+        yield "extra-sign-negative" => ["--3.14"];
+        yield "extra-sign-positive" => ["++3.14"];
+        yield "both-signs-1" => ["+-3.14"];
+        yield "both-signs-2" => ["-+3.14"];
+        yield "internal-whitespace" => ["3.14 14927"];
+    }
+
+    /** Provides empty parameter descriptions. */
+    public static function providerEmptyParameterDescriptions(): iterable
+    {
+        yield "empty" => [""];
+        yield "single-whitespace" => [" "];
+        yield "multiple-whitespace" => ["   "];
+    }
+
+    /** Provides valid parameter data types. */
+    public static function providerValidParameterDataTypes(): iterable
+    {
+        yield "any" => [ConsoleApplication::TypeAny];
+        yield "string" => [ConsoleApplication::TypeString];
+        yield "int" => [ConsoleApplication::TypeInt];
+        yield "float" => [ConsoleApplication::TypeFloat];
+        yield "array" => [ConsoleApplication::TypeArray];
+    }
+
+    /** Provides invalid parameter data types. */
+    public static function providerInvalidPrameterDataTypes(): iterable
+    {
+        yield "first-lower" => [-1,];
+        yield "first-higher" => [5,];
+        yield "negative" => [-99,];
+        yield "positive" => [99,];
+    }
+
+    /** Provides responses considered affirmative replies to a confirmation request. */
+    public static function providerAffirmativeConfirmResponses(): iterable
+    {
+        yield "y" => ["y"];
+        yield "Y" => ["Y"];
+        yield "Yes" => ["Yes"];
+        yield "yes" => ["yes"];
+        yield "yup" => ["yup"];
+        yield "Yup" => ["Yup"];
+        yield "yellow" => ["yellow"];
+        yield "Yellow" => ["Yellow"];
+    }
+
+    /** Provides responses considered negative replies to a confirmation request. */
+    public static function providerNegativeConfirmResponses(): iterable
+    {
+        yield "empty" => [""];
+        yield "whitespace" => ["   "];
+        yield "number-1" => ["1"];
+        yield "number-0" => ["0"];
+        yield "leading-whitespace-y" => [" y"];
+        yield "leading-whitespace-Y" => [" Y"];
+        yield "N" => ["N"];
+        yield "n" => ["n"];
+        yield "no" => ["no"];
+        yield "No" => ["No"];
+        yield "nope" => ["nope"];
+        yield "Nope" => ["Nope"];
+        yield "not" => ["not"];
+        yield "Not" => ["Not"];
+        yield "never" => ["never"];
+        yield "Never" => ["Never"];
+        yield "newt" => ["newt"];
+        yield "Newt" => ["Newt"];
+
+        // first char every letter of the alphabet (except Y and N)
+        yield "amber" => ["amber"];
+        yield "Amber" => ["Amber"];
+        yield "brown" => ["brown"];
+        yield "Brown" => ["Brown"];
+        yield "cyan" => ["cyan"];
+        yield "Cyan" => ["Cyan"];
+        yield "damson" => ["damson"];
+        yield "Damson" => ["Damson"];
+        yield "eggshell" => ["eggshell"];
+        yield "Eggshell" => ["Eggshell"];
+        yield "fawn" => ["fawn"];
+        yield "Fawn" => ["Fawn"];
+        yield "green" => ["green"];
+        yield "Green" => ["Green"];
+        yield "hessian" => ["hessian"];
+        yield "Hessian" => ["Hessian"];
+        yield "indigo" => ["indigo"];
+        yield "Indigo" => ["Indigo"];
+        yield "jute" => ["jute"];
+        yield "Jute" => ["Jute"];
+        yield "kale" => ["kale"];
+        yield "Kale" => ["Kale"];
+        yield "lime" => ["lime"];
+        yield "Lime" => ["Lime"];
+        yield "magenta" => ["magenta"];
+        yield "Magenta" => ["Magenta"];
+        yield "ochre" => ["ochre"];
+        yield "Ochre" => ["Ochre"];
+        yield "pink" => ["pink"];
+        yield "Pink" => ["Pink"];
+        yield "quince" => ["quince"];
+        yield "Quince" => ["Quince"];
+        yield "red" => ["red"];
+        yield "Red" => ["Red"];
+        yield "salmon" => ["salmon"];
+        yield "Salmon" => ["Salmon"];
+        yield "teal" => ["teal"];
+        yield "Teal" => ["Teal"];
+        yield "umber" => ["umber"];
+        yield "Umber" => ["Umber"];
+        yield "violet" => ["violet"];
+        yield "Violet" => ["Violet"];
+        yield "winter" => ["winter"];
+        yield "Winter" => ["Winter"];
+        yield "xylophone" => ["xylophone"];
+        yield "Xylophone" => ["Xylophone"];
+        yield "zenith" => ["zenith"];
+        yield "Zenith" => ["Zenith"];
+    }
+
+    /** Provides raw command-line arguments. */
+    public static function providerCommandLineArguments(): iterable
+    {
+        yield "no-args" => [["command.php",], []];
+        yield "one-arg" => [["command.php", "foo",], ["foo",]];
+        yield "one-flag" => [["command.php", "--foo",], ["--foo",]];
+        yield "one-short-flag" => [["command.php", "-f",], ["-f",]];
+        yield "one-option" => [["command.php", "--foo", "foo-value",], ["--foo", "foo-value",]];
+        yield "one-short-option" => [["command.php", "-f", "foo-value"], ["-f", "foo-value",]];
+        yield "arg-option-and-flag" => [["command.php", "-f", "foo-value", "--bar", "bar-value", "argument",], ["-f", "foo-value", "--bar", "bar-value", "argument",]];
+    }
+
     /** Ensure the constructor sets the script and raw arguments. */
     public function testConstructor1(): void
     {
@@ -146,101 +527,32 @@ final class ConsoleApplicationTest extends TestCase
         self::assertTrue($app->hasFlag("debug"));
     }
 
-    public static function validParameterNames(): iterable
-    {
-        yield "typical1" => ["foo"];
-        yield "typical2" => ["bar"];
-        yield "typical3" => ["ex"];
-        yield "typical-upper-1" => ["FOO1"];
-        yield "typical-upper-2" => ["BAR2"];
-        yield "typical-upper-3" => ["FooBar12"];
-        yield "includes-numeric" => ["life42"];
-        yield "includes-hyphen" => ["life-42"];
-        yield "includes-underscore" => ["life_42"];
-        yield "includes-underscore-and-hyphen" => ["life_-42"];
-        yield "extreme-numeric" => ["a1"];
-        yield "extreme-hyphen" => ["a-"];
-        yield "extreme-underscore" => ["a_"];
-        yield "extreme-long" => [str_repeat("foobarbaz-_42-", 100)];
-    }
-
-    public static function invalidParameterNames(): iterable
-    {
-        yield "empty" => [""];
-        yield "single-whitespace" => [" "];
-        yield "more-whitespace" => ["   "];
-        yield "single-hyphen" => ["-"];
-        yield "more-hyphen" => ["---"];
-        yield "single-underscore" => ["_"];
-        yield "more-underscore" => ["___"];
-        yield "all-invalid" => ["4-2_"];
-        yield "leading-whitespace" => [" foo"];
-        yield "trailing-whitespace" => ["foo "];
-        yield "inline-whitespace" => ["foo bar"];
-        yield "digit" => ["4"];
-        yield "numeric" => ["42"];
-        yield "leading-numeric" => ["42-life"];
-        yield "leading-hyphen" => ["-life42"];
-        yield "leading-underscore" => ["_life42"];
-    }
-
-    public static function validParameterShortNames(): iterable
-    {
-        foreach (range("a", "z") as $ch) {
-            yield $ch => [$ch];
-        }
-
-        foreach (range("A", "Z") as $ch) {
-            yield $ch => [$ch];
-        }
-    }
-
-    public static function invalidParameterShortNames(): iterable
-    {
-        yield "empty" => [""];
-        yield "whitespace" => [" "];
-        yield "punctuation" => ["-"];
-        yield "leading-whitespace" => [" f"];
-        yield "trailing-whitespace" => ["f "];
-        yield "surrounding-whitespace" => [" f "];
-        yield "digit" => ["4"];
-        yield "too-long" => ["ab"];
-    }
-
-    /**
-     * Ensure isValidParameterName() passes valid parameter names.
-     * @dataProvider validParameterNames
-     */
+    /** Ensure isValidParameterName() passes valid parameter names. */
+    #[DataProvider("providerValidParameterNames")]
     public function testIsValidParameterName1(string $name): void
     {
         $actual = (new StaticXRay(ConsoleApplication::class))->isValidParameterName($name);
         self::assertTrue($actual);
     }
 
-    /**
-     * Ensure isValidParameterName() rejects invalid parameter names.
-     * @dataProvider invalidParameterNames
-     */
+    /** Ensure isValidParameterName() rejects invalid parameter names. */
+    #[DataProvider("providerInvalidParameterNames")]
     public function testIsValidParameterName2(string $name): void
     {
         $actual = (new StaticXRay(ConsoleApplication::class))->isValidParameterName($name);
         self::assertFalse($actual);
     }
 
-    /**
-     * Ensure isValidShortParameterName() passes valid parameter names.
-     * @dataProvider validParameterShortNames
-     */
+    /** Ensure isValidShortParameterName() passes valid parameter names. */
+    #[DataProvider("providerValidParameterShortNames")]
     public function testIsValidParameterShortName1(string $name): void
     {
         $actual = (new StaticXRay(ConsoleApplication::class))->isValidParameterShortName($name);
         self::assertTrue($actual);
     }
 
-    /**
-     * Ensure isValidShortParameterName() rejects invalid parameter names.
-     * @dataProvider invalidParameterShortNames
-     */
+    /** Ensure isValidShortParameterName() rejects invalid parameter names. */
+    #[DataProvider("providerInvalidParameterShortNames")]
     public function testIsValidParameterShortName2(string $name): void
     {
         $actual = (new StaticXRay(ConsoleApplication::class))->isValidParameterShortName($name);
@@ -254,24 +566,12 @@ final class ConsoleApplicationTest extends TestCase
         self::assertEquals("", $app->description());
     }
 
-    public static function dataForTestDescription2(): iterable
-    {
-        yield "typical" => ["A console app", "A console app",];
-        yield "really-lone" => [
-            str_repeat("A really long description of a console application.", 100),
-            str_repeat("A really long description of a console application.", 100),
-        ];
-        yield "really-short" => [".", ".",];
-        yield "leading-whitespace-trimmed" => ["  Description", "Description",];
-        yield "trailing-whitespace-trimmed" => ["The description  ", "The description",];
-        yield "surrounding-whitespace-trimmed" => ["   A description. ", "A description.",];
-    }
-
     /**
      * Ensure the description can be set and is trimmed.
+     *
      * @param string $description
-     * @dataProvider dataForTestDescription2
      */
+    #[DataProvider("providerDescriptions")]
     public function testDescription2(string $description, string $expected): void
     {
         $app = new XRay($this->createApplication());
@@ -281,9 +581,10 @@ final class ConsoleApplicationTest extends TestCase
 
     /**
      * Ensure the description of the app is available, once configured.
+     *
      * @param string $description
-     * @dataProvider dataForTestDescription2
      */
+    #[DataProvider("providerDescriptions")]
     public function testDescription3(string $description): void
     {
         $app = new XRay($this->createApplication(configure: fn () => $this->setDescription($description)));
@@ -292,17 +593,8 @@ final class ConsoleApplicationTest extends TestCase
         self::assertNotEquals("", $app->description());
     }
 
-    public static function dataForTestDescription4(): iterable
-    {
-        yield "empty" => ["",];
-        yield "single-whitespace" => [" ",];
-        yield "extra-whitespace" => ["  ",];
-    }
-
-    /**
-     * Ensure the description can't be set to nothing.
-     * @dataProvider dataForTestDescription4
-     */
+    /** Ensure the description can't be set to nothing. */
+    #[DataProvider("providerEmptyDescriptions")]
     public function testDescription4(string $description): void
     {
         self::expectException(LogicException::class);
@@ -329,6 +621,7 @@ final class ConsoleApplicationTest extends TestCase
 
             public function run(): int
             {
+                throw new LogicException("run() should not be called");
             }
         });
 
@@ -350,19 +643,8 @@ final class ConsoleApplicationTest extends TestCase
         self::assertTrue($configured);
     }
 
-    /** Provides command-line arguments for testing the command help. */
-    public static function dataForHelpTests(): iterable
-    {
-        yield "help-only" => [["command.php", "--help",],];
-        yield "help-first" => [["command.php", "--help", "foo", "bar",],];
-        yield "help-last" => [["command.php", "foo", "bar", "--help",],];
-        yield "help-surrounded" => [["command.php", "foo", "--help", "bar",],];
-    }
-
-    /**
-     * Ensure run() is not is called when the help arg is present.
-     * @dataProvider dataForHelpTests
-     */
+    /** Ensure run() is not is called when the help arg is present. */
+    #[DataProvider("providerHelpTests")]
     public function testExec2(array $args): void
     {
         $runCalled = false;
@@ -405,10 +687,44 @@ final class ConsoleApplicationTest extends TestCase
         self::assertEquals("b", $option->shortName);
     }
 
-    /**
-     * Ensure run() is not is called when the help arg is present.
-     * @dataProvider dataForHelpTests
-     */
+    /** Ensure exec sets the log level when --debug flag is set. */
+    public function testExec4(): void
+    {
+        $log = Mockery::mock(LoggerContract::class);
+
+        $app = $this->createApplication(
+            args: ["command.php", "--debug",],
+        );
+
+        $log->expects("setLevel")
+            ->once()
+            ->with(LoggerContract::DebugLevel);
+
+        $app->bindService(LoggerContract::class, $log);
+        $app->exec();
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure exec doesn't set the log level when --debug flag is not set. */
+    public function testExec5(): void
+    {
+        $log = Mockery::mock(LoggerContract::class);
+
+        $app = $this->createApplication(
+            args: ["command.php",],
+        );
+
+        $log->expects("setLevel")
+            ->never()
+            ->with(LoggerContract::DebugLevel);
+
+        $app->bindService(LoggerContract::class, $log);
+        $app->exec();
+        self::markTestAsExternallyVerified();
+    }
+
+    /** Ensure run() is not is called when the help arg is present. */
+    #[DataProvider("providerHelpTests")]
     public function testShowHelp1(array $args): void
     {
         $stream = fopen("php://memory", "w+");
@@ -425,20 +741,19 @@ final class ConsoleApplicationTest extends TestCase
         $app->exec();
         fseek($stream, 0, SEEK_SET);
 
-        self::assertEquals(
-            <<<EOF
-command.php: Test command
-  [-h] [--help] [--debug] [foo] [bar]
-
-Flags
-    --help|-h Show the command's help message.
-    --debug Run the command in debug mode.
-
-Arguments
-    foo (any, optional) The foo argument will be ignored.
-    bar (any, optional) The bar argument will be ignored.
-
-EOF,
+        self::assertEquals(<<<EOF
+            command.php: Test command
+              [-h] [--help] [--debug] [foo] [bar]
+            
+            Flags
+                --help|-h Show the command's help message.
+                --debug Run the command in debug mode.
+            
+            Arguments
+                foo (any, optional) The foo argument will be ignored.
+                bar (any, optional) The bar argument will be ignored.
+            
+            EOF,
             fread($stream, 1024),
         );
     }
@@ -498,49 +813,22 @@ EOF,
         self::assertTrue($app->isInDebugMode());
     }
 
-    public static function validFlagAndOptionArguments(): iterable
-    {
-        yield "typical" => ["--flag", "flag"];
-        yield "typical-short" => ["-f", "f"];
-        yield "typical-hyphenated" => ["--option-name", "option-name"];
-        yield "extreme-extra-leading-hyphens" => ["---the-option", "-the-option"];
-    }
-
-    /**
-     * Ensure extractName() successfully extracts from long and short name options and flags
-     * @dataProvider validFlagAndOptionArguments
-     */
+    /** Ensure extractName() successfully extracts from long and short name options and flags */
+    #[DataProvider("providerValidFlagAndOptionArguments")]
     public function testExtractParameterName1(string $arg, string $expected): void
     {
         $app = new StaticXRay(ConsoleApplication::class);
         self::assertEquals($expected, $app->extractParameterName($arg));
     }
 
-    public static function invalidFlagAndOptionArguments(): iterable
-    {
-        yield "empty" => [""];
-        yield "whitespace" => ["   "];
-        yield "no-leading-hyphens" => ["option-name",];
-        yield "whitespace-before-leading-hyphens" => [" --the-option",];
-    }
-
-    /**
-     * Ensure extractName() throws when not given an option or flag name
-     * @dataProvider invalidFlagAndOptionArguments
-     */
+    /** Ensure extractName() throws when not given an option or flag name */
+    #[DataProvider("providerInvalidFlagAndOptionArguments")]
     public function testExtractParameterName2(string $arg): void
     {
         $app = new StaticXRay(ConsoleApplication::class);
         self::expectException(LogicException::class);
         self::expectExceptionMessage("Expected option or flag, found \"{$arg}\"");
         $app->extractParameterName($arg);
-    }
-
-    public static function validCondensedFlagArguments(): iterable
-    {
-        yield "single-flag" => [["-f",], ["-f",],];
-        yield "multiple-flags" => [["-bf",], ["-b", "-f",],];
-        yield "multiple-flags-and-other-args" => [["--option", "-bf", "argument"], ["--option", "-b", "-f", "argument",],];
     }
 
     /** Ensure we can successfully determine a name is defined. */
@@ -648,19 +936,8 @@ EOF,
         self::assertFalse($app->parameterShortNameIsDefined("x"));
     }
 
-    public static function dataForTestParameterShortNameIsDefined3(): iterable
-    {
-        yield "empty" => [""];
-        yield "leading-whitespace" => [" h"];
-        yield "trailing-whitespace" => ["h "];
-        yield "surrounding-whitespace" => [" h "];
-        yield "regular-name" => ["help"];
-    }
-
-    /**
-     * Ensure we get a logic exception if the programmer has provided an invalid short name.
-     * @dataProvider dataForTestParameterShortNameIsDefined3
-     */
+    /** Ensure we get a logic exception if the programmer has provided an invalid short name. */
+    #[DataProvider("providerInvalidShortParameterNames")]
     public function testParameterShortNameIsDefined3(string $shortName): void
     {
         $app = new XRay($this->createApplication());
@@ -669,70 +946,45 @@ EOF,
         $app->parameterShortNameIsDefined($shortName);
     }
 
-    public static function dataForTestIsCompressedFlags1(): iterable
-    {
-        yield "single-flag" => ["-a", false,];
-        yield "two-flags" => ["-ac", true,];
-        yield "long-name" => ["--flag", false,];
-        yield "argument" => ["flag", false,];
-        yield "many-flags" => ["-flagtext", true,];
-        yield "hyphen-only" => ["-", false,];
-        yield "contains-digits" => ["-abc1def", false,];
-        yield "empty" => ["", false,];
-        yield "whitespace" => [" ", false,];
-        yield "leading-whitespace" => [" -abc", false,];
-        yield "trailing-whitespace" => ["-abc ", false,];
-        yield "surrounding-whitespace" => [" -abc ", false,];
-        yield "multiple-whitespace" => ["   ", false,];
-    }
-
     /**
-     * Ensure compressed flags are expanded correctly.
+     * Ensure compressed flags are identified correctly.
      *
-     * @dataProvider dataForTestIsCompressedFlags1
-     * @param string $compressed The string of compressed flags, with the leading "-".
-     * @param bool $expected Whether the string represents a valid set of compressed flags.
+     * @param string $arg The set of compressed flags to test.
      */
-    public function testIsCompressedFlags1(string $arg, bool $expected): void
+    #[DataProvider("providerCompressedFlags")]
+    public function testIsCompressedFlags1(string $arg): void
     {
         $consoleApplication = new StaticXRay(ConsoleApplication::class);
-        self::assertEquals($expected, $consoleApplication->isCompressedFlags($arg));
+        self::assertTrue($consoleApplication->isCompressedFlags($arg));
     }
 
-    public static function dataForTestExpandCompressedFlags1(): iterable
+    /**
+     * Ensure arguments that aren't compressed flags are identified correctly.
+     *
+     * @param string $arg The argument that is not a set of compressed flags.
+     */
+    #[DataProvider("providerNotCompressedFlags")]
+    public function testIsCompressedFlags2(string $arg): void
     {
-        yield "single-flag" => ["-a", ["-a",],];
-        yield "two-flags" => ["-ac", ["-a", "-c",],];
-        yield "many-flags" => ["-acfbhnjCKgm", ["-a", "-c", "-f", "-b", "-h", "-n", "-j", "-C", "-K", "-g", "-m",],];
+        $consoleApplication = new StaticXRay(ConsoleApplication::class);
+        self::assertFalse($consoleApplication->isCompressedFlags($arg));
     }
 
     /**
      * Ensure compressed flags are expanded correctly.
      *
-     * @dataProvider dataForTestExpandCompressedFlags1
      * @param string $compressed The string of compressed flags, with the leading "-".
      * @param array $expected The expected array of uncompressed flags.
      */
+    #[DataProvider("providerCompressedFlagsAndExpansion")]
     public function testExpandCompressedFlags1(string $compressed, array $expected): void
     {
         $consoleApplication = new StaticXRay(ConsoleApplication::class);
         self::assertEquals($expected, $consoleApplication->expandCompressedFlags($compressed));
     }
 
-    public static function dataForTestParseCommandLineArguments1(): iterable
-    {
-        yield "all-long-flag-option-arg" => [["--bead", "--framework", "bead", "input-value",], true,];
-        yield "all-long-flag-arg-option" => [["--bead", "input-value", "--framework", "bead",], true,];
-        yield "all-long-option-flag-arg" => [["--framework", "bead", "--bead", "input-value",], true,];
-        yield "all-long-option-arg-flag" => [["--framework", "bead", "input-value", "--bead",], true,];
-        yield "all-long-arg-flag-option" => [["input-value", "--bead", "--framework", "bead",], true,];
-        yield "all-long-arg-option-flag" => [["input-value", "--framework", "bead", "--bead",], true,];
-    }
-
-    /**
-     * Ensure we can successfully parse valid command-line arguments.
-     * @dataProvider dataForTestParseCommandLineArguments1
-     */
+    /** Ensure we can successfully parse valid command-line arguments. */
+    #[DataProvider("providerValidCommandLineArguments")]
     public function testParseCommandLineArguments1(array $args, bool $expectedFlagValue): void
     {
         $app = new XRay($this->createApplication(
@@ -751,18 +1003,8 @@ EOF,
         self::assertEquals("input-value", $app->argumentValue("input"));
     }
 
-    public static function dataForTestParseCommandLineArguments2(): iterable
-    {
-        yield "duplicate-flag" => [["--bead", "--bead",], "--bead",];
-        yield "duplicate-option" => [["--framework", "bead", "--framework", "another-bead",], "--framework",];
-        yield "duplicate-option-amongst-others" => [["--framework", "bead", "--bead", "--framework", "another-bead", "input-value",], "--framework",];
-        yield "duplicate-field-amongst-others" => [["--framework", "bead", "--bead", "input-value", "--bead",], "--bead",];
-    }
-
-    /**
-     * Ensure we reject duplicate command-line arguments during parsing.
-     * @dataProvider dataForTestParseCommandLineArguments2
-     */
+    /** Ensure we reject duplicate command-line arguments during parsing. */
+    #[DataProvider("providerDuplicateCommandLineArguments")]
     public function testParseCommandLineArguments2(array $args, string $duplicateParameterName): void
     {
         $app = new XRay($this->createApplication(
@@ -838,48 +1080,10 @@ EOF,
         self::assertTrue($app->flagValue("configuration"));
     }
 
-    public static function dataForTestValildateArguments1(): iterable
-    {
-        yield "int-42" => [ConsoleApplication::TypeInt, "42", 42,];
-        yield "int-0" => [ConsoleApplication::TypeInt, "0", 0,];
-        yield "int-minus-3" => [ConsoleApplication::TypeInt, "-3", -3,];
-        yield "int-plus-42" => [ConsoleApplication::TypeInt, "+42", 42,];
-        yield "int-leading-whitespace" => [ConsoleApplication::TypeInt, " +42", 42,];
-        yield "int-trailing-whitespace" => [ConsoleApplication::TypeInt, "-42 ", -42,];
-        yield "int-surrounding-whitespace" => [ConsoleApplication::TypeInt, " -42 ", -42,];
-        yield "float-3.14" => [ConsoleApplication::TypeFloat, "3.14", 3.14,];
-        yield "float-0.0" => [ConsoleApplication::TypeFloat, "0.0", 0.0,];
-        yield "float-minus-7.853" => [ConsoleApplication::TypeFloat, "-7.853", -7.853,];
-        yield "float-plus-3.14" => [ConsoleApplication::TypeFloat, "+3.14", 3.14,];
-        yield "float-leading-whitespace" => [ConsoleApplication::TypeFloat, " +3.14", 3.14,];
-        yield "float-trailing-whitespace" => [ConsoleApplication::TypeFloat, "-3.14 ", -3.14,];
-        yield "float-surrounding-whitespace" => [ConsoleApplication::TypeFloat, " -3.14 ", -3.14,];
-        yield "string-empty" => [ConsoleApplication::TypeString, "", "",];
-        yield "string-whitespace" => [ConsoleApplication::TypeString, "   ", "   ",];
-        yield "string-bead framework" => [ConsoleApplication::TypeString, "bead framework", "bead framework",];
-        yield "string-leading-whitespace" => [ConsoleApplication::TypeString, " bead", " bead",];
-        yield "string-trailing-whitespace" => [ConsoleApplication::TypeString, "framework ", "framework ",];
-        yield "string-surrounding-whitespace" => [ConsoleApplication::TypeString, " bead-framework ", " bead-framework ",];
-        yield "any-empty-string" => [ConsoleApplication::TypeAny, "", "",];
-        yield "any-whitespace-string" => [ConsoleApplication::TypeAny, "   ", "   ",];
-        yield "any-bead framework-string" => [ConsoleApplication::TypeAny, "bead framework", "bead framework",];
-        yield "any-leading-whitespace-string" => [ConsoleApplication::TypeAny, " bead", " bead",];
-        yield "any-trailing-whitespace-string" => [ConsoleApplication::TypeAny, "framework ", "framework ",];
-        yield "any-surrounding-whitespace-string" => [ConsoleApplication::TypeAny, " bead-framework ", " bead-framework ",];
-        yield "any-int-42" => [ConsoleApplication::TypeAny, "42", "42",];
-        yield "any-int-0" => [ConsoleApplication::TypeAny, "0", "0",];
-        yield "any-int-minus-3" => [ConsoleApplication::TypeAny, "-3", "-3",];
-        yield "any-int-plus-42" => [ConsoleApplication::TypeAny, "+42", "+42",];
-        yield "any-float-3.14" => [ConsoleApplication::TypeAny, "3.14", "3.14",];
-        yield "any-float-0.0" => [ConsoleApplication::TypeAny, "0.0", "0.0",];
-        yield "any-float-minus-7.853" => [ConsoleApplication::TypeAny, "-7.853", "-7.853",];
-        yield "any-float-plus-3.14" => [ConsoleApplication::TypeAny, "+3.14", "+3.14",];
-    }
-
     /**
      * Ensure we successfully validate all types of command-line arguments, options and flags.
-     * @dataProvider dataForTestValildateArguments1
      */
+    #[DataProvider("providerValidatedCommandLineArguments")]
     public function testValidateCommandLineArguments1(int $type, string $arg, mixed $expectedValue): void
     {
         $app = new XRay($this->createApplication(
@@ -912,38 +1116,11 @@ EOF,
         self::assertSame(["value-1", "value-2",], $app->optionValue("test-option"));
     }
 
-    public static function invalidIntValues(): iterable
-    {
-        yield "empty" => [""];
-        yield "whitespace" => [" "];
-        yield "multiple-whitespace" => ["   "];
-        yield "alpha" => ["abc"];
-        yield "extra-sign-negative" => ["--42"];
-        yield "extra-sign-positive" => ["++42"];
-        yield "both-signs-1" => ["+-42"];
-        yield "both-signs-2" => ["-+42"];
-        yield "internal-whitespace" => ["42 7"];
-        yield "float" => ["3.14"];
-    }
-
-    public static function invalidFloatValues(): iterable
-    {
-        yield "empty" => [""];
-        yield "whitespace" => [" "];
-        yield "multiple-whitespace" => ["   "];
-        yield "alpha" => ["abc"];
-        yield "extra-sign-negative" => ["--3.14"];
-        yield "extra-sign-positive" => ["++3.14"];
-        yield "both-signs-1" => ["+-3.14"];
-        yield "both-signs-2" => ["-+3.14"];
-        yield "internal-whitespace" => ["3.14 14927"];
-    }
-
     /**
      * Ensure we reject values that are not valid for int arguments.
-     * @dataProvider invalidIntValues
      */
-    public function testValidateCommandLineArguments3(string $arg): void
+    #[DataProvider("providerInvalidIntValues")]
+     function testValidateCommandLineArguments3(string $arg): void
     {
         $app = new XRay($this->createApplication(
             args: ["test-command.php", $arg,],
@@ -958,9 +1135,9 @@ EOF,
 
     /**
      * Ensure we reject values that are not valid for float arguments.
-     * @dataProvider invalidFloatValues
      */
-    public function testValidateCommandLineArguments4(string $arg): void
+    #[DataProvider("providerInvalidFloatValues")]
+     function testValidateCommandLineArguments4(string $arg): void
     {
         $app = new XRay($this->createApplication(
             args: ["test-command.php", $arg,],
@@ -975,9 +1152,9 @@ EOF,
 
     /**
      * Ensure we reject values that are not valid for int options.
-     * @dataProvider invalidIntValues
      */
-    public function testValidateCommandLineArguments5(string $arg): void
+    #[DataProvider("providerInvalidIntValues")]
+     function testValidateCommandLineArguments5(string $arg): void
     {
         $app = new XRay($this->createApplication(
             args: ["test-command.php", "--test-opt", $arg,],
@@ -992,9 +1169,9 @@ EOF,
 
     /**
      * Ensure we reject values that are not valid for float options.
-     * @dataProvider invalidFloatValues
      */
-    public function testValidateCommandLineArguments6(string $arg): void
+    #[DataProvider("providerInvalidFloatValues")]
+     function testValidateCommandLineArguments6(string $arg): void
     {
         $app = new XRay($this->createApplication(
             args: ["test-command.php", "--test-opt", $arg,],
@@ -1053,27 +1230,11 @@ EOF,
         self::assertTrue($app->parameterShortNameIsDefined("o"));
     }
 
-    public static function emptyParameterDescriptions(): iterable
-    {
-        yield "empty" => [""];
-        yield "single-whitespace" => [" "];
-        yield "multiple-whitespace" => ["   "];
-    }
-
-    public static function validParameterDataTypes(): iterable
-    {
-        yield "any" => [ConsoleApplication::TypeAny];
-        yield "string" => [ConsoleApplication::TypeString];
-        yield "int" => [ConsoleApplication::TypeInt];
-        yield "float" => [ConsoleApplication::TypeFloat];
-        yield "array" => [ConsoleApplication::TypeArray];
-    }
-
     /**
      * Ensure empty descriptions are rejected.
-     * @dataProvider emptyParameterDescriptions
      */
-    public function testAddOption3(string $description): void
+    #[DataProvider("providerEmptyParameterDescriptions")]
+     function testAddOption3(string $description): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1083,9 +1244,9 @@ EOF,
 
     /**
      * Ensure we can add options of all types.
-     * @dataProvider validParameterDataTypes
      */
-    public function testAddOption4(int $type): void
+    #[DataProvider("providerValidParameterDataTypes")]
+     function testAddOption4(int $type): void
     {
         $app = new XRay($this->createApplication());
         $app->addOption("test-option", description: "Test option", type: $type);
@@ -1154,19 +1315,11 @@ EOF,
         self::assertNull($option->default);
     }
 
-    public static function invalidPrameterDataTypes(): iterable
-    {
-        yield "first-lower" => [-1,];
-        yield "first-higher" => [5,];
-        yield "negative" => [-99,];
-        yield "positive" => [99,];
-    }
-
     /**
      * Ensure addOption() rejects invalid data types.
-     * @dataProvider invalidPrameterDataTypes
      */
-    public function testAddOption11(int $type): void
+    #[DataProvider("providerInvalidPrameterDataTypes")]
+     function testAddOption11(int $type): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1176,9 +1329,9 @@ EOF,
 
     /**
      * Ensure addOption() rejects invalid names.
-     * @dataProvider invalidParameterNames
      */
-    public function testAddOption12(string $name): void
+    #[DataProvider("providerInvalidParameterNames")]
+     function testAddOption12(string $name): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1188,9 +1341,9 @@ EOF,
 
     /**
      * Ensure addOption() rejects invalid parameter short names.
-     * @dataProvider invalidParameterShortNames
      */
-    public function testAddOption13(string $name): void
+    #[DataProvider("providerInvalidParameterShortNames")]
+     function testAddOption13(string $name): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1247,9 +1400,9 @@ EOF,
 
     /**
      * Ensure we can add a valid argument.
-     * @dataProvider validParameterNames
      */
-    public function testAddArgument1(string $name): void
+    #[DataProvider("providerValidParameterNames")]
+     function testAddArgument1(string $name): void
     {
         $app = new XRay($this->createApplication());
         self::assertFalse($app->parameterNameIsDefined($name));
@@ -1259,9 +1412,9 @@ EOF,
 
     /**
      * Ensure we can add arguments of all types.
-     * @dataProvider validParameterDataTypes
      */
-    public function testAddArgument2(int $type): void
+    #[DataProvider("providerValidParameterDataTypes")]
+     function testAddArgument2(int $type): void
     {
         $app = new XRay($this->createApplication());
         self::assertFalse($app->parameterNameIsDefined("test-argument"));
@@ -1271,9 +1424,9 @@ EOF,
 
     /**
      * Ensure the default type is Any when adding an argument.
-     * @dataProvider validParameterDataTypes
      */
-    public function testAddArgument3(): void
+    #[DataProvider("providerValidParameterDataTypes")]
+     function testAddArgument3(): void
     {
         $app = new XRay($this->createApplication());
         self::assertFalse($app->parameterNameIsDefined("test-argument"));
@@ -1344,9 +1497,9 @@ EOF,
 
     /**
      * Ensure empty descriptions are rejected.
-     * @dataProvider emptyParameterDescriptions
      */
-    public function testAddArgument10(string $description): void
+    #[DataProvider("providerEmptyParameterDescriptions")]
+     function testAddArgument10(string $description): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1356,9 +1509,9 @@ EOF,
 
     /**
      * Ensure addArgument() rejects invalid data types.
-     * @dataProvider invalidPrameterDataTypes
      */
-    public function testAddArgument11(int $type): void
+    #[DataProvider("providerInvalidPrameterDataTypes")]
+     function testAddArgument11(int $type): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1368,9 +1521,9 @@ EOF,
 
     /**
      * Ensure addArgument() rejects invalid parameter names.
-     * @dataProvider invalidParameterNames
      */
-    public function testAddArgument12(string $name): void
+    #[DataProvider("providerInvalidParameterNames")]
+     function testAddArgument12(string $name): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1418,9 +1571,9 @@ EOF,
 
     /**
      * Ensure we can add a valid flag.
-     * @dataProvider validParameterNames
      */
-    public function testAddFlag1(string $name): void
+    #[DataProvider("providerValidParameterNames")]
+     function testAddFlag1(string $name): void
     {
         $app = new XRay($this->createApplication());
         self::assertFalse($app->parameterNameIsDefined($name));
@@ -1512,9 +1665,9 @@ EOF,
 
     /**
      * Ensure empty descriptions are rejected.
-     * @dataProvider emptyParameterDescriptions
      */
-    public function testAddFlag10(string $description): void
+    #[DataProvider("providerEmptyParameterDescriptions")]
+     function testAddFlag10(string $description): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1524,9 +1677,9 @@ EOF,
 
     /**
      * Ensure addFlag() rejects invalid parameter names.
-     * @dataProvider invalidParameterNames
      */
-    public function testAddFlag11(string $name): void
+    #[DataProvider("providerInvalidParameterNames")]
+     function testAddFlag11(string $name): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1536,9 +1689,9 @@ EOF,
 
     /**
      * Ensure addFlag() rejects invalid parameter short names.
-     * @dataProvider invalidParameterShortNames
      */
-    public function testAddFlag12(string $name): void
+    #[DataProvider("providerInvalidParameterShortNames")]
+     function testAddFlag12(string $name): void
     {
         $app = new XRay($this->createApplication());
         self::expectException(LogicException::class);
@@ -1982,23 +2135,11 @@ EOF,
         fclose($outStream);
     }
 
-    public static function dataForTestConfirm2(): iterable
-    {
-        yield "y" => ["y"];
-        yield "Y" => ["Y"];
-        yield "Yes" => ["Yes"];
-        yield "yes" => ["yes"];
-        yield "yup" => ["yup"];
-        yield "Yup" => ["Yup"];
-        yield "yellow" => ["yellow"];
-        yield "Yellow" => ["Yellow"];
-    }
-
     /**
      * Ensure confirm() accepts all expected positive responses.
-     * @dataProvider dataForTestConfirm2
      */
-    public function testConfirm2(string $response): void
+    #[DataProvider("providerAffirmativeConfirmResponses")]
+     function testConfirm2(string $response): void
     {
         $inStream = self::createInputStream("{$response}\n");
         $outStream = fopen("php://memory", "w+");
@@ -2011,83 +2152,11 @@ EOF,
         fclose($outStream);
     }
 
-    public static function dataForTestConfirm3(): iterable
-    {
-        yield "empty" => [""];
-        yield "whitespace" => ["   "];
-        yield "number-1" => ["1"];
-        yield "number-0" => ["0"];
-        yield "leading-whitespace-y" => [" y"];
-        yield "leading-whitespace-Y" => [" Y"];
-        yield "N" => ["N"];
-        yield "n" => ["n"];
-        yield "no" => ["no"];
-        yield "No" => ["No"];
-        yield "nope" => ["nope"];
-        yield "Nope" => ["Nope"];
-        yield "not" => ["not"];
-        yield "Not" => ["Not"];
-        yield "never" => ["never"];
-        yield "Never" => ["Never"];
-        yield "newt" => ["newt"];
-        yield "Newt" => ["Newt"];
-
-        // first char every letter of the alphabet (except Y and N)
-        yield "amber" => ["amber"];
-        yield "Amber" => ["Amber"];
-        yield "brown" => ["brown"];
-        yield "Brown" => ["Brown"];
-        yield "cyan" => ["cyan"];
-        yield "Cyan" => ["Cyan"];
-        yield "damson" => ["damson"];
-        yield "Damson" => ["Damson"];
-        yield "eggshell" => ["eggshell"];
-        yield "Eggshell" => ["Eggshell"];
-        yield "fawn" => ["fawn"];
-        yield "Fawn" => ["Fawn"];
-        yield "green" => ["green"];
-        yield "Green" => ["Green"];
-        yield "hessian" => ["hessian"];
-        yield "Hessian" => ["Hessian"];
-        yield "indigo" => ["indigo"];
-        yield "Indigo" => ["Indigo"];
-        yield "jute" => ["jute"];
-        yield "Jute" => ["Jute"];
-        yield "kale" => ["kale"];
-        yield "Kale" => ["Kale"];
-        yield "lime" => ["lime"];
-        yield "Lime" => ["Lime"];
-        yield "magenta" => ["magenta"];
-        yield "Magenta" => ["Magenta"];
-        yield "ochre" => ["ochre"];
-        yield "Ochre" => ["Ochre"];
-        yield "pink" => ["pink"];
-        yield "Pink" => ["Pink"];
-        yield "quince" => ["quince"];
-        yield "Quince" => ["Quince"];
-        yield "red" => ["red"];
-        yield "Red" => ["Red"];
-        yield "salmon" => ["salmon"];
-        yield "Salmon" => ["Salmon"];
-        yield "teal" => ["teal"];
-        yield "Teal" => ["Teal"];
-        yield "umber" => ["umber"];
-        yield "Umber" => ["Umber"];
-        yield "violet" => ["violet"];
-        yield "Violet" => ["Violet"];
-        yield "winter" => ["winter"];
-        yield "Winter" => ["Winter"];
-        yield "xylophone" => ["xylophone"];
-        yield "Xylophone" => ["Xylophone"];
-        yield "zenith" => ["zenith"];
-        yield "Zenith" => ["Zenith"];
-    }
-
     /**
      * Ensure confirm() returns negative for all other responses.
-     * @dataProvider dataForTestConfirm3
      */
-    public function testConfirm3(string $response): void
+    #[DataProvider("providerNegativeConfirmResponses")]
+     function testConfirm3(string $response): void
     {
         $inStream = self::createInputStream("{$response}\n");
         $outStream = fopen("php://memory", "w+");
@@ -2148,22 +2217,11 @@ EOF,
         self::assertSame($this->stdin, $app->inStream());
     }
 
-    public static function dataForTestArguments1(): iterable
-    {
-        yield "no-args" => [["command.php",], []];
-        yield "one-arg" => [["command.php", "foo",], ["foo",]];
-        yield "one-flag" => [["command.php", "--foo",], ["--foo",]];
-        yield "one-short-flag" => [["command.php", "-f",], ["-f",]];
-        yield "one-option" => [["command.php", "--foo", "foo-value",], ["--foo", "foo-value",]];
-        yield "one-short-option" => [["command.php", "-f", "foo-value"], ["-f", "foo-value",]];
-        yield "arg-option-and-flag" => [["command.php", "-f", "foo-value", "--bar", "bar-value", "argument",], ["-f", "foo-value", "--bar", "bar-value", "argument",]];
-    }
-
     /**
      * Ensure we can get the raw command-line arguments.
-     * @dataProvider dataForTestArguments1
      */
-    public function testArguments1(array $cliArgs, array $expectedArgs): void
+    #[DataProvider("providerCommandLineArguments")]
+     function testArguments1(array $cliArgs, array $expectedArgs): void
     {
         $app = $this->createApplication(args: $cliArgs);
         self::assertEquals($expectedArgs, $app->commandLineArguments());
